@@ -1,0 +1,24 @@
+Tinfour -- A Software Library 
+Copyright 22014-2016 G.W. Lucas
+
+ 
+===============================================================================
+This product includes The Apache Commons Math software library developed at
+the Apache Software Foundation (http://www.apache.org/)
+and released under the Apache Commons License Version 2.0, available
+at http://www.apache.org/licenses// Further notices and licence
+files are bundled in the commons-math jar file.
+
+This product includes software developed by the JTS Topology Suite
+at http://tsusiatsoftware.net/jts/main.html and released under
+the GNU Lesser General Public License available at 
+http://www.gnu.org/licenses/lgpl-3.0.en.html.  
+
+This product includes icons from the FatCow web page at 
+http://www.fatcow.com/free-icons and distributed under the Create Commons
+Attribution 3.0 License.
+
+
+ 
+
+

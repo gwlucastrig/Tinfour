@@ -1,0 +1,105 @@
+<project name="Tinfour" default="dist" basedir=".">
+  <description>
+    preliminary build file for Tinfour
+  </description>
+  <!-- set global properties for this build -->
+  <property name="src.dir"     location="src/main/java"/>
+  <property name="testsrc.dir" location="src/test/java"/>
+  <property name="javadoc.dir" location="doc/javadoc"/>
+  <property name="build" location="build"/>
+  <property name="dist" location="dist"/>
+
+  <target name="init">
+    <!-- Create the time stamp -->
+    <tstamp/>
+    <!-- Create the build directory structure used by compile -->
+    <mkdir dir="${build}" />
+	<mkdir dir="${dist}" />
+  </target>
+
+	<path id="build.classpath">
+	  <fileset dir="lib">
+		<include name="*.jar"/>
+	  </fileset>
+	</path>
+  
+  <target name="compile" depends="init" description="compile the source">
+    <!-- Compile the java code from ${src.dir} into ${build} -->
+    <javac includeantruntime="false"   destdir="${build}"  debug="on">
+	    <src path="${src.dir}" />
+		<src path="${testsrc.dir}" />
+		<classpath refid="build.classpath" />
+	</javac>
+  </target>
+ 
+  
+  <target name="dist" depends="compile"
+        description="generate the distribution">	
+	<!--Build a jar of just the Tinfour classes (without the test classes) -->
+	<jar jarfile="dist/Tinfour-1.0.jar" basedir="${build}" excludes="tinfour/test/**" >
+		<manifest>
+			<attribute name="Built-By" value="${user.name}" />
+			<attribute name="Specification-Title" value="Tinfour Library Classes" />
+			<attribute name="Specification-Version" value="1.0" />
+		</manifest>
+	</jar>
+	
+	 
+
+    <!-- Build a jar of the test classes, with the Tinfour Viewer configured as the
+	     main class.  Set up the class path so the viewer (or individual test applications) 
+		 can be run. -->
+	<jar jarfile="dist/TinfourViewer-1.0.jar" basedir="${build}">
+		<fileset dir="src/test/java" includes="tinfour/test/viewer/resources/**" />
+		<manifest>
+			<attribute name="Specification-Title" value="Tinfour Bundled with Tests and Viewer Demo" />
+			<attribute name="Specification-Version" value="1.0" />
+			<attribute name="Main-Class" value="tinfour.test.viewer.TinfourViewerMain" />
+			<attribute name="Class-Path" value="Tinfour-1.0.jar ../lib/commons-math3-3.6.1.jar" />
+		</manifest>
+	</jar>	
+  </target>
+
+  <target name="clean"  description="clean up">
+    <!-- Delete the ${build} and ${dist} directory trees -->
+    <delete dir="${build}"/>
+    <delete dir="${dist}"/>
+	<delete dir="${javadoc.dir}"/>
+	<delete file="pmd_results.html" />
+  </target>
+  
+  <!-- Generate javadocs for current project into ${javadoc.dir} -->
+  <target name="javadoc" depends="init" description="generate documentation for Java code">
+  	 <mkdir dir="${javadoc.dir}"/>
+    <javadoc sourcepath="${src.dir}" destdir="${javadoc.dir}" classpathref="build.classpath"
+		windowtitle="Tinfour API"  author="false"
+	/>
+  </target>
+  
+
+<!--   PMD       to run this, you will have to set up the PMD class path first.
+                 this configuration assumes it is in a parallel folder.
+
+<path id="pmd.classpath">
+    <fileset dir="../pmd-bin-5.4.1/lib">
+        <include name="*.jar"/>
+    </fileset>
+</path>
+
+<taskdef name="pmd" classname="net.sourceforge.pmd.ant.PMDTask" classpathref="pmd.classpath"/>
+
+  
+<target name="pmd">
+      <pmd  rulesetfiles="pmd_ruleset.xml" >
+          <formatter type="net.sourceforge.pmd.renderers.HTMLRenderer" toFile="pmd_results.html"/>
+          <fileset dir="${src.dir}">
+				<include name="**/*.java" />
+          </fileset>
+		  <fileset dir="${testsrc.dir}">
+				<include name="**/*.java" />
+          </fileset>
+      </pmd>
+</target>
+ -->
+  
+</project>
