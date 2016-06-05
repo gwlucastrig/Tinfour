@@ -40,7 +40,7 @@ implementation with a minimum of features.
 ### External Project Dependencies ###
 Tinfour does have one external project dependency and, at least for now,
 you will have to download it manually before you can use Tinfour.  The dependency
-is on the well-known Apache Commons Math library.  Download a recenter version
+is on the well-known Apache Commons Math library.  Download a recent version
 of the library from
 [Apache Commons Math Download](http://commons.apache.org/proper/commons-math/download_math.cgi "Apache Commons Math")
 store the jar in the Tinfour/lib directory (folder) and Tinfour will be good to go.
