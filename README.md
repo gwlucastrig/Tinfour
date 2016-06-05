@@ -23,7 +23,7 @@ details for the software.
 ### The Tinfour Viewer ###
 When someone first sees a project like Tinfour, they might reasonably ask
 that most thorny of questions "What is it good for?"  To try to address that question,
-this libary includes a simple demonstration program which allows the user to view
+this library includes a simple demonstration program which allows the user to view
 and explore raw data, including samples such as Lidar files that contain
 huge numbers of points. To run the demonstrator, you must have Java installed
 on your system.  Depending on your setup, you may be able to invoke the viewer
@@ -50,7 +50,12 @@ Lidar is a system for collecting surface elevation using laser measuring devices
 mounted on low flying aircraft. It's pretty amazing technology.
 There are some excellent sources of Lidar data to be had for free, you might start at 
 [Free LiDAR Data Sources](http://gisgeography.com/top-6-free-lidar-data-sources/ "Gis Geography")
-or [USGS Cebter for LIDAR Information] (http://lidar.cr.usgs.gov/ "USGS")
+or [USGS Center for LIDAR Information] (http://lidar.cr.usgs.gov/ "USGS").
+The Commonwealth of Pennsylvania was one of the first states to collect and post
+a comprehensive survey of lidar data, and they did the job right... Their site includes 
+not just lidar data, but the supporting breakline files (Shapefiles), multi-spectral imagery,
+and project metadata (including Dewberry reports). Visit this excellent resource at
+[PAMAP Lidar Elevation Data]( http://www.dcnr.state.pa.us/topogeo/pamap/lidar/index.htm "PAMAP Lidar Elevation Data")
 
 ### A short demo ###
 Recently, I found an earlier Delaunay triangulation project by "The Mad Creator" (Bill Dwyer)
