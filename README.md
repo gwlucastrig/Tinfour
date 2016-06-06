@@ -10,15 +10,17 @@ sample points into a triangular mesh. That optimality makes the Delaunay Triangu
 a useful tool for interpolation, grid construction, and surface analysis.
 
 ### Tinfour ###
-Tinfour is a Java package that provides tools for constructing and applying
-Delaunay Triangulations. Because it is intended to process large data sets,
+Tinfour is a software library written in Java that provides tools for constructing 
+and applying Triangulated Irregular Networks (TINs) that conform to the Delaunay
+criterion. Because it is intended to process large data sets,
 the implementation gives a great deal of attention to performance and
-memory use. On a conventional laptop is is capable of processing sample
+memory use. On a conventional laptop it is capable of processing sample
 points at a rate of better than one million points per second.
 
 The Tinfour source code includes extensive Javadoc. This project also includes
-an informal paper that describes the algorithms and implementation
-details for the software.
+an informal paper that describes the uses, algorithms, and implementation
+of the software with enough detail to support potential developers 
+who may wish to employ Tinfour in their own work.
 
 ### The Tinfour Viewer ###
 When someone first sees a project like Tinfour, they might reasonably ask
@@ -42,8 +44,8 @@ Tinfour does have one external project dependency and, at least for now,
 you will have to download it manually before you can use Tinfour.  The dependency
 is on the well-known Apache Commons Math library.  Download a recent version
 of the library from
-[Apache Commons Math Download](http://commons.apache.org/proper/commons-math/download_math.cgi "Apache Commons Math")
-store the jar in the Tinfour/lib directory (folder) and Tinfour will be good to go.
+[Apache Commons Math Download](http://commons.apache.org/proper/commons-math/download_math.cgi "Apache Commons Math"),
+store the jar in the Tinfour/lib directory (folder), and Tinfour will be good to go.
 
 ### Sources of Data ###
 Lidar is a system for collecting surface elevation using laser measuring devices
@@ -73,7 +75,7 @@ that I decided to include one of my own.
 ``` 
 
 
-### Why are there External Project Dependencies? ###
+### Why are there external project dependencies? ###
 The only external dependency in the Tinfour package is the
 [Apache Commons Math Library](https://commons.apache.org/proper/commons-math/).
 This dependency is required by the linear algebra and statistics functions
@@ -108,3 +110,14 @@ to process the compressed LAZ format files. Doing so would
 make file access far more conveient. I'd also like to have the
 reader obtain the metadata from LAS files, particular those
 elements using Well-Known Text (WKT) format and GeoTIFF tags.
+
+I'd also like to see an extension of Tinfour to build Voronoi Diagrams 
+and perhaps conduct rendering and analysis using that graphical structure
+which is closely related to the Delaunay Triangulation.
+
+Finally, the whole point of working on a project like Tinfour is to see 
+it used to do something useful. To that end, I welcome ideas, requests, and
+recommendations for analysis tools and applications that would
+benefit the open source and scientific communities. Got something
+to say? Let me know.
+ 
