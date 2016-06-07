@@ -39,6 +39,8 @@ The demonstrator is intended to show how the Tinfour library could be integrated
 into a fully feature GIS application or other analysis tool. It's a simple
 implementation with a minimum of features. 
 
+![Lidar over Guilford, CT](doc/images/TinfourViewerGuilford.jpg "Lidar over Guilford, CT")
+
 ### Sources of Data ###
 Lidar is a system for collecting surface elevation using laser measuring devices
 mounted on low flying aircraft. It's pretty amazing technology.
