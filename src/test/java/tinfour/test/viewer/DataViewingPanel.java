@@ -41,6 +41,7 @@
  */
 package tinfour.test.viewer;
 
+import java.awt.BasicStroke;
 import java.awt.Color;
 import java.awt.Component;
 import java.awt.Font;
@@ -74,6 +75,7 @@ import tinfour.test.viewer.backplane.BackplaneManager;
 import tinfour.test.viewer.backplane.IModel;
 import tinfour.test.viewer.backplane.ModelFromLas;
 import tinfour.test.viewer.backplane.MvComposite;
+import tinfour.test.viewer.backplane.MvQueryResult;
 import tinfour.test.viewer.backplane.RenderProduct;
 import tinfour.test.viewer.backplane.ViewOptions;
 
@@ -117,6 +119,7 @@ public class DataViewingPanel extends JPanel {
   private AffineTransform p2c; // panel to composite
   private AffineTransform p2m;  // panel to model
   private RenderProduct[] renderProducts = new RenderProduct[2];
+  private MvQueryResult mvQueryResult;
   private boolean showScale;
 
   Timer redrawTimer;
@@ -210,9 +213,10 @@ public class DataViewingPanel extends JPanel {
             c[0] = e.getX();
             c[1] = e.getY();
             p2c.transform(c, 0, c, 2, 1);
-            String s = mvComposite.performQuery(c[2], c[3]);
-            queryPane.setText(s);
+            mvQueryResult = mvComposite.performQuery(c[2], c[3]);
+            queryPane.setText(mvQueryResult.getText());
             queryPane.setCaretPosition(0);
+            repaint();
           }
         }
       }
@@ -396,6 +400,24 @@ public class DataViewingPanel extends JPanel {
           si.render(g, x0, y0, f, Color.white, Color.black);
         }
       }
+
+      if(mvQueryResult !=null){
+        Point2D p = new Point2D.Double();
+        c2p.transform(mvQueryResult.getCompositePoint(), p);
+
+        int px = (int) p.getX();
+        int py = (int) p.getY();
+        g2d.setStroke(new BasicStroke(3.0f));
+        g2d.setColor(Color.black);
+        g2d.drawLine(px - 10, py, px + 10, py);
+        g2d.drawLine(px, py - 10, px, py + 10);
+        g2d.setStroke(new BasicStroke(1.0f));
+        g2d.setColor(Color.white);
+        g2d.drawLine(px - 10, py, px + 10, py);
+        g2d.drawLine(px, py - 10, px, py + 10);
+
+
+      }
     }
   }
 
@@ -409,6 +431,7 @@ public class DataViewingPanel extends JPanel {
     renderProducts[0] = null;
     renderProducts[1] = null;
     mvComposite = null;
+    mvQueryResult = null;
     compositeImage = null;
     resizeAnchorX = Double.NaN;
     resizeAnchorY = Double.NaN;
@@ -434,6 +457,7 @@ public class DataViewingPanel extends JPanel {
   void loadModel(IModel model) {
     backplaneManager.loadModel(model);
     mvComposite = null;
+    mvQueryResult = null;
     renderProducts[0] = null;
     renderProducts[1] = null;
     compositeImage = null;
@@ -474,6 +498,7 @@ public class DataViewingPanel extends JPanel {
     c2p = AffineTransform.getTranslateInstance(-pad, -pad);
     p2c = AffineTransform.getTranslateInstance(pad, pad);
     this.mvComposite = mvComposite;
+    mvQueryResult = null;
     AffineTransform c2m = mvComposite.getComposite2ModelTransform();
     p2m = new AffineTransform(c2m);
     p2m.concatenate(p2c);  // becomes c2m * p2c
@@ -732,6 +757,7 @@ public class DataViewingPanel extends JPanel {
         getHeight() + 2 * pad,
         a, aInv);
       mvComposite = newComposite;
+      mvQueryResult = null;
     } else {
       // perform a light-weight render reusing existing TINs
       MvComposite newComposite = backplaneManager.queueLightweightRenderTask(
@@ -740,6 +766,7 @@ public class DataViewingPanel extends JPanel {
         getHeight() + 2 * pad,
         a, aInv);
       mvComposite = newComposite;
+       mvQueryResult = null;
     }
   }
 

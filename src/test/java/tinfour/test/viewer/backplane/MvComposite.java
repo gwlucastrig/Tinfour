@@ -37,6 +37,7 @@ import java.awt.RenderingHints;
 import java.awt.geom.AffineTransform;
 import java.awt.geom.Ellipse2D;
 import java.awt.geom.Line2D;
+import java.awt.geom.Point2D;
 import java.awt.image.BufferedImage;
 import java.util.Formatter;
 import java.util.List;
@@ -783,7 +784,7 @@ public class MvComposite {
    * @param y a coordinate in the composite coordinate system
    * @return a valid string
    */
-  public String performQuery(double x, double y) {
+  public MvQueryResult performQuery(double x, double y) {
     double[] c = new double[4];
     c[0] = x;
     c[1] = y;
@@ -791,8 +792,13 @@ public class MvComposite {
     double mx = c[2];
     double my = c[3];
 
+    Point2D compositePoint = new Point2D.Double(x, y);
+    Point2D modelPoint = new Point2D.Double(mx, my);
     if (interpolator == null) {
-      return "<html>Data not available. Model not loaded</html>";
+      new MvQueryResult(
+        compositePoint,
+        modelPoint,
+       "<html>Data not available. Model not loaded</html>");
     }
 
     NeighborEdgeVertex nev = edgeLocator.getEdgeWithNearestVertex(mx, my);
@@ -856,7 +862,7 @@ public class MvComposite {
       fmt.format("\nRegression used %d samples\n", interpolator.getSampleCount());
     }
     fmt.format("</small></pre></html>");
-    return sb.toString();
+    return new MvQueryResult(compositePoint, modelPoint,sb.toString());
 
   }
 
