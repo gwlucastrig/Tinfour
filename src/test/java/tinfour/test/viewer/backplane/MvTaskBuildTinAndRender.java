@@ -50,10 +50,8 @@ class MvTaskBuildTinAndRender implements IModelViewTask {
 
   /**
    * An arbitrary setting for how many pixels (on average) we require
-   * between vertices when computing thinning.
+   * between vertices when computing thinning for raster
    */
-  private static final int spaceInPixelsWireframe = 50;
-
   private static final int spaceInPixelsRaster = 2;
 
   private static final int MAX_VERTICES_FOR_TIN = 50000;
@@ -119,8 +117,8 @@ class MvTaskBuildTinAndRender implements IModelViewTask {
     SelectionResult result = null;
     if (view.isWireframeSelected()) {
       result = selectVerticesForProcessing(
-        view.isThinningSelected(),
-        spaceInPixelsWireframe,
+        true,
+        view.getWireframeSampleSpacing(),
         MAX_VERTICES_FOR_TIN,
         true);
       List<Vertex> vList = result.list;

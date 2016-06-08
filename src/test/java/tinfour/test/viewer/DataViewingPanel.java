@@ -737,7 +737,7 @@ public class DataViewingPanel extends JPanel {
     }
 
     if (view.isWireframeSelected()
-      && oldView.isThinningSelected() != view.isThinningSelected()) {
+      && oldView.getWireframeSampleThinning() != view.getWireframeSampleThinning()) {
       redrawRequired = true;
     }
 
