@@ -64,6 +64,17 @@ public class ViewOptions {
   private boolean isLidarGroundPointsOptionSelected;
   private boolean isFullResolutionGridSelected;
 
+  private SampleThinning wireframeSampleThinning = SampleThinning.Medium;
+
+  /**
+   * An enumeration definitng states for Wireframe sample thinning
+   */
+  public enum SampleThinning {
+    Medium,
+    Fine,
+    ExtraFine;
+  }
+
   /**
    * Create a new instance copying the state data from the supplied reference
    * @param v a valid instance
@@ -80,6 +91,7 @@ public class ViewOptions {
     // wireframe options
     isWireframeSelected = v.isWireframeSelected;
     isThinningSelected = v.isThinningSelected;
+    wireframeSampleThinning = v.wireframeSampleThinning;
     isEdgeRenderingSelected = v.isEdgeRenderingSelected;
     isVertexRenderingSelected = v.isVertexRenderingSelected;
     isLabelRenderingSelected = v.isLabelRenderingSelected;
@@ -267,20 +279,6 @@ public class ViewOptions {
   }
 
   /**
-   * @return the isThinningSelected
-   */
-  public boolean isThinningSelected() {
-    return isThinningSelected;
-  }
-
-  /**
-   * @param isThinningSelected the isThinningSelected to set
-   */
-  public void setThinningSelected(boolean isThinningSelected) {
-    this.isThinningSelected = isThinningSelected;
-  }
-
-  /**
    * @return the isEdgeRenderingSelected
    */
   public boolean isEdgeRenderingSelected() {
@@ -461,5 +459,39 @@ public class ViewOptions {
   public int getPadding() {
     return 150;
   }
+
+  /**
+   * Sets the sample thinning setting for wireframe rendering.
+   * @param sampleThinning a valid enumeration state
+   */
+public void setWireframeSampleThinning(SampleThinning sampleThinning){
+  wireframeSampleThinning = sampleThinning;
+}
+
+/**
+ * Gets the sample thinning setting for wireframe rendering
+ * @return a valid enumerations state;
+ */
+public SampleThinning getWireframeSampleThinning(){
+  return wireframeSampleThinning;
+}
+
+/**
+ * Gets the pixel distance between samples for the selected
+ * thinning factor.
+ * @return a positive number in pixels (user coordinates)
+ */
+public int getWireframeSampleSpacing(){
+  switch (wireframeSampleThinning) {
+      case Medium:
+        return 50;
+      case Fine:
+        return 35;  // about 50/sqrt(2)
+      case ExtraFine:
+        return 24;
+      default:
+        return 50;
+    }
+}
 
 }

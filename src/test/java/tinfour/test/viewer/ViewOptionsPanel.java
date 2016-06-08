@@ -40,8 +40,8 @@ import javax.swing.JList;
 import javax.swing.JOptionPane;
 import javax.swing.JTextField;
 import javax.swing.ListCellRenderer;
-import tinfour.test.viewer.backplane.ViewOptions;
 import tinfour.test.utils.TestPalette;
+import tinfour.test.viewer.backplane.ViewOptions;
 
 /**
  * Provides UI for showing viewing options
@@ -128,7 +128,20 @@ import tinfour.test.utils.TestPalette;
     paletteAssignFixedRange.setSelected(useRangeOfValues);
 
     wireframeCheckBox.setSelected(view.isWireframeSelected());
-    enableThinningCheckBox.setSelected(view.isThinningSelected());
+    ViewOptions.SampleThinning wThin = view.getWireframeSampleThinning();
+    switch (wThin) {
+      case Medium:
+        wireframeSampleThinningComboBox.setSelectedIndex(0);
+        break;
+      case Fine:
+        wireframeSampleThinningComboBox.setSelectedIndex(1);
+        break;
+      case ExtraFine:
+        wireframeSampleThinningComboBox.setSelectedIndex(2);
+        break;
+      default:
+        wireframeSampleThinningComboBox.setSelectedIndex(0);
+    }
     wireframeColorUsingForeground.setSelected(!view.usePaletteForWireframe());
     wireframeColorUsingPalette.setSelected(view.usePaletteForWireframe());
     edgesCheckBox.setSelected(view.isEdgeRenderingSelected());
@@ -218,7 +231,20 @@ import tinfour.test.utils.TestPalette;
     view.setUseRangeOfValuesForPalette(useRangeOfValues);
 
     view.setWireframeSelected(wireframeCheckBox.isSelected());
-    view.setThinningSelected(enableThinningCheckBox.isSelected());
+    int index = wireframeSampleThinningComboBox.getSelectedIndex();
+    switch (index) {
+      case 0:
+        view.setWireframeSampleThinning(ViewOptions.SampleThinning.Medium);
+        break;
+      case 1:
+        view.setWireframeSampleThinning(ViewOptions.SampleThinning.Fine);
+        break;
+      case 2:
+         view.setWireframeSampleThinning(ViewOptions.SampleThinning.ExtraFine);
+        break;
+      default:
+        view.setWireframeSampleThinning(ViewOptions.SampleThinning.Medium);
+    }
     view.setUsePaletteForWireframe(wireframeColorUsingPalette.isSelected());
     view.setEdgeRenderingSelected(edgesCheckBox.isSelected());
     view.setVertexRenderingSelected(verticesCheckBox.isSelected());
@@ -266,6 +292,7 @@ import tinfour.test.utils.TestPalette;
     lidarPointSelectionGroup = new javax.swing.ButtonGroup();
     wireframeColorButtonGroup = new javax.swing.ButtonGroup();
     foregroundBackgroundButtonGroup = new javax.swing.ButtonGroup();
+    jComboBox1 = new javax.swing.JComboBox();
     optionsPanel = new javax.swing.JPanel();
     jLabel1 = new javax.swing.JLabel();
     jLabel2 = new javax.swing.JLabel();
@@ -279,7 +306,6 @@ import tinfour.test.utils.TestPalette;
     jLabel5 = new javax.swing.JLabel();
     paletteAssignMaxRange = new javax.swing.JTextField();
     wireframeCheckBox = new javax.swing.JCheckBox();
-    enableThinningCheckBox = new javax.swing.JCheckBox();
     edgesCheckBox = new javax.swing.JCheckBox();
     verticesCheckBox = new javax.swing.JCheckBox();
     labelsCheckBox = new javax.swing.JCheckBox();
@@ -299,10 +325,14 @@ import tinfour.test.utils.TestPalette;
     wireframeColorUsingForeground = new javax.swing.JRadioButton();
     wireframeColorUsingPalette = new javax.swing.JRadioButton();
     fullResolutionGridCheckbox = new javax.swing.JCheckBox();
+    jLabel3 = new javax.swing.JLabel();
+    wireframeSampleThinningComboBox = new javax.swing.JComboBox();
     actionsPanel = new javax.swing.JPanel();
     applyButton = new javax.swing.JButton();
     cancelButton = new javax.swing.JButton();
     okayButton = new javax.swing.JButton();
+
+    jComboBox1.setModel(new javax.swing.DefaultComboBoxModel(new String[] { "Item 1", "Item 2", "Item 3", "Item 4" }));
 
     optionsPanel.setBorder(javax.swing.BorderFactory.createEtchedBorder());
 
@@ -350,10 +380,6 @@ import tinfour.test.utils.TestPalette;
 
     wireframeCheckBox.setSelected(true);
     wireframeCheckBox.setText("Wireframe");
-
-    enableThinningCheckBox.setSelected(true);
-    enableThinningCheckBox.setText("Enable Thinning (Recommended)");
-    enableThinningCheckBox.setToolTipText("Use scale-dependent thinning (recommended for large samples)");
 
     edgesCheckBox.setSelected(true);
     edgesCheckBox.setText("Edges");
@@ -423,6 +449,10 @@ import tinfour.test.utils.TestPalette;
       }
     });
 
+    jLabel3.setText("Sample Thinning");
+
+    wireframeSampleThinningComboBox.setModel(new javax.swing.DefaultComboBoxModel(new String[] { " Medium", "Fine", "Extra Fine" }));
+
     javax.swing.GroupLayout optionsPanelLayout = new javax.swing.GroupLayout(optionsPanel);
     optionsPanel.setLayout(optionsPanelLayout);
     optionsPanelLayout.setHorizontalGroup(
@@ -452,13 +482,16 @@ import tinfour.test.utils.TestPalette;
             .addGap(21, 21, 21)
             .addGroup(optionsPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
               .addComponent(edgesCheckBox)
-              .addComponent(enableThinningCheckBox)
               .addGroup(optionsPanelLayout.createSequentialGroup()
                 .addComponent(verticesCheckBox)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
                 .addComponent(labelsCheckBox)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
-                .addComponent(labelFieldComboBox, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))))
+                .addComponent(labelFieldComboBox, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
+              .addGroup(optionsPanelLayout.createSequentialGroup()
+                .addComponent(jLabel3)
+                .addGap(18, 18, 18)
+                .addComponent(wireframeSampleThinningComboBox, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))))
           .addComponent(jLabel9)
           .addGroup(optionsPanelLayout.createSequentialGroup()
             .addGap(10, 10, 10)
@@ -493,7 +526,7 @@ import tinfour.test.utils.TestPalette;
               .addComponent(jLabel2)
               .addComponent(blackOnWhiteRadioButton)
               .addComponent(whiteOnBlackRadioButton))))
-        .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+        .addContainerGap(25, Short.MAX_VALUE))
     );
     optionsPanelLayout.setVerticalGroup(
       optionsPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
@@ -523,20 +556,23 @@ import tinfour.test.utils.TestPalette;
         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
         .addGroup(optionsPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING)
           .addGroup(optionsPanelLayout.createSequentialGroup()
-            .addComponent(enableThinningCheckBox)
+            .addComponent(jLabel10)
+            .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+            .addComponent(wireframeColorUsingForeground)
+            .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+            .addComponent(wireframeColorUsingPalette)
+            .addGap(5, 5, 5))
+          .addGroup(optionsPanelLayout.createSequentialGroup()
+            .addGroup(optionsPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+              .addComponent(jLabel3)
+              .addComponent(wireframeSampleThinningComboBox, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
             .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
             .addComponent(edgesCheckBox)
             .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
             .addGroup(optionsPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
               .addComponent(verticesCheckBox)
               .addComponent(labelsCheckBox)
-              .addComponent(labelFieldComboBox, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)))
-          .addGroup(optionsPanelLayout.createSequentialGroup()
-            .addComponent(jLabel10)
-            .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-            .addComponent(wireframeColorUsingForeground)
-            .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-            .addComponent(wireframeColorUsingPalette)))
+              .addComponent(labelFieldComboBox, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))))
         .addGap(18, 18, 18)
         .addComponent(rasterCheckBox)
         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
@@ -715,13 +751,14 @@ import tinfour.test.utils.TestPalette;
   private javax.swing.JButton cancelButton;
   private javax.swing.JCheckBox edgesCheckBox;
   private javax.swing.JTextField elevationTextField;
-  private javax.swing.JCheckBox enableThinningCheckBox;
   private javax.swing.ButtonGroup foregroundBackgroundButtonGroup;
   private javax.swing.JCheckBox fullResolutionGridCheckbox;
   private javax.swing.JCheckBox hillshadeCheckBox;
+  private javax.swing.JComboBox jComboBox1;
   private javax.swing.JLabel jLabel1;
   private javax.swing.JLabel jLabel10;
   private javax.swing.JLabel jLabel2;
+  private javax.swing.JLabel jLabel3;
   private javax.swing.JLabel jLabel4;
   private javax.swing.JLabel jLabel5;
   private javax.swing.JLabel jLabel6;
@@ -748,5 +785,6 @@ import tinfour.test.utils.TestPalette;
   private javax.swing.ButtonGroup wireframeColorButtonGroup;
   private javax.swing.JRadioButton wireframeColorUsingForeground;
   private javax.swing.JRadioButton wireframeColorUsingPalette;
+  private javax.swing.JComboBox wireframeSampleThinningComboBox;
   // End of variables declaration//GEN-END:variables
 }
