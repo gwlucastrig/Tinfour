@@ -51,7 +51,11 @@ The Commonwealth of Pennsylvania was one of the first states to collect and post
 a comprehensive survey of lidar data, and they did the job right... Their site includes 
 not just lidar data, but the supporting breakline files (Shapefiles), multi-spectral imagery,
 and project metadata (including Dewberry reports). Visit this excellent resource at
-[PAMAP Lidar Elevation Data]( http://www.dcnr.state.pa.us/topogeo/pamap/lidar/index.htm "PAMAP Lidar Elevation Data")
+[PAMAP Lidar Elevation Data]( http://www.dcnr.state.pa.us/topogeo/pamap/lidar/index.htm "PAMAP Lidar Elevation Data").
+
+If you just want to download a single Lidar file and view it, I recommend
+[PAMAP Tile 41991330PAS]( ftp://pamap.pasda.psu.edu/pamap_lidar/cycle1/LAS/South/2006/40000000/41001330PAS.zip "PAMAP Tile 4100133PAS").
+At 36.7 megabytes, it isn't dainty, but it does contain interesting land features.
 
 ### A short demo ###
 Recently, I found an earlier Delaunay triangulation project by "The Mad Creator" (Bill Dwyer)
