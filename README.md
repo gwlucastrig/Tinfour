@@ -55,7 +55,8 @@ and project metadata (including Dewberry reports). Visit this excellent resource
 
 If you just want to download a single Lidar file and view it, I recommend PAMAP Tile 4100133PAS
 ftp://pamap.pasda.psu.edu/pamap_lidar/cycle1/LAS/South/2006/40000000/41001330PAS.zip
-At 36.7 megabytes, it isn't dainty, but it does contain interesting land features.
+At 36.7 megabytes, it isn't dainty, but it does contain interesting land features and sufficient
+detail to exercise the major functions of the viewer.
 
 ### A short demo ###
 Recently, I found an earlier Delaunay triangulation project by "The Mad Creator" (Bill Dwyer)
