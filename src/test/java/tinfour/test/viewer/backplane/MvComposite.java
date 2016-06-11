@@ -762,7 +762,7 @@ public class MvComposite {
       // but will tend to reveal the triangular nature of the underlying TIN
       // in areas of particularly severe gradient.
       double z = interpolator.interpolate(
-        SurfaceModel.Cubic,
+        SurfaceModel.QuadraticWithCrossTerms,
         BandwidthSelectionMethod.FixedProportionalBandwidth, 1.0,
         mx, my, null);
       if (Double.isNaN(z)) {
@@ -813,8 +813,8 @@ public class MvComposite {
     Formatter fmt = new Formatter(sb);
     fmt.format("<html><strong>Query/Regression Results</strong><br><pre><small>");
     double z = interpolator.interpolate(
-      SurfaceModel.Cubic,
-      BandwidthSelectionMethod.AdaptiveBandwidth, 0.5,
+      SurfaceModel.QuadraticWithCrossTerms,
+      BandwidthSelectionMethod.AdaptiveBandwidth, 1.0,
       mx, my, null);
     fmt.format("X:     %s\n", model.getFormattedX(mx));
     fmt.format("Y:     %s\n", model.getFormattedY(my));
@@ -834,7 +834,7 @@ public class MvComposite {
       double zY = beta[2];
       double zXX = 2 * beta[3];
       double zYY = 2 * beta[4];
-      double zXY = beta[4];
+      double zXY = beta[5];
       double kP = (zXX * zX * zX + 2 * zXY * zX * zY + zYY * zY * zY)
         / ((zX * zX + zY * zY) * Math.pow(zX * zX + zY * zY + 1.0, 1.5));
 
@@ -946,8 +946,8 @@ public class MvComposite {
           double x = (iCol + 0.5) * dx + x0;
           if (minX <= x && x <= maxX) {
             double z = gwr.interpolate(
-              SurfaceModel.Cubic,
-              BandwidthSelectionMethod.FixedProportionalBandwidth, 0.5,
+              SurfaceModel.QuadraticWithCrossTerms,
+              BandwidthSelectionMethod.FixedProportionalBandwidth, 1.0,
               x, y, null);
 
             if (gwr.wasTargetExteriorToTin()) {
