@@ -555,7 +555,10 @@ public class GwrInterpolator {
 
     double distMean = prepDistances(qx, qy, nSamples, samples, distsq);
 
-    if (!prepWeights(model, bandwidthMethod, bandwidthParameter, qx, qy, nSamples, samples, distsq, weights, distMean)) {
+    if (!prepWeights(
+      model,   bandwidthMethod,   bandwidthParameter,
+      qx, qy, nSamples, samples, distsq, weights, distMean))
+    {
       return Double.NaN;
     }
 

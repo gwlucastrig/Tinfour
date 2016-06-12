@@ -48,7 +48,6 @@ public class ViewOptions {
 
   // wireframe options
   private boolean isWireframeSelected;
-  private boolean isThinningSelected;
   private boolean isEdgeRenderingSelected;
   private boolean isVertexRenderingSelected;
   private boolean isLabelRenderingSelected;
@@ -90,7 +89,6 @@ public class ViewOptions {
 
     // wireframe options
     isWireframeSelected = v.isWireframeSelected;
-    isThinningSelected = v.isThinningSelected;
     wireframeSampleThinning = v.wireframeSampleThinning;
     isEdgeRenderingSelected = v.isEdgeRenderingSelected;
     isVertexRenderingSelected = v.isVertexRenderingSelected;
@@ -126,7 +124,6 @@ public class ViewOptions {
 
     // wireframe options
     isWireframeSelected = true;
-    isThinningSelected = true;
     isEdgeRenderingSelected = true;
     isVertexRenderingSelected = true;
     isLabelRenderingSelected = true;

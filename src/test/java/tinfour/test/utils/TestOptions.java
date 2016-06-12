@@ -34,11 +34,11 @@ import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.util.Arrays;
 import tinfour.common.IIncrementalTin;
-import tinfour.standard.IncrementalTin;
 import tinfour.interpolation.GwrTinInterpolator;
 import tinfour.interpolation.IInterpolatorOverTin;
 import tinfour.interpolation.NaturalNeighborInterpolator;
 import tinfour.interpolation.TriangularFacetInterpolator;
+import tinfour.standard.IncrementalTin;
 
 /**
  * Provides a convenience utility for extracting command-line arguments for
@@ -361,6 +361,7 @@ public class TestOptions {
    * an empty array
    */
  public double[] scanBounds(String[] args, String option, boolean[] matched) {
+    double[] a = new double[4];
     for (int i = 0; i < args.length; i++) {
       if (args[i].equalsIgnoreCase(option)) {
         if (i > args.length - 5) {
@@ -368,7 +369,6 @@ public class TestOptions {
             "Fewer than 4 arguments where bounds specified for argument " + i);
         }
         matched[i] = true;
-        double[] a = new double[4];
         for (int j = 0; j < 4; j++) {
           int index = i + 1 + j;
           matched[index] = true;

@@ -76,6 +76,10 @@ public class ModelFromText extends ModelAdapter implements IModel {
     VertexLoader loader = new VertexLoader();
 
     List<Vertex> list = loader.readDelimitedFile(file, delimiter);
+    if (list.isEmpty()) {
+      monitor.reportDone(); // remove the progress bar
+      throw new IOException("Unable to read points from file");
+    }
 
     xMin = loader.getXMin();
     yMin = loader.getYMin();
