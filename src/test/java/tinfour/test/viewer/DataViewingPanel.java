@@ -215,7 +215,6 @@ public class DataViewingPanel extends JPanel {
             p2c.transform(c, 0, c, 2, 1);
             mvQueryResult = mvComposite.performQuery(c[2], c[3]);
             queryPane.setText(mvQueryResult.getText());
-            queryPane.setCaretPosition(0);
             repaint();
           }
         }
@@ -228,7 +227,6 @@ public class DataViewingPanel extends JPanel {
         }
         imagePressPoint = new Point2D.Double(e.getX(), e.getY());
         p2c.transform(imagePressPoint, imagePressPoint);
-
       }
 
       @Override
@@ -510,6 +508,8 @@ public class DataViewingPanel extends JPanel {
   public void postImageUpdate(RenderProduct product) {
     if (mvComposite == null) {
       setMvComposite(product.composite);
+    }else if(!product.composite.equals(mvComposite)){
+      return;
     }
     String reportText = mvComposite.getModelAndRenderingReport();
     reportPane.setText(reportText);
@@ -517,6 +517,7 @@ public class DataViewingPanel extends JPanel {
 
     int index = product.layerType.ordinal();
     renderProducts[index] = product;
+
     assembleComposite();
     repaint();
   }
@@ -663,7 +664,11 @@ public class DataViewingPanel extends JPanel {
           if (renderProducts[i] != null) {
             AffineTransform compatibility = AffineTransform.getTranslateInstance(pad, pad);
             compatibility.concatenate(c2p);
+            if(renderProducts[i].compatibilityTransform==null){
             renderProducts[i].compatibilityTransform = compatibility;
+            }else{
+              renderProducts[i].compatibilityTransform.preConcatenate(compatibility);
+            }
           }
         }
 
