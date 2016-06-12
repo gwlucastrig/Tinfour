@@ -40,7 +40,7 @@ import tinfour.common.Vertex;
 /**
  * A utility for creating randomly positioned vertices for test purposes.
  */
-public class TestVertices {
+public final class TestVertices {
 
   /**
    * A private constructor to deter applications from instantiating
@@ -66,7 +66,7 @@ public class TestVertices {
       double x = r.nextDouble();
       double y = r.nextDouble();
       double z = x*x + y*y -(x+y) -0.5;  // (x-0.5)^2 + (y-0.5)^2
-      vList.add(new Vertex(x, y, z, i));
+      vList.add(new Vertex(x, y, z, i)); //NOPMD
     }
 
     return vList;

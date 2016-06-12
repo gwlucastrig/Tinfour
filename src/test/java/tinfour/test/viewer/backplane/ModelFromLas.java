@@ -129,6 +129,17 @@ public class ModelFromLas extends ModelAdapter implements IModel {
     }
 
     List<Vertex> list = loader.readLasFile(file, vFilter, monitor);
+    if(list.isEmpty()){
+      monitor.reportDone(); // remove the progress bar
+      if(this.groundPointFilter){
+        // the source data contained no ground points. this can
+        // happen when a LAS file is not classified or in the case of
+        // bathymetric lidar (which may contain all water points)
+        throw new IOException("Source Lidar file does not contain groundpoints");
+      }else{
+        throw new IOException("Unable to read points from file");
+      }
+    }
 
     xMin = loader.getXMin();
     yMin = loader.getYMin();

@@ -137,6 +137,7 @@ public class TinRenderingUtility {
    * @param tin a valid instance of a TIN
    * @return a valid buffered image of specified size
    */
+  @SuppressWarnings("PMD.AvoidInstantiatingObjectsInLoops")
   BufferedImage render(
     AffineTransform af,
     int width, int height,

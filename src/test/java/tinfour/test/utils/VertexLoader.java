@@ -367,6 +367,7 @@ public class VertexLoader
       yMax = Double.NaN;
       zMin = Double.NaN;
       zMax = Double.NaN;
+      return;
     }
 
     Vertex v = list.get(0);

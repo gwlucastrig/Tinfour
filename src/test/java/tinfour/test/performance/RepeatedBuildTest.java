@@ -44,7 +44,6 @@ import tinfour.common.Vertex;
 import tinfour.test.utils.IDevelopmentTest;
 import tinfour.test.utils.TestOptions;
 import tinfour.test.utils.VertexLoader;
-import tinfour.standard.IncrementalTin;
 
 /**
  * A test application that repeatedly builds a TIN tracking the time
@@ -133,13 +132,13 @@ static final String[] usage = {
     ps.println("Time for pre-sort   " + timeForPreSort);
     ps.println("Number of vertices  " + vertexList.size());
 
-    IIncrementalTin tin = new IncrementalTin(1); //options.getNewInstanceOfTestTin();
+    IIncrementalTin tin = options.getNewInstanceOfTestTin();
     ps.println("run,        build,    avg_build,     total_mem,   alloc_time");
 
     int iAvg = 3;  // minimum index to start collecting average
     for (int iTest = 0; iTest < nTests; iTest++) {
       String preallocTime = "       ~~~";
-      tin = new IncrementalTin(1); // options.getNewInstanceOfTestTin();
+      tin =  options.getNewInstanceOfTestTin();
       if (usePreAlloc) {
         time0 = System.nanoTime();
         tin.preAllocateEdges(nVertices);
