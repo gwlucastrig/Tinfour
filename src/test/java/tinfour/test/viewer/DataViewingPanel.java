@@ -105,6 +105,8 @@ public class DataViewingPanel extends JPanel {
   BackplaneManager backplaneManager;
 
   boolean redrawInProgress;
+  boolean firstQuery = true;
+  boolean firstDraw = true;
 
   /**
    * The point at which the mouse was most recently pressed; used
@@ -115,12 +117,14 @@ public class DataViewingPanel extends JPanel {
   private ViewOptions viewOptions;
   private MvComposite mvComposite;
   private BufferedImage compositeImage;
+  private BufferedImage legendImage;
   private AffineTransform c2p; // composite to panel
   private AffineTransform p2c; // panel to composite
   private AffineTransform p2m;  // panel to model
   private RenderProduct[] renderProducts = new RenderProduct[2];
   private MvQueryResult mvQueryResult;
   private boolean showScale;
+  private boolean showLegend;
 
   Timer redrawTimer;
 
@@ -133,6 +137,7 @@ public class DataViewingPanel extends JPanel {
     backplaneManager.clear();
     mvComposite = null;
     compositeImage = null;
+    legendImage = null;
     renderProducts[0] = null;
     renderProducts[1] = null;
     reportPane.setText(null);
@@ -215,6 +220,7 @@ public class DataViewingPanel extends JPanel {
             p2c.transform(c, 0, c, 2, 1);
             mvQueryResult = mvComposite.performQuery(c[2], c[3]);
             queryPane.setText(mvQueryResult.getText());
+            queryPane.setCaretPosition(0);
             repaint();
           }
         }
@@ -383,23 +389,33 @@ public class DataViewingPanel extends JPanel {
 
     if (compositeImage != null) {
       g2d.drawImage(compositeImage, c2p, this);
-      if (mvComposite != null && mvComposite.isReady() && showScale) {
-        // draw a scale bar, but suppress it if the user has engaged
-        // a zoom action
-        double p2cScale = Math.abs(p2c.getDeterminant());
-        if (Math.abs(p2cScale - 1) < 1.0e-6) {
-          double s = Math.sqrt(Math.abs(p2m.getDeterminant()));
-          int x0 = getWidth() - 240;
-          int y0 = getHeight() - 25;
-          ScaleIntervals si = ScaleIntervals.computeIntervals(200, 10, s);
-          Font f = getFont();
-          String family = f.getFamily();
-          f = new Font(family, Font.BOLD, 14);
-          si.render(g, x0, y0, f, Color.white, Color.black);
+      if (mvComposite != null && mvComposite.isReady()) {
+        if (showScale) {
+          // draw a scale bar, but suppress it if the user has engaged
+          // a zoom action
+          double p2cScale = Math.abs(p2c.getDeterminant());
+          if (Math.abs(p2cScale - 1) < 1.0e-6) {
+            double s = Math.sqrt(Math.abs(p2m.getDeterminant()));
+            int x0 = getWidth() - 240;
+            int y0 = getHeight() - 25;
+            ScaleIntervals si = ScaleIntervals.computeIntervals(200, 10, s);
+            Font f = getFont();
+            String family = f.getFamily();
+            f = new Font(family, Font.BOLD, 14);
+            si.render(g, x0, y0, f, Color.white, Color.black);
+          }
+        }
+        if (showLegend && legendImage != null) {
+          int h = legendImage.getHeight();
+          int y0 = getHeight() - h - 5;
+          if (y0 < 5) {
+            y0 = 5;
+          }
+          g.drawImage(legendImage, 5, y0, this);
         }
       }
 
-      if(mvQueryResult !=null){
+      if (mvQueryResult != null) {
         Point2D p = new Point2D.Double();
         c2p.transform(mvQueryResult.getCompositePoint(), p);
 
@@ -413,7 +429,6 @@ public class DataViewingPanel extends JPanel {
         g2d.setColor(Color.white);
         g2d.drawLine(px - 10, py, px + 10, py);
         g2d.drawLine(px, py - 10, px, py + 10);
-
 
       }
     }
@@ -431,6 +446,7 @@ public class DataViewingPanel extends JPanel {
     mvComposite = null;
     mvQueryResult = null;
     compositeImage = null;
+    legendImage = null;
     resizeAnchorX = Double.NaN;
     resizeAnchorY = Double.NaN;
     reportPane.setText(null);
@@ -459,6 +475,7 @@ public class DataViewingPanel extends JPanel {
     renderProducts[0] = null;
     renderProducts[1] = null;
     compositeImage = null;
+    legendImage = null;
     resizeAnchorX = Double.NaN;
     resizeAnchorY = Double.NaN;
     reportPane.setText(null);
@@ -496,6 +513,7 @@ public class DataViewingPanel extends JPanel {
     c2p = AffineTransform.getTranslateInstance(-pad, -pad);
     p2c = AffineTransform.getTranslateInstance(pad, pad);
     this.mvComposite = mvComposite;
+    assembleLegend(); // if any
     mvQueryResult = null;
     AffineTransform c2m = mvComposite.getComposite2ModelTransform();
     p2m = new AffineTransform(c2m);
@@ -508,7 +526,7 @@ public class DataViewingPanel extends JPanel {
   public void postImageUpdate(RenderProduct product) {
     if (mvComposite == null) {
       setMvComposite(product.composite);
-    }else if(!product.composite.equals(mvComposite)){
+    } else if (!product.composite.equals(mvComposite)) {
       return;
     }
     String reportText = mvComposite.getModelAndRenderingReport();
@@ -664,9 +682,9 @@ public class DataViewingPanel extends JPanel {
           if (renderProducts[i] != null) {
             AffineTransform compatibility = AffineTransform.getTranslateInstance(pad, pad);
             compatibility.concatenate(c2p);
-            if(renderProducts[i].compatibilityTransform==null){
-            renderProducts[i].compatibilityTransform = compatibility;
-            }else{
+            if (renderProducts[i].compatibilityTransform == null) {
+              renderProducts[i].compatibilityTransform = compatibility;
+            } else {
               renderProducts[i].compatibilityTransform.preConcatenate(compatibility);
             }
           }
@@ -678,7 +696,7 @@ public class DataViewingPanel extends JPanel {
           getWidth() + 2 * pad,
           getHeight() + 2 * pad,
           a, aInv);
-
+        assembleLegend();
         setMvComposite(mvComposite);
         for (int i = 0; i < renderProducts.length; i++) {
           if (renderProducts[i] != null) {
@@ -746,7 +764,7 @@ public class DataViewingPanel extends JPanel {
       redrawRequired = true;
     }
 
-    if(view.isWireframeSelected() && !oldView.isWireframeSelected()){
+    if (view.isWireframeSelected() && !oldView.isWireframeSelected()) {
       redrawRequired = true;
     }
     if ((view.isRasterSelected() || view.isHillshadeSelected())
@@ -762,6 +780,7 @@ public class DataViewingPanel extends JPanel {
         getHeight() + 2 * pad,
         a, aInv);
       mvComposite = newComposite;
+      assembleLegend();
       mvQueryResult = null;
     } else {
       // perform a light-weight render reusing existing TINs
@@ -771,13 +790,32 @@ public class DataViewingPanel extends JPanel {
         getHeight() + 2 * pad,
         a, aInv);
       mvComposite = newComposite;
-       mvQueryResult = null;
+      assembleLegend();
+      mvQueryResult = null;
     }
   }
 
   void setShowScale(boolean showScale) {
     this.showScale = showScale;
     repaint();
+  }
+
+  void setShowLegend(boolean showLegend) {
+    this.showLegend = showLegend;
+    assembleLegend();
+    repaint();
+  }
+
+  void assembleLegend() {
+    if (showLegend && mvComposite != null) {
+      Font font = new Font("Arial", Font.BOLD, 10);
+      this.legendImage = mvComposite.renderLegend(
+        mvComposite.getView(),
+        mvComposite.getModel(),
+        50, 100, 10, font, true);
+    } else {
+      legendImage = null;
+    }
   }
 
 }
