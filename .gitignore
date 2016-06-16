@@ -1,0 +1,14 @@
+# files used in building, testing, and inspecting 
+*.class
+build/
+pmd_results.html
+
+ 
+
+# Package Files -- at this time, all of these are included in the distribution #
+# *.jar
+# *.war  not used in forseeable future
+# *.ear   ""     ""      ""      ""
+
+# virtual machine crash logs, see http://www.java.com/en/download/help/error_hotspot.xml
+hs_err_pid*

@@ -318,6 +318,18 @@ class DataViewerUI {
 
     });
 
+    final JCheckBoxMenuItem legendEnabled = new JCheckBoxMenuItem("Show Legend");
+    legendEnabled.addActionListener(new ActionListener() {
+
+      @Override
+      public void actionPerformed(ActionEvent e) {
+        boolean showLegend = legendEnabled.isSelected();
+        dvPanel.setShowLegend(showLegend);
+      }
+
+    });
+
+
     JMenuItem zoomToSource = new JMenuItem("Zoom to source");
     zoomToSource.addActionListener(new ActionListener() {
       @Override
@@ -328,6 +340,7 @@ class DataViewerUI {
     });
     viewMenu.add(optionsMenu);
     viewMenu.add(scaleEnabled);
+    viewMenu.add(legendEnabled);
     viewMenu.add(new JSeparator());
     viewMenu.add(zoomToSource);
     return viewMenu;

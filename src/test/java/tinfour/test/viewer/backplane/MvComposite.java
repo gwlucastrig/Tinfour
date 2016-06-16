@@ -34,13 +34,19 @@ import java.awt.Font;
 import java.awt.GradientPaint;
 import java.awt.Graphics2D;
 import java.awt.RenderingHints;
+import java.awt.font.FontRenderContext;
+import java.awt.font.TextLayout;
 import java.awt.geom.AffineTransform;
 import java.awt.geom.Ellipse2D;
 import java.awt.geom.Line2D;
 import java.awt.geom.Point2D;
+import java.awt.geom.Rectangle2D;
 import java.awt.image.BufferedImage;
+import java.io.File;
+import java.io.IOException;
 import java.util.Formatter;
 import java.util.List;
+import javax.imageio.ImageIO;
 import tinfour.common.IIncrementalTin;
 import tinfour.common.INeighborEdgeLocator;
 import tinfour.common.IQuadEdge;
@@ -52,6 +58,7 @@ import tinfour.gwr.SurfaceModel;
 import tinfour.interpolation.GwrTinInterpolator;
 import tinfour.interpolation.NaturalNeighborInterpolator;
 import tinfour.test.utils.TestPalette;
+import tinfour.utils.AxisIntervals;
 
 /**
  * Provides elements and method for managing the imagery associated with
@@ -310,7 +317,7 @@ public class MvComposite {
 
   /**
    * Sets the TIN to be used for wireframe rendering.
-   *  <strong>Important:</strong>
+   * <strong>Important:</strong>
    * the TIN must not be modified after it is added to this composite.
    *
    * @param tin a valid TIN.
@@ -328,36 +335,36 @@ public class MvComposite {
     this.rasterTin = rasterTin;
   }
 
-
   /**
    * Apply the specified range of values to the accumulated limits of
    * the range of values visible in the display
+   *
    * @param zMin the minimum value
    * @param zMax the maximum value
    */
-  void recordRangeOfVisibleSamples(double zMin, double zMax){
-    synchronized(this){
-      if(zMin<zVisMin){
+  void recordRangeOfVisibleSamples(double zMin, double zMax) {
+    synchronized (this) {
+      if (zMin < zVisMin) {
         zVisMin = zMin;
       }
-      if(zMax>zVisMax){
+      if (zMax > zVisMax) {
         zVisMax = zMax;
       }
     }
   }
 
-
-  private double [] getRangeOfVisibleSamples(){
-    synchronized(this){
-      if(zVisMin==Double.POSITIVE_INFINITY){
+  private double[] getRangeOfVisibleSamples() {
+    synchronized (this) {
+      if (zVisMin == Double.POSITIVE_INFINITY) {
         return new double[0];
       }
-      double []d = new double[2];
+      double[] d = new double[2];
       d[0] = zVisMin;
       d[1] = zVisMax;
       return d;
     }
   }
+
   /**
    * Submit a TIN as a candidate for serving as the interpolating TIN.
    * The TIN will be selected if its reduction factor is less than that
@@ -402,6 +409,7 @@ public class MvComposite {
    * Render sample points only. Used when the user has deselected the
    * edge rendering. Since a TIN is not required, the rendering is
    * conducted strictly on the basis of the selected list.
+   *
    * @param vList a list of vertices
    * @return a buffered image containing the rendering result.
    */
@@ -470,7 +478,6 @@ public class MvComposite {
 
     return bImage;
   }
-
 
   /**
    * Render using an existing wireframe tin.
@@ -704,7 +711,7 @@ public class MvComposite {
       }
     }
 
-  //  Draw a border around the overall composite
+    //  Draw a border around the overall composite
     //    g2d.setStroke(new BasicStroke(2.0f));
     //    g2d.setColor(new Color(64, 64, 255));
     //    Rectangle2D r2d = new Rectangle2D.Double(0, 0, width, height);
@@ -798,7 +805,7 @@ public class MvComposite {
       new MvQueryResult(
         compositePoint,
         modelPoint,
-       "<html>Data not available. Model not loaded</html>");
+        "<html>Data not available. Model not loaded</html>");
     }
 
     NeighborEdgeVertex nev = edgeLocator.getEdgeWithNearestVertex(mx, my);
@@ -862,7 +869,7 @@ public class MvComposite {
       fmt.format("\nRegression used %d samples\n", interpolator.getSampleCount());
     }
     fmt.format("</small></pre></html>");
-    return new MvQueryResult(compositePoint, modelPoint,sb.toString());
+    return new MvQueryResult(compositePoint, modelPoint, sb.toString());
 
   }
 
@@ -1087,6 +1094,7 @@ public class MvComposite {
     rasterImage = new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB);
     rasterImage.setRGB(0, 0, width, height, argb, 0, width);
     updateReport();
+    //makeLegend( );
   }
 
   /**
@@ -1183,13 +1191,12 @@ public class MvComposite {
       fmt.format("    Not Available\n");
     }
 
-    double []rng =  getRangeOfVisibleSamples();
-    if(rng.length>0){
+    double[] rng = getRangeOfVisibleSamples();
+    if (rng.length > 0) {
       fmt.format("\nRange of visible samples\n");
       fmt.format("    Min:      %11.3f\n", rng[0]);
       fmt.format("    Max:      %11.3f\n", rng[1]);
     }
-
 
     fmt.format("</small></pre></html>");
     fmt.flush();
@@ -1204,16 +1211,158 @@ public class MvComposite {
     reductionForRaster = reduction;
   }
 
-  IIncrementalTin getWireframeTin(){
-    return  wireframeTin;
+  IIncrementalTin getWireframeTin() {
+    return wireframeTin;
   }
 
-  int getReductionForWireframe(){
+  int getReductionForWireframe() {
     return reductionForWireframe;
   }
 
   public boolean isReady() {
     return model.isLoaded() && interpolatingTin != null;
+  }
+
+  void makeLegend() {
+    Font font = new Font("Arial", Font.BOLD, 10);
+    BufferedImage bImage = renderLegend(view, model, 50, 100, 5, font, true);
+    if (bImage != null) {
+      try {
+
+        File file = new File("legend.png");
+        ImageIO.write(bImage, "PNG", file);
+        System.out.println("wrote " + file);
+      } catch (IOException ioex) {
+
+      }
+    }
+
+  }
+
+  /**
+   * Render a legend for the current model and view. The width and height
+   * are the dimensions of the color bar, but the actual legend will extend
+   * larger to accommodate labels.
+   *
+   * @param vx a valid view
+   * @param mx a valid model
+   * @param width the width of the color bar
+   * @param height the height of the color bar
+   * @param margin the margin around the overall legend
+   * @param frame indicates that a framing rectangle is to be drawn
+   * around the legend
+   * @return if successful, a valid buffered image; otherwise, a null
+   */
+  public BufferedImage renderLegend(
+    ViewOptions vx, IModel mx, int width, int height, int margin, Font font, boolean frame) {
+
+    int priSpace = 20;
+    int secSpace = 5;
+    int ticLength = 10;
+    int ticLengthShort = 5;
+    double v0 = mx.getMinZ();
+    double v1 = mx.getMaxZ();
+    if (vx.useRangeOfValuesForPalette()) {
+      double[] d = vx.getRangeForPalette();
+      v0 = d[0];
+      v1 = d[1];
+    }
+    if (v0 == v1) {
+      return null; // can't do anything
+    }
+
+    AxisIntervals lx = AxisIntervals.computeIntervals(
+      v0, v1, priSpace, secSpace, height);
+    if (lx == null) {
+      return null;
+    }
+
+    // figure out how much space is needed for the labels
+    double wLabel = 0; // width for labels
+
+    FontRenderContext frc = new FontRenderContext(null, true, true);
+    String[] labels = lx.getLabels();
+    double[] wLab = new double[labels.length];
+    for (int i = 0; i < labels.length; i++) {
+      TextLayout layout = new TextLayout(labels[i], font, frc); // NOPMD
+      Rectangle2D bounds = layout.getBounds();
+      wLab[i] = bounds.getMaxX();
+      if (wLab[i] > wLabel) {
+        wLabel = wLab[i];
+      }
+    }
+
+    TextLayout layout = new TextLayout("0", font, frc); // NOPMD
+    Rectangle2D bounds = layout.getBounds();
+    double wZero = bounds.getWidth();
+    double yLabelCenter = bounds.getCenterY(); // for vertical alignment of labels
+
+    int iWidth = (int) (width + 2 * margin + wLabel + ticLength + wZero / 2);
+    int iHeight = height + 2 * margin;
+    BufferedImage bImage = new BufferedImage(
+      iWidth,
+      iHeight,
+      BufferedImage.TYPE_INT_ARGB);
+    Graphics2D g2d = bImage.createGraphics();
+    g2d.setRenderingHint(
+      RenderingHints.KEY_ANTIALIASING,
+      RenderingHints.VALUE_ANTIALIAS_ON);
+    g2d.setColor(vx.getBackground());
+    g2d.fillRect(0, 0, iWidth + 1, iHeight + 1);
+
+    g2d.setFont(font);
+
+    int x0 = margin;
+    int x1 = margin + width;   // start of tics
+    int x2 = (int) (margin + width + ticLength + wZero / 2 + 1); // start of labels
+    int x3 = (int) (x2 + wLabel); // end of labels
+    int y0 = margin; // top of color bar
+    int y1 = margin + height; // bottom of color bar
+
+    String paletteName = vx.getPaletteName();
+    TestPalette palette = TestPalette.getPaletteByName(paletteName);
+
+    Rectangle2D r2d = new Rectangle2D.Double();
+    for (int i = 0; i <= height; i++) {
+      double v = i / (double) height;
+      double y = y1 - i;
+      Color c = palette.getColor(v, 0.0, 1.0);
+      g2d.setColor(c);
+      r2d.setRect(x0, y, width, 1);
+      g2d.fill(r2d);
+    }
+    g2d.setColor(vx.getForeground());
+    r2d.setRect(x0, y0, width, height);
+    g2d.draw(r2d);
+
+    double[][] cTics = lx.getTicCoordinates();
+    double[] vT = cTics[0];
+    Line2D l2d = new Line2D.Double();
+    String fmt = lx.getLabelFormat();
+    for (int i = 0; i < vT.length; i++) {
+      double y = y1 - lx.mapValueToPixel(vT[i]);
+      l2d.setLine(x1, y, x1 + ticLength, y);
+      g2d.draw(l2d);
+      String s = String.format(fmt, vT[i]);
+      double x = x3 - wLab[i]; // right justified
+      g2d.drawString(s, (float) x, (float) (y - yLabelCenter));
+    }
+
+    if (cTics.length == 2) {
+      vT = cTics[1];
+      for (int i = 0; i < vT.length; i++) {
+        double y = y1 - lx.mapValueToPixel(vT[i]);
+        l2d.setLine(x1, y, x1 + ticLengthShort, y);
+        g2d.draw(l2d);
+      }
+    }
+
+    if (frame) {
+      g2d.setColor(vx.getForeground());
+      g2d.drawRect(0, 0, iWidth - 1, iHeight - 1);
+    }
+    return bImage;
+
   }
 
 }
