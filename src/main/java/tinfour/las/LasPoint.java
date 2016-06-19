@@ -38,6 +38,11 @@ package tinfour.las;
  * can be used and reused over and over again as temporary
  * containers for data.  Thus elements are exposed as public
  * without accessors methods or other protections.
+ * <p>
+ * There is, however, no restriction on creating instances of this class.
+ * Depending on the requirements of the implementation, it may be completely
+ * reasonable to do so. However, when millions of points are to be
+ * processed, it will be advantageous to not create persistent instances.
  */
 public class LasPoint {
     /** The position within the file at which the record is stored */
@@ -48,7 +53,7 @@ public class LasPoint {
     public double y;
     /** The Z coordinate from the record, always populated */
     public double z;
-    /** The intensity of the return at the detected point, 
+    /** The intensity of the return at the detected point,
      * by convention normalized to the range 0 to 65535
      */
     public int intensity;
@@ -70,4 +75,8 @@ public class LasPoint {
     public boolean keypoint;
     /** Indicates that point should not be included in processing */
     public boolean withheld;
+    /** The GPS time (interpreted according to header GPS flag */
+    public double gpsTime;
+
+
 }

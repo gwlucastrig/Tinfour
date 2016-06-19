@@ -64,8 +64,16 @@
     <!-- Delete the ${build} and ${dist} directory trees -->
     <delete dir="${build}"/>
     <delete dir="${dist}"/>
-	<delete dir="${javadoc.dir}"/>
 	<delete file="pmd_results.html" />
+  </target>
+  
+  
+  <!-- A separate target exists for Javadoc because it is currently
+  managed under git. We don't want to rebuild .html files unnecessarily
+  because we don't want a proliferation of versions on git.
+  -->
+    <target name="clean-javadoc"  description="clean up">
+	<delete dir="${javadoc.dir}"/>
   </target>
   
   <!-- Generate javadocs for current project into ${javadoc.dir} -->
