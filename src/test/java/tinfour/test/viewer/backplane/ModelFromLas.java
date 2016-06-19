@@ -31,12 +31,16 @@ package tinfour.test.viewer.backplane;
 
 import java.io.File;
 import java.io.IOException;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 import java.util.Formatter;
 import java.util.List;
+import java.util.SimpleTimeZone;
 import tinfour.common.IMonitorWithCancellation;
 import tinfour.common.Vertex;
 import tinfour.las.ILasRecordFilter;
 import tinfour.las.LasFileReader;
+import tinfour.las.LasGpsTimeType;
 import tinfour.las.LasPoint;
 import tinfour.las.LasRecordFilterByClass;
 import tinfour.test.utils.VertexLoader;
@@ -282,6 +286,17 @@ public class ModelFromLas extends ModelAdapter implements IModel {
       fmt.format("   Return:         %d of %d\n",
         record.returnNumber, record.numberOfReturns);
       fmt.format("   Intensity:      %d\n", record.intensity);
+      LasGpsTimeType gpsType = reader.getLasGpsTimeType();
+      Date date = gpsType.transformGpsTimeToDate(record.gpsTime);
+      SimpleDateFormat sdf;
+      if (gpsType == LasGpsTimeType.WeekTime) {
+        sdf = new SimpleDateFormat("EEE hh:MM:ss.S");
+      } else {
+        sdf = new SimpleDateFormat("EEE YYYY-MM-dd HH:mm:ss.S");
+      }
+      sdf.setTimeZone(new SimpleTimeZone(0, "UTC"));
+      fmt.format("   Time/Date:      %s UTC\n", sdf.format(date));
+
     } catch (IOException ioex) {
       System.err.println(
         "IOException reading " + file.getName() + " " + ioex.getMessage());

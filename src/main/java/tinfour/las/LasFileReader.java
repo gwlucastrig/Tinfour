@@ -52,6 +52,7 @@ import java.util.Locale;
 public class LasFileReader {
 
   private static final int BIT4 = 0x10;
+  private static final int BIT1 = 0x01;
 
   /**
    * Provides definitions for the alternate methods for specifying
@@ -63,6 +64,8 @@ public class LasFileReader {
     /** The LAS file used Well-Known-Text to identify CRS */
     WKT
   };
+
+
 
 
 
@@ -106,6 +109,7 @@ public class LasFileReader {
   private long numberOfPointRecords;
   private long[] numberOfPointsByReturn;
   private CoordinateReferenceSystemOption crsOption;
+  private LasGpsTimeType lasGpsTimeType;
 
   private final BufferedRandomAccessForLidar braf;
   private boolean isClosed;
@@ -200,6 +204,12 @@ public class LasFileReader {
       crsOption = CoordinateReferenceSystemOption.WKT;
     }
 
+    if((globalEncoding&BIT1)==0){
+      lasGpsTimeType = LasGpsTimeType.WeekTime;
+    }else{
+      lasGpsTimeType = LasGpsTimeType.SatelliteTime;
+    }
+
     for(int i=0; i<this.numberVariableLengthRecords; i++){
        LasVariableLengthRecord vlrHeader = readVlrHeader();
        braf.skipBytes(vlrHeader.recordLength);
@@ -263,11 +273,33 @@ public class LasFileReader {
     p.scanDirectionFlag = (mask >> 5) & 0x01;
     p.edgeOfFlightLine = (mask & 0x80) != 0;
 
+
+    // for record types 0 to 5, the classification
+    // is packed in with some other bit-values, see Table 8
     mask = braf.readUnsignedByte();
-    p.classification = mask & 0x1f;
+    p.classification = mask &0x1f; // bits 0:4, values 0 to 32
     p.synthetic = (mask & 0x20) != 0;
     p.keypoint = (mask & 0x40) != 0;
     p.withheld = (mask & 0x80) != 0;
+
+    // we currently skip
+    //   scan angle rank  1 byte
+    //   user data        1 byte
+    //   point source ID  2 bytes
+    braf.skipBytes(4); // scan angle rank
+
+
+    if (pointDataRecordFormat == 1 || pointDataRecordFormat == 3) {
+      p.gpsTime = braf.readDouble();
+      // Depending on the gpsTimeType element, the GPS time can be
+      // in one of two formats:
+      //    GPS Week Time  seconds since 12:00 a.m. Sunday
+      //    GPS Satellite Time   seconds since 12 a.m. Jan 6, 1980
+      //                         minus an offset 1.0e+9
+      //    The mapping to a Java time requires information about
+      //    the GPS time type
+    }
+
   }
 
   /**
@@ -429,6 +461,18 @@ public class LasFileReader {
       }
     }
     return false;
+  }
+
+  /**
+   * Gets the representation of time that is assigned to
+   * the sample point GPS time values.  This option
+   * is arbitrarily assigned by the agency that collected and distributed
+   * the LAS file. It is necessary to use this value in order to interpret
+   * the GPS time of the samples.
+   * @return an enumeration giving the time recording format used for the LAS file
+   */
+  public LasGpsTimeType getLasGpsTimeType(){
+    return  lasGpsTimeType;
   }
 
 //   A sample main for debugging and diagnostics.
