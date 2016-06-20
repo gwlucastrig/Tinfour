@@ -41,10 +41,10 @@ import tinfour.common.Vertex;
 import tinfour.gwr.BandwidthSelectionMethod;
 import tinfour.gwr.SurfaceGwr;
 import tinfour.gwr.SurfaceModel;
+import tinfour.interpolation.GwrTinInterpolator;
 import tinfour.test.utils.IDevelopmentTest;
 import tinfour.test.utils.TestOptions;
 import tinfour.test.utils.VertexLoader;
-import tinfour.interpolation.GwrTinInterpolator;
 import tinfour.utils.TinInstantiationUtility;
 
 /**
@@ -140,8 +140,6 @@ public class ExampleGWR implements IDevelopmentTest {
 
     double x = (xmin + xmax) / 2.0;
     double y = (ymin + ymax) / 2.0;
-    x = xmin+20;
-    y = ymax-200;
 
     // Perform the interpolation for coordinates (x,y) given a valid TIN
     // using a specified surface model and the Adaptive Bandwidth selection
