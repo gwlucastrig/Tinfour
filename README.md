@@ -104,7 +104,9 @@ Configuring Tinfour in an IDE is pretty simple:
 The primary feature remaining for future work in Tinfour is support
 for the constrained Delaunay triangulation to handle breakline features,
 boundaries, and other linear features representing discontinuities in
-the modeled surface.
+the modeled surface. I am currently planning an implementationfor this
+feature and welcome any insights into practical issues that you
+may have.
 
 I would very much like to extend the Lidar file reader to be able
 to process the compressed LAZ format files. Doing so would 
@@ -112,7 +114,7 @@ make file access far more conveient. I'd also like to have the
 reader obtain the metadata from LAS files, particularly those
 elements using Well-Known Text (WKT) format and GeoTIFF tags.
 
-I'd also like to see an extension of Tinfour to build Voronoi Diagrams 
+I'd like to see an extension of Tinfour to build Voronoi Diagrams 
 and perhaps conduct rendering and analysis using that graphical structure
 which is closely related to the Delaunay Triangulation.
 
@@ -120,7 +122,5 @@ Finally, the whole point of working on a project like Tinfour is to see
 it used to do something useful. To that end, I welcome ideas, requests, and
 recommendations for analysis tools and applications that would
 benefit the open source and scientific communities. Got something
-to say? You can contact me by using the GitHub menu items up above 
-to get a gmail address for gwlucastrig. It's a bit round-about, but it
-will have to do for now.
+to say? You can contact me at <contact.tinfour@gmail.com>
  

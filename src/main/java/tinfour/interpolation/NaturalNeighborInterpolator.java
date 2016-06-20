@@ -669,8 +669,7 @@ public class NaturalNeighborInterpolator implements IInterpolatorOverTin {
 
   /**
    * Given a reference point inside a simple, but potentially non-convex
-   * polygon,
-   * creates an array of barycentric coordinates for the point. The
+   * polygon, creates an array of barycentric coordinates for the point. The
    * coordinates are normalized, so that their sum is 1.0. This method
    * populates the barycentric deviation member element which may be
    * used as a figure of merit for evaluating the success of the
