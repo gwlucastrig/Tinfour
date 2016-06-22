@@ -61,6 +61,8 @@ import javax.swing.JScrollPane;
 import javax.swing.JSeparator;
 import javax.swing.JSplitPane;
 import javax.swing.filechooser.FileFilter;
+import javax.swing.text.DefaultCaret;
+import tinfour.test.utils.TestPalette;
 import tinfour.test.viewer.backplane.UnitSquareModel;
 import tinfour.test.viewer.backplane.ViewOptions;
 
@@ -106,6 +108,20 @@ class DataViewerUI {
       try {
         appIconImage = ImageIO.read(ins);
         frame.setIconImage(appIconImage);
+        ins.close();
+        ins = null;
+      } catch (IOException dontCare) {
+
+      }
+    }
+
+    ins = DataViewerUI.class.getResourceAsStream(
+      "resources/SequentialPalettes.csv");
+    if (ins != null) {
+      try {
+        TestPalette.loadRecipiesFromStream(ins, true);
+        ins.close();
+        ins = null;
       } catch (IOException dontCare) {
 
       }
@@ -120,15 +136,30 @@ class DataViewerUI {
     dataPanel.setPreferredSize(new Dimension(250, 500));
     dataPanel.setLayout(new BorderLayout());
 
+    // getting the scrolling and caret behavior to work right took some
+    // doing.  We want it so that if the user is looking at the report
+    // or query panels when he does something to change their text,
+    // they maintain the same relative position. One important part of
+    // this was to not set the preferred size of the JEditorPanes.
+    // for the report pane, if we set preferred size, it interferes
+    // with the scrolling position and lands it at the bottom of the
+    // documnet when new text is set.  However, we need to set a size
+    // on the containing scroll pane otherwise the display size is
+    // quite small when the panes are split.
     JEditorPane reportPane = new JEditorPane();
     reportPane.setEditable(false);
     reportPane.setContentType("text/html");
-    reportPane.setPreferredSize(new Dimension(250, 250));
+    DefaultCaret dc = (DefaultCaret) (reportPane.getCaret());
+    dc.setUpdatePolicy(DefaultCaret.NEVER_UPDATE);
     JScrollPane reportScrollPane = new JScrollPane(reportPane);
+    reportScrollPane.setPreferredSize(new Dimension(250, 250));
+
 
     JEditorPane queryPane = new JEditorPane();
     queryPane.setEditable(false);
     queryPane.setContentType("text/html");
+    dc = (DefaultCaret) (queryPane.getCaret());
+    dc.setUpdatePolicy(DefaultCaret.NEVER_UPDATE);
     JScrollPane queryScrollPane = new JScrollPane(queryPane);
 
     JSplitPane infoSplit = new JSplitPane(JSplitPane.VERTICAL_SPLIT, reportScrollPane, queryScrollPane);

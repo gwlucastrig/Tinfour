@@ -34,12 +34,13 @@ import java.io.BufferedInputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.List;
 
 public class DelimitedReader {
 
-  final FileInputStream fins;
+  final InputStream fins;
   final BufferedInputStream bins;
   final int delimiter;
 
@@ -49,8 +50,15 @@ public class DelimitedReader {
       this.delimiter = delimiter;
   }
 
+   public DelimitedReader(InputStream ins, char delimiter) throws IOException {
+      fins = ins;
+      bins = new BufferedInputStream(fins);
+      this.delimiter = delimiter;
+  }
+
+
   List<String> readStrings() throws IOException {
-    int c = -1;
+    int c;
     final StringBuilder sb= new StringBuilder();
     final List<String>sList = new ArrayList<>();
     while(true){
