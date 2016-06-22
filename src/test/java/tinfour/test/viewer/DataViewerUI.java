@@ -370,6 +370,7 @@ class DataViewerUI {
 
     });
     viewMenu.add(optionsMenu);
+    viewMenu.add(new JSeparator());
     viewMenu.add(scaleEnabled);
     viewMenu.add(legendEnabled);
     viewMenu.add(new JSeparator());

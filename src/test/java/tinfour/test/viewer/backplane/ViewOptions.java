@@ -60,10 +60,11 @@ public class ViewOptions {
   private double hillshadeElevation;
   private double hillshadeAmbient;
 
-  private boolean isLidarGroundPointsOptionSelected;
+
   private boolean isFullResolutionGridSelected;
 
   private SampleThinning wireframeSampleThinning = SampleThinning.Medium;
+  private LidarPointSelection lidarPointSelection = LidarPointSelection.GroundPoints;
 
   /**
    * An enumeration definitng states for Wireframe sample thinning
@@ -72,6 +73,12 @@ public class ViewOptions {
     Medium,
     Fine,
     ExtraFine;
+  }
+
+  public enum LidarPointSelection {
+    GroundPoints,
+    FirstReturn,
+    AllPoints
   }
 
   /**
@@ -104,7 +111,8 @@ public class ViewOptions {
     hillshadeAmbient = v.hillshadeAmbient;
     isFullResolutionGridSelected = v.isFullResolutionGridSelected;
 
-    isLidarGroundPointsOptionSelected = v.isLidarGroundPointsOptionSelected;
+    lidarPointSelection = v.lidarPointSelection;
+
   }
 
   /**
@@ -137,7 +145,7 @@ public class ViewOptions {
     hillshadeElevation = 45; // degrees
     hillshadeAmbient = 25; // percent
 
-    isLidarGroundPointsOptionSelected = true;
+    lidarPointSelection = LidarPointSelection.GroundPoints;
   }
 
   /**
@@ -424,18 +432,15 @@ public class ViewOptions {
   }
 
   /**
-   * @return the isLidarGroundPointsOptionSelected
+   * Gets the option for selecting lidar sample points
+   * @return the option for selecting lidar sample points
    */
-  public boolean isLidarGroundPointsOptionSelected() {
-    return isLidarGroundPointsOptionSelected;
+  public LidarPointSelection getLidarPointSelection() {
+    return lidarPointSelection;
   }
 
-  /**
-   * @param isLidarGroundPointsOptionSelected the
-   * isLidarGroundPointsOptionSelected to set
-   */
-  public void setIsLidarGroundPointsOptionSelected(boolean isLidarGroundPointsOptionSelected) {
-    this.isLidarGroundPointsOptionSelected = isLidarGroundPointsOptionSelected;
+  public void setLidarPointSelection(LidarPointSelection selection) {
+    this.lidarPointSelection = selection;
   }
 
   /**

@@ -119,6 +119,7 @@
                           <Group type="103" groupAlignment="0" attributes="0">
                               <Component id="lidarAllPointsButton" min="-2" max="-2" attributes="0"/>
                               <Component id="lidarGroundPointsButton" min="-2" max="-2" attributes="0"/>
+                              <Component id="lidarFirstReturnButton" alignment="0" min="-2" max="-2" attributes="0"/>
                           </Group>
                       </Group>
                       <Group type="102" alignment="0" attributes="0">
@@ -159,7 +160,7 @@
                           </Group>
                       </Group>
                   </Group>
-                  <EmptySpace pref="25" max="32767" attributes="0"/>
+                  <EmptySpace pref="29" max="32767" attributes="0"/>
               </Group>
           </Group>
         </DimensionLayout>
@@ -233,8 +234,10 @@
                   <EmptySpace max="-2" attributes="0"/>
                   <Component id="lidarGroundPointsButton" min="-2" max="-2" attributes="0"/>
                   <EmptySpace max="-2" attributes="0"/>
+                  <Component id="lidarFirstReturnButton" min="-2" max="-2" attributes="0"/>
+                  <EmptySpace max="-2" attributes="0"/>
                   <Component id="lidarAllPointsButton" min="-2" max="-2" attributes="0"/>
-                  <EmptySpace max="32767" attributes="0"/>
+                  <EmptySpace pref="16" max="32767" attributes="0"/>
               </Group>
           </Group>
         </DimensionLayout>
@@ -486,6 +489,17 @@
             </Property>
           </Properties>
         </Component>
+        <Component class="javax.swing.JRadioButton" name="lidarFirstReturnButton">
+          <Properties>
+            <Property name="buttonGroup" type="javax.swing.ButtonGroup" editor="org.netbeans.modules.form.RADComponent$ButtonGroupPropertyEditor">
+              <ComponentRef name="lidarPointSelectionGroup"/>
+            </Property>
+            <Property name="text" type="java.lang.String" value="First Returns Only"/>
+          </Properties>
+          <Events>
+            <EventHandler event="actionPerformed" listener="java.awt.event.ActionListener" parameters="java.awt.event.ActionEvent" handler="lidarFirstReturnButtonActionPerformed"/>
+          </Events>
+        </Component>
       </SubComponents>
     </Container>
     <Container class="javax.swing.JPanel" name="actionsPanel">
@@ -494,7 +508,7 @@
         <DimensionLayout dim="0">
           <Group type="103" groupAlignment="0" attributes="0">
               <Group type="102" alignment="1" attributes="0">
-                  <EmptySpace pref="204" max="32767" attributes="0"/>
+                  <EmptySpace pref="208" max="32767" attributes="0"/>
                   <Component id="okayButton" linkSize="1" min="-2" max="-2" attributes="0"/>
                   <EmptySpace max="-2" attributes="0"/>
                   <Component id="cancelButton" linkSize="1" min="-2" max="-2" attributes="0"/>

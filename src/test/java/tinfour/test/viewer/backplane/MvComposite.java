@@ -1131,9 +1131,10 @@ public class MvComposite {
    * require a reloading of the model.
    */
   public boolean isModelReloadRequired(ViewOptions v) {
-    return model instanceof ModelFromLas
-      && view.isLidarGroundPointsOptionSelected()
-      != v.isLidarGroundPointsOptionSelected();
+    if(model instanceof ModelFromLas){
+      return view.getLidarPointSelection() != v.getLidarPointSelection();
+    }
+    return false;
   }
 
   public String getModelAndRenderingReport() {

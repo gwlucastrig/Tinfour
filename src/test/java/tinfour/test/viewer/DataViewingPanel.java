@@ -78,6 +78,7 @@ import tinfour.test.viewer.backplane.MvComposite;
 import tinfour.test.viewer.backplane.MvQueryResult;
 import tinfour.test.viewer.backplane.RenderProduct;
 import tinfour.test.viewer.backplane.ViewOptions;
+import tinfour.test.viewer.backplane.ViewOptions.LidarPointSelection;
 
 /**
  * A test panel to demonstrate mouse events and coordinate transformation
@@ -747,12 +748,12 @@ public class DataViewingPanel extends JPanel {
     // ground-point filter option
     if (model instanceof ModelFromLas) {
       ModelFromLas lasModel = (ModelFromLas) model;
-      boolean modelWasFiltered = lasModel.hasGroundPointFilter();
-      boolean newViewIsFiltered = view.isLidarGroundPointsOptionSelected();
-      if (modelWasFiltered != newViewIsFiltered) {
+      LidarPointSelection oldPointSelection = lasModel.getLidarPointSelection();
+      LidarPointSelection newPointSelection = view.getLidarPointSelection();
+      if (oldPointSelection != newPointSelection) {
         model = new ModelFromLas(
           lasModel.getFile(),
-          newViewIsFiltered);
+          newPointSelection);
         redrawRequired = true;
       }
     }
