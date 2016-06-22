@@ -104,8 +104,7 @@ public class DataViewingPanel extends JPanel {
    */
   BackplaneManager backplaneManager;
 
-  boolean redrawInProgress;
-  boolean firstQuery = true;
+  private boolean redrawInProgress;
   boolean firstDraw = true;
 
   /**
@@ -220,7 +219,6 @@ public class DataViewingPanel extends JPanel {
             p2c.transform(c, 0, c, 2, 1);
             mvQueryResult = mvComposite.performQuery(c[2], c[3]);
             queryPane.setText(mvQueryResult.getText());
-            queryPane.setCaretPosition(0);
             repaint();
           }
         }
@@ -529,9 +527,9 @@ public class DataViewingPanel extends JPanel {
     } else if (!product.composite.equals(mvComposite)) {
       return;
     }
+
     String reportText = mvComposite.getModelAndRenderingReport();
     reportPane.setText(reportText);
-    reportPane.setCaretPosition(0);
 
     int index = product.layerType.ordinal();
     renderProducts[index] = product;

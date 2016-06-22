@@ -15,7 +15,7 @@
  * ---------------------------------------------------------------------
  */
 
-/*
+ /*
  * -----------------------------------------------------------------------
  *
  * Revision History:
@@ -34,6 +34,8 @@ package tinfour.test.utils;
 import java.awt.Color;
 import java.awt.Graphics;
 import java.awt.image.BufferedImage;
+import java.io.IOException;
+import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -48,13 +50,15 @@ import javax.swing.ImageIcon;
 public class TestPalette {
 
   private static class Recipe {
+
     final String name;
     final TestPalette palette;
 
-    Recipe(String name, float [][]rgb){
+    Recipe(String name, float[][] rgb) {
       this.name = name;
-      this.palette = new TestPalette( name, rgb);
+      this.palette = new TestPalette(name, rgb);
     }
+
   }
 
   /**
@@ -129,10 +133,10 @@ public class TestPalette {
     {255, 255, 0}
   };
 
-
   /**
    * A multi-hue color scheme adapted from "ColorBrewer: Color Advice for Maps"
-   * by Cynthia Brewer, et al., at <a href="http://colorbrewer2.org/">ColorBrewer</a>
+   * by Cynthia Brewer, et al., at
+   * <a href="http://colorbrewer2.org/">ColorBrewer</a>
    */
   private static final float[][] purpleTones = {
     {78, 49, 95},
@@ -219,301 +223,298 @@ public class TestPalette {
     {255, 160, 0},
     {255, 192, 0},
     {255, 224, 0},
-    {255, 255, 255},
+    {255, 255, 255},};
+
+  private static final float rainbow[][] = {
+    {0, 0, 255},
+    {0, 255, 0},
+    {230, 230, 0}, // yellow toned down a bit
+    {255, 0, 0}
   };
 
-    private static final  float rainbow[][] = {
-    {0,     0, 255},
-    {0,   255,   0},
-    {230, 230,   0}, // yellow toned down a bit
-    {255,    0,  0}
+  private static final float[][] linearGray = {
+    {64, 64, 64},
+    {232, 232, 232}
   };
 
-    private static final float blackToGray[][] = {
-    {0, 0, 0},
-    {176, 176, 176}
-  };
+  static final float[][] topoElev = {
+    {0, 60, 16},
+    {9, 87, 2},
+    {0, 142, 0},
+    {38, 202, 0},
+    {173, 231, 45},
+    {246, 252, 83},
+    {204, 150, 52},
+    {138, 29, 0},
+    {239, 222, 222},};
 
-      static final float[][] topoElev = {
-        {0, 60, 16},
-        {9, 87, 2},
-        {0, 142, 0},
-        {38, 202, 0},
-        {173, 231, 45},
-        {246, 252, 83},
-        {204, 150, 52},
-        {138, 29, 0},
-        {239, 222, 222},};
+  static final float[][] monotonicLuminance = {
+    {4, 4, 4},
+    {10, 3, 8},
+    {13, 4, 11},
+    {16, 5, 14},
+    {18, 5, 16},
+    {21, 6, 18},
+    {22, 7, 19},
+    {24, 8, 21},
+    {26, 8, 22},
+    {27, 9, 24},
+    {28, 10, 25},
+    {30, 11, 26},
+    {31, 12, 27},
+    {32, 12, 28},
+    {33, 13, 29},
+    {35, 14, 31},
+    {36, 14, 32},
+    {37, 15, 32},
+    {38, 15, 33},
+    {39, 16, 34},
+    {40, 17, 35},
+    {41, 17, 36},
+    {42, 18, 38},
+    {43, 19, 38},
+    {44, 19, 39},
+    {46, 20, 41},
+    {46, 20, 45},
+    {46, 21, 50},
+    {45, 21, 55},
+    {45, 21, 60},
+    {45, 22, 64},
+    {45, 23, 67},
+    {45, 23, 71},
+    {45, 24, 75},
+    {45, 24, 77},
+    {45, 25, 81},
+    {45, 25, 84},
+    {44, 26, 87},
+    {44, 27, 90},
+    {45, 27, 92},
+    {45, 28, 95},
+    {44, 29, 98},
+    {44, 29, 100},
+    {44, 30, 103},
+    {44, 31, 106},
+    {44, 31, 109},
+    {44, 32, 110},
+    {44, 33, 113},
+    {44, 34, 116},
+    {43, 34, 118},
+    {42, 35, 121},
+    {40, 38, 120},
+    {38, 40, 119},
+    {36, 42, 120},
+    {34, 44, 120},
+    {33, 46, 120},
+    {32, 47, 120},
+    {31, 49, 121},
+    {30, 50, 122},
+    {30, 51, 123},
+    {29, 52, 123},
+    {29, 53, 125},
+    {28, 55, 125},
+    {28, 56, 126},
+    {27, 57, 127},
+    {28, 58, 128},
+    {28, 59, 129},
+    {27, 60, 129},
+    {27, 61, 131},
+    {27, 62, 132},
+    {27, 63, 133},
+    {28, 64, 134},
+    {27, 65, 135},
+    {27, 66, 136},
+    {27, 68, 137},
+    {27, 69, 138},
+    {25, 71, 136},
+    {22, 73, 134},
+    {21, 74, 133},
+    {20, 76, 131},
+    {17, 78, 129},
+    {16, 79, 128},
+    {15, 81, 126},
+    {14, 82, 125},
+    {10, 84, 123},
+    {10, 85, 122},
+    {9, 87, 120},
+    {8, 88, 119},
+    {7, 89, 118},
+    {6, 91, 117},
+    {4, 92, 115},
+    {4, 94, 114},
+    {4, 95, 114},
+    {3, 96, 112},
+    {1, 98, 111},
+    {1, 99, 110},
+    {0, 100, 109},
+    {0, 101, 108},
+    {0, 103, 107},
+    {0, 104, 106},
+    {0, 105, 105},
+    {0, 107, 104},
+    {0, 108, 101},
+    {0, 110, 100},
+    {0, 111, 99},
+    {0, 112, 98},
+    {0, 114, 96},
+    {0, 115, 95},
+    {0, 116, 93},
+    {0, 118, 92},
+    {0, 119, 90},
+    {0, 120, 89},
+    {0, 121, 88},
+    {0, 123, 86},
+    {0, 124, 85},
+    {0, 125, 83},
+    {0, 127, 82},
+    {0, 128, 80},
+    {0, 129, 79},
+    {0, 131, 77},
+    {0, 132, 75},
+    {0, 133, 73},
+    {0, 134, 72},
+    {0, 136, 70},
+    {0, 137, 68},
+    {0, 138, 66},
+    {0, 139, 65},
+    {0, 141, 64},
+    {0, 142, 63},
+    {0, 143, 61},
+    {0, 145, 60},
+    {0, 146, 60},
+    {0, 147, 58},
+    {0, 149, 57},
+    {0, 150, 56},
+    {0, 151, 55},
+    {0, 153, 53},
+    {0, 154, 52},
+    {0, 155, 51},
+    {0, 157, 50},
+    {0, 158, 48},
+    {0, 159, 47},
+    {0, 160, 45},
+    {0, 162, 44},
+    {0, 163, 42},
+    {0, 164, 41},
+    {0, 165, 39},
+    {0, 167, 36},
+    {0, 168, 34},
+    {0, 169, 31},
+    {0, 170, 23},
+    {0, 169, 8},
+    {9, 170, 0},
+    {20, 171, 0},
+    {29, 172, 0},
+    {35, 173, 0},
+    {40, 174, 0},
+    {45, 175, 0},
+    {48, 176, 0},
+    {52, 177, 0},
+    {55, 178, 0},
+    {59, 179, 0},
+    {61, 180, 0},
+    {64, 181, 0},
+    {66, 182, 0},
+    {68, 183, 0},
+    {71, 184, 0},
+    {73, 185, 0},
+    {76, 186, 0},
+    {78, 187, 0},
+    {79, 188, 0},
+    {81, 189, 0},
+    {83, 190, 0},
+    {85, 191, 0},
+    {87, 192, 0},
+    {92, 193, 0},
+    {99, 193, 0},
+    {106, 193, 0},
+    {114, 193, 0},
+    {119, 194, 0},
+    {125, 194, 0},
+    {130, 194, 0},
+    {135, 195, 0},
+    {140, 195, 0},
+    {145, 195, 0},
+    {149, 196, 0},
+    {153, 196, 0},
+    {157, 197, 0},
+    {161, 197, 0},
+    {165, 197, 0},
+    {169, 198, 0},
+    {172, 198, 0},
+    {176, 199, 0},
+    {180, 199, 0},
+    {184, 199, 0},
+    {186, 200, 0},
+    {190, 201, 0},
+    {193, 201, 0},
+    {197, 201, 0},
+    {200, 202, 0},
+    {201, 201, 24},
+    {203, 202, 51},
+    {206, 202, 65},
+    {207, 203, 77},
+    {209, 203, 87},
+    {212, 203, 95},
+    {213, 204, 103},
+    {215, 205, 109},
+    {218, 205, 116},
+    {219, 206, 121},
+    {221, 207, 127},
+    {223, 207, 132},
+    {226, 207, 138},
+    {227, 208, 143},
+    {229, 209, 147},
+    {231, 209, 151},
+    {232, 210, 155},
+    {235, 211, 159},
+    {237, 211, 164},
+    {238, 212, 168},
+    {240, 212, 172},
+    {243, 213, 175},
+    {243, 214, 179},
+    {245, 214, 183},
+    {248, 215, 186},
+    {248, 216, 189},
+    {248, 218, 193},
+    {247, 219, 195},
+    {247, 220, 198},
+    {247, 222, 201},
+    {248, 223, 204},
+    {247, 224, 206},
+    {247, 226, 209},
+    {247, 227, 211},
+    {247, 229, 214},
+    {247, 230, 216},
+    {247, 231, 218},
+    {247, 232, 220},
+    {248, 234, 224},
+    {247, 235, 225},
+    {247, 236, 229},
+    {247, 238, 231},
+    {247, 239, 232},
+    {248, 240, 235},
+    {248, 242, 237},
+    {247, 243, 239},
+    {248, 244, 241},
+    {248, 246, 244},
+    {248, 247, 246},
+    {248, 248, 248},
+    {249, 249, 249},
+    {251, 251, 251},
+    {252, 252, 252},
+    {253, 253, 253},
+    {254, 254, 254},
+    {255, 255, 255},};
 
-      static final float [][]monotonicLuminance = {
-            {4,4,4},
-   {10,3,8},
-   {13,4,11},
-   {16,5,14},
-   {18,5,16},
-   {21,6,18},
-   {22,7,19},
-   {24,8,21},
-   {26,8,22},
-   {27,9,24},
-   {28,10,25},
-   {30,11,26},
-   {31,12,27},
-   {32,12,28},
-   {33,13,29},
-   {35,14,31},
-   {36,14,32},
-   {37,15,32},
-   {38,15,33},
-   {39,16,34},
-   {40,17,35},
-   {41,17,36},
-   {42,18,38},
-   {43,19,38},
-   {44,19,39},
-   {46,20,41},
-   {46,20,45},
-   {46,21,50},
-   {45,21,55},
-   {45,21,60},
-   {45,22,64},
-   {45,23,67},
-   {45,23,71},
-   {45,24,75},
-   {45,24,77},
-   {45,25,81},
-   {45,25,84},
-   {44,26,87},
-   {44,27,90},
-   {45,27,92},
-   {45,28,95},
-   {44,29,98},
-   {44,29,100},
-   {44,30,103},
-   {44,31,106},
-   {44,31,109},
-   {44,32,110},
-   {44,33,113},
-   {44,34,116},
-   {43,34,118},
-   {42,35,121},
-   {40,38,120},
-   {38,40,119},
-   {36,42,120},
-   {34,44,120},
-   {33,46,120},
-   {32,47,120},
-   {31,49,121},
-   {30,50,122},
-   {30,51,123},
-   {29,52,123},
-   {29,53,125},
-   {28,55,125},
-   {28,56,126},
-   {27,57,127},
-   {28,58,128},
-   {28,59,129},
-   {27,60,129},
-   {27,61,131},
-   {27,62,132},
-   {27,63,133},
-   {28,64,134},
-   {27,65,135},
-   {27,66,136},
-   {27,68,137},
-   {27,69,138},
-   {25,71,136},
-   {22,73,134},
-   {21,74,133},
-   {20,76,131},
-   {17,78,129},
-   {16,79,128},
-   {15,81,126},
-   {14,82,125},
-   {10,84,123},
-   {10,85,122},
-   {9,87,120},
-   {8,88,119},
-   {7,89,118},
-   {6,91,117},
-   {4,92,115},
-   {4,94,114},
-   {4,95,114},
-   {3,96,112},
-   {1,98,111},
-   {1,99,110},
-   {0,100,109},
-   {0,101,108},
-   {0,103,107},
-   {0,104,106},
-   {0,105,105},
-   {0,107,104},
-   {0,108,101},
-   {0,110,100},
-   {0,111,99},
-   {0,112,98},
-   {0,114,96},
-   {0,115,95},
-   {0,116,93},
-   {0,118,92},
-   {0,119,90},
-   {0,120,89},
-   {0,121,88},
-   {0,123,86},
-   {0,124,85},
-   {0,125,83},
-   {0,127,82},
-   {0,128,80},
-   {0,129,79},
-   {0,131,77},
-   {0,132,75},
-   {0,133,73},
-   {0,134,72},
-   {0,136,70},
-   {0,137,68},
-   {0,138,66},
-   {0,139,65},
-   {0,141,64},
-   {0,142,63},
-   {0,143,61},
-   {0,145,60},
-   {0,146,60},
-   {0,147,58},
-   {0,149,57},
-   {0,150,56},
-   {0,151,55},
-   {0,153,53},
-   {0,154,52},
-   {0,155,51},
-   {0,157,50},
-   {0,158,48},
-   {0,159,47},
-   {0,160,45},
-   {0,162,44},
-   {0,163,42},
-   {0,164,41},
-   {0,165,39},
-   {0,167,36},
-   {0,168,34},
-   {0,169,31},
-   {0,170,23},
-   {0,169,8},
-   {9,170,0},
-   {20,171,0},
-   {29,172,0},
-   {35,173,0},
-   {40,174,0},
-   {45,175,0},
-   {48,176,0},
-   {52,177,0},
-   {55,178,0},
-   {59,179,0},
-   {61,180,0},
-   {64,181,0},
-   {66,182,0},
-   {68,183,0},
-   {71,184,0},
-   {73,185,0},
-   {76,186,0},
-   {78,187,0},
-   {79,188,0},
-   {81,189,0},
-   {83,190,0},
-   {85,191,0},
-   {87,192,0},
-   {92,193,0},
-   {99,193,0},
-   {106,193,0},
-   {114,193,0},
-   {119,194,0},
-   {125,194,0},
-   {130,194,0},
-   {135,195,0},
-   {140,195,0},
-   {145,195,0},
-   {149,196,0},
-   {153,196,0},
-   {157,197,0},
-   {161,197,0},
-   {165,197,0},
-   {169,198,0},
-   {172,198,0},
-   {176,199,0},
-   {180,199,0},
-   {184,199,0},
-   {186,200,0},
-   {190,201,0},
-   {193,201,0},
-   {197,201,0},
-   {200,202,0},
-   {201,201,24},
-   {203,202,51},
-   {206,202,65},
-   {207,203,77},
-   {209,203,87},
-   {212,203,95},
-   {213,204,103},
-   {215,205,109},
-   {218,205,116},
-   {219,206,121},
-   {221,207,127},
-   {223,207,132},
-   {226,207,138},
-   {227,208,143},
-   {229,209,147},
-   {231,209,151},
-   {232,210,155},
-   {235,211,159},
-   {237,211,164},
-   {238,212,168},
-   {240,212,172},
-   {243,213,175},
-   {243,214,179},
-   {245,214,183},
-   {248,215,186},
-   {248,216,189},
-   {248,218,193},
-   {247,219,195},
-   {247,220,198},
-   {247,222,201},
-   {248,223,204},
-   {247,224,206},
-   {247,226,209},
-   {247,227,211},
-   {247,229,214},
-   {247,230,216},
-   {247,231,218},
-   {247,232,220},
-   {248,234,224},
-   {247,235,225},
-   {247,236,229},
-   {247,238,231},
-   {247,239,232},
-   {248,240,235},
-   {248,242,237},
-   {247,243,239},
-   {248,244,241},
-   {248,246,244},
-   {248,247,246},
-   {248,248,248},
-   {249,249,249},
-   {251,251,251},
-   {252,252,252},
-   {253,253,253},
-   {254,254,254},
-   {255,255,255},
-    };
-
-  private static final Recipe []  namedPalettes = {
-    new Recipe("BlueToYellow",paletteB2Y),
+  private static Recipe[] namedPalettes = {
+    new Recipe("BlueToYellow", paletteB2Y),
     new Recipe("PurpleTones", purpleTones),
     new Recipe("RedToYellowToWhite", redToYellowToWhite),
     new Recipe("Rainbow", rainbow),
-    new Recipe("BlackToGray", blackToGray),
+    new Recipe("LinearGray", linearGray),
     new Recipe("Elevation", topoElev),
     new Recipe("MonotonicLuminance", monotonicLuminance)
   };
-
 
   private final float[][] palette;
   private final String name;
@@ -549,7 +550,7 @@ public class TestPalette {
     return new TestPalette("BlueToYellow", paletteB2Y);
   }
 
-    /**
+  /**
    * Gets an instance of the palette colorizer using
    * the default palette. The choice of palette for this routine
    * is undefined and subject to change.
@@ -561,16 +562,17 @@ public class TestPalette {
   }
 
   /**
-   *Gets an instance of the palette colorizer using
+   * Gets an instance of the palette colorizer using
    * the purple-tones palette. The palette used is based on
    * the CIE LCH model which tends to give better color transitions
    * for the blue-to-yellow range than the simpler RGB model.
    *
    * @return a valid instance.
    */
-  public static TestPalette getPurpleTonesPalette(){
+  public static TestPalette getPurpleTonesPalette() {
     return new TestPalette("PurpleTones", purpleTones);
   }
+
   /**
    * Constructs an instance of the palette colorizer using
    * the red-to-yellow-to-white palette.
@@ -581,8 +583,7 @@ public class TestPalette {
     return new TestPalette("RedToYellowToWhite", redToYellowToWhite);
   }
 
-
-   /**
+  /**
    * Constructs an instance of the palette colorizer using
    * the rainbow palette.
    *
@@ -592,14 +593,14 @@ public class TestPalette {
     return new TestPalette("Rainbow", rainbow);
   }
 
-   /**
+  /**
    * Constructs an instance of the palette colorizer using
-   * the black-to-gray palette.
+   * the a linear interpolation of values in the RGB color space.
    *
    * @return a valid instance.
    */
-  public static TestPalette getBlackToGrayPalette(){
-    return new TestPalette("BlackToGray", blackToGray);
+  public static TestPalette getLinearGrayPalette() {
+    return new TestPalette("Linear Gray", linearGray);
   }
 
   /**
@@ -620,6 +621,7 @@ public class TestPalette {
    * undefined input value (Double.NaN), a zero (fully transparent)
    * value will be returned. If given a z value outside the specified
    * region, its value will be constrained as necessary.
+   *
    * @param z the z value of interest
    * @param zMin the value associated with the minimum-index color
    * in the palette.
@@ -629,8 +631,8 @@ public class TestPalette {
    */
   public int getARGB(double z, double zMin, double zMax) {
     double t = (palette.length - 1) * (z - zMin) / (zMax - zMin);
-    if(Double.isNaN(t)){
-        return 0;
+    if (Double.isNaN(t)) {
+      return 0;
     }
 
     int r, g, b;
@@ -654,8 +656,7 @@ public class TestPalette {
 
   }
 
-
-/**
+  /**
    * Assigns a Color object to a z value based
    * on its position within a range of values and the palette associated
    * with this instance.
@@ -665,6 +666,7 @@ public class TestPalette {
    * undefined input value (Double.NaN), a zero (fully transparent)
    * value will be returned. If given a z value outside the specified
    * region, its value will be constrained as necessary.
+   *
    * @param z the z value of interest
    * @param zMin the value associated with the minimum-index color
    * in the palette.
@@ -672,24 +674,25 @@ public class TestPalette {
    * in the palette.
    * @return an integer in the ARGB format
    */
-  public Color  getColor(double z, double zMin, double zMax) {
+  public Color getColor(double z, double zMin, double zMax) {
     return new Color(getARGB(z, zMin, zMax));
   }
 
   /**
    * Gets the palette specified by name
+   *
    * @param paletteName a valid string matching one a named palette
    * defined by this class.
    * @return if found, a valid palette; otherwise, a null
    */
-  public static TestPalette getPaletteByName(String paletteName){
-    if(paletteName==null || paletteName.isEmpty()){
+  public static TestPalette getPaletteByName(String paletteName) {
+    if (paletteName == null || paletteName.isEmpty()) {
       throw new NullPointerException(
         "Null or empty specification for palette name");
     }
     String s = paletteName.trim();
-    for(Recipe r: TestPalette.namedPalettes){
-      if(r.name.equalsIgnoreCase(s)){
+    for (Recipe r : TestPalette.namedPalettes) {
+      if (r.name.equalsIgnoreCase(s)) {
         return r.palette;
       }
     }
@@ -698,22 +701,23 @@ public class TestPalette {
 
   /**
    * Gets a list of the names of palettes defined by this class.
+   *
    * @return a valid, non-empty list.
    */
-  public static List<String> getPaletteNames(){
-    List<String>aList = new ArrayList<>();
-    for(Recipe r: TestPalette.namedPalettes){
+  public static List<String> getPaletteNames() {
+    List<String> aList = new ArrayList<>();
+    for (Recipe r : TestPalette.namedPalettes) {
       aList.add(r.name);
     }
     return aList;
   }
 
-
   /**
    * Gets the name of the palette
+   *
    * @return a valid string.
    */
-  public String getName(){
+  public String getName() {
     return name;
   }
 
@@ -728,4 +732,43 @@ public class TestPalette {
     }
     return new ImageIcon(bImage);
   }
+
+  public static void loadRecipiesFromStream(InputStream ins, boolean flip)
+    throws IOException, NumberFormatException {
+
+    DelimitedReader reader = new DelimitedReader(ins, ',');
+    List<String> list;
+    List<Recipe> rList = new ArrayList<>();
+    for (int i = 0; i < namedPalettes.length; i++) {
+      rList.add(namedPalettes[i]);
+    }
+    list = reader.readStrings();  // read the header line
+    while (true) {
+      list = reader.readStrings();
+      if (list.isEmpty()) {
+        break;
+      }
+      String name = list.get(0);
+      int count = Integer.parseInt(list.get(1));
+      float[][] rgb = new float[count][3];
+      int k = (flip ? count - 1 : 0);
+
+      rgb[k][0] = Integer.parseInt(list.get(2));
+      rgb[k][1] = Integer.parseInt(list.get(3));
+      rgb[k][2] = Integer.parseInt(list.get(4));
+      for (int i = 1; i < count; i++) {
+        k = (flip ? count - 1 - i : i);
+        list = reader.readStrings();
+        if (list.isEmpty()) {
+          break;
+        }
+        rgb[k][0] = Integer.parseInt(list.get(2));
+        rgb[k][1] = Integer.parseInt(list.get(3));
+        rgb[k][2] = Integer.parseInt(list.get(4));
+      }
+      rList.add(new Recipe(name, rgb));
+    }
+    namedPalettes = rList.toArray(new Recipe[rList.size()]);
+  }
+
 }
