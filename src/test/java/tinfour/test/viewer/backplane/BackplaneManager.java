@@ -39,6 +39,7 @@ import javax.swing.SwingUtilities;
 import tinfour.common.IMonitorWithCancellation;
 import tinfour.test.viewer.DataViewingPanel;
 import tinfour.test.viewer.StatusPanel;
+import tinfour.test.viewer.backplane.ViewOptions.LidarPointSelection;
 
 public class BackplaneManager {
 
@@ -145,9 +146,8 @@ public class BackplaneManager {
       postStatusMessage(taskIndex, "Tinfour does not yet support LAZ files");
       return;
     } else if ("LAS".equalsIgnoreCase(ext)) {
-      boolean groundPointFilter;
-      groundPointFilter = view.isLidarGroundPointsOptionSelected();
-      model = new ModelFromLas(file, groundPointFilter);
+      LidarPointSelection selections = view.getLidarPointSelection();
+      model = new ModelFromLas(file, selections);
     } else if ("TXT".equalsIgnoreCase(ext)) {
       model = new ModelFromText(file, ' ');
     } else if ("CSV".equalsIgnoreCase(ext)) {

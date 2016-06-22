@@ -42,6 +42,7 @@ import javax.swing.JTextField;
 import javax.swing.ListCellRenderer;
 import tinfour.test.utils.TestPalette;
 import tinfour.test.viewer.backplane.ViewOptions;
+import tinfour.test.viewer.backplane.ViewOptions.LidarPointSelection;
 
 /**
  * Provides UI for showing viewing options
@@ -162,8 +163,22 @@ import tinfour.test.viewer.backplane.ViewOptions;
     setDouble(elevationTextField, "%3.1f", view.getHillshadeElevation());
     setDouble(ambientTextField, "%3.1f", view.getHillshadeAmbient());
     fullResolutionGridCheckbox.setSelected(view.isFullResolutionGridSelected());
-    lidarGroundPointsButton.setSelected(view.isLidarGroundPointsOptionSelected());
-    lidarAllPointsButton.setSelected(!view.isLidarGroundPointsOptionSelected());
+            lidarGroundPointsButton.setSelected(false);
+        lidarFirstReturnButton.setSelected(false);
+        lidarAllPointsButton.setSelected(false);
+    switch(view.getLidarPointSelection()){
+      case GroundPoints:
+        lidarGroundPointsButton.setSelected(true);
+        break;
+      case FirstReturn:
+        lidarFirstReturnButton.setSelected(true);
+        break;
+      case AllPoints:
+        lidarAllPointsButton.setSelected(false);
+        break;
+      default:
+        lidarGroundPointsButton.setSelected(true);
+    }
   }
 
   private double extractField(JTextField field, double value) {
@@ -262,7 +277,13 @@ import tinfour.test.viewer.backplane.ViewOptions;
     view.setHillshadeAmbient(extractField(ambientTextField, 135));
 
     view.setFullResolutionGridSelected(fullResolutionGridCheckbox.isSelected());
-    view.setIsLidarGroundPointsOptionSelected(lidarGroundPointsButton.isSelected());
+    if(lidarGroundPointsButton.isSelected()){
+      view.setLidarPointSelection(LidarPointSelection.GroundPoints);
+    }else if(lidarFirstReturnButton.isSelected()){
+      view.setLidarPointSelection(LidarPointSelection.FirstReturn);
+    }else{
+      view.setLidarPointSelection(LidarPointSelection.AllPoints);
+    }
 
     //transcribeViewToComponents(); // just a diagnostic
     return badInput;
@@ -327,6 +348,7 @@ import tinfour.test.viewer.backplane.ViewOptions;
     fullResolutionGridCheckbox = new javax.swing.JCheckBox();
     jLabel3 = new javax.swing.JLabel();
     wireframeSampleThinningComboBox = new javax.swing.JComboBox();
+    lidarFirstReturnButton = new javax.swing.JRadioButton();
     actionsPanel = new javax.swing.JPanel();
     applyButton = new javax.swing.JButton();
     cancelButton = new javax.swing.JButton();
@@ -453,6 +475,14 @@ import tinfour.test.viewer.backplane.ViewOptions;
 
     wireframeSampleThinningComboBox.setModel(new javax.swing.DefaultComboBoxModel(new String[] { " Medium", "Fine", "Extra Fine" }));
 
+    lidarPointSelectionGroup.add(lidarFirstReturnButton);
+    lidarFirstReturnButton.setText("First Returns Only");
+    lidarFirstReturnButton.addActionListener(new java.awt.event.ActionListener() {
+      public void actionPerformed(java.awt.event.ActionEvent evt) {
+        lidarFirstReturnButtonActionPerformed(evt);
+      }
+    });
+
     javax.swing.GroupLayout optionsPanelLayout = new javax.swing.GroupLayout(optionsPanel);
     optionsPanel.setLayout(optionsPanelLayout);
     optionsPanelLayout.setHorizontalGroup(
@@ -497,7 +527,8 @@ import tinfour.test.viewer.backplane.ViewOptions;
             .addGap(10, 10, 10)
             .addGroup(optionsPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
               .addComponent(lidarAllPointsButton)
-              .addComponent(lidarGroundPointsButton)))
+              .addComponent(lidarGroundPointsButton)
+              .addComponent(lidarFirstReturnButton)))
           .addGroup(optionsPanelLayout.createSequentialGroup()
             .addGap(10, 10, 10)
             .addGroup(optionsPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
@@ -526,7 +557,7 @@ import tinfour.test.viewer.backplane.ViewOptions;
               .addComponent(jLabel2)
               .addComponent(blackOnWhiteRadioButton)
               .addComponent(whiteOnBlackRadioButton))))
-        .addContainerGap(25, Short.MAX_VALUE))
+        .addContainerGap(29, Short.MAX_VALUE))
     );
     optionsPanelLayout.setVerticalGroup(
       optionsPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
@@ -590,8 +621,10 @@ import tinfour.test.viewer.backplane.ViewOptions;
         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
         .addComponent(lidarGroundPointsButton)
         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+        .addComponent(lidarFirstReturnButton)
+        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
         .addComponent(lidarAllPointsButton)
-        .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+        .addContainerGap(16, Short.MAX_VALUE))
     );
 
     applyButton.setText("Apply");
@@ -623,7 +656,7 @@ import tinfour.test.viewer.backplane.ViewOptions;
     actionsPanelLayout.setHorizontalGroup(
       actionsPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
       .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, actionsPanelLayout.createSequentialGroup()
-        .addContainerGap(204, Short.MAX_VALUE)
+        .addContainerGap(208, Short.MAX_VALUE)
         .addComponent(okayButton)
         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
         .addComponent(cancelButton)
@@ -703,6 +736,10 @@ import tinfour.test.viewer.backplane.ViewOptions;
     // TODO add your handling code here:
   }//GEN-LAST:event_fullResolutionGridCheckboxActionPerformed
 
+  private void lidarFirstReturnButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_lidarFirstReturnButtonActionPerformed
+    // TODO add your handling code here:
+  }//GEN-LAST:event_lidarFirstReturnButtonActionPerformed
+
   class PaletteRenderer extends JLabel implements ListCellRenderer {
 
     String[] names;
@@ -767,6 +804,7 @@ import tinfour.test.viewer.backplane.ViewOptions;
   private javax.swing.JComboBox labelFieldComboBox;
   private javax.swing.JCheckBox labelsCheckBox;
   private javax.swing.JRadioButton lidarAllPointsButton;
+  private javax.swing.JRadioButton lidarFirstReturnButton;
   private javax.swing.JRadioButton lidarGroundPointsButton;
   private javax.swing.ButtonGroup lidarPointSelectionGroup;
   private javax.swing.JButton okayButton;

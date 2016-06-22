@@ -43,7 +43,9 @@ import tinfour.las.LasFileReader;
 import tinfour.las.LasGpsTimeType;
 import tinfour.las.LasPoint;
 import tinfour.las.LasRecordFilterByClass;
+import tinfour.las.LasRecordFilterByFirstReturn;
 import tinfour.test.utils.VertexLoader;
+import tinfour.test.viewer.backplane.ViewOptions.LidarPointSelection;
 
 /**
  * A model for managing data taken from a Lidar (LAS) file.
@@ -76,8 +78,7 @@ public class ModelFromLas extends ModelAdapter implements IModel {
     "Overlap Point"
   };
 
-
-  final boolean groundPointFilter;
+   LidarPointSelection lidarPointSelection;
 
   double geoScaleX;
   double geoScaleY;
@@ -101,9 +102,9 @@ public class ModelFromLas extends ModelAdapter implements IModel {
    *
    *
    */
-  public ModelFromLas(File file, boolean groundPointFilter) {
+  public ModelFromLas(File file, LidarPointSelection lidarPointSelection) {
     super(file);
-    this.groundPointFilter = groundPointFilter;
+    this.lidarPointSelection = lidarPointSelection;
   }
 
   /**
@@ -128,18 +129,26 @@ public class ModelFromLas extends ModelAdapter implements IModel {
     VertexLoader loader = new VertexLoader();
 
     ILasRecordFilter vFilter = null;
-    if (this.groundPointFilter) {
-      vFilter = new LasRecordFilterByClass(2);
+    switch(lidarPointSelection){
+      case GroundPoints:
+         vFilter = new LasRecordFilterByClass(2);
+         break;
+      case FirstReturn:
+        vFilter = new LasRecordFilterByFirstReturn();
+        break;
+      default:
     }
+
 
     List<Vertex> list = loader.readLasFile(file, vFilter, monitor);
     if(list.isEmpty()){
       monitor.reportDone(); // remove the progress bar
-      if(this.groundPointFilter){
+      if(lidarPointSelection != LidarPointSelection.AllPoints){
         // the source data contained no ground points. this can
         // happen when a LAS file is not classified or in the case of
         // bathymetric lidar (which may contain all water points)
-        throw new IOException("Source Lidar file does not contain groundpoints");
+        throw new IOException(
+          "Source Lidar file does not contain samples for "+lidarPointSelection);
       }else{
         throw new IOException("Unable to read points from file");
       }
@@ -171,23 +180,9 @@ public class ModelFromLas extends ModelAdapter implements IModel {
 
   @Override
   public String getDescription() {
-    if (this.hasGroundPointFilter()) {
-      return "Lidar (Ground Points)";
-    } else {
-      return "Lidar (All Samples)";
-    }
+      return "Lidar ("+lidarPointSelection+")";
   }
 
-
-  /**
-   * Indicates if the model was instantiated with the ground-point filter
-   * activated.
-   *
-   * @return true if the model filters out non-ground-points.
-   */
-  public boolean hasGroundPointFilter() {
-    return this.groundPointFilter;
-  }
 
   @Override
   public String getFormattedCoordinates(double x, double y) {
@@ -311,4 +306,8 @@ public class ModelFromLas extends ModelAdapter implements IModel {
     }
   }
 
+
+  public LidarPointSelection getLidarPointSelection(){
+    return lidarPointSelection;
+  }
 }
