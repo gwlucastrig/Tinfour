@@ -419,7 +419,7 @@ import tinfour.test.viewer.backplane.ViewOptions;
     ambientTextField.setText("25");
     ambientTextField.setToolTipText("Percent ambient light 0 to 60 percent");
 
-    jLabel9.setText("Lidar Options");
+    jLabel9.setText("Lidar Options (LAS files only)");
 
     lidarPointSelectionGroup.add(lidarGroundPointsButton);
     lidarGroundPointsButton.setSelected(true);
@@ -573,7 +573,6 @@ import tinfour.test.viewer.backplane.ViewOptions;
               .addComponent(verticesCheckBox)
               .addComponent(labelsCheckBox)
               .addComponent(labelFieldComboBox, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))))
-        .addGap(18, 18, 18)
         .addComponent(rasterCheckBox)
         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
         .addGroup(optionsPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)

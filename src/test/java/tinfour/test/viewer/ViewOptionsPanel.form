@@ -215,7 +215,6 @@
                           </Group>
                       </Group>
                   </Group>
-                  <EmptySpace type="separate" max="-2" attributes="0"/>
                   <Component id="rasterCheckBox" min="-2" max="-2" attributes="0"/>
                   <EmptySpace max="-2" attributes="0"/>
                   <Group type="103" groupAlignment="3" attributes="0">
@@ -416,7 +415,7 @@
         </Component>
         <Component class="javax.swing.JLabel" name="jLabel9">
           <Properties>
-            <Property name="text" type="java.lang.String" value="Lidar Options"/>
+            <Property name="text" type="java.lang.String" value="Lidar Options (LAS files only)"/>
           </Properties>
         </Component>
         <Component class="javax.swing.JRadioButton" name="lidarGroundPointsButton">

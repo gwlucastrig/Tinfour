@@ -30,10 +30,15 @@ that most thorny of questions "What is it good for?"  To try to address that que
 this library includes a simple demonstration program which allows the user to view
 and explore raw data, including samples such as Lidar files that contain
 huge numbers of points. To run the demonstrator, you must have Java installed
-on your system.  Depending on your setup, you may be able to invoke the viewer
+on your system.  If you do not have Java installed on your computer, you may
+download an installer for free from 
+[Oracle Corporation, Java Downloads](https://java.com/en/download/ "Java downloads from Oracle")
+
+Depending on your setup, you may be able to invoke the viewer
 by simply navigating to your copy of the Tinfour "dist" folder and double clicking
-the TinfourViewer jar.  From the command window, you can invoke the viewer
-using the following:
+the TinfourViewer jar ("Java Archive") file.  For Windows users, there is also a 
+run.sh script in the main software distribution. On all systems, you can invoke the viewer
+from a command window by using the following:
 ```
      java -Xmx1500m -jar TinfourViewer-1.0.jar
 ```
