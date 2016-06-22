@@ -37,7 +37,7 @@ download an installer for free from
 Depending on your setup, you may be able to invoke the viewer
 by simply navigating to your copy of the Tinfour "dist" folder and double clicking
 the TinfourViewer jar ("Java Archive") file.  For Windows users, there is also a 
-run.sh script in the main software distribution. On all systems, you can invoke the viewer
+run.bat script in the main software distribution. On all systems, you can invoke the viewer
 from a command window by using the following:
 ```
      java -Xmx1500m -jar TinfourViewer-1.0.jar
