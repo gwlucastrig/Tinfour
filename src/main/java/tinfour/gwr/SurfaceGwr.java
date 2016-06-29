@@ -251,72 +251,73 @@ public class SurfaceGwr {
         double y2 = y * y;
         double x3 = x * x2;
         double y3 = y * y2;
-        double xy = x*y;
-        double x2y = x*xy;
-        double xy2 = xy*y;
+        double x4 = x2 * x2;
+        double y4 = y2 * y2;
+        double xy = x * y;
 
         input[0][0] += w;
+
         input[0][1] += w * x;
         input[0][2] += w * y;
         input[0][3] += w * x2;
         input[0][4] += w * y2;
         input[0][5] += w * xy;
-        input[0][6] += w * x2y;
-        input[0][7] += w * xy2;
+        input[0][6] += w * x2 * y;
+        input[0][7] += w * x * y2;
         input[0][8] += w * x3;
         input[0][9] += w * y3;
 
-        input[1][1] += w * x2;         // x * x
-        input[1][2] += w * xy;         // y * x
-        input[1][3] += w * x3;         // x2 * x
-        input[1][4] += w * y2 * x;     // y2 * x
-        input[1][5] += w * x2y;        // xy * x
-        input[1][6] += w * x2y * x;    // x2 * y * x
-        input[1][7] += w * xy2 * x;    // x * y2 * x
-        input[1][8] += w * x3 * x;     // x3 * x
-        input[1][9] += w * y3 * x;     // y3 * x
+        input[1][1] += w * x2;
+        input[1][2] += w * xy;
+        input[1][3] += w * x3;
+        input[1][4] += w * x * y2;
+        input[1][5] += w * x2 * y;
+        input[1][6] += w * x * x2 * y;
+        input[1][7] += w * x * x * y2;
+        input[1][8] += w * x * x3;
+        input[1][9] += w * x * y3;
 
-        input[2][2] += w * y2;         // y * y
-        input[2][3] += w * x2 * y;     // x2 * y
-        input[2][4] += w * y3;         // y2 * y
-        input[2][5] += w * xy2;        // xy * y
-        input[2][6] += w * x2y * y;    // x2 * y * y
-        input[2][7] += w * xy2 * y;    // x * y2 * y
-        input[2][8] += w * x3 * y;     // x3 * y
-        input[2][9] += w * y3 * y;     // y3 * y
+        input[2][2] += w * y2;
+        input[2][3] += w * x2 * y;
+        input[2][4] += w * y3;
+        input[2][5] += w * x * y2;
+        input[2][6] += w * y * x2 * y;
+        input[2][7] += w * y * x * y2;
+        input[2][8] += w * y * x3;
+        input[2][9] += w * y * y3;
 
-        input[3][3] += w * x2 * x2;      // x2 * x2
-        input[3][4] += w * y2 * x2;      // y2 * x2
-        input[3][5] += w * xy * x2;      // xy * x2
-        input[3][6] += w * x2y * x2;     // x2 * y * x2
-        input[3][7] += w * xy2 * x2;     // x * y2 * x2
-        input[3][8] += w * x3 * x2;      // x3 * x2
-        input[3][9] += w * y3 * x2;      // y3 * x2
+        input[3][3] += w * x4;
+        input[3][4] += w * x2 * y2;
+        input[3][5] += w * x3 * y;
+        input[3][6] += w * x2 * x2 * y;
+        input[3][7] += w * x2 * x * y2;
+        input[3][8] += w * x2 * x3;
+        input[3][9] += w * x2 * y3;
 
-        input[4][4] += w * y2 * y2;      // y2 * y2
-        input[4][5] += w * xy * y2;      // xy * y2
-        input[4][6] += w * x2y * y2;     // x2 *y * y2
-        input[4][7] += w * xy2 * y2;     // x * y2 * y2
-        input[4][8] += w * x3 * y2;      // x3 * y2
-        input[4][9] += w * y3 * y2;      // y3 * y2
+        input[4][4] += w * y4;
+        input[4][5] += w * x * y3;
+        input[4][6] += w * y2 * x2 * y;
+        input[4][7] += w * y2 * x * y2;
+        input[4][8] += w * y2 * x3;
+        input[4][9] += w * y2 * y3;
 
-        input[5][5] += w * xy * xy;      // xy * xy
-        input[5][6] += w * x2*y * xy;    // x2 * y * xy
-        input[5][7] += w * xy2 * xy;     // x * y2 * xy
-        input[5][8] += w * x3 * xy;      // x3 * xy
-        input[5][9] += w * y3 * xy;      // y3 * xy
+        input[5][5] += w * x2 * y2;
+        input[5][6] += w * xy * x2 * y;
+        input[5][7] += w * xy * x * y2;
+        input[5][8] += w * xy * x3;
+        input[5][9] += w * xy * y3;
 
-        input[6][6] += w * x2y * x2y;      // x2*y * x2*y
-        input[6][7] += w * xy2 * x2y;      // x*y2 * x2*y
-        input[6][8] += w * x3 * x2y;       // x3 * x2 * y
-        input[6][9] += w * y3 * x2y;       // y3 * x2 * y
+        input[6][6] += w * x2 * y * x2 * y;
+        input[6][7] += w * x2 * y * x * y2;
+        input[6][8] += w * x2 * y * x3;
+        input[6][9] += w * x2 * y * y3;
 
-        input[7][7] += w * xy2 * xy2;        // x*y2 * x*y2
-        input[7][8] += w * x3 * xy2;
-        input[7][9] += w * y3 * xy2;
+        input[7][7] += w * y2 * x * x * y2;
+        input[7][8] += w * y2 * x * x3;
+        input[7][9] += w * y2 * x * y3;
 
         input[8][8] += w * x3 * x3;
-        input[8][9] += w * y3 * x3;
+        input[8][9] += w * x3 * y3;
 
         input[9][9] += w * y3 * y3;
 
@@ -326,8 +327,8 @@ public class SurfaceGwr {
         g[3][0] += w * x2 * z;
         g[4][0] += w * y2 * z;
         g[5][0] += w * xy * z;
-        g[6][0] += w * x2y * z;
-        g[7][0] += w * xy2 * z;
+        g[6][0] += w * x2 * y * z;
+        g[7][0] += w * x * y2 * z;
         g[8][0] += w * x3 * z;
         g[9][0] += w * y3 * z;
       }
@@ -408,6 +409,7 @@ public class SurfaceGwr {
         double xy = x * y;
 
         input[0][0] += w;
+
         input[0][1] += w * x;
         input[0][2] += w * y;
         input[0][3] += w * x2;
@@ -483,6 +485,7 @@ public class SurfaceGwr {
         double xy = x * y;
 
         input[0][0] += w;
+
         input[0][1] += w * x;
         input[0][2] += w * y;
         input[0][3] += w * x2;
@@ -491,14 +494,14 @@ public class SurfaceGwr {
         input[1][1] += w * x2;
         input[1][2] += w * xy;
         input[1][3] += w * x3;
-        input[1][4] += w * y2*x;
+        input[1][4] += w * x * y2;
 
         input[2][2] += w * y2;
         input[2][3] += w * x2 * y;
         input[2][4] += w * y3;
 
         input[3][3] += w * x4;
-        input[3][4] += w * y2 * x2;
+        input[3][4] += w * x2 * y2;
 
         input[4][4] += w * y4;
 
@@ -544,7 +547,7 @@ public class SurfaceGwr {
         input[0][2] += w * y;
 
         input[1][1] += w * x2;
-        input[1][2] += w * y * x;
+        input[1][2] += w * x * y;
 
         input[2][2] += w * y2;
 
@@ -557,7 +560,6 @@ public class SurfaceGwr {
       // positive-definite matrix.  So here the code assigns the symmetric
       // terms.
       input[1][0] = input[0][1];
-
       input[2][0] = input[0][2];
       input[2][1] = input[1][2];
     } else if (model == SurfaceModel.PlanarWithCrossTerms) {
@@ -579,12 +581,12 @@ public class SurfaceGwr {
         input[0][2] += w * y;
         input[0][3] += w * xy;
 
-        input[1][1] += w * x2;  // x*x
-        input[1][2] += w * xy;  // y*x
-        input[1][3] += w * xy * x;
+        input[1][1] += w * x2;
+        input[1][2] += w * xy;
+        input[1][2] += w * x2*y;
 
         input[2][2] += w * y2;
-        input[2][3] += w * xy*y;
+        input[2][3] += w * x*y2;
 
         input[3][3] += w * xy * xy;
 

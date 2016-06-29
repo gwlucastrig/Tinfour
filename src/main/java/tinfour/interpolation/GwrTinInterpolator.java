@@ -239,8 +239,8 @@ public class GwrTinInterpolator extends GwrInterpolator implements IInterpolator
    * <p>
    * When in doubt, a good general specification for bandwidth-selection is
    * to use BandwidthSelectionMethod.FixedProportionalBandwidth
-   * with a bandwidth parameter of 1.0. The model should be selected based
-   * on the anticipated behavior of the surface. SurfaceModel.Quadratic is
+   * with a bandwidth parameter of 0.5. The model should be selected based
+   * on the anticipated behavior of the surface. SurfaceModel.Cubic is
    * usually a good choice for all but flat surfaces.
    *
    * @param model a valid model specification

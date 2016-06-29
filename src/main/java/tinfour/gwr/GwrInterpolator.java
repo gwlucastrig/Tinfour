@@ -42,7 +42,7 @@ public class GwrInterpolator {
 
   SurfaceModel surfaceModel;
   SurfaceGwr regression;
-  final SurfaceGwr[] regressionArray;
+  SurfaceGwr[] regressionArray;
   int minRequiredSamples;
 
   BandwidthSelectionMethod bandwidthMethod;
@@ -148,7 +148,7 @@ public class GwrInterpolator {
 
     this.bandwidth = 0; // not yet specified
 
-    // IMPORTANT: the array indices must reflect the ordinal of the
+    // IMPORTANT: the array indices must relfect the ordinal of the
     // SurfaceModel enumeration
     regressionArray = new SurfaceGwr[6];
 
