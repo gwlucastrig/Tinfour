@@ -278,9 +278,9 @@ public class ModelFromLas extends ModelAdapter implements IModel {
         description = "Reserved ("+record.classification+")";
       }
       fmt.format("   Classification: %s\n", description);
-      fmt.format("   Return:         %d of %d\n",
+      fmt.format("   Return:    %d of %d\n",
         record.returnNumber, record.numberOfReturns);
-      fmt.format("   Intensity:      %d\n", record.intensity);
+      fmt.format("   Intensity: %d\n", record.intensity);
       LasGpsTimeType gpsType = reader.getLasGpsTimeType();
       Date date = gpsType.transformGpsTimeToDate(record.gpsTime);
       SimpleDateFormat sdf;
@@ -290,7 +290,7 @@ public class ModelFromLas extends ModelAdapter implements IModel {
         sdf = new SimpleDateFormat("EEE YYYY-MM-dd HH:mm:ss.S");
       }
       sdf.setTimeZone(new SimpleTimeZone(0, "UTC"));
-      fmt.format("   Time/Date:      %s UTC\n", sdf.format(date));
+      fmt.format("   Time/Date: %s UTC\n", sdf.format(date));
 
     } catch (IOException ioex) {
       System.err.println(

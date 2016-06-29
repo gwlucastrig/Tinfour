@@ -839,18 +839,30 @@ public class MvComposite {
       }
       double zX = beta[1];
       double zY = beta[2];
-      double zXX = 2 * beta[3];
-      double zYY = 2 * beta[4];
-      double zXY = beta[5];
-      double kP = (zXX * zX * zX + 2 * zXY * zX * zY + zYY * zY * zY)
-        / ((zX * zX + zY * zY) * Math.pow(zX * zX + zY * zY + 1.0, 1.5));
+      double slope = Math.sqrt(zX * zX + zY * zY);
+      double kP = Double.NaN;
+      double kS = Double.NaN;
 
-      double kS = (zX * zY * (zXX - zYY) + (zY * zY - zX * zX) * zXY)
-        / Math.pow(zX * zX + zY * zY, 1.5);
+      switch (surface.getModel()) {
+        case QuadraticWithCrossTerms:
+        case CubicWithCrossTerms:
+          double zXX = 2 * beta[3];
+          double zYY = 2 * beta[4];
+          double zXY = beta[5];
 
+          kP = (zXX * zX * zX + 2 * zXY * zX * zY + zYY * zY * zY)
+            / ((zX * zX + zY * zY) * Math.pow(zX * zX + zY * zY + 1.0, 1.5));
+
+          kS = (zX * zY * (zXX - zYY) + (zY * zY - zX * zX) * zXY)
+            / Math.pow(zX * zX + zY * zY, 1.5);
+          break;
+        default:
+          break;
+      }
+      
       double h = surface.getPredictionIntervalHalfRange(0.05);
       fmt.format("Z:     %11.2f &plusmn; %4.2f\n", z, h);
-      fmt.format("Slope: %11.2f %%\n", interpolator.getSlope() * 100);
+      fmt.format("Slope: %11.2f %%\n", slope * 100);
       fmt.format("Curvature\n");
       fmt.format("  Profile:    %8.5f (radian/unit)\n", kP);
       fmt.format("  Streamline: %8.5f (radian/unit)\n", kS);
