@@ -238,6 +238,19 @@ public class SurfaceGwr {
     double[][] g;
     double[][] input;
 
+    // In the following expressions, the layout of the regression
+    // variables is organized to simplify the computation of quantities
+    // such as slope and curvature.  Recall that the samples are always
+    // mapped so that the query position (xQUery, yQuery) is treated
+    // as the origin. Therefore, then the derivatives are evaluated at
+    // the query position (adjusted origin), many terms drop out and
+    // the following relationships apply
+    //     Z   = b[0]
+    //     Zx  = b[1]     //   partial of z(x,y) with respect to x, etc.
+    //     Zy  = b[2]
+    //     Zxx = 2*b[3]   //   2nd partial of z(x,y) with respect to x, etc.
+    //     Zyy = 2*b[4]
+    //     Zxy = b[5]
     if (model == SurfaceModel.CubicWithCrossTerms) {
       nVariables = 9;
       g = new double[10][1];
@@ -334,8 +347,7 @@ public class SurfaceGwr {
       }
 
       // the input for a least-squares fit is a real-symmetric
-      // positive-definite matrix.  So here the code assigns the symmetric
-      // terms.
+      // matrix.  So here the code assigns the symmetric terms.
       input[1][0] = input[0][1];
 
       input[2][0] = input[0][2];
@@ -444,9 +456,8 @@ public class SurfaceGwr {
         g[5][0] += w * xy * z;
       }
 
-      // the input for a least-squares fit is a real-symmetric
-      // positive-definite matrix.  So here the code assigns the symmetric
-      // terms.
+      // the input for a least-squares fit is a real-symmetric matrix.
+      // So here the code assigns the symmetric terms.
       input[1][0] = input[0][1];
 
       input[2][0] = input[0][2];
@@ -512,9 +523,8 @@ public class SurfaceGwr {
         g[4][0] += w * y2 * z;
       }
 
-      // the input for a least-squares fit is a real-symmetric
-      // positive-definite matrix.  So here the code assigns the symmetric
-      // terms.
+      // the input for a least-squares fit is a real-symmetric matrix.
+      // So here the code assigns the symmetric terms.
       input[1][0] = input[0][1];
 
       input[2][0] = input[0][2];
@@ -556,9 +566,8 @@ public class SurfaceGwr {
         g[2][0] += w * y * z;
       }
 
-      // the input for a least-squares fit is a real-symmetric
-      // positive-definite matrix.  So here the code assigns the symmetric
-      // terms.
+      // the input for a least-squares fit is a real-symmetric matrix.
+      // So here the code assigns the symmetric terms.
       input[1][0] = input[0][1];
       input[2][0] = input[0][2];
       input[2][1] = input[1][2];
@@ -576,19 +585,20 @@ public class SurfaceGwr {
         double y2 = y * y;
         double xy = x * y;
 
+
         input[0][0] += w;
         input[0][1] += w * x;
         input[0][2] += w * y;
         input[0][3] += w * xy;
 
-        input[1][1] += w * x2;
-        input[1][2] += w * xy;
-        input[1][2] += w * x2*y;
+        input[1][1] += w * x2;    // x*x
+        input[1][2] += w * xy;    // y*x
+        input[1][3] += w * xy*x;  // xy*x
 
-        input[2][2] += w * y2;
-        input[2][3] += w * x*y2;
+        input[2][2] += w * y2;    // y*y
+        input[2][3] += w * xy*y;  // xy*y
 
-        input[3][3] += w * xy * xy;
+        input[3][3] += w * xy * xy;  //xy*xy
 
         g[0][0] += w * z;
         g[1][0] += w * x * z;
@@ -596,9 +606,8 @@ public class SurfaceGwr {
         g[3][0] += w * xy * z;
       }
 
-      // the input for a least-squares fit is a real-symmetric
-      // positive-definite matrix.  So here the code assigns the symmetric
-      // terms.
+      // the input for a least-squares fit is a real-symmetric matrix.
+      // So here the code assigns the symmetric terms.
       input[1][0] = input[0][1];
 
       input[2][0] = input[0][2];
@@ -669,9 +678,8 @@ public class SurfaceGwr {
         g[6][0] += w * y3 * z;
       }
 
-      // the input for a least-squares fit is a real-symmetric
-      // positive-definite matrix.  So here the code assigns the symmetric
-      // terms.
+      // the input for a least-squares fit is a real-symmetric matrix.
+      // So here the code assigns the symmetric terms.
       input[1][0] = input[0][1];
 
       input[2][0] = input[0][2];
@@ -711,12 +719,13 @@ public class SurfaceGwr {
     RealMatrix matrixA = new Array2DRowRealMatrix(input, false);
 
     // The Apache Commons Math MultipleLinearRegression implementation
-    // used the QRDecomposition, and we follow their lead.
-    // When I first implemented this, I thought that since
-    // the input matrix is real symmetric and ought to be
-    // positive-definite,  it could be solved using a Cholesky
-    // decomposition.  However, I ran into numeric issues that led to
-    // the matrix violating the positive-definite criterion.
+    // uses the QRDecomposition, and we follow their lead.
+    // When I first implemented this, I thought that the input matrix would be
+    // a real symmetric and positive-definite matrix. If that were the case,
+    // it could be solved using a Cholesky decomposition.
+    // However, the weighting factors remove the positive-definite property
+    // and even when evaluating ordinary least squares, I ran into numeric
+    // issues that led to the matrix violating the positive-definite criterion.
     try {
       QRDecomposition cd = new QRDecomposition(matrixA);
       solver = cd.getSolver();
@@ -864,7 +873,7 @@ public class SurfaceGwr {
         residuals[i] = ssrS;
       }
     } else if (model == SurfaceModel.PlanarWithCrossTerms) {
-      //  z(x, y) = b0 + b1*x + b2*y
+      //  z(x, y) = b0 + b1*x + b2*y + b3*xy
       rX = new double[nSamples][4];
       for (int i = 0; i < nSamples; i++) {
         double x = samples[i][0] - xOffset;
@@ -937,9 +946,9 @@ public class SurfaceGwr {
     // GREATER than 2*tr(S) which means that the last subtraction above
     // would actually INCREASE the denominator.
     //    I've done a lot of testing and do not understand what's going
-    // on.  My best guess is that the GWR is not an unbasiased estiator
+    // on.  My best guess is that the GWR is not an unbasiased estimator
     // and that the BRC shorter form works only when the regression
-    // is approimately unbiased. BRC actually mentions, but does not
+    // is approximately unbiased. BRC actually mentions, but does not
     // apply, a bias-related term. But depending on the bandwidth selection,
     // the ommitted terms become significant.
     //   Finally, there isn't a pressing reason to remove the tr(S'S)
@@ -983,8 +992,7 @@ public class SurfaceGwr {
   // This mess was meant to test the stats computations using matrix methods
   // that could more directly be correlated with published documents.
   // The calculations will be less efficient than the customized computeRegression
-  // but provide an independent verification...  Also, I begain coding
-  // Leung's alternate computations
+  // but provide an independent verification...
   //public  void testComputeStatistics() {
   //
   //    if (this.areStatsComputed) {
@@ -1529,7 +1537,7 @@ public class SurfaceGwr {
 
   @Override
   public String toString() {
-    return "TerrainGWR: model=" + model;
+    return "SurfaceGWR: model=" + model;
   }
 
 }

@@ -428,6 +428,20 @@ public class LasFileReader {
     return list;
   }
 
+  /**
+   * Gets the variable-length record with the specified recordId
+   * @param recordId a valid record ID in agreement with the LAS specification
+   * @return if found, a valid instance; otherwise, a null
+   */
+  public LasVariableLengthRecord getVariableLengthRecordByRecordId(int recordId){
+    for(LasVariableLengthRecord vlr: vlrList){
+      if(vlr.getRecordId()==recordId){
+        return vlr;
+      }
+    }
+    return null;
+  }
+
   private boolean inLonRange(double x) {
     return -180 <= x && x <= 360;
   }

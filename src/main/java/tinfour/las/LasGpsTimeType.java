@@ -81,17 +81,18 @@ public enum LasGpsTimeType {
    * <strong>Note:</strong> This class does not yet account for
    * GPS leap seconds. Further research is required to resolve this issue.
    *
-   * @param gpsTime a valid LAS-formatted GPS Time in the same
+   * @param lasGpsTime a valid LAS-formatted GPS Time in the same
    * representation as this enumeration.
    * @return a time in milliseconds
    */
-  public long transformGpsTimeToMillis(double gpsTime) {
+  public long transformGpsTimeToMillis(double lasGpsTime) {
     // using the floor will ensure negative values are handled correctly.
-    long f = (long) Math.floor(gpsTime);
-    double d = gpsTime - (double) f;
+    long f = (long) Math.floor(lasGpsTime);
+    double d = lasGpsTime - (double) f;
     if (this == LasGpsTimeType.SatelliteTime) {
-      long s = f + 1000000000;
-      return s * 1000 + (long) (d * 1000 + 0.5) + LasGpsTimeType.GPS_EPOCH_SECONDS;
+      double gpsTime = Math.floor(lasGpsTime)+1.0e+9;
+      long s = GpsTimeConverter.getInstance().gpsToMillis(gpsTime);
+      return s + (long) (d * 1000 + 0.5);
     } else {
       // week time
       return f * 1000 + (long) (d * 1000 + 0.5);
@@ -105,12 +106,12 @@ public enum LasGpsTimeType {
    * <strong>Note:</strong> This class does not yet account for
    * GPS leap seconds. Further research is required to resolve this issue.
    *
-   * @param gpsTime a valid LAS-formatted GPS Time in the same
+   * @param lasGpsTime a valid LAS-formatted GPS Time in the same
    * representation as this enumeration.
    * @return a valid Date instance
    */
-  public Date transformGpsTimeToDate(double gpsTime) {
-    return new Date(transformGpsTimeToMillis(gpsTime));
+  public Date transformGpsTimeToDate(double lasGpsTime) {
+    return new Date(transformGpsTimeToMillis(lasGpsTime));
   }
 
 }
