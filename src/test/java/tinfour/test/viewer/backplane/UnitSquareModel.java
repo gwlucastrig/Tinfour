@@ -39,6 +39,7 @@ import tinfour.common.IMonitorWithCancellation;
 import tinfour.common.IQuadEdge;
 import tinfour.common.Vertex;
 import tinfour.standard.IncrementalTin;
+import tinfour.utils.LinearUnits;
 
 /**
  * Provides a simple model covering a unit square and containing
@@ -199,4 +200,16 @@ public class UnitSquareModel implements IModel {
     return perimeterList;
   }
 
+  /**
+   * Gets the linear units for the coordinate system used by the
+   * data. It is assumed that the vertical and horizontal coordinate
+   * systems will be in the same unit system, though assumption
+   * could change in a future implementation.
+   *
+   * @return at this time, the method always returns LinearUnits.UNDEFINED
+   */
+  @Override
+  public LinearUnits getLinearUnits() {
+    return LinearUnits.UNKNOWN;
+  }
 }

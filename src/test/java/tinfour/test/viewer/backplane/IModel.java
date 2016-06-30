@@ -19,6 +19,7 @@ import java.util.List;
 import tinfour.common.IIncrementalTin;
 import tinfour.common.IMonitorWithCancellation;
 import tinfour.common.Vertex;
+import tinfour.utils.LinearUnits;
 
 /**
  * Defines methods for accessing and maintaining a collection of
@@ -216,5 +217,14 @@ public interface IModel {
    * @return a list of vertices.
    */
   public List<Vertex> getPerimeterVertices();
+
+  /**
+   * Gets the linear units for the coordinate system used by the
+   * data. It is assumed that the vertical and horizontal coordinate
+   * systems will be in the same unit system, though assumption
+   * could change in a future implementation.
+   * @return a valid enumeration instance
+   */
+  public LinearUnits getLinearUnits();
 
 }

@@ -35,6 +35,7 @@ import java.util.List;
 import tinfour.common.IMonitorWithCancellation;
 import tinfour.common.Vertex;
 import tinfour.test.utils.VertexLoader;
+import tinfour.utils.LinearUnits;
 
 /**
  * A model for managing data taken from a text or comma-separated-value
@@ -107,6 +108,19 @@ public class ModelFromText extends ModelAdapter implements IModel {
     } else {
       return "Text delimited by '" + delimiter + "'";
     }
+  }
+
+  /**
+   * Gets the linear units for the coordinate system used by the
+   * data. It is assumed that the vertical and horizontal coordinate
+   * systems will be in the same unit system, though assumption
+   * could change in a future implementation.
+   *
+   * @return at this time, the method always returns LinearUnits.UNDEFINED
+   */
+  @Override
+  public LinearUnits getLinearUnits() {
+    return LinearUnits.UNKNOWN;
   }
 
 }

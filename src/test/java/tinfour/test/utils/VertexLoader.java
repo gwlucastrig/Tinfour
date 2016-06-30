@@ -40,6 +40,7 @@ import tinfour.las.ILasRecordFilter;
 import tinfour.las.LasFileReader;
 import tinfour.las.LasPoint;
 import tinfour.utils.HilbertSort;
+import tinfour.utils.LinearUnits;
 
 /**
  * A utility for loading vertices from a file for testing
@@ -61,6 +62,7 @@ public class VertexLoader
   double geoOffsetY;
   boolean isSourceInGeographicCoordinates;
   TestOptions.GeoCoordinateOption geoCoordOpt;
+  LinearUnits linearUnits = LinearUnits.UNKNOWN;
 
   /**
    * Sets the maximum number of vertices that will be loaded from a source
@@ -173,6 +175,7 @@ public class VertexLoader
 
     LasFileReader reader = new LasFileReader(file);
     long nRecords = reader.getNumberOfPointRecords();
+     linearUnits = reader.getLinearUnits();
 
     int classification = options.getLidarClass();
     double thinning = options.getLidarThinningFactor();
@@ -239,6 +242,7 @@ public class VertexLoader
     }
 
     LasFileReader reader = new LasFileReader(file);
+    linearUnits = reader.getLinearUnits();
 
     List<Vertex> list = readLasFile(reader, filter, progressMonitor);
     reader.close();
@@ -579,4 +583,15 @@ public class VertexLoader
     return vList;
   }
 
+  /**
+   * Gets the linear units for the coordinate system used by the
+   * data. It is assumed that the vertical and horizontal coordinate
+   * systems will be in the same unit system, though assumption
+   * could change in a future implementation.
+   *
+   * @return a valid enumeration instance
+   */
+  public LinearUnits getLinearUnits() {
+    return linearUnits;
+  }
 }
