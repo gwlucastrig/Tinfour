@@ -59,6 +59,7 @@ import tinfour.interpolation.GwrTinInterpolator;
 import tinfour.interpolation.NaturalNeighborInterpolator;
 import tinfour.test.utils.TestPalette;
 import tinfour.utils.AxisIntervals;
+import tinfour.utils.LinearUnits;
 
 /**
  * Provides elements and method for managing the imagery associated with
@@ -808,6 +809,15 @@ public class MvComposite {
         "<html>Data not available. Model not loaded</html>");
     }
 
+    String units;
+    switch (model.getLinearUnits()) {
+      case METERS:
+      case FEET:
+        units = model.getLinearUnits().getAbbreviation();
+        break;
+      default:
+        units = "units";
+    }
     NeighborEdgeVertex nev = edgeLocator.getEdgeWithNearestVertex(mx, my);
     boolean queryIsOutside = !nev.isInterior();
     Vertex vNear = nev.getNearestVertex();
@@ -859,18 +869,18 @@ public class MvComposite {
         default:
           break;
       }
-      
+
       double h = surface.getPredictionIntervalHalfRange(0.05);
-      fmt.format("Z:     %11.2f &plusmn; %4.2f\n", z, h);
+      fmt.format("Z:     %11.2f &plusmn; %4.2f %s\n", z, h, units);
       fmt.format("Slope: %11.2f %%\n", slope * 100);
       fmt.format("Curvature\n");
-      fmt.format("  Profile:    %8.5f (radian/unit)\n", kP);
-      fmt.format("  Streamline: %8.5f (radian/unit)\n", kS);
+      fmt.format("  Profile:    %8.5f (radian/%s)\n", kP, units);
+      fmt.format("  Streamline: %8.5f (radian/%s)\n", kS, units);
       fmt.format("Steepest Descent\n");
       fmt.format("  Azimuth:    %4d&deg;\n", (int) (descA));
       fmt.format("  Compass Brg: %03d&deg;\n", (int) (descB));
       fmt.format("Nearest Point\n");
-      fmt.format("  Dist:  %11.2f units\n", dNear);
+      fmt.format("  Dist:  %11.2f %s\n", dNear, units);
       fmt.format("  X:     %s\n", model.getFormattedX(vNear.getX()));
       fmt.format("  Y:     %s\n", model.getFormattedY(vNear.getY()));
       fmt.format("  Z:     %11.2f\n", vNear.getZ());
@@ -1168,12 +1178,18 @@ public class MvComposite {
   private synchronized void updateReport() {  //NOPMD (just to save an indent)
     StringBuilder sb = new StringBuilder(2048);
     Formatter fmt = new Formatter(sb);
+    String units;
+    LinearUnits linearUnits = model.getLinearUnits();
+    units =linearUnits.toString();
+    units = units.substring(0,1).toUpperCase()+
+            units.substring(1, units.length()).toLowerCase();
     fmt.format("<html><strong>Model</strong><br><pre><small>");
     fmt.format("  Name: %s\n", model.getName());
     fmt.format("  Type: %s\n", model.getDescription());
     fmt.format("  Vertices:         %8d\n", model.getVertexCount());
     fmt.format("  Load time(ms):    %8d\n", model.getTimeToLoadInMillis());
     fmt.format("  Sort time(ms):    %8d\n", model.getTimeToSortInMillis());
+    fmt.format("  Linear Units:     %s\n", units);
     fmt.format("  Bounds\n");
     fmt.format("    Min X:          %s\n", model.getFormattedX(model.getMinX()));
     fmt.format("    Max X:          %s\n", model.getFormattedX(model.getMaxX()));

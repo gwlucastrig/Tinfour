@@ -44,6 +44,7 @@ import tinfour.common.IMonitorWithCancellation;
 import tinfour.common.IQuadEdge;
 import tinfour.common.Vertex;
 import tinfour.utils.HilbertSort;
+import tinfour.utils.LinearUnits;
 import tinfour.virtual.VirtualIncrementalTin;
 
 /**
@@ -346,6 +347,19 @@ public class ModelAdapter implements IModel {
   @Override
   public List<Vertex> getPerimeterVertices() {
     return perimeterList;
+  }
+
+  /**
+   * Gets the linear units for the coordinate system used by the
+   * data. It is assumed that the vertical and horizontal coordinate
+   * systems will be in the same unit system, though assumption
+   * could change in a future implementation.
+   *
+   * @return at this time, the method always returns LinearUnits.UNDEFINED
+   */
+  @Override
+  public LinearUnits getLinearUnits() {
+    return LinearUnits.UNKNOWN;
   }
 
 }

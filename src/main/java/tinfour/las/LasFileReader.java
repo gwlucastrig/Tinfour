@@ -29,6 +29,7 @@
  */
 package tinfour.las;
 
+import tinfour.utils.LinearUnits;
 import java.io.File;
 import java.io.IOException;
 import java.text.SimpleDateFormat;
@@ -110,6 +111,9 @@ public class LasFileReader {
   private long[] numberOfPointsByReturn;
   private CoordinateReferenceSystemOption crsOption;
   private LasGpsTimeType lasGpsTimeType;
+  private LinearUnits lasLinearUnits = LinearUnits.UNKNOWN;
+  private boolean isGeographicModelTypeKnown = false;
+  private boolean usesGeographicModel = false;
 
   private final BufferedRandomAccessForLidar braf;
   private boolean isClosed;
@@ -216,6 +220,10 @@ public class LasFileReader {
        vlrList.add(vlrHeader);
     }
 
+    if(crsOption==CoordinateReferenceSystemOption.GeoTIFF){
+      loadGeoTiffSpecification();
+
+    }
   }
 
   private LasVariableLengthRecord readVlrHeader() throws IOException {
@@ -463,8 +471,15 @@ public class LasFileReader {
    */
   public boolean usesGeographicCoordinates() {
 
+    // while GeoTiff specification is implemented,
+    // support for WKT is not.  So the class may or may not
+    // know the geographic model type
+    if( isGeographicModelTypeKnown){
+       return usesGeographicModel;
+    }
+
     // apply some rules of thumb
-    // TODO: implement this the right way using VLR's
+
     if (inLonRange(minX) && inLonRange(maxX)) {
       if (maxX - minX > 10) {
         // a lidar sample would not contain a 10-degree range
@@ -487,6 +502,65 @@ public class LasFileReader {
    */
   public LasGpsTimeType getLasGpsTimeType(){
     return  lasGpsTimeType;
+  }
+
+
+  private void loadGeoTiffSpecification() throws IOException {
+    // get the projection keys
+    LasVariableLengthRecord vlr = getVariableLengthRecordByRecordId(34735);
+    if (vlr == null) {
+      return;  // this is actually a file-format error
+    }
+
+    // technically, we should check to make sure that the
+    // thing that follows is the GeoTiff header.
+    // but we just assume that it is correct and skip it.
+    braf.seek(vlr.getFilePosition() + 8);
+    int nR = vlr.recordLength / 8 - 1;
+    List<GeoTiffKey> keyList = new ArrayList<>();
+    for (int i = 0; i < nR; i++) {
+      int keyCode = braf.readUnsignedShort();
+      int location = braf.readUnsignedShort();
+      int count = braf.readUnsignedShort();
+      int valueOrOffset = braf.readUnsignedShort();
+      GeoTiffKey key = new GeoTiffKey(keyCode, location, count, valueOrOffset);
+      keyList.add(key);
+    }
+
+    GeoTiffData gtData = new GeoTiffData(keyList, null, null);
+
+    // see if the data is projected or geographic
+    int gtModelType = gtData.getInteger(GeoTiffData.GtModelTypeGeoKey);
+    if (gtModelType == 1) {
+      // it's projected
+      this.isGeographicModelTypeKnown = true;
+      this.usesGeographicModel = false;
+    } else if (gtModelType == 2) {
+      // its geographic
+      this.isGeographicModelTypeKnown = true;
+      this.usesGeographicModel = true;
+    }
+
+    int unitsCode = -1;
+    if (gtData.isKeyDefined(GeoTiffData.VerticalUnitsGeoKey)) {
+      unitsCode = gtData.getInteger(GeoTiffData.VerticalUnitsGeoKey);
+    } else if (gtData.isKeyDefined(GeoTiffData.ProjLinearUnitsGeoKey)) {
+      unitsCode = gtData.getInteger(GeoTiffData.ProjLinearUnitsGeoKey);
+    }
+
+    if (unitsCode == 9001) {
+      lasLinearUnits = LinearUnits.METERS;
+    } else if (9002 <= unitsCode && unitsCode <= 9006) {
+      lasLinearUnits = LinearUnits.FEET;
+    } else if (unitsCode == 9014) {
+      // fathoms are probably not used, but could be supplied
+      // in bathymetric lidar applications
+      lasLinearUnits = LinearUnits.FATHOMS;
+    }
+  }
+
+  public LinearUnits getLinearUnits(){
+    return lasLinearUnits;
   }
 
 //   A sample main for debugging and diagnostics.

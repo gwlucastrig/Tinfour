@@ -21,7 +21,7 @@ points at a rate of better than one million points per second.
 The Tinfour source code includes extensive Javadoc. This project also includes
 an informal paper that describes the uses, algorithms, and implementation
 of the software with enough detail to support potential developers 
-who may wish to employ Tinfour in their own work. For more details, see
+who may wish to contribute code or employ Tinfour in their own work. For more details, see
 [Data Elements and Algorithms for the Tinfour Libary](doc/TinfourAlgorithmsAndDataElements.pdf "Data Elements and Algorithms")
 
 ### The Tinfour Viewer ###

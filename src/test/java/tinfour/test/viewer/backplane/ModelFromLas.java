@@ -46,6 +46,7 @@ import tinfour.las.LasRecordFilterByClass;
 import tinfour.las.LasRecordFilterByFirstReturn;
 import tinfour.test.utils.VertexLoader;
 import tinfour.test.viewer.backplane.ViewOptions.LidarPointSelection;
+import tinfour.utils.LinearUnits;
 
 /**
  * A model for managing data taken from a Lidar (LAS) file.
@@ -89,6 +90,8 @@ public class ModelFromLas extends ModelAdapter implements IModel {
   int nonGroundPoints;
   int groundPoints;
 
+  LinearUnits linearUnits;
+
 
 
   /**
@@ -128,6 +131,7 @@ public class ModelFromLas extends ModelAdapter implements IModel {
     long time0 = System.currentTimeMillis();
     VertexLoader loader = new VertexLoader();
 
+
     ILasRecordFilter vFilter = null;
     switch(lidarPointSelection){
       case GroundPoints:
@@ -154,6 +158,7 @@ public class ModelFromLas extends ModelAdapter implements IModel {
       }
     }
 
+    this.linearUnits = loader.getLinearUnits();
     xMin = loader.getXMin();
     yMin = loader.getYMin();
     xMax = loader.getXMax();
@@ -266,6 +271,8 @@ public class ModelFromLas extends ModelAdapter implements IModel {
       return;
     }
 
+    // Opening the LAS file over and over again is
+    // may be a performance issue
     LasFileReader reader = null;
     try {
       reader = new LasFileReader(file);
@@ -307,7 +314,25 @@ public class ModelFromLas extends ModelAdapter implements IModel {
   }
 
 
+  /**
+   * Gets the point selection option used to load the model.
+   * @return a valid enumeration instance
+   */
   public LidarPointSelection getLidarPointSelection(){
     return lidarPointSelection;
+  }
+
+
+  /**
+   * Gets the linear units for the coordinate system used by the
+   * data. It is assumed that the vertical and horizontal coordinate
+   * systems will be in the same unit system, though assumption
+   * could change in a future implementation.
+   *
+   * @return a valid enumeration instance
+   */
+  @Override
+  public LinearUnits getLinearUnits() {
+    return linearUnits;
   }
 }
