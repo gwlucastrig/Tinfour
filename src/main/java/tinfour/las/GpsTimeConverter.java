@@ -218,7 +218,7 @@ public class GpsTimeConverter {
    * measured from the GPS epoch 6 January 1980.
    * @return a valid Java time in milliseconds
    */
-  Date gpsToDate(double gpsTime) {
+  public Date gpsToDate(double gpsTime) {
     long t = gpsToMillis(gpsTime);
     return new Date(t);
   }

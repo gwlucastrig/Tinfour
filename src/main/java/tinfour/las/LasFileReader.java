@@ -114,6 +114,7 @@ public class LasFileReader {
   private LinearUnits lasLinearUnits = LinearUnits.UNKNOWN;
   private boolean isGeographicModelTypeKnown = false;
   private boolean usesGeographicModel = false;
+  private GeoTiffData gtData;
 
   private final BufferedRandomAccessForLidar braf;
   private boolean isClosed;
@@ -515,8 +516,8 @@ public class LasFileReader {
     // technically, we should check to make sure that the
     // thing that follows is the GeoTiff header.
     // but we just assume that it is correct and skip it.
-    braf.seek(vlr.getFilePosition() + 8);
-    int nR = vlr.recordLength / 8 - 1;
+    braf.seek(vlr.getFilePosition() + 6);
+    int nR = braf.readUnsignedShort();
     List<GeoTiffKey> keyList = new ArrayList<>();
     for (int i = 0; i < nR; i++) {
       int keyCode = braf.readUnsignedShort();
@@ -527,7 +528,28 @@ public class LasFileReader {
       keyList.add(key);
     }
 
-    GeoTiffData gtData = new GeoTiffData(keyList, null, null);
+    vlr = getVariableLengthRecordByRecordId(34736);
+    double []doubleData = null;
+    if (vlr != null) {
+       braf.seek(vlr.getFilePosition());
+      int nD = vlr.recordLength/8;
+      doubleData = new double[nD];
+      for(int i=0; i<nD; i++){
+          doubleData[i]= braf.readDouble();
+      }
+    }
+
+    vlr = getVariableLengthRecordByRecordId(34737);
+    char []asciiData = null;
+    if(vlr !=null){
+         braf.seek(vlr.getFilePosition());
+       asciiData = new char[vlr.recordLength];
+       for(int i=0; i<vlr.recordLength; i++){
+           asciiData[i] = (char)braf.readUnsignedByte();
+       }
+    }
+
+    gtData = new GeoTiffData(keyList, doubleData, asciiData);
 
     // see if the data is projected or geographic
     int gtModelType = gtData.getInteger(GeoTiffData.GtModelTypeGeoKey);
@@ -542,9 +564,9 @@ public class LasFileReader {
     }
 
     int unitsCode = -1;
-    if (gtData.isKeyDefined(GeoTiffData.VerticalUnitsGeoKey)) {
+    if (gtData.containsKey(GeoTiffData.VerticalUnitsGeoKey)) {
       unitsCode = gtData.getInteger(GeoTiffData.VerticalUnitsGeoKey);
-    } else if (gtData.isKeyDefined(GeoTiffData.ProjLinearUnitsGeoKey)) {
+    } else if (gtData.containsKey(GeoTiffData.ProjLinearUnitsGeoKey)) {
       unitsCode = gtData.getInteger(GeoTiffData.ProjLinearUnitsGeoKey);
     }
 
@@ -557,8 +579,37 @@ public class LasFileReader {
       // in bathymetric lidar applications
       lasLinearUnits = LinearUnits.FATHOMS;
     }
+
+    //if(gtData.isKeyDefined(GeoTiffData.PCSCitationGeoKey)){
+    //    String s = gtData.getString(GeoTiffData.PCSCitationGeoKey);
+    //    System.out.println(s);
+    //}
+    //
+    //  if(gtData.isKeyDefined(GeoTiffData.GeoCitationGeoKey)){
+    //    String s = gtData.getString(GeoTiffData.GeoCitationGeoKey);
+    //    System.out.println(s);
+    //}
   }
 
+
+  /**
+   * Gets a copy of the GeoTiffData associated with the LAS file, if any.
+   * For those LAS files which use Well-Known Text (WKT) specifications,
+   * the return value from this method will be null.
+   * @return if available, a valid instance; otherwise a null.
+   */
+  public GeoTiffData getGeoTiffData(){
+      return gtData;
+  }
+  
+
+  /**
+   * Get the linear units specified by the LAS file.  This method
+   * assumes that the vertical and horizontal data are in the same
+   * system (unless Geographic coordinates are used). In the future
+   * this assumption may be revised, requiring a change to the API.
+   * @return a valid instance of the enumeration.
+   */
   public LinearUnits getLinearUnits(){
     return lasLinearUnits;
   }
