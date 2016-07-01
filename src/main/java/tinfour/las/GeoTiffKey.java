@@ -38,7 +38,7 @@ public class GeoTiffKey {
   /**
    * The integer key code from the GeoTIFF specification
    */
-  final int key;
+  public final int key;
 
   /**
    * The TIFF tag code indicating if data for this TiffKey comes
@@ -50,19 +50,19 @@ public class GeoTiffKey {
    * 34737, then the data will come from a second of the TIFF
    * byte source that carries ASCII coded String values.
    */
-  final int location;
+  public final int location;
 
   /**
    * The number of elements associated with this key.
    */
-  final int count;
+  public final int count;
 
   /**
    * Alternately, the value associated with the key (if the location
    * is zero) or the offset into the TUFF byte source that carries
    * the relevant binary information for this key.
    */
-  final int valueOrOffset;
+  public final int valueOrOffset;
 
   /**
    * Standard constructor

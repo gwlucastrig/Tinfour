@@ -15,7 +15,7 @@
  * ---------------------------------------------------------------------
  */
 
-/*
+ /*
  * -----------------------------------------------------------------------
  *
  * Revision History:
@@ -28,67 +28,163 @@
  *
  * -----------------------------------------------------------------------
  */
-
 package tinfour.las;
 
+import java.io.IOException;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 
 /**
- * Provides elements and data for accessing GeoTiff data from
- * a GeoTIFF specification
+ * Provides the main data collection for accessing data
+ * from the embedded GeoTIFF tags in a LAS file.
  */
 public class GeoTiffData {
 
-  /**
-   * Key code for the GtModelTypeGeoKey specification
-   */
-  public static final int GtModelTypeGeoKey = 1024;
+    /**
+     * The code tag for a TIFF directory containing floating point parameters
+     * (doubles) for the GeoTIFF specification
+     */
+    public static final int GeoDoubleParamsTag = 34736;
+    /**
+     * The code tag for a TIFF directory containing ASCII string parameters for
+     * the GeoTIFF specification
+     */
+    private static final int GeoAsciiParamsTag = 34737;
 
-  /**
-   * Key code for the ProjLinearUnitsGeoKey specification
-   */
-  public static final int ProjLinearUnitsGeoKey = 3076;
+    /**
+     * Key code for the GtModelTypeGeoKey specification
+     */
+    public static final int GtModelTypeGeoKey = 1024;
 
-  /**
-   * Key code for the VerticalLinearUnitsGeoKey specification
-   */
-  public static final int VerticalUnitsGeoKey = 4099;
+    /**
+     * Key code for the GeoCitationGeoKey specification
+     */
+    public static final int GeoCitationGeoKey = 2049;
 
-  private final List<GeoTiffKey>keyList;
-  private final HashMap<Integer, GeoTiffKey> keyMap;
-  private final  double []fpData;
-  private final  byte []asciiData;
+        /**
+     * Key code for the PCSCitationGeoKey specification
+     */
+    public static final int PCSCitationGeoKey = 3073;
 
-  public GeoTiffData(
-    List<GeoTiffKey>keyList,
-    double []fpData,
-    byte []asciiData){
-    this.keyList = keyList;
-    this.fpData = fpData;
-    this.asciiData = asciiData;
-    this.keyMap = new HashMap<>();
-    for(GeoTiffKey key: keyList){
-      keyMap.put(key.getKeyCode(), key);
+
+    /**
+     * Key code for the ProjLinearUnitsGeoKey specification
+     */
+    public static final int ProjLinearUnitsGeoKey = 3076;
+
+    /**
+     * Key code for the VerticalLinearUnitsGeoKey specification
+     */
+    public static final int VerticalUnitsGeoKey = 4099;
+
+    private final List<GeoTiffKey> keyList;
+    private final HashMap<Integer, GeoTiffKey> keyMap;
+    private final double[] doubleData;
+    private final char[] asciiData;
+
+    public GeoTiffData(
+            List<GeoTiffKey> keyList,
+            double[] fpData,
+            char[] asciiData) {
+        this.keyList = keyList;
+        this.doubleData = fpData;
+        this.asciiData = asciiData;
+        this.keyMap = new HashMap<>();
+        for (GeoTiffKey key : keyList) {
+            keyMap.put(key.getKeyCode(), key);
+        }
     }
-  }
 
-
-  public boolean isKeyDefined(int keyCode){
-    return keyMap.containsKey(keyCode);
-  }
-
-  public int getInteger(int keyCode){
-    GeoTiffKey key = keyMap.get(keyCode);
-    if(key==null){
-      return Integer.MIN_VALUE;
-    }else if(key.location!=0){
-      // key is not an integer.
-      return Integer.MIN_VALUE;
-    }else{
-      return key.valueOrOffset;
+    /**
+     * Indicates whether the GeoTiffData collection contains an entry
+     * for the specified key code. This method does not indicate whether
+     * the specified code is a valid value, only whether it is
+     * available in the data set.
+     * @param keyCode an integer key code
+     * @return true if the collection includes an entry for the code,
+     * otherwise false.
+     */
+    public boolean containsKey(int keyCode) {
+        return keyMap.containsKey(keyCode);
     }
-  }
 
+    /**
+     * Gets the single integer value associated with the GeoTIFF keycode.
+     *
+     * @param keyCode a valid GeoTIFF key
+     * @return a positive integer value in the range 0 to 65535 (the range of an
+     * unsigned short integer)
+     * @throws IOException in the event of a TIFF format exception
+     * or the key code is not found.
+     */
+    public int getInteger(int keyCode) throws IOException {
+        GeoTiffKey key = keyMap.get(keyCode);
+        if (key == null || key.location != 0) {
+            throw new IOException("Invalid TIFF key for integer: " + keyCode);
+        } else {
+            return key.valueOrOffset;
+        }
+    }
 
+    /**
+     * Gets an array of one or more doubles containing the value or values
+     * associated with the specified key code.
+     *
+     * @param keyCode a valid GeoTIFF key
+     * @return a valid array
+     * @throws IOException in the event of a TIFF format exception
+     */
+    public double[] getDouble(int keyCode) throws IOException {
+        GeoTiffKey key = keyMap.get(keyCode);
+        if (key == null || key.location != GeoDoubleParamsTag) {
+            throw new IOException("Invalid TIFF key for double: " + keyCode);
+        }
+        if (doubleData == null || key.count + key.valueOrOffset > doubleData.length) {
+            throw new IOException(
+                    "Format violation: count exceeds available data for " + keyCode);
+        }
+        double[] d = new double[key.count];
+        System.arraycopy(doubleData, key.valueOrOffset, d, 0, key.count);
+        return d;
+
+    }
+
+    /**
+     * Gets the single String value associated with the GeoTIFF keycode.
+     *
+     * @param keyCode a valid GeoTIFF key
+     * @return a positive integer value in the range 0 to 65535 (the range of an
+     * unsigned short integer)
+     * @throws IOException in the event of a TIFF format exception
+     */
+    public String getString(int keyCode) throws IOException {
+        GeoTiffKey key = keyMap.get(keyCode);
+        if (key == null || key.location != GeoAsciiParamsTag) {
+            throw new IOException("Invalid TIFF key for ASCII string: " + keyCode);
+        }
+        if (asciiData == null || key.count + key.valueOrOffset > asciiData.length) {
+            throw new IOException(
+                    "Format violation: count exceeds available data for " + keyCode);
+        }
+        StringBuilder sb = new StringBuilder(key.count);
+        for (int i = 0; i < key.count; i++) {
+            char c = asciiData[i];
+            if (c == 0) {
+                break; // not in the spec, but I've seen it happen
+            }
+            sb.append(c);
+        }
+        return sb.toString();
+    }
+
+    /**
+     * Gets a list of the keys defined by this GeoTiffData collection
+     * @return a safe copy of the key list from this collection.
+     */
+    public List<GeoTiffKey>getKeyList(){
+        List<GeoTiffKey>list = new ArrayList<>(keyList.size());
+        list.addAll(keyList);
+        return list;
+    }
 }
