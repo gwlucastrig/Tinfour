@@ -33,7 +33,8 @@ import java.util.Arrays;
  * Provides a utility for computing the intervals for labeling
  * a coordinate axis in a legend or other graph.
  */
-public class AxisIntervals {
+@SuppressWarnings("PMD.AvoidDeeplyNestedIfStmts")
+public final class AxisIntervals {
 
   private static final double LN10 = Math.log(10.0);
 

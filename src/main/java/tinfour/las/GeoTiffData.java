@@ -83,6 +83,7 @@ public class GeoTiffData {
     private final double[] doubleData;
     private final char[] asciiData;
 
+    @SuppressWarnings("PMD.ArrayIsStoredDirectly")
     public GeoTiffData(
             List<GeoTiffKey> keyList,
             double[] fpData,

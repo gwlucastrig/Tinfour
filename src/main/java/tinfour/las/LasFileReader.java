@@ -29,7 +29,6 @@
  */
 package tinfour.las;
 
-import tinfour.utils.LinearUnits;
 import java.io.File;
 import java.io.IOException;
 import java.text.SimpleDateFormat;
@@ -39,6 +38,7 @@ import java.util.Date;
 import java.util.GregorianCalendar;
 import java.util.List;
 import java.util.Locale;
+import tinfour.utils.LinearUnits;
 
 /**
  * Reads the content of a LAS file. The file is divided into a
@@ -112,8 +112,8 @@ public class LasFileReader {
   private CoordinateReferenceSystemOption crsOption;
   private LasGpsTimeType lasGpsTimeType;
   private LinearUnits lasLinearUnits = LinearUnits.UNKNOWN;
-  private boolean isGeographicModelTypeKnown = false;
-  private boolean usesGeographicModel = false;
+  private boolean isGeographicModelTypeKnown;
+  private boolean usesGeographicModel;
   private GeoTiffData gtData;
 
   private final BufferedRandomAccessForLidar braf;
@@ -124,7 +124,7 @@ public class LasFileReader {
   public LasFileReader(File path) throws IOException {
     braf = new BufferedRandomAccessForLidar(path);
     vlrList = new ArrayList<>();
-    readHeader();
+    readHeader(); //NOPMD
   }
 
   /**
@@ -222,7 +222,7 @@ public class LasFileReader {
     }
 
     if(crsOption==CoordinateReferenceSystemOption.GeoTIFF){
-      loadGeoTiffSpecification();
+      loadGeoTiffSpecification();  //NOPMD
 
     }
   }
@@ -524,7 +524,7 @@ public class LasFileReader {
       int location = braf.readUnsignedShort();
       int count = braf.readUnsignedShort();
       int valueOrOffset = braf.readUnsignedShort();
-      GeoTiffKey key = new GeoTiffKey(keyCode, location, count, valueOrOffset);
+      GeoTiffKey key = new GeoTiffKey(keyCode, location, count, valueOrOffset); //NOPMD
       keyList.add(key);
     }
 
@@ -601,7 +601,7 @@ public class LasFileReader {
   public GeoTiffData getGeoTiffData(){
       return gtData;
   }
-  
+
 
   /**
    * Get the linear units specified by the LAS file.  This method
