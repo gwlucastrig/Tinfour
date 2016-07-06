@@ -230,7 +230,7 @@ public class GpsTimeConverter {
    */
   private static class GpsTimeConverterHolder {
 
-    private static final GpsTimeConverter INSTANCE = new GpsTimeConverter();
+    private static final GpsTimeConverter INSTANCE = new GpsTimeConverter(); //NOPMD
   }
 
   /**

@@ -817,6 +817,7 @@ public class MvComposite {
         break;
       default:
         units = "units";
+        break;
     }
     NeighborEdgeVertex nev = edgeLocator.getEdgeWithNearestVertex(mx, my);
     boolean queryIsOutside = !nev.isInterior();

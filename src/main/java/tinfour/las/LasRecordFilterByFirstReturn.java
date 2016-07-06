@@ -36,12 +36,13 @@ package tinfour.las;
  * are not marked as "withheld".
  */
 public class LasRecordFilterByFirstReturn implements ILasRecordFilter {
+
     /**
-     * Construction a filter that accepts only records with the
+     * Constructs a filter that accepts only records with the
      * return number set to 1.
      */
     public LasRecordFilterByFirstReturn( ){
-
+      // empty constructor
     }
     @Override
     public boolean accept(LasPoint record) {
