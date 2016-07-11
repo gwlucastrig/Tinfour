@@ -357,7 +357,7 @@ public class GeometricOperations {
       q22.setValue(ay).selfSubtract(cy);
       q11.selfMultiply(q12);
       q21.selfMultiply(q22);
-      q11.selfSubtract(q12);
+      q11.selfSubtract(q21);
       return q11.doubleValue();
     }
     return a;

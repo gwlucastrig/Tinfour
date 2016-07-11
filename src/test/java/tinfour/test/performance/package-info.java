@@ -1,9 +1,11 @@
 /**
  * Provides classes intended to support the development and debugging
- * of the IIncrementalTin classes and their supporting utilities. These
- * classes are not intended for unit testing, though can be used as examples
- * that give insights into how to set up a unit test.  Theses tests are
- * organized for the convenience of debugging and troubleshooting efforts.
+ * of the IIncrementalTin classes and their supporting utilities. In general,
+ * these classes perform integration testing rather than unit testing.
+ * They can, however, be used as examples that give insights unto how a
+ * unit test can be set up.  The design and option specifications
+ * for these classes evolved to address problems that typically arose
+ * during debugging and troubleshooting efforts.
  */
 
 package tinfour.test.performance;

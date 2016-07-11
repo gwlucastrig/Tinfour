@@ -37,6 +37,29 @@ import org.apache.commons.math3.distribution.TDistribution;
  * surface using linear regression methods to develop a polynomial
  * z = f(x, y) describing the surface in the region of the interpolation
  * coordinates.
+ * <p>
+ * <Strong>Development Notes</strong><br>
+ * The current implementation of this class supports a family of surface
+ * models based on polynomials p(x, y) of order 3 or less. While this approach
+ * is appropriate for the original intent of this class, modeling terrain,
+ * there is no reason why the class cannot be adapted to support arbitrary models.
+ * Originally, I felt that users interested in other problems might
+ * be better served by R, GWR4, or even the Apache Commons Math
+ * GSLMultipleLinearRegression class. But this implementation has
+ * demonstrated sufficient utility, that it may be worth considering
+ * expanding its capabilities.
+ * <p>
+ * One of the special considerations in terrain modeling is "mass production".
+ * Creating a raster grid from unstructured data can involve literally millions
+ * of interpolation operations. The design of this class reflects
+ * that requirement. In particular, it featured the reuse of Java
+ * objects and arrays to avoid the cost of constructing or allocating
+ * new instances. However, recent improvements in Java’s handling
+ * of short-persistence objects (through escape analysis) have made
+ * some of these considerations less pressing. So future work
+ * may not be coupled to the same approach as the existing implementation.
+ *
+ *
  */
 public class GwrInterpolator {
 
