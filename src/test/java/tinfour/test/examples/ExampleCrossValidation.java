@@ -40,12 +40,12 @@ import tinfour.common.IIncrementalTin;
 import tinfour.common.Vertex;
 import tinfour.gwr.BandwidthSelectionMethod;
 import tinfour.gwr.SurfaceModel;
-import tinfour.test.utils.IDevelopmentTest;
-import tinfour.test.utils.TestOptions;
-import tinfour.test.utils.VertexLoader;
 import tinfour.interpolation.GwrTinInterpolator;
 import tinfour.interpolation.NaturalNeighborInterpolator;
 import tinfour.interpolation.TriangularFacetInterpolator;
+import tinfour.test.utils.IDevelopmentTest;
+import tinfour.test.utils.TestOptions;
+import tinfour.test.utils.VertexLoader;
 import tinfour.utils.TinInstantiationUtility;
 
 /**
@@ -285,6 +285,8 @@ public class ExampleCrossValidation implements IDevelopmentTest {
     // than the input list.  The input list may have contained duplicates or
     // vertices with nearly identical horizontal coordinates.
     // So some of the vertices in the test list below may be merged groups.
+    // Thus the cross validation process is not degraded by samples with
+    // the same or nearly identical horizontal coordinates.
     ps.println("Performing cross validation");
     ps.println("Fixed bandwidth is " + bandwidth);
 

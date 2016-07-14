@@ -90,7 +90,7 @@ public class ModelFromLas extends ModelAdapter implements IModel {
   int nonGroundPoints;
   int groundPoints;
 
-  LinearUnits linearUnits;
+  LinearUnits linearUnits = LinearUnits.UNKNOWN;
 
 
 

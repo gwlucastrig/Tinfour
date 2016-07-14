@@ -78,6 +78,12 @@ class MvTaskReload implements IModelViewTask {
       monitor.postMessage("Reloading " + model.getName());
       monitor.reportProgress(0);
       model.load(monitor);
+      // When a MvComposite is constructed from a model that has already
+      // been loaded, the constructor determines the range of visible samples.
+      // But in the special case where a model is reloaded, the samples
+      // would not be available during MvComposite construction. So
+      // the range must be obtained now.
+      mvComposite.applyRangeOfVisibleSamples(model.getVertexList());
       mvComposite.submitCandidateTinForInterpolation(
         model.getReferenceTin(), model.getReferenceReductionFactor());
 
