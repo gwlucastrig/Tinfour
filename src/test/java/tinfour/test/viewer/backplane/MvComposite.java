@@ -197,6 +197,7 @@ public class MvComposite {
       interpolatingTinReductionFactor = model.getReferenceReductionFactor();
       interpolator = new GwrTinInterpolator(interpolatingTin);
       edgeLocator = interpolatingTin.getNeighborEdgeLocator();
+      applyRangeOfVisibleSamples(model.getVertexList());
     }
 
     updateReport();
@@ -206,6 +207,8 @@ public class MvComposite {
    * Construct a new composite transferring data products from the older
    * composite so that they may be reused without additional processing.
    * These elements may include TINs and grids as well as transformations.
+   * Generally, this method is used when the styling has changed, but the
+   * geometry has not.
    *
    * @param mvComposite the older composite
    * @param view a valid set of view parameters
@@ -336,14 +339,36 @@ public class MvComposite {
     this.rasterTin = rasterTin;
   }
 
+
+
   /**
-   * Apply the specified range of values to the accumulated limits of
-   * the range of values visible in the display
-   *
-   * @param zMin the minimum value
-   * @param zMax the maximum value
+   * Given a vertex list, determine which vertices are within the
+   * visible bounds and establish min and max values accordingly.
+   * If  extrema have already been established, the specified list will be
+   * applied incrementally to the existing bounds.
+   * @param vList a valid list of vertices.
    */
-  void recordRangeOfVisibleSamples(double zMin, double zMax) {
+  final void applyRangeOfVisibleSamples(List<Vertex> vList) {
+    if(vList==null){
+      return;
+    }
+    double zMin = Double.POSITIVE_INFINITY;
+    double zMax = Double.NEGATIVE_INFINITY;
+    for (Vertex v : vList) {
+      double x = v.getX();
+      double y = v.getY();
+      if (vx0 <= x && x <= vx1 && vy0 <= y && y <= vy1) {
+        double z = v.getZ();
+        if (z < zMin) {
+          zMin = z;
+        }
+        if (z > zMax) {
+          zMax = z;
+        }
+      }
+    }
+
+
     synchronized (this) {
       if (zMin < zVisMin) {
         zVisMin = zMin;
@@ -1181,6 +1206,10 @@ public class MvComposite {
     Formatter fmt = new Formatter(sb);
     String units;
     LinearUnits linearUnits = model.getLinearUnits();
+    if(linearUnits==null){
+      // the model is improperly implemented, but we'll survive
+      linearUnits = LinearUnits.UNKNOWN;
+    }
     units =linearUnits.toString();
     units = units.substring(0,1).toUpperCase()+
             units.substring(1, units.length()).toLowerCase();

@@ -126,18 +126,6 @@ class MvTaskBuildTinAndRender implements IModelViewTask {
       if (isCancelled) {
         return;
       }
-      double zVisMin = Double.POSITIVE_INFINITY;
-      double zVisMax = Double.NEGATIVE_INFINITY;
-      for (Vertex v : vList) {
-        double z = v.getZ();
-        if (z < zVisMin) {
-          zVisMin = z;
-        }
-        if (z > zVisMax) {
-          zVisMax = z;
-        }
-      }
-      composite.recordRangeOfVisibleSamples(zVisMin, zVisMax);
 
       int n = vList.size();
       backplaneManager.postStatusMessage(taskIndex,
@@ -211,18 +199,6 @@ class MvTaskBuildTinAndRender implements IModelViewTask {
           taskIndex, "Failed build TIN, insufficient data");
         return;
       }
-      double zVisMin = Double.POSITIVE_INFINITY;
-      double zVisMax = Double.NEGATIVE_INFINITY;
-      for (Vertex v : vList) {
-        double z = v.getZ();
-        if (z < zVisMin) {
-          zVisMin = z;
-        }
-        if (z > zVisMax) {
-          zVisMax = z;
-        }
-      }
-      composite.recordRangeOfVisibleSamples(zVisMin, zVisMax);
     }
     composite.setReductionForRaster(result.reduction);
     composite.setRasterTin(tin);
