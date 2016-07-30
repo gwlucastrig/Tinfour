@@ -131,6 +131,8 @@ public class ExampleCrossValidation implements IDevelopmentTest {
 
     boolean enableAdaptive
       = options.scanBooleanOption(args, "-enableAdaptive", optionsMatched, false);
+    boolean logProgress
+      = options.scanBooleanOption(args, "-showProgress", optionsMatched, false);
 
     // if any non-recognized options were supplied, complain
     options.checkForUnrecognizedArgument(args, optionsMatched);
@@ -267,7 +269,7 @@ public class ExampleCrossValidation implements IDevelopmentTest {
       = BandwidthSelectionMethod.FixedProportionalBandwidth;
 
     BandwidthSelectionMethod bsmAdapt
-      = BandwidthSelectionMethod.AdaptiveBandwidth;
+      = BandwidthSelectionMethod.OptimalAICc;
 
     // Construct some tabulators to keep track of our results
     Tabulator tabNni = new Tabulator();
@@ -301,9 +303,14 @@ public class ExampleCrossValidation implements IDevelopmentTest {
       }
     }
     ps.println("Number of expected tests " + nExpected);
+    int progressModulus = 0;
+    if(logProgress){
+      progressModulus = nExpected/20;
+    }
     int nTest = 0;
     int nOrdinary = 0;
     time0 = System.nanoTime();
+    long timePrior = time0;
     for (Vertex v : vertexList) {
       double x = v.getX();
       double y = v.getY();
@@ -329,6 +336,20 @@ public class ExampleCrossValidation implements IDevelopmentTest {
           tabProB.tabulate(inGwr.getBandwidth() );
 
           if (enableAdaptive) {
+            if(progressModulus>0 && (nTest%progressModulus)==0){
+              double aDone = (double)nTest/(double)nExpected;
+              int percentDone = (int)(aDone*100+0.01);
+              time1 = System.nanoTime();
+              double deltaT = (time1-timePrior)/1000000.0;
+              timePrior = time1;
+              double rate = progressModulus/deltaT;  // test per ms
+              long estTimeRemaining = (long)((nExpected-nTest)/rate);
+              Date estFinish = new Date(System.currentTimeMillis()+estTimeRemaining);
+
+              System.out.format("Completed %3d%%   (%f per sec)    est finish %s\n",
+                percentDone, rate*1000.0, estFinish.toString());
+              System.out.flush();
+            }
             double zAdp
               = inGwr.interpolateUsingAdaptiveModelAndBandwidth(x, y, null);
             double adaptedBandwidth = inGwr.getBandwidth();
@@ -337,8 +358,7 @@ public class ExampleCrossValidation implements IDevelopmentTest {
             } else {
               tabBdw.tabulate(adaptedBandwidth);
             }
-            SurfaceModel adaptedModel
-              = inGwr.getCurrentSurfaceGWR().getModel();
+            SurfaceModel adaptedModel = inGwr.getSurfaceModel();
             int index = adaptedModel.ordinal();
             adpModelCount[index]++;
             tabAdp.tabulate(zAdp - z);

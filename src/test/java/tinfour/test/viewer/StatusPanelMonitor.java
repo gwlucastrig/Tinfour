@@ -35,7 +35,7 @@ import javax.swing.SwingUtilities;
 import tinfour.common.IMonitorWithCancellation;
 
 class StatusPanelMonitor extends JProgressBar implements IMonitorWithCancellation {
-
+  private static final long serialVersionUID = 1L;
   private final StatusPanel statusPanel;
   private final int taskIndex;
   private boolean cancelled;

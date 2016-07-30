@@ -85,7 +85,8 @@ import tinfour.test.viewer.backplane.ViewOptions.LidarPointSelection;
  * when viewing images.
  */
 public class DataViewingPanel extends JPanel {
-
+  private static final long serialVersionUID=1L;
+  
   /**
    * The label for viewing mouse motion data
    */

@@ -39,7 +39,7 @@ import javax.swing.SwingUtilities;
 import tinfour.common.IMonitorWithCancellation;
 
 public class StatusPanel extends JPanel {
-
+  private static final long serialVersionUID=1L;
   JLabel statusLabel;
   StatusPanelMonitor currentMonitor;
   int taskIndex;

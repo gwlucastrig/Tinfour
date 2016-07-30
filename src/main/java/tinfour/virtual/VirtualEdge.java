@@ -81,7 +81,7 @@ public final class VirtualEdge implements IQuadEdge {
   /**
    * Constructs a copy of the current instance.
    *
-   * @return
+   * @return a valid instance.
    */
   VirtualEdge copy() {
     return new VirtualEdge(pool, page, index);
@@ -91,7 +91,7 @@ public final class VirtualEdge implements IQuadEdge {
    * Constructs an unassigned edge tied to the same edge pool
    * as the current instance.
    *
-   * @return
+   * @return a valid instance.
    */
   VirtualEdge getUnassignedEdge() {
     return new VirtualEdge(pool);

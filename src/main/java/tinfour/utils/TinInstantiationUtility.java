@@ -165,8 +165,8 @@ public class TinInstantiationUtility {
 
     Constructor<?> constructor = null;
     try {
-      Constructor[] allConstructors = tinClass.getDeclaredConstructors();
-      for (Constructor c : allConstructors) {
+      Constructor<?>[] allConstructors = tinClass.getDeclaredConstructors();
+      for (Constructor<?> c : allConstructors) {
         Class<?>[] pTypes = c.getParameterTypes();
         if (pTypes.length == 1 && pTypes[0]==Double.TYPE) {
           constructor = c;

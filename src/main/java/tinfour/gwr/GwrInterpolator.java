@@ -54,18 +54,16 @@ import org.apache.commons.math3.distribution.TDistribution;
  * of interpolation operations. The design of this class reflects
  * that requirement. In particular, it featured the reuse of Java
  * objects and arrays to avoid the cost of constructing or allocating
- * new instances. However, recent improvements in Java’s handling
+ * new instances. However, recent improvements in Java's handling
  * of short-persistence objects (through escape analysis) have made
  * some of these considerations less pressing. So future work
  * may not be coupled to the same approach as the existing implementation.
- *
  *
  */
 public class GwrInterpolator {
 
   SurfaceModel surfaceModel;
-  SurfaceGwr regression;
-  final SurfaceGwr[] regressionArray;
+  final SurfaceGwr gwr;
   int minRequiredSamples;
 
   BandwidthSelectionMethod bandwidthMethod;
@@ -168,19 +166,8 @@ public class GwrInterpolator {
    *
    */
   public GwrInterpolator() {
-
     this.bandwidth = 0; // not yet specified
-
-    // IMPORTANT: the array indices must reflect the ordinal of the
-    // SurfaceModel enumeration
-    regressionArray = new SurfaceGwr[6];
-
-    regressionArray[0] = new SurfaceGwr(SurfaceModel.Planar);
-    regressionArray[1] = new SurfaceGwr(SurfaceModel.PlanarWithCrossTerms);
-    regressionArray[2] = new SurfaceGwr(SurfaceModel.Quadratic);
-    regressionArray[3] = new SurfaceGwr(SurfaceModel.QuadraticWithCrossTerms);
-    regressionArray[4] = new SurfaceGwr(SurfaceModel.Cubic);
-    regressionArray[5] = new SurfaceGwr(SurfaceModel.CubicWithCrossTerms);
+    gwr = new SurfaceGwr();
   }
 
   private void checkInputs(int nSamples, double[][] samples) {
@@ -232,63 +219,43 @@ public class GwrInterpolator {
 
     checkInputs(nSamples, samples);
     double[] weights = new double[nSamples];
+    double[][]sampleWeightsMatrix = new double[nSamples][nSamples];
     double[] distsq = new double[nSamples];
     double meanDist = prepDistances(qx, qy, nSamples, samples, distsq);
-
-    double zBest = Double.NaN;
     double bestAICc = Double.POSITIVE_INFINITY;
     double bestBandwidth = Double.POSITIVE_INFINITY;
-    SurfaceGwr bestRegression = null;
-    regression = null;
-    for (SurfaceGwr reg : regressionArray) {
-      regression = reg;
-      SurfaceModel model = reg.getModel();
-      if (!prepWeights(model, BandwidthSelectionMethod.AdaptiveBandwidth,
-        0, qx, qy, nSamples, samples, distsq, weights, meanDist)) {
+    SurfaceModel bestModel = null;
+    for (SurfaceModel model: SurfaceModel.values()) {
+      if (!prepWeights(model, BandwidthSelectionMethod.OptimalAICc,
+        0, qx, qy, nSamples, samples, distsq, weights, sampleWeightsMatrix, meanDist)) {
         continue;
       }
 
-      beta = regression.computeRegression(qx, qy, nSamples, samples, weights);
-      if (beta == null) {
-        continue;
-      }
-      double zTest = beta[0];
-
-      double AICc = reg.getAICc();
+      gwr.initWeightsMatrixUsingGaussianKernel(samples, nSamples, bandwidth, sampleWeightsMatrix);
+      double AICc = gwr.evaluateAICc(
+        model, qx, qy, nSamples, samples, weights, sampleWeightsMatrix);
       if (AICc < bestAICc) {
         bestAICc = AICc;
         bestBandwidth = bandwidth;
-        bestRegression = reg;
-        zBest = zTest;
+        bestModel = model;
       }
     }
-    regression = bestRegression;
-    bandwidth = bestBandwidth;
-    regression = bestRegression;
-    // if the best regression results were not on the final entry
-    // in the regression array, preform the interpolation again to
-    // ensure that all internal state variables are set to the
-    // correct values.
-    if (regression != regressionArray[regressionArray.length - 1]) {
-      computeWeights(nSamples, distsq, weights, bestBandwidth);
-      beta = regression.computeRegression(qx, qy, nSamples, samples, weights);
-      if (beta == null) {
-        return Double.NaN; // not expected
-      }
-      zBest = beta[0];
+    if(bestModel == null ){
+      // none of the evalations produced a valid AICc, probably due to
+      // defective inputs.
+      return Double.NaN;
     }
 
-    //for (int i = 0; i < nSamples; i++) {
-    //  double yEst = regression.getEstimatedValue(samples[i][0], samples[i][1]);
-    //  double yErr = yEst - samples[i][2];
-    //  double dx = samples[i][0] - qx;
-    //  double dy = samples[i][1] - qy;
-    //  double d = Math.sqrt(dx * dx + dy * dy);
-    //  System.out.format(
-    //    "%2d.  %12.4f   %12.4f   (%12.4f)  %12.4f  %12.4f(w) %12.4f(d)\n",
-    //    i, samples[i][2], yEst, yErr, yErr * weights[i], weights[i], d);
-    //}
-    return zBest;
+    bandwidth = bestBandwidth;
+    computeWeights(nSamples, distsq, weights, bestBandwidth);
+    beta =
+      gwr.computeRegression(
+        bestModel, qx, qy, nSamples, samples, weights,null);
+    if (beta == null) {
+      return Double.NaN; // not expected
+    }
+
+    return beta[0];
   }
 
   private void computeWeights(
@@ -311,12 +278,10 @@ public class GwrInterpolator {
     double[][] samples,
     double[] distsq,
     double[] weights,
+    double[][]sampleWeightsMatrix,
     double meanDist) {
 
-    int ordinal = model.ordinal();
-    regression = regressionArray[ordinal];
-
-    minRequiredSamples = regression.getMinimumRequiredSamples();
+    minRequiredSamples = gwr.getMinimumRequiredSamples(model);
     if (minRequiredSamples > nSamples) {
       return false;
     }
@@ -331,9 +296,9 @@ public class GwrInterpolator {
       case FixedProportionalBandwidth:
         bandwidth = meanDist * bandwidthParameter;
         break;
-      case AdaptiveBandwidth:
+      case OptimalAICc:
         bandwidth = prepAdaptiveBandwidthSelection(
-          qx, qy, nSamples, samples, distsq, weights, meanDist);
+          model, qx, qy, nSamples, samples, distsq, weights, sampleWeightsMatrix, meanDist);
         break;
       case OrdinaryLeastSquares:
         bandwidth = Double.POSITIVE_INFINITY;
@@ -388,42 +353,56 @@ public class GwrInterpolator {
   }
 
   private double testBandwidth(
+    SurfaceModel model,
     double qx,
     double qy,
     int nSamples,
     double[][] samples,
     double[] distsq,
     double weights[],
+    double [][]sampleWeightsMatrix,
     double lambda) {
     nAdaptiveBandwidthTests++;
     double lambda2 = lambda * lambda;
     for (int i = 0; i < nSamples; i++) {
       weights[i] = Math.exp(-0.5 * (distsq[i] / lambda2));
     }
-    regression.computeRegression(qx, qy, nSamples, samples, weights);
-    return regression.getAICc();
+
+    gwr.initWeightsMatrixUsingGaussianKernel(
+      samples, nSamples, lambda, sampleWeightsMatrix);
+    return gwr.evaluateAICc(
+      model, qx, qy, nSamples, samples, weights, sampleWeightsMatrix);
+
   }
 
   private double testOrdinaryLeastSquares(
+    SurfaceModel model,
     double qx,
     double qy,
     int nSamples,
     double[][] samples,
-    double weights[]) {
+    double []weights,
+    double [][]sampleWeightsMatrix) {
     Arrays.fill(weights, 0, nSamples, 1.0);
-    regression.computeRegression(qx, qy, nSamples, samples, weights);
+    for(int i=0; i<nSamples; i++){
+      Arrays.fill(sampleWeightsMatrix[i], 0, nSamples, 1.0);
+    }
+    gwr.computeRegression(
+      model, qx, qy, nSamples, samples, weights, sampleWeightsMatrix);
 
-    return regression.getResidualVariance();
+    return gwr.getAICc();
     // return regression.getPredictionIntervalHalfRange(0.05);
   }
 
   private double prepAdaptiveBandwidthSelection(
+    SurfaceModel model,
     double qx,
     double qy,
     int nSamples,
     double[][] samples,
     double[] distsq,
     double[] weights,
+    double [][]sampleWeightsMatrix,
     double meanDist) {
 
     double m0 = meanDist * 0.4;
@@ -438,7 +417,8 @@ public class GwrInterpolator {
     double y[] = new double[nCut];
     for (int i = 0; i < nCut; i++) {
       x[i] = adaptiveTestParameters[i] * deltaM + m0;
-      y[i] = testBandwidth(qx, qy, nSamples, samples, distsq, weights, x[i]);
+      y[i] = testBandwidth(
+        model, qx, qy, nSamples, samples, distsq, weights, sampleWeightsMatrix, x[i]);
     }
 
     double acceptX = deltaM / 1.0e+5;
@@ -458,7 +438,7 @@ public class GwrInterpolator {
       // in the array, further optimization is unlikely to yield
       // improvement.  And, in fact, ordinary least squares may yield a
       // better soluton.
-      double yTest = testOrdinaryLeastSquares(qx, qy, nSamples, samples, weights);
+      double yTest = testOrdinaryLeastSquares(model, qx, qy, nSamples, samples, weights,sampleWeightsMatrix);
       if (yTest < yBest) {
         return Double.POSITIVE_INFINITY;
       }
@@ -499,7 +479,7 @@ public class GwrInterpolator {
             if (xTest < x0) {
               break;  // out of range
             }
-            yTest = testBandwidth(qx, qy, nSamples, samples, distsq, weights, xTest);
+            yTest = testBandwidth(model, qx, qy, nSamples, samples, distsq, weights, sampleWeightsMatrix, xTest);
             if (Double.isNaN(yTest)) {
               // diagnostic, call it again to see what went wrong
               // testBandwidth(qx, qy, nSamples, samples, distsq, w, xTest);
@@ -515,7 +495,7 @@ public class GwrInterpolator {
             if (xTest > x2) {
               break;
             }
-            yTest = testBandwidth(qx, qy, nSamples, samples, distsq, weights, xTest);
+            yTest = testBandwidth(model, qx, qy, nSamples, samples, distsq, weights, sampleWeightsMatrix, xTest);
             if (Double.isNaN(yTest)) {
               // not expected, potentially pathological. skip.
               // testBandwidth(qx, qy, w, xTest);
@@ -577,10 +557,13 @@ public class GwrInterpolator {
     double[] weights = new double[nSamples];
 
     double distMean = prepDistances(qx, qy, nSamples, samples, distsq);
-
+    double [][]sampleWeightsMatrix = null;
+    if(bandwidthMethod==BandwidthSelectionMethod.OptimalAICc){
+      sampleWeightsMatrix = new double[nSamples][nSamples];
+    }
     if (!prepWeights(
       model,   bandwidthMethod,   bandwidthParameter,
-      qx, qy, nSamples, samples, distsq, weights, distMean))
+      qx, qy, nSamples, samples, distsq, weights, sampleWeightsMatrix, distMean))
     {
       return Double.NaN;
     }
@@ -589,41 +572,164 @@ public class GwrInterpolator {
     // prepInputs selected the SurfaceGWR to be used and stuck it in
     // the member element regression.  It also populated the weights to
     // be used in the regression calculation.
-    beta = regression.computeRegression(qx, qy, nSamples, samples, weights);
+    beta = gwr.computeRegression(
+       model, qx, qy, nSamples, samples, weights, sampleWeightsMatrix);
     if (beta == null) {
       return Double.NaN;
     }
     return beta[0];
   }
 
+
+  private void prepSampleWeightsMatrix(){
+    if(!gwr.isSampleWeightsMatrixSet()){
+        int nSamples = gwr.getSampleCount();
+        if(nSamples == 0){
+          return;
+        }
+        double [][]samples = gwr.getSamples();
+        double [][]sampleWeightMatrix = new double[nSamples][nSamples];
+        gwr.initWeightsMatrixUsingGaussianKernel(samples, nSamples, bandwidth, sampleWeightMatrix);
+        gwr.setSampleWeightsMatrix(sampleWeightMatrix);
+    }
+  }
+
   /**
-   * Gets the instance of the Geographically Weighted Regression (GWR)
-   * class that was used in the most recent interpolation. The member elements
-   * of the SurfaceGWR instance returned by this call will contain
-   * statistical data and regression coefficients from the most
-   * recent interpolation and is the preferred way to access such information.
-   * <p>
-   * For efficiency, this class class creates a single
-   * instance of SurfaceGWR for each surface model and reuses them
-   * across multiple interpolations. Thus, the state data stored in this
-   * the SurfaceGWR's member elements may change if additional
-   * interpolations are performed. And since some interpolation options
-   * may select different surface models between interpolations, there
-   * is no guarantee that the SurfaceGWR used for one interpolation (which
-   * might require a planar surface) would be used for the next
-   * (which might include a quadratic surface). So an application that requires
-   * access to the data stored in a SurfaceGWR should call this method anew
-   * after each interpolation action, extract the necessary data, and
-   * not attempt to preserve the current reference to SurfaceGWR across
-   * multiple calls to the interpolation methods.
-   * <p>
-   * This method is intended for diagnostic and analysis purposes.
+   * Get the Akaike information criterion (corrected) organized so that the
+   * <strong>minimum</strong> value is preferred.
    *
-   * @return the instance that was used in the most recent interpolation
-   * or a null if no interpolation has been performed.
+   * @return a valid floating point number.
    */
-  public SurfaceGwr getCurrentSurfaceGWR() {
-    return regression;
+  public double getAICc() {
+     prepSampleWeightsMatrix();
+    return gwr.getAICc();
+  }
+
+  /**
+   * Gets the coefficients computed by the most recent regression
+   * calculation, or a zero-length array if no results are available.
+   * @return if available, a valid array; otherwise a zero-length array.
+   */
+  public double[] getCoefficients(){
+    if(beta==null){
+      return new double[0];
+    }else{
+    return Arrays.copyOf(beta, beta.length);
+    }
+  }
+
+    /**
+   * Get the effective degrees of freedom for the a chi-squared distribution
+   * which approximates the distribution of the GWR. Combined with the
+   * residual variance, this yields an unbiased estimator that can be
+   * used in the construction of confidence intervals and prediction
+   * intervals.
+   * <p>
+   * The definition of this method is based on Leung (2000).
+   *
+   * @return a positive, potentially non-integral value.
+   */
+  public double getEffectiveDegreesOfFreedom() {
+    prepSampleWeightsMatrix();
+    return gwr.getEffectiveDegreesOfFreedom();
+  }
+
+    /**
+   * Get leung's delta parameter
+   *
+   * @return a positive value
+   */
+  public double getLeungDelta1() {
+    prepSampleWeightsMatrix();
+    return gwr.getLeungDelta1();
+  }
+
+  /**
+   * Get Leung's delta2 parameter.
+   *
+   * @return a positive value
+   */
+  public double getLeungDelta2() {
+    prepSampleWeightsMatrix();
+     return gwr.getLeungDelta2();
+  }
+
+ /**
+   * Gets the prediction interval at the interpolation coordinates
+   * on the observed response for the most recent call to computeRegression.
+   * According to Walpole (1995), the prediction interval
+   * "provides a bound within which we can say with a preselected
+   * degree of certainty that a new observed response will fall."
+   * For example, we do not know the true values of the surface at the
+   * interpolation points, but suppose observed values were to become
+   * available. Given a significance level (alpha) of 0.05, 95 percent
+   * of the observed values would occur within the prediction interval.
+   *
+   * @param alpha the significance level (typically 0&#46;.05, etc).
+   * @return an array of dimension two giving the lower and upper bound
+   * of the prediction interval.
+   */
+  public double[] getPredictionInterval(double alpha) {
+    prepSampleWeightsMatrix();
+    double h = getPredictionIntervalHalfRange(alpha);
+    double a[] = new double[2];
+    a[0] = beta[0] - h;
+    a[1] = beta[0] + h;
+    return a;
+  }
+
+  /**
+   * Gets a value equal to one half of the range of the prediction interval
+   * on the observed response at the interpolation coordinates for the
+   * most recent call to computeRegression().
+   *
+   * @param alpha the significance level (typically 0&#46;.05, etc).
+   * @return a positive value.
+   */
+  public double getPredictionIntervalHalfRange(double alpha) {
+    // TO DO: if the method is OLS, it would make sense to
+    //        use a OLS version of this calculation rather than
+    //        the more costly Leung version...  Also, I am not 100 %
+    //        sure that they converge to the same answer, though they should
+    prepSampleWeightsMatrix();
+    return gwr.getPredictionIntervalHalfRange(alpha);
+  }
+
+
+    /**
+   * Gets the residuals from the most recent regression calculation.
+   * For this application, the residual the difference between the predicted
+   * result and the input sample.
+   *
+   * @return if computed, a valid array of double; otherwise, an empty array.
+   */
+  public double[] getResiduals() {
+    prepSampleWeightsMatrix();
+   return gwr.getResiduals();
+  }
+
+    /**
+   * Gets the residual sum of the squared errors (residuals) for
+   * the predicted versus the observed values at the sample locations.
+   *
+   * @return a positive number.
+   */
+  public double getResidualSumOfTheSquares() {
+    prepSampleWeightsMatrix();
+    return gwr.getResidualSumOfTheSquares();
+  }
+
+  /**
+   * Gets the samples from the most recent computation.
+   * The array returned from this method is an n-by-3 array that
+   * may contain more than nSamples entries. Therefore it is important
+   * to call the getSampleCount() method to know how many samples
+   * are actually valid.
+   *
+   * @return if available, a valid array of samples ; otherwise an empty array
+   */
+  public double[][] getSamples() {
+    return gwr.getSamples();
   }
 
   /**
@@ -646,6 +752,28 @@ public class GwrInterpolator {
     return Math.sqrt(fx * fx + fy * fy);
   }
 
+    /**
+   * Gets an unbiased estimate of the the standard deviation
+   * of the residuals for the predicted values for all samples.
+   *
+   * @return if available, a positive real value; otherwise NaN.
+   */
+  public double getStandardDeviation() {
+    prepSampleWeightsMatrix();
+      return gwr.getStandardDeviation();
+  }
+
+  /**
+   * Gets the surface model for the most recently performed
+   * interpolation. In the case where an optimization routine was
+   * used to perform the interpolation, this value will be the model
+   * selected by the optimization.
+   * @return  if available a valid instance; if no interpolation
+   * has been performed, a null.
+   */
+  public SurfaceModel getSurfaceModel(){
+    return gwr.getModel();
+  }
   /**
    * Gets the unit normal to the surface at the position of the most
    * recent interpolation. The unit normal is computed based on the
@@ -673,6 +801,28 @@ public class GwrInterpolator {
       return n;
     }
   }
+
+
+  /**
+   * Gets an unbiased estimate of the variance of the residuals
+   * for the predicted values for all samples.
+   *
+   * @return if available, a positive real value; otherwise NaN.
+   */
+  public double getVariance() {
+    prepSampleWeightsMatrix();
+   return gwr.getVariance();
+  }
+
+ /**
+   * Gets an array of weights from the most recent computation.
+   *
+   * @return if available, a valid array of weights; otherwise, an empty array.
+   */
+  public double[] getWeights() {
+   return gwr.getWeights();
+  }
+
 
   /**
    * Perform a variation of a statistical bootstrap analysis in which the
@@ -707,9 +857,14 @@ public class GwrInterpolator {
     double[] weights = new double[nSamples];
     double meanDist = prepDistances(qx, qy, nSamples, samples, distsq);
 
+        double [][]sampleWeightsMatrix = null;
+    if(bandwidthMethod==BandwidthSelectionMethod.OptimalAICc){
+      sampleWeightsMatrix = new double[nSamples][nSamples];
+    }
     if (!prepWeights(
       model, bandwidthMethod, bandwidthParameter,
-      qx, qy, nSamples, samples, distsq, weights, meanDist)) {
+      qx, qy, nSamples, samples, distsq, weights,sampleWeightsMatrix, meanDist))
+    {
       return null;
     }
 
@@ -735,7 +890,8 @@ public class GwrInterpolator {
       if (k < minRequiredSamples) {
         continue;
       }
-      beta = regression.computeRegression(qx, qy, k, jInputs, jWeights);
+      beta = gwr.computeRegression(
+          model, qx, qy, k, jInputs, jWeights, null);
       if (beta == null || Double.isNaN(beta[0])) {
         continue;
       }

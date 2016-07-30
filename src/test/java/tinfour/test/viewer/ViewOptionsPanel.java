@@ -49,7 +49,7 @@ import tinfour.test.viewer.backplane.ViewOptions.LidarPointSelection;
  */
  @SuppressWarnings("PMD")  // due to non-compliant, automatically generated code
  class ViewOptionsPanel extends javax.swing.JPanel {
-
+  private  static final long serialVersionUID=1L;
   private DataViewingPanel dvPanel;
   private ViewOptions view;
   private List<String> paletteNames;
@@ -741,7 +741,7 @@ import tinfour.test.viewer.backplane.ViewOptions.LidarPointSelection;
   }//GEN-LAST:event_lidarFirstReturnButtonActionPerformed
 
   class PaletteRenderer extends JLabel implements ListCellRenderer {
-
+    private  static final long serialVersionUID=1L;
     String[] names;
     Icon[] icons;
 

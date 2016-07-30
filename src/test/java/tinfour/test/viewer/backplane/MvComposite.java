@@ -53,7 +53,6 @@ import tinfour.common.IQuadEdge;
 import tinfour.common.NeighborEdgeVertex;
 import tinfour.common.Vertex;
 import tinfour.gwr.BandwidthSelectionMethod;
-import tinfour.gwr.SurfaceGwr;
 import tinfour.gwr.SurfaceModel;
 import tinfour.interpolation.GwrTinInterpolator;
 import tinfour.interpolation.NaturalNeighborInterpolator;
@@ -855,9 +854,8 @@ public class MvComposite {
     StringBuilder sb = new StringBuilder(512);
     Formatter fmt = new Formatter(sb);
     fmt.format("<html><strong>Query/Regression Results</strong><br><pre><small>");
-    double z = interpolator.interpolate(
-      SurfaceModel.QuadraticWithCrossTerms,
-      BandwidthSelectionMethod.AdaptiveBandwidth, 1.0,
+    double z = interpolator.interpolate(SurfaceModel.QuadraticWithCrossTerms,
+      BandwidthSelectionMethod.OptimalAICc, 1.0,
       mx, my, null);
     fmt.format("X:     %s\n", model.getFormattedX(mx));
     fmt.format("Y:     %s\n", model.getFormattedY(my));
@@ -866,8 +864,7 @@ public class MvComposite {
     } else if (Double.isNaN(z)) {
       fmt.format("Z:     Not available\n");
     } else {
-      SurfaceGwr surface = interpolator.getCurrentSurfaceGWR();
-      double beta[] = surface.getCoefficients();
+      double beta[] = interpolator.getCoefficients();
       double descA = Math.toDegrees(Math.atan2(-beta[2], -beta[1]));
       double descB = 90 - descA;
       if (descB < 0) {
@@ -879,7 +876,7 @@ public class MvComposite {
       double kP = Double.NaN;
       double kS = Double.NaN;
 
-      switch (surface.getModel()) {
+      switch (interpolator.getSurfaceModel()) {
         case QuadraticWithCrossTerms:
         case CubicWithCrossTerms:
           double zXX = 2 * beta[3];
@@ -896,7 +893,7 @@ public class MvComposite {
           break;
       }
 
-      double h = surface.getPredictionIntervalHalfRange(0.05);
+      double h = interpolator.getPredictionIntervalHalfRange(0.05);
       fmt.format("Z:     %11.2f &plusmn; %4.2f %s\n", z, h, units);
       fmt.format("Slope: %11.2f %%\n", slope * 100);
       fmt.format("Curvature\n");
@@ -1011,8 +1008,7 @@ public class MvComposite {
               zGrid[index] = Float.NaN;
             } else {
               zGrid[index] = (float) z;
-              SurfaceGwr surface = gwr.getCurrentSurfaceGWR();
-              double[] beta = surface.getCoefficients();
+              double[] beta = gwr.getCoefficients();
               zGrid[index + 1] = (float) beta[1]; // derivative Zx
               zGrid[index + 2] = (float) beta[2]; // derivative Zy
             }

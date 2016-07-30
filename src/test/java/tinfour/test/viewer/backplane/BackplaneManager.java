@@ -213,7 +213,7 @@ public class BackplaneManager {
         // presented as large as it possibly can, fitting it into
         // the available space in the composite image.
         double cAspect = (double) width / (double) height; // aspect of composite
-        double mAspect = (double) (mx1 - mx0) / (my1 - my0); // aspect of model
+        double mAspect = (mx1 - mx0) / (my1 - my0); // aspect of model
         double aspect = cAspect / mAspect;
 
         double xOffset = 0;

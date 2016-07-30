@@ -23,6 +23,13 @@
  * 08/2014   G. Lucas  Created as TerrainGWR
  * 12/2015   G. Lucas  Renamed to SurfaceGWR to reflect the potential
  *                       for other applications in addition to terrain.
+ * 07/2016   G. Lucas  Extensive changes to fix incorrect implementation
+ *                     descriptive statistics. Removed the specification of
+ *                     a surface model from the constructor (it was originally
+ *                     intended to support allocation of re-usable data elements
+ *                     based on number of parameters for the model, but that
+ *                     approach was abandoned and the constructor changed
+ *                     accordingly).
  *
  * Notes:
  *   In the implementation of this class, I have tried to defer the
@@ -101,12 +108,16 @@ import org.apache.commons.math3.linear.SingularMatrixException;
  * p. 9-32.
  * <p>
  * Information related to the AICc criteria as applied to a GWR was found
+ * in "Geographically Weighted Regression" by David C Wheeler and Antonio Paez,
+ * a white paper I found on the web. It appears to be a chapter from
+ * "Handbook of Applied Spatial Analysis: Software Tool, Methods, and
+ * Applications", Springer Verlag, Berlin (2010). I also found information
  * in Charlton, M. and Fotheringham, A. (2009) "Geographically Weighted
- * Regression -- White Paper",  National Center for Geocomputation,
- * National University of Ireland Maynooth, a white paper downloaded from the web.
- * A number of other papers by Brunsdon, Fotheringham and Charlton (BRC) which
- * provide slightly different perspectives on the same material
- * can be found  on the web.
+ * Regression -- White Paper", National Center for Geocomputation,
+ * National University of Ireland Maynooth, a white paper downloaded from the
+ * web. A number of other papers by Brunsdon, Fotheringham and Charlton (BRC)
+ * which provide slightly different perspectives on the same material
+ * can be found on the web.
  * <p>
  * <strong>A Note on Safe Coding:</strong> This class maintains references to
  * its most recent inputs as member elements. For efficiency purposes,
@@ -126,7 +137,8 @@ import org.apache.commons.math3.linear.SingularMatrixException;
  * The current implementation of this class supports a family of surface
  * models based on polynomials p(x, y) of order 3 or less. While this approach
  * is appropriate for the original intent of this class, modeling terrain,
- * there is no reason why the class cannot be adapted to support arbitrary models.
+ * there is no reason why the class cannot be adapted to support arbitrary
+ * models.
  * Originally, I felt that users interested in other problems might
  * be better served by R, GWR4, or even the Apache Commons Math
  * GSLMultipleLinearRegression class. But this implementation has
@@ -138,14 +150,14 @@ import org.apache.commons.math3.linear.SingularMatrixException;
  * of interpolation operations. The design of this class reflects
  * that requirement. In particular, it featured the reuse of Java
  * objects and arrays to avoid the cost of constructing or allocating
- * new instances. However, recent improvements in Java’s handling
+ * new instances. However, recent improvements in Java's handling
  * of short-persistence objects (through escape analysis) have made
  * some of these considerations less pressing. So future work
  * may not be coupled to the same approach as the existing implementation.
  *
- *
  */
 public class SurfaceGwr {
+
   private static final double log2PI = Math.log(2 * Math.PI);
 
   private double xOffset;
@@ -154,57 +166,36 @@ public class SurfaceGwr {
   int nSamples;
   double[][] samples;
   double[] weights;
-  double[]residuals;
+  double [][]sampleWeightsMatrix;
+  double[] residuals;
   int nVariables; // number of independent or "explanatory" variables
   int nDegOfFreedom;
   double[] beta;
 
   boolean areVarianceAndHatPrepped;
-  boolean areDeltasComputed;
-  DecompositionSolver solver;
-  RealMatrix solution;
+
+
   double sigma2;  // Residual standard variance (sigma squared)
   double rss; // resisdual sum squares
 
   double effectiveDegOfF;
-  RealMatrix mX;
-  RealMatrix vcMatrix;  // variance-covariance matrix
   RealMatrix hat;
   double traceHat;
+  double traceHat2;
   double delta1;
   double delta2;
 
-  private final SurfaceModel model;
-
-
-  /**
-   * Construct an interpolator with default Quadratic model
-   */
-  public SurfaceGwr() {
-    model = SurfaceModel.QuadraticWithCrossTerms;
-  }
+  private  SurfaceModel model;
 
   /**
-   * Construct an instance using the specified surface model.
-   *
-   * @param model a valid surface model.
+   * Standard constructor.
    */
-  public SurfaceGwr(SurfaceModel model) {
-    if (model == null) {
-      throw new NullPointerException("Null model not allowed");
-    }
-    this.model = model;
+  public SurfaceGwr(){
+    beta = new double[0];
+    nSamples = 0;
+    sigma2 = Double.NaN;
   }
 
-  /**
-   * Get the minimum number of samples required to perform a
-   * regression for the associated surface model
-   *
-   * @return a positive integer
-   */
-  final public int getMinimumRequiredSamples() {
-    return model.getCoefficientCount() + 1;
-  }
 
   /**
    * Computes the elevation for a point at the specified query
@@ -217,31 +208,44 @@ public class SurfaceGwr {
    * <strong>Note:</strong> For efficiency purposes, the arrays for
    * samples and weights passed to this method are stored in the class
    * directly.
+   * <p>The sample weights matrix is a two dimensional array giving
+   * weights based on the distance between samples. It is used when performing
+   * calculations for descriptive statistics such as standard deviation,
+   * confidence intervals, etc.  Because of the high cost of initializing this
+   * array, it can be treated as optional in cases where only the regression
+   * coefficients are required.
+   * <p>
+   * A convenience routine for populating the sample weights matrix is
+   * supplied by the initWeightsUsingGaussianKernal method.
    *
+   * @param model the model to be used for the regression
    * @param xQuery x coordinate of the query position
    * @param yQuery y coordinate of the query position
    * @param nSamples the number of sample points to be used for regression
    * @param samples an array of dimension [n][3] giving at least nSamples
    * points with the x, y, and z values for the regression.
    * @param weights an array of weighting factors for samples
+   * @param sampleWeightsMatrix an optional array of weights based on the
+   * distances between different samples; if descriptive statistics are
+   * not required, pass a null value for this argument.
    * @return an array of regression coefficients, or null if the
    * computation failed.
    */
   @SuppressWarnings({"PMD.ArrayIsStoredDirectly", "PMD.MethodReturnsInternalArray"})
   public double[] computeRegression(
+    SurfaceModel model,
     double xQuery,
     double yQuery,
     int nSamples,
     double[][] samples,
-    double[] weights) {
+    double[] weights,
+    double [][]sampleWeightsMatrix) {
     // clear out previous solutions
     areVarianceAndHatPrepped = false;
-    areDeltasComputed = false;
-    solution = null;
+    this.model = model;
     this.sigma2 = Double.NaN;
     this.rss = Double.NaN;
     this.beta = null;
-    this.vcMatrix = null;
     this.hat = null;
 
     if (nSamples < model.getCoefficientCount()) {
@@ -253,6 +257,7 @@ public class SurfaceGwr {
     this.nSamples = nSamples;
     this.samples = samples;
     this.weights = weights;
+    this.sampleWeightsMatrix = sampleWeightsMatrix;
     this.xOffset = xQuery;
     this.yOffset = yQuery;
 
@@ -606,7 +611,6 @@ public class SurfaceGwr {
         double y2 = y * y;
         double xy = x * y;
 
-
         input[0][0] += w;
         input[0][1] += w * x;
         input[0][2] += w * y;
@@ -614,10 +618,10 @@ public class SurfaceGwr {
 
         input[1][1] += w * x2;    // x*x
         input[1][2] += w * xy;    // y*x
-        input[1][3] += w * xy*x;  // xy*x
+        input[1][3] += w * xy * x;  // xy*x
 
         input[2][2] += w * y2;    // y*y
-        input[2][3] += w * xy*y;  // xy*y
+        input[2][3] += w * xy * y;  // xy*y
 
         input[3][3] += w * xy * xy;  //xy*xy
 
@@ -743,441 +747,647 @@ public class SurfaceGwr {
     // uses the QRDecomposition, and we follow their lead.
     // When I first implemented this, I thought that the input matrix would be
     // a real symmetric and positive-definite matrix. If that were the case,
-    // it could be solved using a Cholesky decomposition.
-    // However, the weighting factors remove the positive-definite property
-    // and even when evaluating ordinary least squares, I ran into numeric
+    // it could be solved using a Cholesky decomposition.  But, even
+    // when evaluating ordinary least squares, I ran into numeric
     // issues that led to the matrix violating the positive-definite criterion.
     try {
       QRDecomposition cd = new QRDecomposition(matrixA);
-      solver = cd.getSolver();
-      solution = solver.solve(matrixG);
+      DecompositionSolver solver = cd.getSolver();
+      RealMatrix solution = solver.solve(matrixG);
       beta = new double[nVariables + 1];
       for (int i = 0; i < beta.length; i++) {
         beta[i] = solution.getEntry(i, 0);
       }
     } catch (SingularMatrixException npex) {
-      solution = null;
-      solver = null;
       return null;
     }
 
     return beta;
   }
 
-  void computeDeltas() {
-    if (this.areDeltasComputed) {
-      return;
+  public RealMatrix computeXWX(
+    double xQuery,
+    double yQuery,
+    int nSamples,
+    double[][] samples,
+    double[] weights) {
+
+    if (nSamples < model.getCoefficientCount()) {
+      throw new IllegalArgumentException(
+        "Insufficient number of samples for regression: found "
+        + nSamples + ", need " + model.getCoefficientCount());
     }
-    computeVarianceAndHat();
-    int nHat = hat.getRowDimension();
-    double[][] itemp = new double[nHat][nHat];
-    for (int i = 0; i < itemp.length; i++) {
-      itemp[i][i] = 1.0;
+
+    double[][] input;
+
+    // In the following expressions, the layout of the regression
+    // variables is organized to simplify the computation of quantities
+    // such as slope and curvature.  Recall that the samples are always
+    // mapped so that the query position (xQUery, yQuery) is treated
+    // as the origin. Therefore, then the derivatives are evaluated at
+    // the query position (adjusted origin), many terms drop out and
+    // the following relationships apply
+    //     Z   = b[0]
+    //     Zx  = b[1]     //   partial of z(x,y) with respect to x, etc.
+    //     Zy  = b[2]
+    //     Zxx = 2*b[3]   //   2nd partial of z(x,y) with respect to x, etc.
+    //     Zyy = 2*b[4]
+    //     Zxy = b[5]
+    if (model == SurfaceModel.CubicWithCrossTerms) {
+      input = new double[10][10];
+      for (int i = 0; i < nSamples; i++) {
+        double x = samples[i][0] - xQuery;
+        double y = samples[i][1] - yQuery;
+        double w = weights[i];
+        double x2 = x * x;
+        double y2 = y * y;
+        double x3 = x * x2;
+        double y3 = y * y2;
+        double x4 = x2 * x2;
+        double y4 = y2 * y2;
+        double xy = x * y;
+
+        input[0][0] += w;
+
+        input[0][1] += w * x;
+        input[0][2] += w * y;
+        input[0][3] += w * x2;
+        input[0][4] += w * y2;
+        input[0][5] += w * xy;
+        input[0][6] += w * x2 * y;
+        input[0][7] += w * x * y2;
+        input[0][8] += w * x3;
+        input[0][9] += w * y3;
+
+        input[1][1] += w * x2;
+        input[1][2] += w * xy;
+        input[1][3] += w * x3;
+        input[1][4] += w * x * y2;
+        input[1][5] += w * x2 * y;
+        input[1][6] += w * x * x2 * y;
+        input[1][7] += w * x * x * y2;
+        input[1][8] += w * x * x3;
+        input[1][9] += w * x * y3;
+
+        input[2][2] += w * y2;
+        input[2][3] += w * x2 * y;
+        input[2][4] += w * y3;
+        input[2][5] += w * x * y2;
+        input[2][6] += w * y * x2 * y;
+        input[2][7] += w * y * x * y2;
+        input[2][8] += w * y * x3;
+        input[2][9] += w * y * y3;
+
+        input[3][3] += w * x4;
+        input[3][4] += w * x2 * y2;
+        input[3][5] += w * x3 * y;
+        input[3][6] += w * x2 * x2 * y;
+        input[3][7] += w * x2 * x * y2;
+        input[3][8] += w * x2 * x3;
+        input[3][9] += w * x2 * y3;
+
+        input[4][4] += w * y4;
+        input[4][5] += w * x * y3;
+        input[4][6] += w * y2 * x2 * y;
+        input[4][7] += w * y2 * x * y2;
+        input[4][8] += w * y2 * x3;
+        input[4][9] += w * y2 * y3;
+
+        input[5][5] += w * x2 * y2;
+        input[5][6] += w * xy * x2 * y;
+        input[5][7] += w * xy * x * y2;
+        input[5][8] += w * xy * x3;
+        input[5][9] += w * xy * y3;
+
+        input[6][6] += w * x2 * y * x2 * y;
+        input[6][7] += w * x2 * y * x * y2;
+        input[6][8] += w * x2 * y * x3;
+        input[6][9] += w * x2 * y * y3;
+
+        input[7][7] += w * y2 * x * x * y2;
+        input[7][8] += w * y2 * x * x3;
+        input[7][9] += w * y2 * x * y3;
+
+        input[8][8] += w * x3 * x3;
+        input[8][9] += w * x3 * y3;
+
+        input[9][9] += w * y3 * y3;
+
+      }
+
+      // the input for a least-squares fit is a real-symmetric
+      // matrix.  So here the code assigns the symmetric terms.
+      input[1][0] = input[0][1];
+
+      input[2][0] = input[0][2];
+      input[2][1] = input[1][2];
+
+      input[3][0] = input[0][3];
+      input[3][1] = input[1][3];
+      input[3][2] = input[2][3];
+
+      input[4][0] = input[0][4];
+      input[4][1] = input[1][4];
+      input[4][2] = input[2][4];
+      input[4][3] = input[3][4];
+
+      input[5][0] = input[0][5];
+      input[5][1] = input[1][5];
+      input[5][2] = input[2][5];
+      input[5][3] = input[3][5];
+      input[5][4] = input[4][5];
+
+      input[6][0] = input[0][6];
+      input[6][1] = input[1][6];
+      input[6][2] = input[2][6];
+      input[6][3] = input[3][6];
+      input[6][4] = input[4][6];
+      input[6][5] = input[5][6];
+
+      input[7][0] = input[0][7];
+      input[7][1] = input[1][7];
+      input[7][2] = input[2][7];
+      input[7][3] = input[3][7];
+      input[7][4] = input[4][7];
+      input[7][5] = input[5][7];
+      input[7][6] = input[6][7];
+
+      input[8][0] = input[0][8];
+      input[8][1] = input[1][8];
+      input[8][2] = input[2][8];
+      input[8][3] = input[3][8];
+      input[8][4] = input[4][8];
+      input[8][5] = input[5][8];
+      input[8][6] = input[6][8];
+      input[8][7] = input[7][8];
+
+      input[9][0] = input[0][9];
+      input[9][1] = input[1][9];
+      input[9][2] = input[2][9];
+      input[9][3] = input[3][9];
+      input[9][4] = input[4][9];
+      input[9][5] = input[5][9];
+      input[9][6] = input[6][9];
+      input[9][7] = input[7][9];
+      input[9][8] = input[8][9];
+
+    } else if (model == SurfaceModel.QuadraticWithCrossTerms) {
+      //  z(x, y) = b0 + b1*x + b2*y +b3*x^2 +b4*y^2+b5*x*y
+      input = new double[6][6];
+      for (int i = 0; i < nSamples; i++) {
+        double x = samples[i][0] - xQuery;
+        double y = samples[i][1] - yQuery;
+        double w = weights[i];
+        double x2 = x * x;
+        double y2 = y * y;
+        double x3 = x * x2;
+        double y3 = y * y2;
+        double x4 = x2 * x2;
+        double y4 = y2 * y2;
+        double xy = x * y;
+
+        input[0][0] += w;
+
+        input[0][1] += w * x;
+        input[0][2] += w * y;
+        input[0][3] += w * x2;
+        input[0][4] += w * y2;
+        input[0][5] += w * xy;
+
+        input[1][1] += w * x2;
+        input[1][2] += w * xy;
+        input[1][3] += w * x * x2;
+        input[1][4] += w * x * y2;
+        input[1][5] += w * x * xy;
+
+        input[2][2] += w * y2;
+        input[2][3] += w * x2 * y;
+        input[2][4] += w * y3;
+        input[2][5] += w * x * y2;
+
+        input[3][3] += w * x4;
+        input[3][4] += w * x2 * y2;
+        input[3][5] += w * x3 * y;
+
+        input[4][4] += w * y4;
+        input[4][5] += w * x * y3;
+
+        input[5][5] += w * x2 * y2;
+
+      }
+
+      // the input for a least-squares fit is a real-symmetric matrix.
+      // So here the code assigns the symmetric terms.
+      input[1][0] = input[0][1];
+
+      input[2][0] = input[0][2];
+      input[2][1] = input[1][2];
+
+      input[3][0] = input[0][3];
+      input[3][1] = input[1][3];
+      input[3][2] = input[2][3];
+
+      input[4][0] = input[0][4];
+      input[4][1] = input[1][4];
+      input[4][2] = input[2][4];
+      input[4][3] = input[3][4];
+
+      input[5][0] = input[0][5];
+      input[5][1] = input[1][5];
+      input[5][2] = input[2][5];
+      input[5][3] = input[3][5];
+      input[5][4] = input[4][5];
+    } else if (model == SurfaceModel.Quadratic) {
+      //  z(x, y) = b0 + b1*x + b2*y +b3*x^2 +b4*y^2+b5*x*y
+      input = new double[5][5];
+      for (int i = 0; i < nSamples; i++) {
+        double x = samples[i][0] - xQuery;
+        double y = samples[i][1] - yQuery;
+        double w = weights[i];
+        double x2 = x * x;
+        double y2 = y * y;
+        double x3 = x * x2;
+        double y3 = y * y2;
+        double x4 = x2 * x2;
+        double y4 = y2 * y2;
+        double xy = x * y;
+
+        input[0][0] += w;
+
+        input[0][1] += w * x;
+        input[0][2] += w * y;
+        input[0][3] += w * x2;
+        input[0][4] += w * y2;
+
+        input[1][1] += w * x2;
+        input[1][2] += w * xy;
+        input[1][3] += w * x3;
+        input[1][4] += w * x * y2;
+
+        input[2][2] += w * y2;
+        input[2][3] += w * x2 * y;
+        input[2][4] += w * y3;
+
+        input[3][3] += w * x4;
+        input[3][4] += w * x2 * y2;
+
+        input[4][4] += w * y4;
+      }
+
+      // the input for a least-squares fit is a real-symmetric matrix.
+      // So here the code assigns the symmetric terms.
+      input[1][0] = input[0][1];
+
+      input[2][0] = input[0][2];
+      input[2][1] = input[1][2];
+
+      input[3][0] = input[0][3];
+      input[3][1] = input[1][3];
+      input[3][2] = input[2][3];
+
+      input[4][0] = input[0][4];
+      input[4][1] = input[1][4];
+      input[4][2] = input[2][4];
+      input[4][3] = input[3][4];
+
+    } else if (model == SurfaceModel.Planar) {
+      //  z(x, y) = b0 + b1*x + b2*y;
+      input = new double[3][3];
+      for (int i = 0; i < nSamples; i++) {
+        double x = samples[i][0] - xQuery;
+        double y = samples[i][1] - yQuery;
+        double w = weights[i];
+        double x2 = x * x;
+        double y2 = y * y;
+
+        input[0][0] += w;
+        input[0][1] += w * x;
+        input[0][2] += w * y;
+
+        input[1][1] += w * x2;
+        input[1][2] += w * x * y;
+
+        input[2][2] += w * y2;
+      }
+
+      // the input for a least-squares fit is a real-symmetric matrix.
+      // So here the code assigns the symmetric terms.
+      input[1][0] = input[0][1];
+      input[2][0] = input[0][2];
+      input[2][1] = input[1][2];
+    } else if (model == SurfaceModel.PlanarWithCrossTerms) {
+      //  z(x, y) = b0 + b1*x + b2*y + b3*x*y;
+      input = new double[4][4];
+      for (int i = 0; i < nSamples; i++) {
+        double x = samples[i][0] - xQuery;
+        double y = samples[i][1] - yQuery;
+        double w = weights[i];
+        double x2 = x * x;
+        double y2 = y * y;
+        double xy = x * y;
+
+        input[0][0] += w;
+        input[0][1] += w * x;
+        input[0][2] += w * y;
+        input[0][3] += w * xy;
+
+        input[1][1] += w * x2;    // x*x
+        input[1][2] += w * xy;    // y*x
+        input[1][3] += w * xy * x;  // xy*x
+
+        input[2][2] += w * y2;    // y*y
+        input[2][3] += w * xy * y;  // xy*y
+
+        input[3][3] += w * xy * xy;  //xy*xy
+      }
+
+      // the input for a least-squares fit is a real-symmetric matrix.
+      // So here the code assigns the symmetric terms.
+      input[1][0] = input[0][1];
+
+      input[2][0] = input[0][2];
+      input[2][1] = input[1][2];
+
+      input[3][0] = input[0][3];
+      input[3][1] = input[1][3];
+      input[3][2] = input[2][3];
+    } else { // if(model==SurfaceModel.Cubic){
+      input = new double[7][7];
+      for (int i = 0; i < nSamples; i++) {
+        double x = samples[i][0] - xQuery;
+        double y = samples[i][1] - yQuery;
+        double w = weights[i];
+        double x2 = x * x;
+        double y2 = y * y;
+        double xy = x * y;
+        double x3 = x * x2;
+        double y3 = y * y2;
+        double x4 = x2 * x2;
+        double y4 = y2 * y2;
+
+        input[0][0] += w;
+
+        input[0][1] += w * x;
+        input[0][2] += w * y;
+        input[0][3] += w * x2;
+        input[0][4] += w * y2;
+        input[0][5] += w * x3;
+        input[0][6] += w * y3;
+
+        input[1][1] += w * x2;
+        input[1][2] += w * xy;
+        input[1][3] += w * x3;
+        input[1][4] += w * y2 * x;
+        input[1][5] += w * x4;
+        input[1][6] += w * y3 * x;
+
+        input[2][2] += w * y2;
+        input[2][3] += w * x2 * y;
+        input[2][4] += w * y3;
+        input[2][5] += w * x3 * y;
+        input[2][6] += w * y4;
+
+        input[3][3] += w * x4;
+        input[3][4] += w * y2 * x2;
+        input[3][5] += w * x3 * x2;  // x5
+        input[3][6] += w * y3 * x2;
+
+        input[4][4] += w * y4;
+        input[4][5] += w * x3 * y2;
+        input[4][6] += w * y3 * y2;  // y5
+
+        input[5][5] += w * x3 * x3;  // x6
+        input[5][6] += w * y3 * x3;
+
+        input[6][6] += w * y3 * y3; // y6
+      }
+
+      // the input for a least-squares fit is a real-symmetric matrix.
+      // So here the code assigns the symmetric terms.
+      input[1][0] = input[0][1];
+
+      input[2][0] = input[0][2];
+      input[2][1] = input[1][2];
+
+      input[3][0] = input[0][3];
+      input[3][1] = input[1][3];
+      input[3][2] = input[2][3];
+
+      input[4][0] = input[0][4];
+      input[4][1] = input[1][4];
+      input[4][2] = input[2][4];
+      input[4][3] = input[3][4];
+
+      input[5][0] = input[0][5];
+      input[5][1] = input[1][5];
+      input[5][2] = input[2][5];
+      input[5][3] = input[3][5];
+      input[5][4] = input[4][5];
+
+      input[6][0] = input[0][6];
+      input[6][1] = input[1][6];
+      input[6][2] = input[2][6];
+      input[6][3] = input[3][6];
+      input[6][4] = input[4][6];
+      input[6][5] = input[5][6];
     }
-    RealMatrix mI = new BlockRealMatrix(itemp);
-    RealMatrix mIL = mI.subtract(hat);
-    RealMatrix mILT = mIL.transpose().multiply(mIL);
-    delta1 = mILT.getTrace();
-    delta2 = (mILT.multiply(mILT)).getTrace();
+
+    return new BlockRealMatrix(input);
+
   }
 
-  void computeVarianceAndHat() {
-    if (this.areVarianceAndHatPrepped) {
-      return;
+  /**
+   * Computes the "design matrix" for the input set of samples and
+   * coordinate offset.  The design matrix is a n by (k+1) matrix
+   * where n is the number of samples and k is the number of explanatory
+   * variables. The first column of each row in the matrix is populated
+   * with the value 1. Subsequent columns are populated with explanatory
+   * variables which are computed based on the selection of surface model.
+   * @param x0 a coordinate offset for adjusting the sample coordinates
+   * @param y0 a coordinate offset for adjusting the sample coordinates
+   * @param n the number of samples
+   * @param s an array dimensioned to at least n-by-k
+   * @return a two dimensional array giving values for the design matrix.
+   */
+  double[][] computeDesignMatrix(
+    SurfaceModel sm,
+    double x0, double y0,
+    int n, double [][]s)
+  {
+    double[][] matrix;
+    if (sm == SurfaceModel.CubicWithCrossTerms) {
+      matrix = new double[n][10];
+      for (int i = 0; i < n; i++) {
+        double x = s[i][0] - x0;
+        double y = s[i][1] - y0;
+        double x2 = x * x;
+        double y2 = y * y;
+        double x3 = x * x2;
+        double y3 = y * y2;
+        double xy = x * y;
+
+        matrix[i][0] = 1;
+        matrix[i][1] = x;
+        matrix[i][2] = y;
+        matrix[i][3] = x2;
+        matrix[i][4] = y2;
+        matrix[i][5] = xy;
+        matrix[i][6] = x2 * y;
+        matrix[i][7] = x * y2;
+        matrix[i][8] = x3;
+        matrix[i][9] = y3;
+      }
+    } else if (sm == SurfaceModel.QuadraticWithCrossTerms) {
+      //  z(x, y) = b0 + b1*x + b2*y +b3*x^2 +b4*y^2+b5*x*y
+      matrix = new double[n][6];
+      for (int i = 0; i < n; i++) {
+        double x = s[i][0] - x0;
+        double y = s[i][1] - y0;
+        double x2 = x * x;
+        double y2 = y * y;
+        double xy = x * y;
+        matrix[i][0] = 1;
+        matrix[i][1] = x;
+        matrix[i][2] = y;
+        matrix[i][3] = x2;
+        matrix[i][4] = y2;
+        matrix[i][5] = xy;
+      }
+    } else if (sm == SurfaceModel.Quadratic) {
+      //  z(x, y) = b0 + b1*x + b2*y +b3*x^2 +b4*y^2+b5*x*y
+      matrix = new double[n][5];
+      for (int i = 0; i < n; i++) {
+        double x = s[i][0] - x0;
+        double y = s[i][1] - y0;
+        double x2 = x * x;
+        double y2 = y * y;
+        matrix[i][0] = 1;
+        matrix[i][1] = x;
+        matrix[i][2] = y;
+        matrix[i][3] = x2;
+        matrix[i][4] = y2;
+      }
+    } else if (sm == SurfaceModel.Planar) {
+      //  z(x, y) = b0 + b1*x + b2*y;
+      matrix = new double[n][3];
+      for (int i = 0; i < n; i++) {
+        double x = s[i][0] - x0;
+        double y = s[i][1] - y0;
+        matrix[i][0] = 1;
+        matrix[i][1] = x;
+        matrix[i][2] = y;
+      }
+    } else if (sm == SurfaceModel.PlanarWithCrossTerms) {
+      //  z(x, y) = b0 + b1*x + b2*y + b3*x*y;
+      matrix = new double[n][4];
+      for (int i = 0; i < n; i++) {
+        double x = s[i][0] - x0;
+        double y = s[i][1] - y0;
+        double xy = x * y;
+        matrix[i][0] = 1;
+        matrix[i][1] = x;
+        matrix[i][2] = y;
+        matrix[i][3] = xy;
+      }
+    } else { // if(sm==SurfaceModel.Cubic){
+      matrix = new double[n][7];
+      for (int i = 0; i < n; i++) {
+        double x = s[i][0] - x0;
+        double y = s[i][1] - y0;
+        double x2 = x * x;
+        double y2 = y * y;
+        double x3 = x * x2;
+        double y3 = y * y2;
+        matrix[i][0] = 1;
+        matrix[i][1] = x;
+        matrix[i][2] = y;
+        matrix[i][3] = x2;
+        matrix[i][4] = y2;
+        matrix[i][5] = x3;
+        matrix[i][6] = y3;
+      }
     }
-    if (beta == null) {
-      // the regression failed
+    return matrix;
+  }
+
+
+
+  public void computeVarianceAndHat() {
+
+    if (areVarianceAndHatPrepped) {
       return;
     }
     areVarianceAndHatPrepped = true;
 
-    // when the weights are added to the summations, the algebraic
-    // simplifications from the classic formulations no longer apply.
-    // so some of the short cuts we'd like to use are unavailable to us.
-
-    residuals = new double[nSamples];
-
-    double rX[][];
-    double rW[] = weights;
-    if (rW.length != nSamples) {
-      rW = new double[nSamples];
-      System.arraycopy(weights, 0, rW, 0, nSamples);
+    if(sampleWeightsMatrix == null){
+      throw new NullPointerException("Null specification for sampleWeightsMatrix");
+    } else if(sampleWeightsMatrix.length!=nSamples){
+      throw new IllegalArgumentException("Incorrectly specified sampleWeightsMatrix");
     }
-    DiagonalMatrix mW = new DiagonalMatrix(rW);
+    double[][] bigS = new double[nSamples][nSamples];
+    double[][] bigW = sampleWeightsMatrix;
 
-    double sse = 0; // sum squared errors
-    // compute SSE, the Sum of the Squared Errors
-    if (model == SurfaceModel.CubicWithCrossTerms) {
-      rX = new double[nSamples][10];
-      for (int i = 0; i < nSamples; i++) {
-        double x = samples[i][0] - xOffset;
-        double y = samples[i][1] - yOffset;
-        double z = samples[i][2];
-        rX[i][0] = 1.0;
-        rX[i][1] = x;
-        rX[i][2] = y;
-        rX[i][3] = x * x;
-        rX[i][4] = y * y;
-        rX[i][5] = x * y;
-        rX[i][6] = x * x * y;
-        rX[i][7] = x * y * y;
-        rX[i][8] = x * x * x;
-        rX[i][9] = y * y * y;
-        double ssrS = (((beta[8] * x + beta[3]) * x + beta[1]) * x
-          + ((beta[9] * y + beta[4]) * y + beta[2]) * y
-          + ((beta[7] * y + beta[6] * x) + beta[5]) * x * y)
-          + (beta[0] - z);
+    double[][] input = computeDesignMatrix(model, xOffset, yOffset, nSamples, samples);
+    RealMatrix mX = new Array2DRowRealMatrix(input, false);
+    RealMatrix mXT = mX.transpose();
 
-        sse += ssrS * ssrS;
-        residuals[i] = ssrS;
-      }
-    } else if (model == SurfaceModel.QuadraticWithCrossTerms) {
-      //  z(x, y) = b0 + b1*x + b2*y + b3*x^2 +b4*y^2 + b5*x*y.
-      rX = new double[nSamples][6];
-      for (int i = 0; i < nSamples; i++) {
-        double x = samples[i][0] - xOffset;
-        double y = samples[i][1] - yOffset;
-        double z = samples[i][2];
-        rX[i][0] = 1.0;
-        rX[i][1] = x;
-        rX[i][2] = y;
-        rX[i][3] = x * x;
-        rX[i][4] = y * y;
-        rX[i][5] = x * y;
-
-        double ssrS
-          = (beta[3] * x + beta[1]) * x
-          + (beta[4] * y + beta[2]) * y
-          + beta[5] * x * y
-          + (beta[0] - z);
-
-        sse += ssrS * ssrS;
-        residuals[i] = ssrS;
-      }
-    } else if (model == SurfaceModel.Quadratic) {
-      //  z(x, y) = b0 + b1*x + b2*y + b3*x^2 +b4*y^2
-      rX = new double[nSamples][5];
-      for (int i = 0; i < nSamples; i++) {
-        double x = samples[i][0] - xOffset;
-        double y = samples[i][1] - yOffset;
-        double z = samples[i][2];
-        rX[i][0] = 1.0;
-        rX[i][1] = x;
-        rX[i][2] = y;
-        rX[i][3] = x * x;
-        rX[i][4] = y * y;
-
-        double ssrS
-          = (beta[3] * x + beta[1]) * x
-          + (beta[4] * y + beta[2]) * y
-          + (beta[0] - z);
-
-        sse += ssrS * ssrS;
-        residuals[i] = ssrS;
-      }
-    } else if (model == SurfaceModel.Planar) {
-      //  z(x, y) = b0 + b1*x + b2*y
-      rX = new double[nSamples][3];
-      for (int i = 0; i < nSamples; i++) {
-        double x = samples[i][0] - xOffset;
-        double y = samples[i][1] - yOffset;
-        double z = samples[i][2];
-        rX[i][0] = 1.0;
-        rX[i][1] = x;
-        rX[i][2] = y;
-
-        double ssrS
-          = (beta[1] * x + beta[2] * y)
-          + (beta[0] - z);
-
-        sse += ssrS * ssrS;
-        residuals[i] = ssrS;
-      }
-    } else if (model == SurfaceModel.PlanarWithCrossTerms) {
-      //  z(x, y) = b0 + b1*x + b2*y + b3*xy
-      rX = new double[nSamples][4];
-      for (int i = 0; i < nSamples; i++) {
-        double x = samples[i][0] - xOffset;
-        double y = samples[i][1] - yOffset;
-        double z = samples[i][2];
-        double xy = x * y;
-        rX[i][0] = 1.0;
-        rX[i][1] = x;
-        rX[i][2] = y;
-        rX[i][3] = xy;
-
-        double ssrS
-          = (beta[1] * x + beta[2] * y + beta[3] * xy)
-          + (beta[0] - z);
-
-        sse += ssrS * ssrS;
-        residuals[i] = ssrS;
-      }
-    } else { // model == SurfaceModel.CubicNoCrossTerms
-      rX = new double[nSamples][7];
-      for (int i = 0; i < nSamples; i++) {
-        double x = samples[i][0] - xOffset;
-        double y = samples[i][1] - yOffset;
-        double z = samples[i][2];
-        rX[i][0] = 1.0;
-        rX[i][1] = x;
-        rX[i][2] = y;
-        rX[i][3] = x * x;
-        rX[i][4] = y * y;
-        rX[i][5] = x * x * x;
-        rX[i][6] = y * y * y;
-        double ssrS = (((beta[5] * x + beta[3]) * x + beta[1]) * x
-          + ((beta[6] * y + beta[4]) * y + beta[2]) * y)
-          + (beta[0] - z);
-
-        sse += ssrS * ssrS;
-        residuals[i] = ssrS;
+    // in the loop below, we compute
+    //   Tr(hat)  and  Tr(Hat' x Hat)
+    //   this second term is actually the square of the
+    //   Frobenius Norm. Internally, the Apache Commons classes
+    //   may provide a more numerically stable implementation of this operation.
+    //   This may be worth future investigation.
+    double sTrace = 0;
+    double sTrace2 = 0;
+    for (int i = 0; i < nSamples; i++) {
+      DiagonalMatrix mW = new DiagonalMatrix(bigW[i]); //NOPMD
+      RealMatrix mXTW = mXT.multiply(mW);
+      RealMatrix rx = mX.getRowMatrix(i);
+      RealMatrix c = mXTW.multiply(mX);
+      QRDecomposition cd = new QRDecomposition(c); // NOPMD
+      DecompositionSolver cdSolver = cd.getSolver();
+      RealMatrix cInv = cdSolver.getInverse();
+      RealMatrix r = rx.multiply(cInv).multiply(mXTW);
+      double[] row = r.getRow(0);
+      sTrace += row[i];
+      System.arraycopy(row, 0, bigS[i], 0, nSamples);
+      for (int j = 0; j < nSamples; j++) {
+        sTrace2 += row[j] * row[j];
       }
     }
 
-    if (sse <= 0) {
-      // this would occur when all the weighted zHat values very closely
-      // match the weighted sample z values (either because of a very
-      // good match with the model or very small weight values where
-      // they don't match) so that the difference between
-      // sst and ssr is so close to zero that numeric issues
-      // result in a negative value.
-      sigma2 = 0;
-      rss = 0;
-      return;
+    hat = new BlockRealMatrix(bigS);
+    traceHat = sTrace;
+    traceHat2 = sTrace2;
+
+    double[][] zArray = new double[nSamples][1];
+    for (int i = 0; i < nSamples; i++) {
+      zArray[i][0] = samples[i][2];
     }
+    RealMatrix mY = new BlockRealMatrix(zArray);
+    RealMatrix mYH = hat.multiply(mY);
+    double sse = 0;
+    for (int i = 0; i < nSamples; i++) {
+      double yHat = mYH.getEntry(i, 0);
+      double e = zArray[i][0] - yHat;
+      sse += e * e;
+    }
+    rss = sse;
 
+    double d1 = nSamples - (2 * traceHat - sTrace2);
+    sigma2 = rss / d1;
 
-    // The traditional variance calculation for an ordinary least squares
-    // fit,  sigma2 = sumSquaredErrors/(nSamples-degreesOfFreedom)
-    // does not apply in the weighted regression
-    // because it would not account for the fact that the regression
-    // coefficients were derived by assigning different levels of
-    // significance (weights) to the samples.  So in the calculation
-    // below, we need to use alternate methods.
-    //
-    // Brunsdon, Fotheringham and Charlton (BRC) use the calculation
-    //       sse/(nSamples - (2*tr(S) - tr(S'S)))
-    // where S is the hat matrix and S' is its transpose.  They
-    // state that tr(S'S) should be close to tr(S) and that one could
-    // use just plain
-    //     tr(S) approximates 2*tr(s) - tr(S'S)
-    // to save some computation.  In testing I frequently observed cases
-    // where tr(S'S) was nothing like tr(S). In fact, tr(S'S) was sometimes
-    // GREATER than 2*tr(S) which means that the last subtraction above
-    // would actually INCREASE the denominator.
-    //    I've done a lot of testing and do not understand what's going
-    // on.  My best guess is that the GWR is not an unbasiased estimator
-    // and that the BRC shorter form works only when the regression
-    // is approximately unbiased. BRC actually mentions, but does not
-    // apply, a bias-related term. But depending on the bandwidth selection,
-    // the ommitted terms become significant.
-    //   Finally, there isn't a pressing reason to remove the tr(S'S)
-    // calculation from the processing since time trials suggest that by
-    // the time we've invested in computing the hat matrix, the extra
-    // processing for tr(S'S) doesn't add significantly to the runtime.
-
-
-      vcMatrix = solver.getInverse();
-
-      mX = new BlockRealMatrix(rX);
-      //mX = new Array2DRowRealMatrix(rX, false);
-      RealMatrix mX1 = mX.transpose();
-      RealMatrix mTemp = mX.multiply(vcMatrix);
-      RealMatrix mTemp2 = mTemp.multiply(mX1);
-      hat = mTemp2.multiply(mW);
-      traceHat = hat.getTrace();
-
-      // let S be the hat matrix computed above with S' being transpose(S)
-      // the following computes trace(S'S)
-      // The block of code was used to verify above calculation for tr(S'S)
-      //     RealMatrix mS1 = hat.transpose();
-      //      double tmSS1 = (mS1.multiply(hat)).getTrace();
-      double sq2 = 0;
-      for (int i = 0; i < hat.getRowDimension(); i++) {
-        double row[] = hat.getRow(i);
-        double rs = 0;
-        for (int j = 0; j < row.length; j++) {
-          rs += (row[j] * row[j]);
-        }
-        sq2 += rs;
-      }
-
-      rss = sse;
-      sigma2 = sse / (nSamples - (2*traceHat - sq2));
-      // the denominator of the sigma2 calculation is identical to
-      // the value of delta1 computed elsewhere.
+    RealMatrix mIL = hat.copy();
+    for(int i=0; i<nSamples; i++){
+      double c = 1.0 - mIL.getEntry(i, i);
+      mIL.setEntry(i, i, c);
+    }
+    RealMatrix mILT = mIL.transpose().multiply(mIL);
+    delta1 = mILT.getTrace();
+    delta2 = (mILT.multiply(mILT)).getTrace();
 
   }
 
-  // This mess was meant to test the stats computations using matrix methods
-  // that could more directly be correlated with published documents.
-  // The calculations will be less efficient than the customized computeRegression
-  // but provide an independent verification...
-  //public  void testComputeStatistics() {
-  //
-  //    if (this.areStatsComputed) {
-  //        return;
-  //    }
-  //    if (beta == null) {
-  //        // the regression failed
-  //        return;
-  //    }
-  //    areStatsComputed = true;
-  //    // when the weights are added to the summations, the algebraic
-  //    // simplifications from the classic formulations no longer apply.
-  //
-  //    sst = 0;  // total sum of the squares
-  //    ssr = 0;  // regression sum of the squares
-  //    double rX[][];
-  //    double rW[] = weights;
-  //    if (rW.length != nSamples) {
-  //        rW = new double[nSamples];
-  //        System.arraycopy(weights, 0, rW, 0, nSamples);
-  //    }
-  //    DiagonalMatrix mW = new DiagonalMatrix(rW);
-  //    double rZ[][] = new double[nSamples][1];
-  //    for (int i = 0; i < nSamples; i++) {
-  //        rZ[i][0] = samples[i][2];
-  //    }
-  //    double rEst[] = new double[nSamples];
-  //    RealMatrix mZ = new Array2DRowRealMatrix(rZ, false);
-  //
-  //    // compute SSE, the Sum of the Squared Errors (weighted)
-  //    if (model == SurfaceModel.Cubic) {
-  //        rX = new double[nSamples][11];
-  //        for (int i = 0; i < nSamples; i++) {
-  //            double x = samples[i][0] - xOffset;
-  //            double y = samples[i][1] - yOffset;
-  //            double z = samples[i][2];
-  //            rX[i][0] = 1.0;
-  //            rX[i][1] = x;
-  //            rX[i][2] = y;
-  //            rX[i][3] = x * x;
-  //            rX[i][4] = y * y;
-  //            rX[i][5] = x * y;
-  //            rX[i][6] = x * x * y;
-  //            rX[i][7] = x * y * y;
-  //            rX[i][8] = x * x * x;
-  //            rX[i][9] = y * y * y;
-  //            double ssrS = (((beta[8] * x + beta[3]) * x + beta[1]) * x
-  //                + ((beta[9] * y + beta[4]) * y + beta[2]) * y
-  //                + ((beta[7] * y + beta[6] * x) + beta[5]) * x * y)
-  //                + (beta[0] - z);
-  //
-  //            sse += weights[i] * ssrS * ssrS;
-  //        }
-  //    } else {
-  //        //  z(x, y) = b0 + b1*x + b2*y + b3*x^2 +b4*y^2 + b5*x*y.
-  //        rX = new double[nSamples][6];
-  //        for (int i = 0; i < nSamples; i++) {
-  //            double x = samples[i][0] - xOffset;
-  //            double y = samples[i][1] - yOffset;
-  //            double z = samples[i][2];
-  //            rX[i][0] = 1.0;
-  //            rX[i][1] = x;
-  //            rX[i][2] = y;
-  //            rX[i][3] = x * x;
-  //            rX[i][4] = y * y;
-  //            rX[i][5] = x * y;
-  //
-  //            double ssrS = ((beta[3] * x + beta[1]) * x
-  //                + (beta[4] * y + beta[2]) * y
-  //                + beta[5] * x * y)
-  //                + (beta[0] - z);
-  //
-  //            rEst[i] = ssrS + z;
-  //            sse += ssrS * ssrS;
-  //
-  //        }
-  //    }
-  //
-  //    if (sse <= 0) {
-  //        sse = 0;
-  //        s2 = 0;
-  //        r2 = 1.0;
-  //
-  //        // this would occur when all the weighted zHat values very closely
-  //        // match the weighted sample z values (either because of a very
-  //        // good match with the model or very small weight values where
-  //        // they don't match) so that the difference between
-  //        // sst and ssr is so close to zero that numeric issues
-  //        // result in a negative value.
-  //    } else {
-  //
-  //        vcMatrix = solver.getInverse();
-  //
-  //        RealMatrix mX = new Array2DRowRealMatrix(rX, false);
-  //        RealMatrix mX1 = mX.transpose();
-  //
-  //        RealMatrix mXWX1 = mX1.multiply(mW).multiply(mX);
-  //        QRDecomposition cd = new QRDecomposition(mXWX1);
-  //        DecompositionSolver cdSolver = cd.getSolver();
-  //        RealMatrix mXWXInv = cdSolver.getInverse();
-  //        RealMatrix mS = mX.multiply(mXWXInv);
-  //        mS = mS.multiply(mX1);
-  //        mS = mS.multiply(mW);
-  //        double tmS = mS.getTrace();
-  //        RealMatrix mS1 = mS.transpose();
-  //        double tmSS1 = (mS1.multiply(mS)).getTrace();
-  //
-  //        double a0 = mXWXInv.transpose().getTrace();
-  //        double a1 = vcMatrix.transpose().getTrace();
-  //
-  //        RealMatrix mTemp = mX.multiply(vcMatrix);
-  //        RealMatrix mTemp2 = mTemp.multiply(mX1);
-  //        hat = mTemp2.multiply(mW);
-  //        double sq = hat.getTrace();
-  //
-  //        int nHat = hat.getRowDimension();
-  //        double[][] itemp = new double[nHat][nHat];
-  //        for (int i = 0; i < itemp.length; i++) {
-  //            itemp[i][i] = 1.0;
-  //        }
-  //        RealMatrix mI = new BlockRealMatrix(itemp);
-  //        RealMatrix mIL = mI.subtract(hat);
-  //        RealMatrix mILT = mIL.transpose().multiply(mIL);
-  //        double delta1 = mILT.getTrace();
-  //        double delta2 = (mILT.multiply(mILT)).getTrace();
-  //        double nLeungDOF = (delta1 * delta1 / delta2);
-  //
-  //        RealMatrix mXWX = mX1.multiply(mW).multiply(mX);
-  //
-  //        QRDecomposition cdx = new QRDecomposition(mXWX);
-  //        DecompositionSolver xsolver = cdx.getSolver();
-  //        RealMatrix mXMXInv = xsolver.getInverse();
-  //        RealMatrix mLeung = mXMXInv.multiply(mX1).multiply(mW).multiply(mW).multiply(mX).multiply(mXMXInv);
-  //        double xLeung = mLeung.getEntry(0, 0);
-  //
-  ////        RealMatrix zEst = hat.multiply(mZ);
-  ////        RealMatrix zEst2 = hat.multiply(zEst);
-  ////        for(int i=0; i<nSamples; i++){
-  ////            System.out.format("%9.5f %9.5f  %9.5f\n", zEst.getEntry(i,0), rEst[i], zEst2.getEntry(i,0));
-  ////        }
-  ////       System.out.flush();
-  //        RealMatrix hat1 = hat.transpose();
-  //        double sqm2 = (hat.multiply(hat1)).getTrace();
-  //        double sq2 = 0;
-  //        for (int i = 0; i < hat.getRowDimension(); i++) {
-  //            double row[] = hat.getRow(i);
-  //            double rs = 0;
-  //            for (int j = 0; j < row.length; j++) {
-  //                rs += (row[j] * row[j]);
-  //            }
-  //            sq2 += rs;
-  //        }
-  //
-  //        effectiveDegOfF = nSamples - (2 * sq - sq2);
-  //
-  //        s2 = sse / effectiveDegOfF;
-  //
-  //        TDistribution tdist = new TDistribution(nLeungDOF);
-  //        double ta = tdist.inverseCumulativeProbability(0.975);
-  //        double pLeung = Math.sqrt(s2) * Math.sqrt(1 + xLeung) * ta;
-  //        System.out.println("Leung pred interval " + pLeung);
-  //
-  //    }
-  //}
   /**
    * Print a summary of the parameters and correlation results for
    * the most recent interpolation.
@@ -1190,13 +1400,18 @@ public class SurfaceGwr {
       ps.format("Regression statistics not available\n");
       return;
     }
+//    ps.format("Regression coefficients & variance\n");
+//    for (int i = 0; i < beta.length; i++) {
+//      System.out.format("beta[%2d] %12.6f  %f\n",
+//        i, beta[i], Math.sqrt(vcMatrix.getEntry(i, i) * sigma2));
+//    }
     ps.format("Regression coefficients & variance\n");
     for (int i = 0; i < beta.length; i++) {
-      System.out.format("beta[%2d] %12.6f  %f\n",
-        i, beta[i], Math.sqrt(vcMatrix.getEntry(i, i) * sigma2));
+      System.out.format("beta[%2d] %12.6f\n",
+        i, beta[i]);
     }
-    ps.format("Residual standard error %f on %d degrees of freedom\n",
-      getResidualStandardDeviation(), this.nDegOfFreedom);
+    ps.format("Residual standard deviation %f on %d degrees of freedom\n",
+      getStandardDeviation(), this.nDegOfFreedom);
     ps.format("Correlation coefficient (r^2): %f\n", getR2());
     ps.format("Adusted r^2:                   %f\n", getAdjustedR2());
     ps.format("F statistic:  %f\n", getF());
@@ -1205,7 +1420,7 @@ public class SurfaceGwr {
 
   /**
    * Gets the computed polynomial coefficients from the regression
-   * (the "beta" parameters that).  These coefficients can be used
+   * (the "beta" parameters that). These coefficients can be used
    * for interpolation or surface modeling purposes. Developers
    * are reminded that the interpolation is based on treating the
    * query point as the origin, so x and y coordinates should be adjusted
@@ -1230,8 +1445,8 @@ public class SurfaceGwr {
   public double getR2() {
     throw new UnsupportedOperationException(
       "R2 statistics not yet implemented");
-    //computeStatistics();
-    //return r2;
+//    computeVarianceAndHat();
+//    return r2;
   }
 
   /**
@@ -1267,17 +1482,18 @@ public class SurfaceGwr {
    *
    * @return if available, a positive real value; otherwise NaN.
    */
-  public double getResidualVariance() {
+  public double getVariance() {
     computeVarianceAndHat();
     return sigma2;
   }
 
   /**
-   * Gets the square root of the residual variance.
+   * Gets an unbiased estimate of the the standard deviation
+   * of the residuals for the predicted values for all samples.
    *
-   * @return if available, a positive value; otherwise a NaN
+   * @return if available, a positive real value; otherwise NaN.
    */
-  public double getResidualStandardDeviation() {
+  public double getStandardDeviation() {
     computeVarianceAndHat();
     return Math.sqrt(sigma2);
   }
@@ -1299,7 +1515,7 @@ public class SurfaceGwr {
    * @return a positive value
    */
   public double getLeungDelta1() {
-    computeDeltas();
+    computeVarianceAndHat();
     return delta1;
   }
 
@@ -1309,7 +1525,7 @@ public class SurfaceGwr {
    * @return a positive value
    */
   public double getLeungDelta2() {
-    computeDeltas();
+    computeVarianceAndHat();
     return delta2;
   }
 
@@ -1319,12 +1535,13 @@ public class SurfaceGwr {
    * residual variance, this yields an unbiased estimator that can be
    * used in the construction of confidence intervals and prediction
    * intervals.
-   * <p>The definition of this method is based on Leung (2000).
+   * <p>
+   * The definition of this method is based on Leung (2000).
    *
    * @return a positive, potentially non-integral value.
    */
   public double getEffectiveDegreesOfFreedom() {
-    computeDeltas();
+    computeVarianceAndHat();
     return delta1 * delta1 / delta2;
   }
 
@@ -1341,19 +1558,35 @@ public class SurfaceGwr {
     //        use a OLS version of this calculation rather than
     //        the more costly Leung version...  Also, I am not 100 %
     //        sure that they converge to the same answer, though they should
-    computeDeltas(); // calls computeStatistics()
+    computeVarianceAndHat();
     //double effDegOfF = getEffectiveDegreesOfFreedom(); // should match delta1
+
+    double[][] input = computeDesignMatrix(model, xOffset, yOffset, nSamples, samples);
+    RealMatrix mX = new Array2DRowRealMatrix(input, false);
+    RealMatrix mXT = mX.transpose();
+
+    // the weights array may not necessarily be of dimension nSamples,
+    // so we need to copy it
+    double[] rW = Arrays.copyOf(weights, nSamples);
+    RealMatrix mW = new DiagonalMatrix(rW);
+    RealMatrix design = mXT.multiply(mW).multiply(mX);
+    RealMatrix vcm;
+    try {
+      QRDecomposition cd = new QRDecomposition(design);
+      DecompositionSolver s = cd.getSolver();
+      vcm = s.getInverse();
+    } catch (SingularMatrixException npex) {
+      return Double.NaN;
+    }
 
     double nLeungDOF = (delta1 * delta1 / delta2);
 
-    double[] rW = new double[nSamples];
     for (int i = 0; i < nSamples; i++) {
       rW[i] = weights[i] * weights[i];
     }
 
     DiagonalMatrix mW2 = new DiagonalMatrix(rW);
-    RealMatrix mXT = mX.transpose();
-    RealMatrix mS = vcMatrix.multiply(mXT).multiply(mW2).multiply(mX).multiply(vcMatrix);
+    RealMatrix mS = vcm.multiply(mXT).multiply(mW2).multiply(mX).multiply(vcm);
     double pS = mS.getEntry(0, 0);
     double p = Math.sqrt(this.sigma2 * (1 + pS));
 
@@ -1374,20 +1607,22 @@ public class SurfaceGwr {
    * interpolation points, but suppose observed values were to become
    * available. Given a significance level (alpha) of 0.05, 95 percent
    * of the observed values would occur within the prediction interval.
+   *
    * @param alpha the significance level (typically 0&#46;.05, etc).
    * @return an array of dimension two giving the lower and upper bound
    * of the prediction interval.
    */
-  public double []getPredictionInterval(double alpha){
+  public double[] getPredictionInterval(double alpha) {
     double h = getPredictionIntervalHalfRange(alpha);
     double a[] = new double[2];
-    a[0] = beta[0]-h;
-    a[1] = beta[0]+h;
+    a[0] = beta[0] - h;
+    a[1] = beta[0] + h;
     return a;
   }
 
   /**
-   * Gets the number of degrees of freedom for the most recent computation.
+   * Gets the number of degrees of freedom for the most recent computation
+   * based on a ordinary least squares treatment (weighting neglected)
    *
    * @return if the most recent computation was successful, a positive
    * integer;
@@ -1398,6 +1633,21 @@ public class SurfaceGwr {
     return nDegOfFreedom;
   }
 
+  public RealMatrix getHatMatrix() {
+    computeVarianceAndHat();
+    return hat;
+  }
+
+    /**
+   * Get the minimum number of samples required to perform a
+   * regression for the specified surface model
+   *
+   * @param sm the surface model to be evaluated
+   * @return a positive integer
+   */
+  final public int getMinimumRequiredSamples(SurfaceModel sm) {
+    return sm.getCoefficientCount() + 1;
+  }
 
   /**
    * Get the coordinates used for the initial query
@@ -1421,8 +1671,6 @@ public class SurfaceGwr {
     return model;
   }
 
-
-
   /**
    * Get the Akaike information criterion (corrected) organized so that the
    * <strong>minimum</strong> value is preferred.
@@ -1430,22 +1678,22 @@ public class SurfaceGwr {
    * @return a valid floating point number.
    */
   public double getAICc() {
-    // the following logic is due to Chartyon and Fotheringham's
+    // the following logic is due to Charlton and Fotheringham's
     // "Geographically Weighted Regression White Paper"
     // Other sources omit the log(2 PI) term.  When comparing sets
     // of equal sample size, it doesn't matter.  Further research is
     // required to verify the correctness of the implementation given
-    // below.
+    // below.  Also, in some version of this paper the denominator is
+    // given as nSamples - 2 - traceHat, but in others it's plus 2.
+    // I've encountered places where -2 results in what APPEARS to be
+    // to small a denominator, so I use +2.  Further research is required.
     if (nSamples - 2 - model.getCoefficientCount() < 1) {
       return Double.NaN;
     }
     computeVarianceAndHat();
-    double lv = Math.log(sigma2); // this is 2*log(sigma)
+    double lv = Math.log(sigma2); // this is 2*log(sigma) or log(sigma^2)
     double x = (nSamples + traceHat) / (nSamples - 2 - traceHat);
-    if (x < 0) {
-      return Double.NaN;
-    }
-    return nSamples * (lv + log2PI) +  x;
+    return nSamples * (lv + log2PI + x);
   }
 
   public double getEstimatedValue(double xQuery, double yQuery) {
@@ -1493,14 +1741,9 @@ public class SurfaceGwr {
   public void clear() {
     nSamples = 0;
     areVarianceAndHatPrepped = false;
-    areDeltasComputed = false;
     samples = null;
     weights = null;
     residuals = null;
-    solver = null;
-    solution = null;
-    mX = null;
-    vcMatrix = null;  // variance-covariance matrix
     hat = null;
   }
 
@@ -1559,6 +1802,185 @@ public class SurfaceGwr {
   @Override
   public String toString() {
     return "SurfaceGWR: model=" + model;
+  }
+
+  /**
+   * Evaluates the AICc score for the specified coordinates. This method
+   * does not change the state of any of the member elements of this class.
+   * It is intended to be used in the automatic bandwidth selection
+   * operations implemented by calling classes.
+   * @param xQuery the x coordinate of the query point for evaluation
+   * @param yQuery the y coordinate of the query point for evaluation
+   * @param nSamples the number of samples.
+   * @param samples an array of nSamples samples including x, y, and z.
+   * @param weights an array of nSamples weights for each sample
+   * @param lambda the bandwidth parameter for evaluation
+   * @return if successful, a valid AICc; if unsuccessful, a NaN
+   */
+  double evaluateAICc(
+    SurfaceModel sm,
+    double xQuery,
+    double yQuery,
+    int nSamples,
+    double[][] samples,
+    double[] weights,
+    double [][]sampleWeightsMatrix) {
+
+    // RealMatrix xwx = computeXWX(xQuery, yQuery, nSamples, samples, weights);
+    double[][] bigS = new double[nSamples][nSamples];
+    double[][] bigW = sampleWeightsMatrix;
+
+    double[][] input = computeDesignMatrix(sm, xQuery, yQuery,nSamples, samples);
+    RealMatrix mX = new Array2DRowRealMatrix(input, false);
+    RealMatrix mXT = mX.transpose();
+
+    // in the loop below, we compute
+    //   Tr(hat)  and  Tr(Hat' x Hat)
+    //   this second term is actually the square of the
+    //   Frobenius Norm. Internally, the Apache Commons classes
+    //   may provide a more numerically stable implementation of this operation.
+    //   This may be worth future investigation.
+    double traceS = 0;
+    double traceS2 = 0;
+    for (int i = 0; i < nSamples; i++) {
+      DiagonalMatrix mW = new DiagonalMatrix(bigW[i]); //NOPMD
+      RealMatrix mXTW = mXT.multiply(mW);
+      RealMatrix rx = mX.getRowMatrix(i);
+      RealMatrix c = mXTW.multiply(mX);
+      QRDecomposition cd = new QRDecomposition(c); // NOPMD
+      DecompositionSolver cdSolver = cd.getSolver();
+      RealMatrix cInv=null ;
+      try{
+      cInv = cdSolver.getInverse();
+      }catch(SingularMatrixException | NullPointerException merde){
+        return Double.NaN;
+        }
+      RealMatrix r = rx.multiply(cInv).multiply(mXTW);
+      double[] row = r.getRow(0);
+      traceS += row[i];
+      for (int j = 0; j < nSamples; j++) { //NOPMD
+        bigS[i][j] = row[j];
+        traceS2 += row[j] * row[j];
+      }
+    }
+
+    RealMatrix mS = new BlockRealMatrix(bigS); // the Hat matrix
+
+    double[][] zArray = new double[nSamples][1];
+    for (int i = 0; i < nSamples; i++) {
+      zArray[i][0] = samples[i][2];
+    }
+    RealMatrix mY = new BlockRealMatrix(zArray);
+    RealMatrix mYH = mS.multiply(mY);
+    double sse = 0;
+    for (int i = 0; i < nSamples; i++) {
+      double yHat = mYH.getEntry(i, 0);
+      double e = zArray[i][0] - yHat;
+      sse += e * e;
+    }
+
+    double d1 = nSamples - (2 * traceS - traceS2);
+    double s2 = sse / d1;
+
+    double lv = Math.log(s2); // this is 2*log(sigma)
+    double x = (nSamples + traceS) / (nSamples - 2 - traceS);
+    return nSamples * (lv + log2PI + x);
+  }
+
+  /**
+   * Initializes an array of weights based on the distance of samples
+   * from a specified pair of coordinates by using the Gaussian kernel.
+   * This method is intended to support the initialization of weights
+   * for a regression computation.
+   * <p>
+   * If Double.POSITIVE_INFINITY is passed as the bandwidth parameter,
+   * all weights will be set uniformly to 1.0, which would be equivalent
+   * to an Ordinary Least Squares regression.
+   *
+   * @param x the coordinate of the query point
+   * @param y the coordinate of the query point
+   * @param samples a two dimensional array giving (x,y) coordinates of the
+   * samples
+   * @param nSamples the number of samples
+   * @param bandwidth the bandwidth parameter
+   * @param weights an array to store the resulting weights
+   */
+  public void initWeightsUsingGaussianKernel(
+    double x, double y, double[][] samples, int nSamples, double bandwidth, double[] weights) {
+    if (Double.isInfinite(bandwidth)) {
+      Arrays.fill(weights, 0, nSamples, 1.0);
+    } else {
+      double lambda2 = bandwidth*bandwidth;
+      for (int i = 0; i < nSamples; i++) {
+        double dx = samples[i][0] - x;
+        double dy = samples[i][1] - y;
+        double d2 = dx * dx + dy * dy;
+        weights[i] = Math.exp(-0.5*d2 / lambda2);
+      }
+    }
+  }
+
+  /**
+   * Initializes a square matrix of weights based on the distance between
+   * samples using the Gaussian kernel. Each ith row of the matrix is set
+   * to the weights for samples based on their distance from the
+   * ith sample. Thus the main diagonal of the matrix is based on the
+   * distance of the sample from itself, and will be assigned a
+   * weight of 1.0
+   *
+   * @param samples a two dimensional array giving (x,y) coordinates of the
+   * samples
+   * @param nSamples the number of samples
+   * @param bandwidth the bandwidth parameter specification
+   * @param matrix a square matrix of dimension nSamples to store the
+   * computed weights.
+   */
+  public void initWeightsMatrixUsingGaussianKernel(
+    double[][] samples, int nSamples, double bandwidth, double[][] matrix) {
+    if (Double.isInfinite(bandwidth)) {
+      for (int i = 0; i < nSamples; i++) {
+        Arrays.fill(matrix[i], 0, nSamples, 1.0);
+      }
+    }else{
+      double lambda2 = bandwidth*bandwidth;
+    for (int i = 0; i < nSamples; i++) {
+      double x = samples[i][0];
+      double y = samples[i][1];
+      for (int j = 0; j < i; j++) {
+        double dx = samples[j][0] - x;
+        double dy = samples[j][1] - y;
+        double d2 = dx * dx + dy * dy;
+        matrix[i][j] = Math.exp(-0.5*d2 / lambda2);
+      }
+      matrix[i][i] = 1;
+      for (int j = i + 1; j < nSamples; j++) {
+        double dx = samples[j][0] - x;
+        double dy = samples[j][1] - y;
+        double d2 = dx * dx + dy * dy;
+        matrix[i][j] = Math.exp(-0.5*d2 / lambda2);
+      }
+    }
+    }
+  }
+
+
+  /**
+   * Indicates whether a sample weights matrix was set.  Because the matrix
+   * is an optional argument of the computeRegression method, it could
+   * be set to a null value.
+   * @return true if the matrix is set; otherwise, false
+   */
+  public boolean isSampleWeightsMatrixSet(){
+    return sampleWeightsMatrix !=null;
+  }
+
+  /**
+   * Allows an application to set the sample weights matrix.
+   * @param sampleWeightsMatrix  a valid  two dimensional array dimensions
+   * to the same size as the number of samples.
+   */
+  public void setSampleWeightsMatrix(double[][]sampleWeightsMatrix){
+    this.sampleWeightsMatrix = sampleWeightsMatrix;
   }
 
 }
