@@ -38,7 +38,6 @@ import tinfour.common.INeighborhoodPointsCollector;
 import tinfour.common.Vertex;
 import tinfour.gwr.BandwidthSelectionMethod;
 import tinfour.gwr.GwrInterpolator;
-import tinfour.gwr.SurfaceGwr;
 import tinfour.gwr.SurfaceModel;
 
 /**
@@ -167,7 +166,6 @@ public class GwrTinInterpolator extends GwrInterpolator implements IInterpolator
 
     this.tin = tin;
     this.maxDepth = maxDepth;
-
   }
 
   /**
@@ -291,7 +289,7 @@ public class GwrTinInterpolator extends GwrInterpolator implements IInterpolator
    *
    * @return a valid array, zero sized if no interpolation has been performed.
    */
-  public Vertex[] getSamples() {
+  public Vertex[] getSampleVertices() {
     if (nSamples == 0) {
       return new Vertex[0];
     }
@@ -305,19 +303,20 @@ public class GwrTinInterpolator extends GwrInterpolator implements IInterpolator
 
   @Override
   public String getMethod() {
-    SurfaceGwr regression = getCurrentSurfaceGWR();
     BandwidthSelectionMethod bMethod = getBandwidthSelectionMethod();
     double bParameter = this.getBandwidth();
-    if (regression == null) {
+    SurfaceModel model = getSurfaceModel();
+    if (model == null) {
       return "GWR: No interpolation performed";
-    }
+    }else{
     return "GWR "
-      + regression.getModel()
+      + model
       + ", depth "
       + maxDepth
       + ", bandwidth "
       + bMethod + ":"
       + bParameter ;
+    }
   }
 
 

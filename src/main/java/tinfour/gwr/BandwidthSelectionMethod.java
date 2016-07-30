@@ -38,6 +38,9 @@ public enum BandwidthSelectionMethod {
     /**
      * Perform GWR using a specified bandwidth given in the same
      * units as the horizontal coordinate system.
+     *//**
+     * Perform GWR using a specified bandwidth given in the same
+     * units as the horizontal coordinate system.
      */
     FixedBandwidth,
 
@@ -51,14 +54,14 @@ public enum BandwidthSelectionMethod {
     /**
      * Attempt to automatically select the bandwidth selection
      * using the Akaike Information Criteria (corrected for sample size).
-     * This technique performs
-     * multiple evaluations of the statistics for the samples in the
-     * vicinity of the query point using different bandwidth settings
-     * in an attempt to find an optimal fit, and is thus the slowest
-     * the available methods.
+     * This technique performs multiple evaluations of the statistics
+     * for the samples in the vicinity of the query point using different
+     * bandwidth settings in an attempt to find an optimal fit.
+     * Because of the large amount of processing required by this procedure
+     * it is thus the slowest the available methods.
      */
-    AdaptiveBandwidth,
-    
+    OptimalAICc,
+
     /**
      * Perform the regression using a uniform weighting for all
      * samples. This method essentially selects an infinite bandwidth.

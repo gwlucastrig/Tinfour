@@ -57,7 +57,7 @@ public class DelimitedReader {
   }
 
 
-  List<String> readStrings() throws IOException {
+  public List<String> readStrings() throws IOException {
     int c;
     final StringBuilder sb= new StringBuilder();
     final List<String>sList = new ArrayList<>();

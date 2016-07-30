@@ -39,7 +39,6 @@ import java.util.SimpleTimeZone;
 import tinfour.common.IIncrementalTin;
 import tinfour.common.Vertex;
 import tinfour.gwr.BandwidthSelectionMethod;
-import tinfour.gwr.SurfaceGwr;
 import tinfour.gwr.SurfaceModel;
 import tinfour.interpolation.GwrTinInterpolator;
 import tinfour.test.utils.IDevelopmentTest;
@@ -143,17 +142,15 @@ public class ExampleGWR implements IDevelopmentTest {
 
     // Perform the interpolation for coordinates (x,y) given a valid TIN
     // using a specified surface model and the Adaptive Bandwidth selection
-    GwrTinInterpolator regInterpolator = new GwrTinInterpolator(tin);
-    double z = regInterpolator.interpolate(
-      SurfaceModel.Cubic,
-      BandwidthSelectionMethod.AdaptiveBandwidth, 1.0,
+    GwrTinInterpolator gwrInt = new GwrTinInterpolator(tin);
+    double z = gwrInt.interpolate(SurfaceModel.Cubic,
+      BandwidthSelectionMethod.OptimalAICc, 1.0,
       x, y, null);
 
     // Obtain the SurfaceGWR for the most recent interpolation,
     // extract some statistics and results, and output to a print stream.
-    SurfaceGwr gwr = regInterpolator.getCurrentSurfaceGWR();
-    double[] beta = gwr.getCoefficients();
-    double[] predictionInterval = gwr.getPredictionInterval(0.05);
+    double[] beta = gwrInt.getCoefficients();
+    double[] predictionInterval = gwrInt.getPredictionInterval(0.05);
 
     double zX = beta[1];
     double zY = beta[2];
@@ -183,9 +180,10 @@ public class ExampleGWR implements IDevelopmentTest {
     ps.format("Grade                                 %8.1f%%\n", grade * 100);
     ps.format("Slope:                                %8.1f\u00b0\n", slope);
     ps.format("Profile curvature:                    %12.5f\n", kP);
-    ps.format("Eff deg of freedom:                   %12.5f\n", gwr.getEffectiveDegreesOfFreedom());
-    ps.format("Variance of Residuals                 %12.5f\n", gwr.getResidualVariance());
-    ps.format("Bandwidth                             %12.5f\n", regInterpolator.getBandwidth());
+    ps.format("Eff deg of freedom:                   %12.5f\n", gwrInt.getEffectiveDegreesOfFreedom());
+    ps.format("Variance of the Residuals:            %12.5f\n", gwrInt.getVariance());
+    ps.format("Standard Deviation of the Residuals   %12.5f\n", gwrInt.getStandardDeviation());
+    ps.format("Bandwidth                             %12.5f\n", gwrInt.getBandwidth());
   }
 
 }

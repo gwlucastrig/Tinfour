@@ -145,7 +145,7 @@ public class ModelAdapter implements IModel {
       tin.add(list, monitor);
       referenceReductionFactor = 1.0;
     } else {
-      ArrayList<Vertex> thinList = new ArrayList(MAX_VERTICES_IN_TIN + 500);
+      ArrayList<Vertex> thinList = new ArrayList<>(MAX_VERTICES_IN_TIN + 500);
       double s = (double) nVertices / (double) MAX_VERTICES_IN_TIN;
       referenceReductionFactor = s;
       int priorIndex = -1;
