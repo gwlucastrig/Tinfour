@@ -305,7 +305,7 @@ public class ExampleCrossValidation implements IDevelopmentTest {
     ps.println("Number of expected tests " + nExpected);
     int progressModulus = 0;
     if(logProgress){
-      progressModulus = nExpected/20;
+      progressModulus = (nExpected+19)/20;
     }
     int nTest = 0;
     int nOrdinary = 0;
@@ -337,8 +337,7 @@ public class ExampleCrossValidation implements IDevelopmentTest {
 
           if (enableAdaptive) {
             if(progressModulus>0 && (nTest%progressModulus)==0){
-              double aDone = (double)nTest/(double)nExpected;
-              int percentDone = (int)(aDone*100+0.01);
+              int percentDone =  (100*nTest)/nExpected;
               time1 = System.nanoTime();
               double deltaT = (time1-timePrior)/1000000.0;
               timePrior = time1;

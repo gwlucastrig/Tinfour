@@ -35,9 +35,18 @@
  *   In the implementation of this class, I have tried to defer the
  * processing of computationally expensive quantities until they are
  * actually requested by a calling application. For example,
- * if pre-specified bandwidth options are used, this class can produce
- * a grid of interpolated values quite quickly because they do not
- * require the evaluation of residuals or the hat matrix.
+ * computing the regression coefficients requires constructing and inverting
+ * one matrix while computing the "hat" matrix (needed to compute variance,
+ * standard deviation, etc.) requires repeating this operation n-sample times.
+ * So if an application does not need descriptive statistics, there is no
+ * need to build these elements.
+ *   However, this approach does have a consequence. In order to
+ * preserve the necessary data for computing these statistics, it is
+ * necessary for an instance of this class to retain an internal reference to
+ * the samples and weight arrays passed to it when the calculation
+ * is invoked.  Although it would be safer to make copies of these arrays,
+ * a concern for "mass production" calculations leads to the class
+ * just keeps references to them.
  * -----------------------------------------------------------------------
  */
 package tinfour.gwr;
@@ -166,14 +175,13 @@ public class SurfaceGwr {
   int nSamples;
   double[][] samples;
   double[] weights;
-  double [][]sampleWeightsMatrix;
+  double[][] sampleWeightsMatrix;
   double[] residuals;
   int nVariables; // number of independent or "explanatory" variables
   int nDegOfFreedom;
   double[] beta;
 
   boolean areVarianceAndHatPrepped;
-
 
   double sigma2;  // Residual standard variance (sigma squared)
   double rss; // resisdual sum squares
@@ -185,17 +193,16 @@ public class SurfaceGwr {
   double delta1;
   double delta2;
 
-  private  SurfaceModel model;
+  private SurfaceModel model;
 
   /**
    * Standard constructor.
    */
-  public SurfaceGwr(){
+  public SurfaceGwr() {
     beta = new double[0];
     nSamples = 0;
     sigma2 = Double.NaN;
   }
-
 
   /**
    * Computes the elevation for a point at the specified query
@@ -208,10 +215,11 @@ public class SurfaceGwr {
    * <strong>Note:</strong> For efficiency purposes, the arrays for
    * samples and weights passed to this method are stored in the class
    * directly.
-   * <p>The sample weights matrix is a two dimensional array giving
+   * <p>
+   * The sample weights matrix is a two dimensional array giving
    * weights based on the distance between samples. It is used when performing
    * calculations for descriptive statistics such as standard deviation,
-   * confidence intervals, etc.  Because of the high cost of initializing this
+   * confidence intervals, etc. Because of the high cost of initializing this
    * array, it can be treated as optional in cases where only the regression
    * coefficients are required.
    * <p>
@@ -239,7 +247,7 @@ public class SurfaceGwr {
     int nSamples,
     double[][] samples,
     double[] weights,
-    double [][]sampleWeightsMatrix) {
+    double[][] sampleWeightsMatrix) {
     // clear out previous solutions
     areVarianceAndHatPrepped = false;
     this.model = model;
@@ -1198,11 +1206,12 @@ public class SurfaceGwr {
 
   /**
    * Computes the "design matrix" for the input set of samples and
-   * coordinate offset.  The design matrix is a n by (k+1) matrix
+   * coordinate offset. The design matrix is a n by (k+1) matrix
    * where n is the number of samples and k is the number of explanatory
    * variables. The first column of each row in the matrix is populated
    * with the value 1. Subsequent columns are populated with explanatory
    * variables which are computed based on the selection of surface model.
+   *
    * @param x0 a coordinate offset for adjusting the sample coordinates
    * @param y0 a coordinate offset for adjusting the sample coordinates
    * @param n the number of samples
@@ -1212,8 +1221,7 @@ public class SurfaceGwr {
   double[][] computeDesignMatrix(
     SurfaceModel sm,
     double x0, double y0,
-    int n, double [][]s)
-  {
+    int n, double[][] s) {
     double[][] matrix;
     if (sm == SurfaceModel.CubicWithCrossTerms) {
       matrix = new double[n][10];
@@ -1310,8 +1318,6 @@ public class SurfaceGwr {
     return matrix;
   }
 
-
-
   public void computeVarianceAndHat() {
 
     if (areVarianceAndHatPrepped) {
@@ -1319,9 +1325,9 @@ public class SurfaceGwr {
     }
     areVarianceAndHatPrepped = true;
 
-    if(sampleWeightsMatrix == null){
+    if (sampleWeightsMatrix == null) {
       throw new NullPointerException("Null specification for sampleWeightsMatrix");
-    } else if(sampleWeightsMatrix.length!=nSamples){
+    } else if (sampleWeightsMatrix.length != nSamples) {
       throw new IllegalArgumentException("Incorrectly specified sampleWeightsMatrix");
     }
     double[][] bigS = new double[nSamples][nSamples];
@@ -1378,7 +1384,7 @@ public class SurfaceGwr {
     sigma2 = rss / d1;
 
     RealMatrix mIL = hat.copy();
-    for(int i=0; i<nSamples; i++){
+    for (int i = 0; i < nSamples; i++) {
       double c = 1.0 - mIL.getEntry(i, i);
       mIL.setEntry(i, i, c);
     }
@@ -1638,7 +1644,7 @@ public class SurfaceGwr {
     return hat;
   }
 
-    /**
+  /**
    * Get the minimum number of samples required to perform a
    * regression for the specified surface model
    *
@@ -1681,15 +1687,12 @@ public class SurfaceGwr {
     // the following logic is due to Charlton and Fotheringham's
     // "Geographically Weighted Regression White Paper"
     // Other sources omit the log(2 PI) term.  When comparing sets
-    // of equal sample size, it doesn't matter.  Further research is
-    // required to verify the correctness of the implementation given
-    // below.  Also, in some version of this paper the denominator is
-    // given as nSamples - 2 - traceHat, but in others it's plus 2.
-    // I've encountered places where -2 results in what APPEARS to be
-    // to small a denominator, so I use +2.  Further research is required.
-    if (nSamples - 2 - model.getCoefficientCount() < 1) {
-      return Double.NaN;
-    }
+    // of equal sample size, it doesn't matter.
+    // TO DO: When comparing the results to the GWR4 program, I discovered that
+    // GWR4 doesn't use the plain sigma, but rather the "ML sigma."
+    // The reason behind this is not discussed in their white paper. Further
+    // investigation is required to see if this provides a way of improving
+    // the effectiveness of the AICc.
     computeVarianceAndHat();
     double lv = Math.log(sigma2); // this is 2*log(sigma) or log(sigma^2)
     double x = (nSamples + traceHat) / (nSamples - 2 - traceHat);
@@ -1809,6 +1812,7 @@ public class SurfaceGwr {
    * does not change the state of any of the member elements of this class.
    * It is intended to be used in the automatic bandwidth selection
    * operations implemented by calling classes.
+   *
    * @param xQuery the x coordinate of the query point for evaluation
    * @param yQuery the y coordinate of the query point for evaluation
    * @param nSamples the number of samples.
@@ -1824,13 +1828,13 @@ public class SurfaceGwr {
     int nSamples,
     double[][] samples,
     double[] weights,
-    double [][]sampleWeightsMatrix) {
+    double[][] sampleWeightsMatrix) {
 
     // RealMatrix xwx = computeXWX(xQuery, yQuery, nSamples, samples, weights);
     double[][] bigS = new double[nSamples][nSamples];
     double[][] bigW = sampleWeightsMatrix;
 
-    double[][] input = computeDesignMatrix(sm, xQuery, yQuery,nSamples, samples);
+    double[][] input = computeDesignMatrix(sm, xQuery, yQuery, nSamples, samples);
     RealMatrix mX = new Array2DRowRealMatrix(input, false);
     RealMatrix mXT = mX.transpose();
 
@@ -1849,12 +1853,12 @@ public class SurfaceGwr {
       RealMatrix c = mXTW.multiply(mX);
       QRDecomposition cd = new QRDecomposition(c); // NOPMD
       DecompositionSolver cdSolver = cd.getSolver();
-      RealMatrix cInv=null ;
-      try{
-      cInv = cdSolver.getInverse();
-      }catch(SingularMatrixException | NullPointerException merde){
+      RealMatrix cInv = null;
+      try {
+        cInv = cdSolver.getInverse();
+      } catch (SingularMatrixException | NullPointerException merde) {
         return Double.NaN;
-        }
+      }
       RealMatrix r = rx.multiply(cInv).multiply(mXTW);
       double[] row = r.getRow(0);
       traceS += row[i];
@@ -1910,12 +1914,12 @@ public class SurfaceGwr {
     if (Double.isInfinite(bandwidth)) {
       Arrays.fill(weights, 0, nSamples, 1.0);
     } else {
-      double lambda2 = bandwidth*bandwidth;
+      double lambda2 = bandwidth * bandwidth;
       for (int i = 0; i < nSamples; i++) {
         double dx = samples[i][0] - x;
         double dy = samples[i][1] - y;
         double d2 = dx * dx + dy * dy;
-        weights[i] = Math.exp(-0.5*d2 / lambda2);
+        weights[i] = Math.exp(-0.5 * d2 / lambda2);
       }
     }
   }
@@ -1941,45 +1945,46 @@ public class SurfaceGwr {
       for (int i = 0; i < nSamples; i++) {
         Arrays.fill(matrix[i], 0, nSamples, 1.0);
       }
-    }else{
-      double lambda2 = bandwidth*bandwidth;
-    for (int i = 0; i < nSamples; i++) {
-      double x = samples[i][0];
-      double y = samples[i][1];
-      for (int j = 0; j < i; j++) {
-        double dx = samples[j][0] - x;
-        double dy = samples[j][1] - y;
-        double d2 = dx * dx + dy * dy;
-        matrix[i][j] = Math.exp(-0.5*d2 / lambda2);
+    } else {
+      double lambda2 = bandwidth * bandwidth;
+      for (int i = 0; i < nSamples; i++) {
+        double x = samples[i][0];
+        double y = samples[i][1];
+        for (int j = 0; j < i; j++) {
+          double dx = samples[j][0] - x;
+          double dy = samples[j][1] - y;
+          double d2 = dx * dx + dy * dy;
+          matrix[i][j] = Math.exp(-0.5 * d2 / lambda2);
+        }
+        matrix[i][i] = 1;
+        for (int j = i + 1; j < nSamples; j++) {
+          double dx = samples[j][0] - x;
+          double dy = samples[j][1] - y;
+          double d2 = dx * dx + dy * dy;
+          matrix[i][j] = Math.exp(-0.5 * d2 / lambda2);
+        }
       }
-      matrix[i][i] = 1;
-      for (int j = i + 1; j < nSamples; j++) {
-        double dx = samples[j][0] - x;
-        double dy = samples[j][1] - y;
-        double d2 = dx * dx + dy * dy;
-        matrix[i][j] = Math.exp(-0.5*d2 / lambda2);
-      }
-    }
     }
   }
 
-
   /**
-   * Indicates whether a sample weights matrix was set.  Because the matrix
+   * Indicates whether a sample weights matrix was set. Because the matrix
    * is an optional argument of the computeRegression method, it could
    * be set to a null value.
+   *
    * @return true if the matrix is set; otherwise, false
    */
-  public boolean isSampleWeightsMatrixSet(){
-    return sampleWeightsMatrix !=null;
+  public boolean isSampleWeightsMatrixSet() {
+    return sampleWeightsMatrix != null;
   }
 
   /**
    * Allows an application to set the sample weights matrix.
-   * @param sampleWeightsMatrix  a valid  two dimensional array dimensions
+   *
+   * @param sampleWeightsMatrix a valid two dimensional array dimensions
    * to the same size as the number of samples.
    */
-  public void setSampleWeightsMatrix(double[][]sampleWeightsMatrix){
+  public void setSampleWeightsMatrix(double[][] sampleWeightsMatrix) {
     this.sampleWeightsMatrix = sampleWeightsMatrix;
   }
 
