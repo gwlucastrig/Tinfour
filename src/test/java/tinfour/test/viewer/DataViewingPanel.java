@@ -79,6 +79,7 @@ import tinfour.test.viewer.backplane.MvQueryResult;
 import tinfour.test.viewer.backplane.RenderProduct;
 import tinfour.test.viewer.backplane.ViewOptions;
 import tinfour.test.viewer.backplane.ViewOptions.LidarPointSelection;
+import tinfour.test.viewer.backplane.ViewOptions.RasterInterpolationMethod;
 
 /**
  * A test panel to demonstrate mouse events and coordinate transformation
@@ -86,7 +87,7 @@ import tinfour.test.viewer.backplane.ViewOptions.LidarPointSelection;
  */
 public class DataViewingPanel extends JPanel {
   private static final long serialVersionUID=1L;
-  
+
   /**
    * The label for viewing mouse motion data
    */
@@ -767,9 +768,27 @@ public class DataViewingPanel extends JPanel {
     if (view.isWireframeSelected() && !oldView.isWireframeSelected()) {
       redrawRequired = true;
     }
-    if ((view.isRasterSelected() || view.isHillshadeSelected())
-      && view.isFullResolutionGridSelected() != oldView.isFullResolutionGridSelected()) {
-      redrawRequired = true;
+    if (view.isRasterSelected()) {
+      if(!oldView.isRasterSelected()){
+        redrawRequired = true;
+      }
+      if (view.isHillshadeSelected()) {
+        // if the previous view was GWR, it would have build the hillshade
+        // data anyway.
+        boolean hillshadeBuilt =
+          oldView.isHillshadeSelected()
+          || oldView.getRasterInterpolationMethod()
+          == RasterInterpolationMethod.GeographicallyWeightedRegression;
+        if (!hillshadeBuilt) {
+          redrawRequired = true;
+        }
+      }
+      if (view.isFullResolutionGridSelected() != oldView.isFullResolutionGridSelected()) {
+        redrawRequired = true;
+      }
+      if (view.getRasterInterpolationMethod() != oldView.getRasterInterpolationMethod()) {
+        redrawRequired = true;
+      }
     }
 
     if (redrawRequired) {

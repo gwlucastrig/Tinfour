@@ -225,7 +225,7 @@ public class GwrTinInterpolator extends GwrInterpolator implements IInterpolator
       return Double.NaN;
     }
 
-    return interpolateUsingAdaptiveModelAndBandwidth(
+    return interpolateUsingAutomaticModelAndBandwidth(
       qx, qy, nSamples, samples);
   }
 

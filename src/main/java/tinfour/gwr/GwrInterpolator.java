@@ -71,7 +71,7 @@ public class GwrInterpolator {
   double bandwidth;
   double[] beta;
 
-  long nAdaptiveBandwidthTests;
+  long nAutomaticBandwidthTests;
 
   // the number of intervals for subdividing the bandwidth test
   // domain when automatically choosing bandwidth.
@@ -79,18 +79,18 @@ public class GwrInterpolator {
   // off accuracy of predicted results and speed of calculation.
   private static final int nSubdivisionsOfBandwidthTestDomain = 6;
 
-  private static final double[] adaptiveTestParameters;
+  private static final double[] automaticTestParameters;
 
   static {
     // divide the range 0 to 1 into a series of intervals with size
     // roughly doubling every two steps
-    adaptiveTestParameters = new double[nSubdivisionsOfBandwidthTestDomain];
+    automaticTestParameters = new double[nSubdivisionsOfBandwidthTestDomain];
     int n = nSubdivisionsOfBandwidthTestDomain;
     for (int i = 0; i < nSubdivisionsOfBandwidthTestDomain - 1; i++) {
       double x = Math.pow(2.0, -(n - 1 - i) / 2.0);
-      adaptiveTestParameters[i + 1] = x;
+      automaticTestParameters[i + 1] = x;
     }
-    adaptiveTestParameters[nSubdivisionsOfBandwidthTestDomain - 1] = 1.0;
+    automaticTestParameters[nSubdivisionsOfBandwidthTestDomain - 1] = 1.0;
   }
 
   /**
@@ -197,7 +197,7 @@ public class GwrInterpolator {
   }
 
   /**
-   * Performs regression using adaptive bandwidth selection and testing all
+   * Performs regression using automatic bandwidth selection and testing all
    * available models using the AICc criterion. This method is intended
    * to achieve a good solution under general circumstances, though it is
    * also the most computationally expensive implementation.
@@ -214,7 +214,7 @@ public class GwrInterpolator {
    * @return if the interpolation is successful, a valid floating point
    * value; otherwise, a NaN.
    */
-  public double interpolateUsingAdaptiveModelAndBandwidth(
+  public double interpolateUsingAutomaticModelAndBandwidth(
     double qx, double qy, int nSamples, double[][] samples) {
 
     checkInputs(nSamples, samples);
@@ -297,7 +297,7 @@ public class GwrInterpolator {
         bandwidth = meanDist * bandwidthParameter;
         break;
       case OptimalAICc:
-        bandwidth = prepAdaptiveBandwidthSelection(
+        bandwidth = prepAutomaticBandwidthSelection(
           model, qx, qy, nSamples, samples, distsq, weights, sampleWeightsMatrix, meanDist);
         break;
       case OrdinaryLeastSquares:
@@ -308,7 +308,7 @@ public class GwrInterpolator {
         break;
     }
 
-    // if the adaptive bandwidth method decides that ordinary least squares
+    // if the automatic bandwidth method decides that ordinary least squares
     // is the best selection, it will select an infinite bandwidth value.
     if (bandwidthMethod == BandwidthSelectionMethod.OrdinaryLeastSquares
       || Double.isInfinite(bandwidth)) {
@@ -362,7 +362,7 @@ public class GwrInterpolator {
     double weights[],
     double [][]sampleWeightsMatrix,
     double lambda) {
-    nAdaptiveBandwidthTests++;
+    nAutomaticBandwidthTests++;
     double lambda2 = lambda * lambda;
     for (int i = 0; i < nSamples; i++) {
       weights[i] = Math.exp(-0.5 * (distsq[i] / lambda2));
@@ -394,7 +394,7 @@ public class GwrInterpolator {
     // return regression.getPredictionIntervalHalfRange(0.05);
   }
 
-  private double prepAdaptiveBandwidthSelection(
+  private double prepAutomaticBandwidthSelection(
     SurfaceModel model,
     double qx,
     double qy,
@@ -416,7 +416,7 @@ public class GwrInterpolator {
     double x[] = new double[nCut];
     double y[] = new double[nCut];
     for (int i = 0; i < nCut; i++) {
-      x[i] = adaptiveTestParameters[i] * deltaM + m0;
+      x[i] = automaticTestParameters[i] * deltaM + m0;
       y[i] = testBandwidth(
         model, qx, qy, nSamples, samples, distsq, weights, sampleWeightsMatrix, x[i]);
     }
@@ -919,12 +919,12 @@ public class GwrInterpolator {
 
   /**
    * Gets the number of tests performed in selecting a bandwidth
-   * via the adaptive selection method. Intended for diagnostic
+   * via the automatic selection method. Intended for diagnostic
    * purposes only.
    * @return a positive value
    */
-  public long getAdaptiveBandwidthTestCount() {
-    return nAdaptiveBandwidthTests;
+  public long getAutomaticBandwidthTestCount() {
+    return nAutomaticBandwidthTests;
   }
 
   /**

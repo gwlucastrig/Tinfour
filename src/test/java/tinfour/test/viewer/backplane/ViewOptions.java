@@ -59,7 +59,7 @@ public class ViewOptions {
   private double hillshadeAzimuth;
   private double hillshadeElevation;
   private double hillshadeAmbient;
-
+  private RasterInterpolationMethod rasterInterpolationMethod;
 
   private boolean isFullResolutionGridSelected;
 
@@ -79,6 +79,12 @@ public class ViewOptions {
     GroundPoints,
     FirstReturn,
     AllPoints
+  }
+
+  public enum RasterInterpolationMethod {
+    NaturalNeighbor,
+    GeographicallyWeightedRegression,
+    TriangularFacet
   }
 
   /**
@@ -112,6 +118,7 @@ public class ViewOptions {
     isFullResolutionGridSelected = v.isFullResolutionGridSelected;
 
     lidarPointSelection = v.lidarPointSelection;
+    rasterInterpolationMethod = v.rasterInterpolationMethod;
 
   }
 
@@ -146,6 +153,7 @@ public class ViewOptions {
     hillshadeAmbient = 25; // percent
 
     lidarPointSelection = LidarPointSelection.GroundPoints;
+    rasterInterpolationMethod = RasterInterpolationMethod.NaturalNeighbor;
   }
 
   /**
@@ -494,6 +502,24 @@ public int getWireframeSampleSpacing(){
       default:
         return 50;
     }
+}
+
+/**
+ * Gets the method to be used for interpolating data when building a
+ * raster grid.
+ * @return a valid instance.
+ */
+public RasterInterpolationMethod getRasterInterpolationMethod(){
+  return this.rasterInterpolationMethod;
+}
+
+/**
+ * Sets the method to be used for interpolating data when building a
+ * raster grid;
+ * @param method a valid instance.
+ */
+public void setRasterInterpolationMethod(RasterInterpolationMethod method){
+   rasterInterpolationMethod = method;
 }
 
 }
