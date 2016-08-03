@@ -129,8 +129,8 @@ public class ExampleCrossValidation implements IDevelopmentTest {
       marginArg = 10.0; // 10 percent reserve
     }
 
-    boolean enableAdaptive
-      = options.scanBooleanOption(args, "-enableAdaptive", optionsMatched, false);
+    boolean enableAutoBW
+      = options.scanBooleanOption(args, "-autoBW", optionsMatched, false);
     boolean logProgress
       = options.scanBooleanOption(args, "-showProgress", optionsMatched, false);
 
@@ -268,8 +268,6 @@ public class ExampleCrossValidation implements IDevelopmentTest {
     BandwidthSelectionMethod bsmPro
       = BandwidthSelectionMethod.FixedProportionalBandwidth;
 
-    BandwidthSelectionMethod bsmAdapt
-      = BandwidthSelectionMethod.OptimalAICc;
 
     // Construct some tabulators to keep track of our results
     Tabulator tabNni = new Tabulator();
@@ -335,7 +333,7 @@ public class ExampleCrossValidation implements IDevelopmentTest {
           // proportional bandwidth setting
           tabProB.tabulate(inGwr.getBandwidth() );
 
-          if (enableAdaptive) {
+          if (enableAutoBW) {
             if(progressModulus>0 && (nTest%progressModulus)==0){
               int percentDone =  (100*nTest)/nExpected;
               time1 = System.nanoTime();
@@ -351,14 +349,14 @@ public class ExampleCrossValidation implements IDevelopmentTest {
             }
             double zAdp
               = inGwr.interpolateUsingAdaptiveModelAndBandwidth(x, y, null);
-            double adaptedBandwidth = inGwr.getBandwidth();
-            if (Double.isInfinite(adaptedBandwidth)) {
+            double autoBandwidth = inGwr.getBandwidth();
+            if (Double.isInfinite(autoBandwidth)) {
               nOrdinary++;
             } else {
-              tabBdw.tabulate(adaptedBandwidth);
+              tabBdw.tabulate(autoBandwidth);
             }
-            SurfaceModel adaptedModel = inGwr.getSurfaceModel();
-            int index = adaptedModel.ordinal();
+            SurfaceModel autoModel = inGwr.getSurfaceModel();
+            int index = autoModel.ordinal();
             adpModelCount[index]++;
             tabAdp.tabulate(zAdp - z);
           }
@@ -378,8 +376,8 @@ public class ExampleCrossValidation implements IDevelopmentTest {
     tabNni.summarize(ps, "Natural Neighbor         ");
     tabFix.summarize(ps, String.format("GWR, Fixed Bandwith %4.2f ", bandwidth));
     tabPro.summarize(ps, String.format("GWR, Proportionate  %4.2f ", 0.45));
-    if (enableAdaptive) {
-      tabAdp.summarize(ps, "GWR, Adaptive Bandwidth  ");
+    if (enableAutoBW) {
+      tabAdp.summarize(ps, "GWR, Automatic BW AICc   ");
       ps.println("\nValues for automatically selected bandwidth");
       ps.format("Mean:   %12.6f\n", tabBdw.getMeanAbsValue());
       ps.format("Std Dev %12.6f\n", tabBdw.getStdDevAbsValue());
@@ -388,9 +386,9 @@ public class ExampleCrossValidation implements IDevelopmentTest {
         SurfaceModel sm = smValues[i];
         ps.format("%-25.25s  %8d\n", sm.name(), adpModelCount[i]);
       }
-      long nAdpTest = inGwr.getAdaptiveBandwidthTestCount();
+      long nAdpTest = inGwr.getAutomaticBandwidthTestCount();
       double adpRate = (double)nAdpTest/adpModelCount.length/nTest;
-      ps.format("Number of Adaptive Bandwidth Tests %d (%f/model/vertex)\n",
+      ps.format("Number of Automatic Bandwidth Iterations %d (%f/model/vertex)\n",
               nAdpTest, adpRate);
     }
     ps.format("\nValues for proportionately selected bandwidth\n");

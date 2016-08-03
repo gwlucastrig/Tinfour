@@ -43,6 +43,7 @@ import javax.swing.ListCellRenderer;
 import tinfour.test.utils.TestPalette;
 import tinfour.test.viewer.backplane.ViewOptions;
 import tinfour.test.viewer.backplane.ViewOptions.LidarPointSelection;
+import tinfour.test.viewer.backplane.ViewOptions.RasterInterpolationMethod;
 
 /**
  * Provides UI for showing viewing options
@@ -179,6 +180,9 @@ import tinfour.test.viewer.backplane.ViewOptions.LidarPointSelection;
       default:
         lidarGroundPointsButton.setSelected(true);
     }
+
+    int index = view.getRasterInterpolationMethod().ordinal();
+    this.rasterMethodComboBox.setSelectedIndex(index);
   }
 
   private double extractField(JTextField field, double value) {
@@ -285,6 +289,12 @@ import tinfour.test.viewer.backplane.ViewOptions.LidarPointSelection;
       view.setLidarPointSelection(LidarPointSelection.AllPoints);
     }
 
+
+
+      index = rasterMethodComboBox.getSelectedIndex();
+      RasterInterpolationMethod rim = RasterInterpolationMethod.values()[index];
+      view.setRasterInterpolationMethod(rim);
+
     //transcribeViewToComponents(); // just a diagnostic
     return badInput;
   }
@@ -349,6 +359,7 @@ import tinfour.test.viewer.backplane.ViewOptions.LidarPointSelection;
     jLabel3 = new javax.swing.JLabel();
     wireframeSampleThinningComboBox = new javax.swing.JComboBox();
     lidarFirstReturnButton = new javax.swing.JRadioButton();
+    rasterMethodComboBox = new javax.swing.JComboBox<>();
     actionsPanel = new javax.swing.JPanel();
     applyButton = new javax.swing.JButton();
     cancelButton = new javax.swing.JButton();
@@ -483,6 +494,9 @@ import tinfour.test.viewer.backplane.ViewOptions.LidarPointSelection;
       }
     });
 
+    rasterMethodComboBox.setModel(new javax.swing.DefaultComboBoxModel<>(new String[] { " Natural Neighbor Interpolation", "Geographically Weighted Regression", "Triangular Facets" }));
+    rasterMethodComboBox.setToolTipText("Select method for raster interpolation");
+
     javax.swing.GroupLayout optionsPanelLayout = new javax.swing.GroupLayout(optionsPanel);
     optionsPanel.setLayout(optionsPanelLayout);
     optionsPanelLayout.setHorizontalGroup(
@@ -507,7 +521,10 @@ import tinfour.test.viewer.backplane.ViewOptions.LidarPointSelection;
             .addComponent(ambientTextField, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
           .addComponent(jLabel1)
           .addComponent(wireframeCheckBox)
-          .addComponent(rasterCheckBox)
+          .addGroup(optionsPanelLayout.createSequentialGroup()
+            .addComponent(rasterCheckBox)
+            .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
+            .addComponent(rasterMethodComboBox, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
           .addGroup(optionsPanelLayout.createSequentialGroup()
             .addGap(21, 21, 21)
             .addGroup(optionsPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
@@ -604,7 +621,10 @@ import tinfour.test.viewer.backplane.ViewOptions.LidarPointSelection;
               .addComponent(verticesCheckBox)
               .addComponent(labelsCheckBox)
               .addComponent(labelFieldComboBox, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))))
-        .addComponent(rasterCheckBox)
+        .addGap(18, 18, 18)
+        .addGroup(optionsPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+          .addComponent(rasterCheckBox)
+          .addComponent(rasterMethodComboBox, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
         .addGroup(optionsPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
           .addComponent(hillshadeCheckBox)
@@ -624,7 +644,7 @@ import tinfour.test.viewer.backplane.ViewOptions.LidarPointSelection;
         .addComponent(lidarFirstReturnButton)
         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
         .addComponent(lidarAllPointsButton)
-        .addContainerGap(16, Short.MAX_VALUE))
+        .addContainerGap(21, Short.MAX_VALUE))
     );
 
     applyButton.setText("Apply");
@@ -816,6 +836,7 @@ import tinfour.test.viewer.backplane.ViewOptions.LidarPointSelection;
   private javax.swing.JTextField paletteAssignMinRange;
   private javax.swing.JComboBox paletteComboBox;
   private javax.swing.JCheckBox rasterCheckBox;
+  private javax.swing.JComboBox<String> rasterMethodComboBox;
   private javax.swing.JCheckBox verticesCheckBox;
   private javax.swing.JRadioButton whiteOnBlackRadioButton;
   private javax.swing.JCheckBox wireframeCheckBox;

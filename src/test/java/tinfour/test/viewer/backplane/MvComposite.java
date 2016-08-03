@@ -56,7 +56,9 @@ import tinfour.gwr.BandwidthSelectionMethod;
 import tinfour.gwr.SurfaceModel;
 import tinfour.interpolation.GwrTinInterpolator;
 import tinfour.interpolation.NaturalNeighborInterpolator;
+import tinfour.interpolation.TriangularFacetInterpolator;
 import tinfour.test.utils.TestPalette;
+import tinfour.test.viewer.backplane.ViewOptions.RasterInterpolationMethod;
 import tinfour.utils.AxisIntervals;
 import tinfour.utils.LinearUnits;
 
@@ -968,99 +970,262 @@ public class MvComposite {
     double maxY = model.getMaxY();
     int rowLimit = row0 + nRows;
 
-    if (hillshade) {
-      IIncrementalTin t = rasterTin;
-      if (t == null) {
-        // really, this should probably throw an IllegalStateException
-        t = wireframeTin;
-      }
-      GwrTinInterpolator gwr = new GwrTinInterpolator(t);
-
-      double[] c = new double[8];
-      for (int iRow = row0; iRow < rowLimit; iRow++) {
-        int index = iRow * width * 3;
-        c[0] = 0;
-        c[1] = iRow + 0.5;
-        c[2] = width;
-        c[3] = iRow + 0.5;
-        c2m.transform(c, 0, c, 4, 2);
-        double x0 = c[4];
-        double y0 = c[5];
-        double x1 = c[6];
-        double y1 = c[7];
-
-        double y = (y0 + y1) / 2; // diagnostic: y0 MUST equal y1
-        if (y < minY || y > maxY) {
-          continue;
-        }
-        double dx = (x1 - x0) / width;
-        for (int iCol = 0; iCol < width; iCol++) {
-          double x = (iCol + 0.5) * dx + x0;
-          if (minX <= x && x <= maxX) {
-            double z = gwr.interpolate(
-              SurfaceModel.QuadraticWithCrossTerms,
-              BandwidthSelectionMethod.FixedProportionalBandwidth, 1.0,
-              x, y, null);
-
-            if (gwr.wasTargetExteriorToTin()) {
-              zGrid[index] = Float.NaN;
-            } else if (Double.isNaN(z)) {
-              zGrid[index] = Float.NaN;
-            } else {
-              zGrid[index] = (float) z;
-              double[] beta = gwr.getCoefficients();
-              zGrid[index + 1] = (float) beta[1]; // derivative Zx
-              zGrid[index + 2] = (float) beta[2]; // derivative Zy
-            }
-          }
-          index += 3;
-        }
-        if (task != null && task.isCancelled()) {
-          return;
-        }
-      }
-    } else {
-      IIncrementalTin t = rasterTin;
-      if (t == null) {
-        t = wireframeTin;
-      }
-      NaturalNeighborInterpolator nni = new NaturalNeighborInterpolator(t);
-      double[] c = new double[8];
-      for (int iRow = row0; iRow < rowLimit; iRow++) {
-        int index = iRow * width * 3;
-        c[0] = 0;
-        c[1] = iRow + 0.5;
-        c[2] = width;
-        c[3] = iRow + 0.5;
-        c2m.transform(c, 0, c, 4, 2);
-        double x0 = c[4];
-        double y0 = c[5];
-        double x1 = c[6];
-        double y1 = c[7];
-
-        double y = (y0 + y1) / 2; // diagnostic: y0 MUST equal y1
-        if (y < minY || y > maxY) {
-          continue;
-        }
-        double dx = (x1 - x0) / width;
-        for (int iCol = 0; iCol < width; iCol++) {
-          double x = (iCol + 0.5) * dx + x0;
-          if (minX <= x && x <= maxX) {
-            double z = nni.interpolate(x, y, null);
-
-            if (Double.isNaN(z)) {
-              zGrid[index] = Float.NaN;
-            } else {
-              zGrid[index] = (float) z;
-            }
-          }
-          index += 3;
-        }
-        if (task != null && task.isCancelled()) {
-          return;
-        }
-      }
+    IIncrementalTin t = rasterTin;
+    if (t == null) {
+      // really, this should probably throw an IllegalStateException
+      t = wireframeTin;
     }
+    double[] c = new double[8];
+
+    RasterInterpolationMethod rim = view.getRasterInterpolationMethod();
+    switch (rim) {
+      case NaturalNeighbor:
+        NaturalNeighborInterpolator nni = new NaturalNeighborInterpolator(t);
+        if (hillshade) {
+          // consider the model as defining a surface z = f(x,y)
+          // the hillshade for NNI is computed by considering the four
+          // points at the corner of the pixel.  In the Model coordinate
+          // space (which is Cartesian), we label them in counterclockwise order
+          //        A --- D
+          //        |     |
+          //        B --- C
+          // We compute the normal vectors at B and D using cross products
+          //      N1 = (C-B) X (A-B)
+          //      N2 = (A-D) X (C-D)
+          // Note that the interior angles CBA and ADC are both taken
+          // counterclockwise order (BC torns onto BA, etc)
+          // We then take the vector sum N = N1+N2.  The normal is needed for
+          // hillshading. Although we could store the entire 3-element normal
+          // in the zGrid array, we wish to save some space by just storing
+          // the partial derivatives. So,  the zGrid stores
+          // the values and the partial derivatives of the surface f as
+          //     zGrid[index]   = z
+          //     zGrid[index+1] = @z/@x
+          //     zGrid[index+2] = @z/%y
+          // and
+          //     @z/@x = -xN/zN
+          //     @z/@y = -yN/zN
+
+          P3 pa = new P3();
+          P3 pb = new P3();
+          P3 pc = new P3();
+          P3 pd = new P3();
+
+          for (int iRow = row0; iRow < rowLimit; iRow++) {
+            int index = iRow * width * 3;
+            c[0] = 0;
+            c[1] = iRow - 0.5;
+            c[2] = width;
+            c[3] = iRow + 0.5;
+            c2m.transform(c, 0, c, 4, 2);
+            double x0 = c[4];
+            double y0 = c[5];
+            double x1 = c[6];
+            double y1 = c[7];
+
+            double y = (y0 + y1) / 2; // diagnostic: y0 MUST equal y1
+            if (y < minY || y > maxY) {
+              continue;
+            }
+            double dx = (x1 - x0) / width;
+            pd.x = x0;
+            pd.y = y1;
+            pd.z = nni.interpolate(pd.x, pd.y, null);
+            pc.x = x0;
+            pc.y = y0;
+            pc.z = nni.interpolate(pc.x, pc.y, null);
+            for (int iCol = 0; iCol < width; iCol++) {
+              P3 swap = pa;
+              pa = pd;
+              pd = swap;
+              swap = pb;
+              pb = pc;
+              pc = swap;
+              double x = (iCol + 0.5) * dx + x0;
+              pd.x = x + dx / 2;
+              pd.y = y1;
+              pd.z = Double.NaN;
+              pc.x = x + dx / 2;
+              pc.y = y0;
+              pc.z = Double.NaN;
+              if (minX <= x && x <= maxX) {
+                double z = nni.interpolate(x, y, null);
+                pd.z = nni.interpolate(pd.x, pd.y, null);
+                pc.z = nni.interpolate(pc.x, pc.y, null);
+                // we define a grid point as valid only if all 4 corners
+                // have valid data.   We can't shade it if we don't have
+                // a complete set of information.
+                if (Double.isNaN(z)
+                  || Double.isNaN(pa.z)
+                  || Double.isNaN(pb.z)
+                  || Double.isNaN(pc.z)
+                  || Double.isNaN(pd.z)) {
+                  zGrid[index] = Float.NaN;
+                } else {
+                  zGrid[index] = (float) z;
+                  double xA = pa.x - pb.x;
+                  double yA = pa.y - pb.y;
+                  double zA = pa.z - pb.z;
+                  double xC = pc.x - pb.x;
+                  double yC = pc.y - pb.y;
+                  double zC = pc.z - pb.z;
+                  double xN = yC * zA - zC * yA;
+                  double yN = zC * xA - xC * zA;
+                  double zN = xC * yA - yC * xA;
+                  xA = pa.x - pd.x;
+                  yA = pa.y - pd.y;
+                  zA = pa.z - pd.z;
+                  xC = pc.x - pd.x;
+                  yC = pc.y - pd.y;
+                  zC = pc.z - pd.z;
+                  xN += yA * zC - zA * yC;
+                  yN += zA * xC - xA * zC;
+                  zN += xA * yC - yA * xC;
+                  zGrid[index + 1] = (float) (-xN / zN);
+                  zGrid[index + 2] = (float) (-yN / zN);
+                }
+              }
+              index += 3;
+            }
+            if (task != null && task.isCancelled()) {
+              return;
+            }
+          }
+        } else {
+          for (int iRow = row0; iRow < rowLimit; iRow++) {
+            int index = iRow * width * 3;
+            c[0] = 0;
+            c[1] = iRow + 0.5;
+            c[2] = width;
+            c[3] = iRow + 0.5;
+            c2m.transform(c, 0, c, 4, 2);
+            double x0 = c[4];
+            double y0 = c[5];
+            double x1 = c[6];
+            double y1 = c[7];
+
+            double y = (y0 + y1) / 2; // diagnostic: y0 MUST equal y1
+            if (y < minY || y > maxY) {
+              continue;
+            }
+            double dx = (x1 - x0) / width;
+            for (int iCol = 0; iCol < width; iCol++) {
+              double x = (iCol + 0.5) * dx + x0;
+              if (minX <= x && x <= maxX) {
+                double z = nni.interpolate(x, y, null);
+
+                if (Double.isNaN(z)) {
+                  zGrid[index] = Float.NaN;
+                } else {
+                  zGrid[index] = (float) z;
+                  if (hillshade) {
+                    double[] norm = nni.getSurfaceNormal();
+                    zGrid[index + 1] = (float) (norm[0] / norm[2]);
+                    zGrid[index + 2] = (float) (norm[1] / norm[2]);
+                  }
+                }
+              }
+              index += 3;
+            }
+
+            if (task != null && task.isCancelled()) {
+              return;
+            }
+          }
+        }
+
+        break;
+      case GeographicallyWeightedRegression:
+        GwrTinInterpolator gwr = new GwrTinInterpolator(t);
+        for (int iRow = row0; iRow < rowLimit; iRow++) {
+          int index = iRow * width * 3;
+          c[0] = 0;
+          c[1] = iRow + 0.5;
+          c[2] = width;
+          c[3] = iRow + 0.5;
+          c2m.transform(c, 0, c, 4, 2);
+          double x0 = c[4];
+          double y0 = c[5];
+          double x1 = c[6];
+          double y1 = c[7];
+
+          double y = (y0 + y1) / 2; // diagnostic: y0 MUST equal y1
+          if (y < minY || y > maxY) {
+            continue;
+          }
+          double dx = (x1 - x0) / width;
+          for (int iCol = 0; iCol < width; iCol++) {
+            double x = (iCol + 0.5) * dx + x0;
+            if (minX <= x && x <= maxX) {
+              double z = gwr.interpolate(
+                SurfaceModel.QuadraticWithCrossTerms,
+                BandwidthSelectionMethod.FixedProportionalBandwidth, 1.0,
+                x, y, null);
+
+              if (gwr.wasTargetExteriorToTin()) {
+                zGrid[index] = Float.NaN;
+              } else if (Double.isNaN(z)) {
+                zGrid[index] = Float.NaN;
+              } else {
+                zGrid[index] = (float) z;
+                double[] beta = gwr.getCoefficients();
+                zGrid[index + 1] = (float) beta[1]; // derivative Zx
+                zGrid[index + 2] = (float) beta[2]; // derivative Zy
+              }
+            }
+            index += 3;
+          }
+          if (task != null && task.isCancelled()) {
+            return;
+          }
+        }
+        break;
+      case TriangularFacet:
+      default:
+        TriangularFacetInterpolator tri = new TriangularFacetInterpolator(t);
+        for (int iRow = row0; iRow < rowLimit; iRow++) {
+          int index = iRow * width * 3;
+          c[0] = 0;
+          c[1] = iRow + 0.5;
+          c[2] = width;
+          c[3] = iRow + 0.5;
+          c2m.transform(c, 0, c, 4, 2);
+          double x0 = c[4];
+          double y0 = c[5];
+          double x1 = c[6];
+          double y1 = c[7];
+
+          double y = (y0 + y1) / 2; // diagnostic: y0 MUST equal y1
+          if (y < minY || y > maxY) {
+            continue;
+          }
+          double dx = (x1 - x0) / width;
+          for (int iCol = 0; iCol < width; iCol++) {
+            double x = (iCol + 0.5) * dx + x0;
+            if (minX <= x && x <= maxX) {
+              double z = tri.interpolate(x, y, null);
+
+              if (Double.isNaN(z)) {
+                zGrid[index] = Float.NaN;
+              } else {
+                zGrid[index] = (float) z;
+                if (hillshade) {
+                  double[] norm = tri.getSurfaceNormal();
+                  zGrid[index + 1] = (float) (norm[0] / norm[2]);
+                  zGrid[index + 2] = (float) (norm[1] / norm[2]);
+                }
+              }
+            }
+            index += 3;
+          }
+          if (task != null && task.isCancelled()) {
+            return;
+          }
+        }
+
+        break;
+    }
+
   }
 
   /**
@@ -1420,4 +1585,11 @@ public class MvComposite {
 
   }
 
+
+
+  private class P3 {
+      double x;
+      double y;
+      double z;
+  }
 }

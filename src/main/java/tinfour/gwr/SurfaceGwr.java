@@ -54,7 +54,6 @@ package tinfour.gwr;
 import java.io.PrintStream;
 import java.util.Arrays;
 import org.apache.commons.math3.distribution.TDistribution;
-import org.apache.commons.math3.linear.Array2DRowRealMatrix;
 import org.apache.commons.math3.linear.BlockRealMatrix;
 import org.apache.commons.math3.linear.DecompositionSolver;
 import org.apache.commons.math3.linear.DiagonalMatrix;
@@ -184,6 +183,7 @@ public class SurfaceGwr {
   boolean areVarianceAndHatPrepped;
 
   double sigma2;  // Residual standard variance (sigma squared)
+  double mlSigma2;
   double rss; // resisdual sum squares
 
   double effectiveDegOfF;
@@ -748,8 +748,8 @@ public class SurfaceGwr {
         + " for " + nDegOfFreedom + " degrees of freedom");
     }
 
-    RealMatrix matrixG = new Array2DRowRealMatrix(g, false);
-    RealMatrix matrixA = new Array2DRowRealMatrix(input, false);
+    RealMatrix matrixG = new BlockRealMatrix(g );
+    RealMatrix matrixA = new BlockRealMatrix(input );
 
     // The Apache Commons Math MultipleLinearRegression implementation
     // uses the QRDecomposition, and we follow their lead.
@@ -1334,7 +1334,7 @@ public class SurfaceGwr {
     double[][] bigW = sampleWeightsMatrix;
 
     double[][] input = computeDesignMatrix(model, xOffset, yOffset, nSamples, samples);
-    RealMatrix mX = new Array2DRowRealMatrix(input, false);
+    RealMatrix mX = new BlockRealMatrix(input );
     RealMatrix mXT = mX.transpose();
 
     // in the loop below, we compute
@@ -1382,6 +1382,7 @@ public class SurfaceGwr {
 
     double d1 = nSamples - (2 * traceHat - sTrace2);
     sigma2 = rss / d1;
+    mlSigma2 = rss/nSamples;
 
     RealMatrix mIL = hat.copy();
     for (int i = 0; i < nSamples; i++) {
@@ -1568,7 +1569,7 @@ public class SurfaceGwr {
     //double effDegOfF = getEffectiveDegreesOfFreedom(); // should match delta1
 
     double[][] input = computeDesignMatrix(model, xOffset, yOffset, nSamples, samples);
-    RealMatrix mX = new Array2DRowRealMatrix(input, false);
+    RealMatrix mX = new BlockRealMatrix(input );
     RealMatrix mXT = mX.transpose();
 
     // the weights array may not necessarily be of dimension nSamples,
@@ -1688,13 +1689,20 @@ public class SurfaceGwr {
     // "Geographically Weighted Regression White Paper"
     // Other sources omit the log(2 PI) term.  When comparing sets
     // of equal sample size, it doesn't matter.
-    // TO DO: When comparing the results to the GWR4 program, I discovered that
-    // GWR4 doesn't use the plain sigma, but rather the "ML sigma."
-    // The reason behind this is not discussed in their white paper. Further
-    // investigation is required to see if this provides a way of improving
-    // the effectiveness of the AICc.
+    //   Note: When comparing the results from this class with those
+    // of the GWR4 program, I discovered that GWR4 doesn't use the plain sigma,
+    // but rather the "ML sigma."   In this case, the ML sigma is just
+    // the biased estimate of sigma given by RSS/n.  This rationale for
+    // thi usage is not given in the white paper.  However, initial test
+    // using Tinfour suggest that when it is applied to the AICc
+    // in automatic bandwidth selection in cross-validation tests,
+    // the predicted results tend to more closely follow the original
+    // observed data points. So I am following the lead of the GWR4 team
+    // for now, at least until I have more time to research the theory
+    // behind it.
+
     computeVarianceAndHat();
-    double lv = Math.log(sigma2); // this is 2*log(sigma) or log(sigma^2)
+    double lv = Math.log(mlSigma2); // recall 2*log(sigma) is log(sigma^2)
     double x = (nSamples + traceHat) / (nSamples - 2 - traceHat);
     return nSamples * (lv + log2PI + x);
   }
@@ -1835,7 +1843,7 @@ public class SurfaceGwr {
     double[][] bigW = sampleWeightsMatrix;
 
     double[][] input = computeDesignMatrix(sm, xQuery, yQuery, nSamples, samples);
-    RealMatrix mX = new Array2DRowRealMatrix(input, false);
+    RealMatrix mX = new BlockRealMatrix(input);
     RealMatrix mXT = mX.transpose();
 
     // in the loop below, we compute
@@ -1845,7 +1853,6 @@ public class SurfaceGwr {
     //   may provide a more numerically stable implementation of this operation.
     //   This may be worth future investigation.
     double traceS = 0;
-    double traceS2 = 0;
     for (int i = 0; i < nSamples; i++) {
       DiagonalMatrix mW = new DiagonalMatrix(bigW[i]); //NOPMD
       RealMatrix mXTW = mXT.multiply(mW);
@@ -1853,19 +1860,16 @@ public class SurfaceGwr {
       RealMatrix c = mXTW.multiply(mX);
       QRDecomposition cd = new QRDecomposition(c); // NOPMD
       DecompositionSolver cdSolver = cd.getSolver();
-      RealMatrix cInv = null;
+      RealMatrix cInv;
       try {
         cInv = cdSolver.getInverse();
-      } catch (SingularMatrixException | NullPointerException merde) {
+      } catch (SingularMatrixException | NullPointerException badMatrix) {
         return Double.NaN;
       }
       RealMatrix r = rx.multiply(cInv).multiply(mXTW);
       double[] row = r.getRow(0);
       traceS += row[i];
-      for (int j = 0; j < nSamples; j++) { //NOPMD
-        bigS[i][j] = row[j];
-        traceS2 += row[j] * row[j];
-      }
+      System.arraycopy(row, 0, bigS[i], 0, nSamples); //NOPMD
     }
 
     RealMatrix mS = new BlockRealMatrix(bigS); // the Hat matrix
@@ -1883,10 +1887,8 @@ public class SurfaceGwr {
       sse += e * e;
     }
 
-    double d1 = nSamples - (2 * traceS - traceS2);
-    double s2 = sse / d1;
-
-    double lv = Math.log(s2); // this is 2*log(sigma)
+    double mls2 = sse/nSamples;
+    double lv = Math.log(mls2); // this is 2*log(sigma)
     double x = (nSamples + traceS) / (nSamples - 2 - traceS);
     return nSamples * (lv + log2PI + x);
   }
@@ -1984,6 +1986,7 @@ public class SurfaceGwr {
    * @param sampleWeightsMatrix a valid two dimensional array dimensions
    * to the same size as the number of samples.
    */
+  @SuppressWarnings("PMD.ArrayIsStoredDirectly")
   public void setSampleWeightsMatrix(double[][] sampleWeightsMatrix) {
     this.sampleWeightsMatrix = sampleWeightsMatrix;
   }
