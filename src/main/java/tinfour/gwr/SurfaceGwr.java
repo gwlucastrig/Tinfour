@@ -24,7 +24,8 @@
  * 12/2015   G. Lucas  Renamed to SurfaceGWR to reflect the potential
  *                       for other applications in addition to terrain.
  * 07/2016   G. Lucas  Extensive changes to fix incorrect implementation
- *                     descriptive statistics. Removed the specification of
+ *                     of population statistics such as the variance, etc.
+ *                     Removed the specification of
  *                     a surface model from the constructor (it was originally
  *                     intended to support allocation of re-usable data elements
  *                     based on number of parameters for the model, but that
@@ -38,7 +39,7 @@
  * computing the regression coefficients requires constructing and inverting
  * one matrix while computing the "hat" matrix (needed to compute variance,
  * standard deviation, etc.) requires repeating this operation n-sample times.
- * So if an application does not need descriptive statistics, there is no
+ * So if an application does not need the additional statistics, there is no
  * need to build these elements.
  *   However, this approach does have a consequence. In order to
  * preserve the necessary data for computing these statistics, it is
@@ -63,27 +64,37 @@ import org.apache.commons.math3.linear.SingularMatrixException;
 
 /**
  * Provides an implementation of a weighted polynomial regression
- * for the surface f(x, y). A small set of models (cubic, quadradic,
+ * for the surface z=p(x, y). A small set of models (cubic, quadradic,
  * planar) are available for the surface of interest which may
  * be elevation or some other phenomenon. Weights are computed
  * using an inverse distance weighted calculation.
- * <p>
- * While this class is by no means limited to terrain-based applications,
- * the original motivation for its creation was the modeling of
- * surface elevation. It is optimized for the computation of values
+ * <p><strong>A Note on the Suitability of This Implementation: </strong>
+ * Anyone who values his own time should respect the time of others.
+ * With that regard, I believe it appropriate to make this note about
+ * the current state of the Tinfour GWR implementation.  While I believe
+ * that code is implemented correctly, it is not complete.
+ * Statistics such as R values and F scores are not yet available.
+ * The Tinfour GWR classes also lacks tools for detecting multi-collinearities
+ * in model coefficients.  These classes were developed with a specific
+ * application in mind: the modeling of terrain and bathymetry.
+ * And while they can be applied to many other problems, potential
+ * users should consider whether the tool is suitable to their particular
+ * requirements.
+ * <p><strong>Usage Notes:</strong>
+ * This class is optimized for the computation of values
  * at specific points in which a set of irregularly spaced sample points
  * are available in the vicinity of the point of interest. Each value
  * calculation involves a separate regression operation.
  * <p>
- * Regression methods are used as a way of dealing with uncertainty
- * in the observed values passed into the calculation. As such, it provides
+ * Regression techniques are used as a way of dealing with uncertainty
+ * in the observed values passed into the calculation. As such, they provide
  * methods for evaluating the uncertainty in the computed results.
- * <p>
  * In terrain-based applications, it is common to treat points nearest
  * a query position as more significant than those farther away (in
  * accordance to the precept of "spatial autocorrelation"). In order
  * to support that, a criterion for inverse-distance weighting of the
- * regression is provided.
+ * regression is provided based on the Gaussian Kernel
+ * described in the references cited below.
  * <p>
  * Given a set of sample points in the vicinity
  * of the point of interest,(x,y), the class solves for the coefficients
@@ -101,14 +112,14 @@ import org.apache.commons.math3.linear.SingularMatrixException;
  * 1989 by Ronald E. Walpole and Raymond H. Myers, Macmillan Publishing Company,
  * New York City, NY Chapter 10, "Multiple Linear Regression". Walpole and
  * Myers provide an excellent introduction to the problem of multiple
- * linear regression, its descriptive statistics (particularly the
+ * linear regression, its general statistics (particularly the
  * prediction interval), and their use. The calculations for
  * <strong>weighted</strong> regression are not covered in their work, but were
  * derived from the information they provided. Because these calculations
  * are not taken from published literature, they have not been vetted
  * by expert statisticians.
  * <p>
- * Details of the descriptive of statistics specific to a weighted
+ * Details of the residual variance and other statistics specific to a weighted
  * regression are taken from
  * Leung, Yee; Mei, Chang-Lin; and Zhang, Wen-Xiu (2000). "Statistical
  * tests for spatial nonstationarity based on the geographically
@@ -151,7 +162,7 @@ import org.apache.commons.math3.linear.SingularMatrixException;
  * be better served by R, GWR4, or even the Apache Commons Math
  * GSLMultipleLinearRegression class. But this implementation has
  * demonstrated sufficient utility, that it may be worth considering
- * expanding its capabilities.
+ * expanding its capabilities in future development.
  * <p>
  * One of the special considerations in terrain modeling is "mass production".
  * Creating a raster grid from unstructured data can involve literally millions
@@ -218,7 +229,7 @@ public class SurfaceGwr {
    * <p>
    * The sample weights matrix is a two dimensional array giving
    * weights based on the distance between samples. It is used when performing
-   * calculations for descriptive statistics such as standard deviation,
+   * calculations for general statistics such as standard deviation,
    * confidence intervals, etc. Because of the high cost of initializing this
    * array, it can be treated as optional in cases where only the regression
    * coefficients are required.
@@ -234,7 +245,7 @@ public class SurfaceGwr {
    * points with the x, y, and z values for the regression.
    * @param weights an array of weighting factors for samples
    * @param sampleWeightsMatrix an optional array of weights based on the
-   * distances between different samples; if descriptive statistics are
+   * distances between different samples; if general statistics are
    * not required, pass a null value for this argument.
    * @return an array of regression coefficients, or null if the
    * computation failed.

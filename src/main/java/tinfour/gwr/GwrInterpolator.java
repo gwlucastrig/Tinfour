@@ -35,19 +35,26 @@ import org.apache.commons.math3.distribution.TDistribution;
 /**
  * Provides methods and elements for performing interpolation over a
  * surface using linear regression methods to develop a polynomial
- * z = f(x, y) describing the surface in the region of the interpolation
+ * z = p(x, y) describing the surface in the region of the interpolation
  * coordinates.
+ * <p><strong>A Note on the Suitability of This Implementation: </strong>
+ * Anyone who values his own time should respect the time of others.
+ * With that regard, I believe it appropriate to make this note about
+ * the current state of the Tinfour GWR implementation.  While I believe
+ * that code is implemented correctly, it is not complete.
+ * Statistics such as R values and F scores are not yet available.
+ * The Tinfour GWR classes also lacks tools for detecting multi collinearities
+ * in model coefficients.  These classes were developed with a specific
+ * application in mind: the modeling of terrain and bathymetry.
+ * And while they can be applied to many other problems, potential
+ * users should consider whether the tool is suitable to their particular requirements.
  * <p>
  * <Strong>Development Notes</strong><br>
  * The current implementation of this class supports a family of surface
  * models based on polynomials p(x, y) of order 3 or less. While this approach
  * is appropriate for the original intent of this class, modeling terrain,
- * there is no reason why the class cannot be adapted to support arbitrary models.
- * Originally, I felt that users interested in other problems might
- * be better served by R, GWR4, or even the Apache Commons Math
- * GSLMultipleLinearRegression class. But this implementation has
- * demonstrated sufficient utility, that it may be worth considering
- * expanding its capabilities.
+ * there is no reason why the class cannot be adapted to support
+ * other models based on continuous, real-valued variables.
  * <p>
  * One of the special considerations in terrain modeling is "mass production".
  * Creating a raster grid from unstructured data can involve literally millions

@@ -45,6 +45,17 @@ import tinfour.gwr.SurfaceModel;
  * surface using linear regression methods to develop a polynomial
  * z = f(x, y) describing the surface in the region of the interpolation
  * coordinates.
+ * <p><strong>A Note on the Suitability of This Implementation: </strong>
+ * Anyone who values his own time should respect the time of others. 
+ * With that regard, I believe it appropriate to make this note about 
+ * the current state of the Tinfour GWR implementation.  While I believe
+ * that code is implemented correctly, it is not complete.
+ * Statistics such as R values and F scores are not yet available. 
+ * The Tinfour GWR classes also lacks tools for detecting multi collinearities
+ * in model coefficients.  These classes were developed with a specific 
+ * application in mind: the modeling of terrain and bathymetry.  
+ * And while they can be applied to many other problems, potential 
+ * users should consider whether the tool is suitable to their particular requirements.   
  * <p>
  * <strong>A Note on Safe Coding:</strong> This class maintains references to
  * its most recent inputs as member elements. For efficiency purposes,
@@ -136,7 +147,7 @@ public class GwrTinInterpolator extends GwrInterpolator implements IInterpolator
     super();
     neighborhoodPoints = tin.getNeighborhoodPointsCollector();
     this.tin = tin;
-    this.maxDepth = 3;
+    this.maxDepth = 4;
 
   }
 
