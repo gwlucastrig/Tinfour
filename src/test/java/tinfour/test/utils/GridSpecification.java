@@ -88,7 +88,7 @@ public class GridSpecification {
    * The number of rows and columns will be computed based on the
    * bounds and cell size.
    * <p>
-   * <strng>Geographic Coordinate</strong> present a special problem in that
+   * <strong>Geographic Coordinate</strong> present a special problem in that
    * they are non-isotropic. The Tinfour vertex loader will optionally load
    * geographic coordinates and apply a weak map projection to convert them
    * to an isotropic coordinate system. If the source data is in geographic

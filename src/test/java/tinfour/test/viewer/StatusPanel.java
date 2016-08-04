@@ -126,7 +126,7 @@ public class StatusPanel extends JPanel {
    * monitor will be created, but it will not be added to the status
    * panel.
    *
-   * @param index
+   * @param index the index of the task associated with the monitor
    * @return a valid progress monitor.
    */
   public IMonitorWithCancellation getProgressMonitor(final int index) {

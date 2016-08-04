@@ -287,7 +287,7 @@ public class MvComposite {
   /**
    * Get the index of the task currently associated with the composite.
    *
-   * @return
+   * @return a positive integer
    */
   public int getTaskIndex() {
     return taskIndex;
@@ -1469,6 +1469,7 @@ public class MvComposite {
    * @param width the width of the color bar
    * @param height the height of the color bar
    * @param margin the margin around the overall legend
+   * @param font the font to be used for labeling (if enabled)
    * @param frame indicates that a framing rectangle is to be drawn
    * around the legend
    * @return if successful, a valid buffered image; otherwise, a null

@@ -64,6 +64,7 @@ public class BackplaneManager {
   /**
    * Post an image update to the user interface
    *
+   * @param task the task associated with the update
    * @param product a valid render product
    */
   public void postImageUpdate(final IModelViewTask task, final RenderProduct product) {

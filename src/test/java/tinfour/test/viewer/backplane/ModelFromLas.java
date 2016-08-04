@@ -100,8 +100,8 @@ public class ModelFromLas extends ModelAdapter implements IModel {
    * are accepted).
    *
    * @param file a valid LAS file
-   * @param groundPointFilter indicates that the model should load ground
-   * points only (rather than all samples).
+   * @param lidarPointSelection a specification for selecting lidar points
+   * based on their classification or other elements.
    *
    *
    */
