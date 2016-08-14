@@ -84,7 +84,7 @@ public class GwrInterpolator {
   // domain when automatically choosing bandwidth.
   // Chosen arbitrarily based on cross-validation testing and trading
   // off accuracy of predicted results and speed of calculation.
-  private static final int nSubdivisionsOfBandwidthTestDomain = 6;
+  private static final int nSubdivisionsOfBandwidthTestDomain = 8;
 
   private static final double[] automaticTestParameters;
 
@@ -412,8 +412,8 @@ public class GwrInterpolator {
     double [][]sampleWeightsMatrix,
     double meanDist) {
 
-    double m0 = meanDist * 0.4;
-    double m1 = meanDist * 1.0;
+    double m0 = meanDist * 0.3;
+    double m1 = meanDist * 4.0;
     double deltaM = m1 - m0;
     if (deltaM < 0) {
       deltaM = 0;
