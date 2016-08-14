@@ -348,7 +348,7 @@ public class ExampleCrossValidation implements IDevelopmentTest {
               System.out.flush();
             }
             double zAdp
-              = inGwr.interpolateUsingAdaptiveModelAndBandwidth(x, y, null);
+              = inGwr.interpolateUsingAutomaticModelAndBandwidth(x, y, null);
             double autoBandwidth = inGwr.getBandwidth();
             if (Double.isInfinite(autoBandwidth)) {
               nOrdinary++;
