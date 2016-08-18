@@ -147,7 +147,7 @@ public class GwrTinInterpolator extends GwrInterpolator implements IInterpolator
     super();
     neighborhoodPoints = tin.getNeighborhoodPointsCollector();
     this.tin = tin;
-    this.maxDepth = 4;
+    this.maxDepth = 3;
 
   }
 
