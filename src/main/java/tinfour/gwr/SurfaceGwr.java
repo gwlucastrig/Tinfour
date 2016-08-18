@@ -1,5 +1,5 @@
 /*
- * Copyright 2013 Gary W. Lucas.
+ * Copyright 2014 Gary W. Lucas.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -1425,7 +1425,7 @@ public class SurfaceGwr {
 //    }
     ps.format("Regression coefficients & variance\n");
     for (int i = 0; i < beta.length; i++) {
-      System.out.format("beta[%2d] %12.6f\n",
+      ps.format("beta[%2d] %12.6f\n",
         i, beta[i]);
     }
     ps.format("Residual standard deviation %f on %d degrees of freedom\n",
@@ -1514,6 +1514,18 @@ public class SurfaceGwr {
   public double getStandardDeviation() {
     computeVarianceAndHat();
     return Math.sqrt(sigma2);
+  }
+
+  /**
+   * Gets the ML Sigma value used in the AICc calculation. This
+   * value is the sqrt of the sum of the residuals squared divided by
+   * the number of samples.
+   *
+   * @return in available, a positive real value; otherwise NaN.
+   */
+  public double getSigmaML() {
+    computeVarianceAndHat();
+    return Math.sqrt(mlSigma2);
   }
 
   /**
@@ -1696,21 +1708,36 @@ public class SurfaceGwr {
    * @return a valid floating point number.
    */
   public double getAICc() {
-    // the following logic is due to Charlton and Fotheringham's
-    // "Geographically Weighted Regression White Paper"
-    // Other sources omit the log(2 PI) term.  When comparing sets
-    // of equal sample size, it doesn't matter.
-    //   Note: When comparing the results from this class with those
-    // of the GWR4 program, I discovered that GWR4 doesn't use the plain sigma,
-    // but rather the "ML sigma."   In this case, the ML sigma is just
-    // the biased estimate of sigma given by RSS/n.  This rationale for
-    // thi usage is not given in the white paper.  However, initial test
-    // using Tinfour suggest that when it is applied to the AICc
-    // in automatic bandwidth selection in cross-validation tests,
-    // the predicted results tend to more closely follow the original
-    // observed data points. So I am following the lead of the GWR4 team
-    // for now, at least until I have more time to research the theory
-    // behind it.
+   // the following logic is based on Charlton and Fotheringham's
+    // "Geographically Weighted Regression White Paper" (2009) which
+    // is available on the web.  The authors give the equation
+    //    AICc = 2*n*log(sigma) + n*log(2*PI) +  n * (n+tr(S))/(n-2-tr(S))
+    // where
+    //    n is the number of observations in the data set
+    //    S is the hat matrix
+    //    sigma is the "estimate of the standard deviation of the residuals"
+    // When I first coded this routine, I assumed that by sigma,
+    // Charlton and Fotheringham meant the unbiased estimate of standard
+    // deviation as computed in the computeVarianceAndHat() method
+    // of this class.  However, in comparing the output of this method with
+    // their GWR4 program, I was unable to match the results.  Fortunately,
+    // GWR4 displays a result it labels as "ML sigma". By replacing
+    // sigmal with the ML sigma, I was able to get the output from this
+    // method to consistently agree with the values computed by GWR4.
+    //
+    // The value of ML sigma (for "maximum likihood sigma"?) is just
+    //    ML_sigma = sqrt(RSS/n)
+    //    where RSS is the sum of the squared residuals (squared errors).
+    //
+    //   Statistics is not my area of expertise, but I have reviewed a number
+    // of web articles and I think that this use (rather than the unbiased sigma)
+    // may actually be the correct interpretation of the AICc defintion.
+    // In any case, I tested this change by comparing the prediction results
+    // from Tinfour using automatic bandwidth selection (which depends on the
+    // AICc value) against known checkpoint values.  The ML_sigma variation
+    // appears to give a small improvement in the agreement of the
+    // prediction to the checkpoint. So I am following the lead of the GWR4 team
+    // and adopting the ML_sigma in the AICc computation.
 
     computeVarianceAndHat();
     double lv = Math.log(mlSigma2); // recall 2*log(sigma) is log(sigma^2)
@@ -1899,7 +1926,7 @@ public class SurfaceGwr {
     }
 
     double mls2 = sse/nSamples;
-    double lv = Math.log(mls2); // this is 2*log(sigma)
+    double lv = Math.log(mls2); // this is 2*log(sqrt(mls2))
     double x = (nSamples + traceS) / (nSamples - 2 - traceS);
     return nSamples * (lv + log2PI + x);
   }

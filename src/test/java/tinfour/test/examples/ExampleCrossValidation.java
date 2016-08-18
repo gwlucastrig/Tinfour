@@ -59,14 +59,16 @@ public class ExampleCrossValidation implements IDevelopmentTest {
 
   /**
    * Provides the main method for an example application
-   * that develops raster elevation files in Esri's ASCII format
-   * and image files in PNG format.
+   * that attempts to find out how well each point in a set of
+   * sample inputs can be predicted by its neighbors. A cross
+   * validation approach is used.
    * <p>
-   * Data is accepted from an LAS file. For best results, the file
-   * should be in a projected coordinate system rather than a geographic
-   * coordinate system. In general, geographic coordinate systems are a
-   * poor choice for Lidar data processing since they are non-isotropic,
-   * however many data sources provide them in this form.
+   * Data is accepted from an LAS file. A TIN is constructed. Then
+   * one-at-a-time, each point in the tin is removed, and a predicted
+   * value at its position is computed using various interpolators.
+   * A error value is computed as the difference between the predicted
+   * value and the true value. Errors are tabulated. The removed point is
+   * restored. And the process continues to the next point.
    * <p>
    * Command line arguments include the following:
    * <pre>
@@ -90,8 +92,8 @@ public class ExampleCrossValidation implements IDevelopmentTest {
   }
 
   /**
-   * Run the example code accepting an input LAS file and writing an
-   * output grid in Esri's ASCII raster format.
+   * Run the example code accepting a set of input vertices and looping
+   * through to perform cross validation, tabulating the results.
    *
    * @param ps a valid print-stream for recording results of processing.
    * @param args a set of arguments for configuring the processing.
@@ -278,8 +280,8 @@ public class ExampleCrossValidation implements IDevelopmentTest {
     SurfaceModel[] smValues = SurfaceModel.values();
     int[] adpModelCount = new int[smValues.length];
     Tabulator tabProB = new Tabulator();
-
-    Tabulator tabBdw = new Tabulator(); // just used for avg. adative bandwidth
+    Tabulator tabBdw = new Tabulator(); // just used for avg. auto bandwidth
+    Tabulator tabBdwPro = new Tabulator(); // used for avg. auto bandwidth scaled
 
     // The list of vertices contained in the TIN may be slightly differnt
     // than the input list.  The input list may have contained duplicates or
@@ -353,7 +355,9 @@ public class ExampleCrossValidation implements IDevelopmentTest {
             if (Double.isInfinite(autoBandwidth)) {
               nOrdinary++;
             } else {
+              double autoPro = autoBandwidth/inGwr.getSampleDistanceMean();
               tabBdw.tabulate(autoBandwidth);
+              tabBdwPro.tabulate(autoPro);
             }
             SurfaceModel autoModel = inGwr.getSurfaceModel();
             int index = autoModel.ordinal();
@@ -379,8 +383,15 @@ public class ExampleCrossValidation implements IDevelopmentTest {
     if (enableAutoBW) {
       tabAdp.summarize(ps, "GWR, Automatic BW AICc   ");
       ps.println("\nValues for automatically selected bandwidth");
-      ps.format("Mean:   %12.6f\n", tabBdw.getMeanAbsValue());
-      ps.format("Std Dev %12.6f\n", tabBdw.getStdDevAbsValue());
+      ps.format("   Mean:           %12.6f   (%8.6f of mean dist)\n",
+               tabBdw.getMeanAbsValue(), tabBdwPro.getMeanAbsValue());
+      ps.format("   Std Dev         %12.6f   (%8.6f)\n",
+        tabBdw.getStdDevAbsValue(), tabBdwPro.getStdDevAbsValue());
+      ps.format("   Min,Max:        %12.6f, %12.6f  (%5.3f, %5.3f of mean dist)\n",
+        tabBdw.getMinValue(),
+        tabBdw.getMaxValue(),
+        tabBdwPro.getMinValue(),
+        tabBdwPro.getMaxValue());
       ps.format("Number of Ordinary Least Squares: %d\n", nOrdinary);
       for (int i = 0; i < adpModelCount.length; i++) {
         SurfaceModel sm = smValues[i];
@@ -412,6 +423,10 @@ public class ExampleCrossValidation implements IDevelopmentTest {
     int nE;
     int nNaN;
 
+    Tabulator(){
+      minE = Double.POSITIVE_INFINITY;
+      maxE = Double.NEGATIVE_INFINITY;
+    }
     void tabulate(double zE) {
       double e2 = zE * zE;
       double e = Math.abs(zE);
@@ -475,6 +490,14 @@ public class ExampleCrossValidation implements IDevelopmentTest {
       // nE*sumE2-sumE*sumE)/((nE*(nE-1))
       // use the form below
       return Math.sqrt((sumE2 - (sumE / nE) * sumE) / (nE - 1));
+    }
+
+    double getMinValue(){
+      return minE;
+    }
+
+    double getMaxValue(){
+      return maxE;
     }
 
   }

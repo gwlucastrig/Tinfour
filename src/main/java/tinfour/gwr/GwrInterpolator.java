@@ -84,7 +84,9 @@ public class GwrInterpolator {
   // domain when automatically choosing bandwidth.
   // Chosen arbitrarily based on cross-validation testing and trading
   // off accuracy of predicted results and speed of calculation.
-  private static final int nSubdivisionsOfBandwidthTestDomain = 8;
+  private static final int nSubdivisionsOfBandwidthTestDomain = 6;
+  private static final double bandwidthTestDomainScale0 = 0.3;
+  private static final double bandwidthTestDomainScale1 = 1.0;
 
   private static final double[] automaticTestParameters;
 
@@ -398,7 +400,6 @@ public class GwrInterpolator {
       model, qx, qy, nSamples, samples, weights, sampleWeightsMatrix);
 
     return gwr.getAICc();
-    // return regression.getPredictionIntervalHalfRange(0.05);
   }
 
   private double prepAutomaticBandwidthSelection(
@@ -411,9 +412,45 @@ public class GwrInterpolator {
     double[] weights,
     double [][]sampleWeightsMatrix,
     double meanDist) {
+    // The Algorithm --------------------------------------------------
+    // The goal here is to pick a bandwidth that results in good AICc score.
+    // The lower the AICc, the better.  Unfortunately, computing AICc is
+    // a very, very costly operation so we wish to reduce the number of times
+    // the algorithm performs it.
+    // When developing this method, I performed several plots of the curve
+    // for the AICc as as function of bandwidth, or y = AICc(x) where x
+    // is the bandwidth.  While many of these curves were monotonically
+    // decreasing, some of them were quite complex with sharp increments
+    // in value (perhaps even discontinuities?).  So techniques like
+    // Newton's method are out.  Instead, I use the following approach
+    //   1) divide the domain into a number of intervals, based on the
+    //      mean distance of the samples from the query point. A minimum
+    //      range is set because, in practice, very small values of bandwidth
+    //      we not helpful.  These intervals are used to define coordinates
+    //      x[0], x[1]..., x[n-1]
+    //   2) Compute the AICc at each x[i] coording to obtain control points
+    //      (x[0], y[0]), (x[1], y[1]), ..., (x[n-1], y[n-1]).
+    //      Record the best AICc value and corresponding X as xBest and yBest.
+    //   3) Loop through the control points, copying out sets of
+    //      3 subsequential control points.
+    //   4) Using the these "parabola points",
+    //      compute the coefficients for a parabola that approximates the curve.
+    //      Use elementary calculus to find the x coordinate, xTest, for a
+    //      local minima of that curve.
+    //   5) If a minima exists, compute yTest = AICc(xTest).  If the minima
+    //      cannot be found, continue to the next set of 3 parabola poits and
+    //      proceed from step 4.
+    //   6) If yTest<yBest, set xBest = xTest, yBest = yTest.
+    //   7) Adjust the coordinates of the three parabola points so that
+    //      the (xTest, yTest) is now the center point.  Repeat the
+    //      process starting at step 4 for a fixed number of times or until
+    //      no improvement in yBest is available within the current interval.
+    //      If no improvement is available, select the next set of three
+    //      control points as parabola points and continue from step 4.
+    //
 
-    double m0 = meanDist * 0.3;
-    double m1 = meanDist * 4.0;
+    double m0 = meanDist * bandwidthTestDomainScale0;
+    double m1 = meanDist * bandwidthTestDomainScale1;
     double deltaM = m1 - m0;
     if (deltaM < 0) {
       deltaM = 0;
@@ -445,7 +482,8 @@ public class GwrInterpolator {
       // in the array, further optimization is unlikely to yield
       // improvement.  And, in fact, ordinary least squares may yield a
       // better soluton.
-      double yTest = testOrdinaryLeastSquares(model, qx, qy, nSamples, samples, weights,sampleWeightsMatrix);
+      double yTest = testOrdinaryLeastSquares(
+        model, qx, qy, nSamples, samples, weights,sampleWeightsMatrix);
       if (yTest < yBest) {
         return Double.POSITIVE_INFINITY;
       }
@@ -461,17 +499,30 @@ public class GwrInterpolator {
       double x2 = x[i + 1];
       double s0 = (y1 - y0) / (x1 - x0);
       double s1 = (y2 - y1) / (x2 - x1);
+      // pre-test.  If the curve is not convex upward, it will
+      // not have a minima.
       if (s1 > s0) {
         for (int iTest = 0; iTest < 3; iTest++) {
+          // to simplify algebra, we will translate the three
+          // parabola points so that the initial point is the origin.
+          // so the parabola is defined by (0,0), (Xb, yb),  (Xc,Yc)
+          // In this modified coordinate system
+          //    y = A*x^2 +B*x   and y(0) = 0.
+          //  To solve for A and B, we set up a linear system
+          //    Yb = A*Xb^2 + B*Xb
+          //    YC = A*Xb^2 + B*Xc
+          //  We can find the X coordinate for a local minima (if one exists)
+          //  in this coordinate system and then translate it back to standard
+          //  coordinates to compute the AICc
           double Xb = x1 - x0;
           double Xc = x2 - x0;
           double Xb2 = Xb * Xb;
           double Xc2 = Xc * Xc;
           double Yb = y1 - y0;
           double Yc = y2 - y0;
-          double det = Xb2 * Xc - Xb * Xc2;
+          double det = Xb2 * Xc - Xb * Xc2;  // this will never be zero
           double A = (Xc * Yb - Xb * Yc) / det;
-          // A the second derivative of the parabolic equation
+          // 2*A is the second derivative of the parabolic equation
           if (A <= 0) {
             // found a local maximum or inflection point
             break;
@@ -608,7 +659,7 @@ public class GwrInterpolator {
    * @return a valid floating point number.
    */
   public double getAICc() {
-     prepSampleWeightsMatrix();
+    prepSampleWeightsMatrix();
     return gwr.getAICc();
   }
 
@@ -759,7 +810,7 @@ public class GwrInterpolator {
     return Math.sqrt(fx * fx + fy * fy);
   }
 
-    /**
+  /**
    * Gets an unbiased estimate of the the standard deviation
    * of the residuals for the predicted values for all samples.
    *
@@ -769,6 +820,20 @@ public class GwrInterpolator {
     prepSampleWeightsMatrix();
       return gwr.getStandardDeviation();
   }
+
+  /**
+   * Gets the ML Sigma value used in the AICc calculation. This
+   * value is the sqrt of the sum of the residuals squared divided by
+   * the number of samples.
+   *
+   * @return in available, a positive real value; otherwise NaN.
+   */
+  public double getSigmaML() {
+    prepSampleWeightsMatrix();
+    return gwr.getSigmaML();
+  }
+
+
 
   /**
    * Gets the surface model for the most recently performed
