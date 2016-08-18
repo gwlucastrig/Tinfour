@@ -82,7 +82,8 @@ public class GwrInterpolator {
 
   // the number of intervals for subdividing the bandwidth test
   // domain when automatically choosing bandwidth.
-  // Chosen arbitrarily based on cross-validation testing and trading
+  // These selections are not based on any theory, but were
+  // chosen arbitrarily based on cross-validation testing and trading
   // off accuracy of predicted results and speed of calculation.
   private static final int nSubdivisionsOfBandwidthTestDomain = 6;
   private static final double bandwidthTestDomainScale0 = 0.3;
@@ -91,15 +92,14 @@ public class GwrInterpolator {
   private static final double[] automaticTestParameters;
 
   static {
-    // divide the range 0 to 1 into a series of intervals with size
-    // roughly doubling every two steps
-    automaticTestParameters = new double[nSubdivisionsOfBandwidthTestDomain];
+    // The intervals are set up as a series of powers of sqrt(2).
     int n = nSubdivisionsOfBandwidthTestDomain;
-    for (int i = 0; i < nSubdivisionsOfBandwidthTestDomain - 1; i++) {
-      double x = Math.pow(2.0, -(n - 1 - i) / 2.0);
-      automaticTestParameters[i + 1] = x;
+    automaticTestParameters = new double[n];
+     for (int i = 1; i < n-1; i++) {
+      double x = Math.pow(2.0, -(n - i) / 2.0);
+      automaticTestParameters[i] = x;
     }
-    automaticTestParameters[nSubdivisionsOfBandwidthTestDomain - 1] = 1.0;
+    automaticTestParameters[n - 1] = 1.0;
   }
 
   /**
