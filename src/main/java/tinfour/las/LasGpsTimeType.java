@@ -91,7 +91,7 @@ public enum LasGpsTimeType {
     double d = lasGpsTime - (double) f;
     if (this == LasGpsTimeType.SatelliteTime) {
       double gpsTime = Math.floor(lasGpsTime)+1.0e+9;
-      long s = GpsTimeConverter.getInstance().gpsToMillis(gpsTime);
+      long s = GpsTimeConverter.gpsToMillis(gpsTime);
       return s + (long) (d * 1000 + 0.5);
     } else {
       // week time

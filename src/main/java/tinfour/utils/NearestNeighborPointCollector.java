@@ -32,6 +32,7 @@ package tinfour.utils;
 import java.util.Arrays;
 import java.util.List;
 import tinfour.common.Vertex;
+import tinfour.common.VertexMergerGroup;
 
 /**
  * Provides a utility for the efficient identification of the
@@ -67,14 +68,18 @@ public class NearestNeighborPointCollector {
   final int nCol;
   final int nTier;
 
+  VertexMergerGroup.ResolutionRule resolutionRule
+    = VertexMergerGroup.ResolutionRule.MinValue;
+
   /**
    * Construct a collector based on the specified list of vertices and
    * bounds. It is assumed that the coordinates and values of all specifications
    * are valid floating-point values (no NaN's included).
    *
    * @param vList a list of valid vertices
+   * @param mergeDuplicates indicates whether duplicates should be merged.
    */
-  public NearestNeighborPointCollector(List<Vertex> vList) {
+  public NearestNeighborPointCollector(List<Vertex> vList, boolean mergeDuplicates) {
     Vertex a = vList.get(0);
     double x0 = a.getX();
     double x1 = a.getX();
@@ -122,6 +127,16 @@ public class NearestNeighborPointCollector {
 
     nBins = nRow * nCol;
 
+    // 0. allocate an array to store counts.
+    // 1. perform a pass to count up vertices per bin
+    // 2. allocate storage for each bin based on count
+    // 3. perform a pass to insert vertices.  If configured
+    //    to screen duplicates, check for cases
+    //    where a vertex has the same coordinates as
+    //    an existing vertex. When that happens create a merger group.
+    // 4. Resize arrays for bin storage in cases where duplicates were found.
+    // 5. When complete, the iCount array is no longer needed and will be
+    //    allowed to go out-of-scope.
     int[] iCount = new int[nBins];
     for (Vertex v : vList) {
       double x = v.getX();
@@ -135,14 +150,83 @@ public class NearestNeighborPointCollector {
       bins[i] = new Vertex[iCount[i]]; // NOPMD
       iCount[i] = 0;
     }
-    for (Vertex v : vList) {
-      double x = v.getX();
-      double y = v.getY();
-      int iRow = (int) ((y - ymin) / sBin);
-      int iCol = (int) ((x - xmin) / sBin);
-      int index = iRow * nCol + iCol;
-      bins[index][iCount[index]] = v;
-      iCount[index]++;
+
+    if (mergeDuplicates) {
+      // the merge threshold is 1/10000th of the average spacing
+      double averageSpacing = xDelta * yDelta / nV / 0.866;
+      double mergeThreshold = averageSpacing / 1.0e+5;
+      double m2 = mergeThreshold * mergeThreshold;
+      boolean mergeFound = false;
+      collectionLoop:
+      for (Vertex v : vList) {
+        double x = v.getX();
+        double y = v.getY();
+        int iRow = (int) ((y - ymin) / sBin);
+        int iCol = (int) ((x - xmin) / sBin);
+        int index = iRow * nCol + iCol;
+        int n = iCount[index];
+        Vertex[] b = bins[index];
+        for (int i = 0; i < n; i++) {
+          double dx = x - b[i].getX();
+          double dy = y - b[i].getY();
+          if (dx * dx + dy * dy < m2) {
+            mergeFound = true;
+            VertexMergerGroup g;
+            if (b[i] instanceof VertexMergerGroup) {
+              g = (VertexMergerGroup) b[i];
+            } else {
+              g = new VertexMergerGroup(b[i]);
+              g.setResolutionRule(resolutionRule);
+            }
+            g.addVertex(v);
+            continue collectionLoop;
+          }
+        }
+        b[n] = v;
+        iCount[index]++;
+      }
+      if (mergeFound) {
+        // any bins that had merges will now have fewer items
+        // in their arrays than were originally allocated.
+        // resize the arrays.
+        for (int i = 0; i < nBins; i++) {
+          if (iCount[i] < bins[i].length) {
+            bins[i] = Arrays.copyOf(bins[i], iCount[i]);
+          }
+        }
+      }
+    } else {
+      // no mergers are required, just add to appropriate bin.
+      for (Vertex v : vList) {
+        double x = v.getX();
+        double y = v.getY();
+        int iRow = (int) ((y - ymin) / sBin);
+        int iCol = (int) ((x - xmin) / sBin);
+        int index = iRow * nCol + iCol;
+        bins[index][iCount[index]] = v;
+        iCount[index]++;
+      }
+    }
+  }
+
+  /**
+   * Sets the rule for resolving coincident vertices; recalculates
+   * value for vertices in the collection, if necessary
+   *
+   * @param rule a valid member of the enumeration
+   */
+  public void setResolutionRule(VertexMergerGroup.ResolutionRule rule) {
+    if (rule == null || rule == this.resolutionRule) {
+      return;
+    }
+    this.resolutionRule = rule;
+    for (int i = 0; i < nBins; i++) {
+      Vertex[] vArray = bins[i];
+      for (Vertex v : vArray) {
+        if (v instanceof VertexMergerGroup) {
+          ((VertexMergerGroup) v).setResolutionRule(rule);
+        }
+      }
     }
   }
 

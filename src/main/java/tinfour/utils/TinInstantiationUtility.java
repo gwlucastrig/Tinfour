@@ -22,11 +22,6 @@
  * Date     Name         Description
  * ------   ---------    -------------------------------------------------
  * 02/2016  G. Lucas     Created
- *
- * Notes:
- *  The pattern used her to initiate an instance of this class as a
- * singleton is based on the work of Bill Pugh as described in
- * Wikipedia at https://en.wikipedia.org/wiki/Singleton_pattern#Lazy_initialization
  * -----------------------------------------------------------------------
  */
 package tinfour.utils;
