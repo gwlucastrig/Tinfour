@@ -114,10 +114,10 @@ public class GpsTimeConverter {
     {2015, +1, 0},
     {2016, 0, 0},};
 
-  private final long[] linearTime;
-  private final long[] javaTime;
+  private static final long[] linearTime;
+  private static final long[] javaTime;
 
-  private GpsTimeConverter() {
+  static {
     int nTimeFixes = 0;
     for (int i = 0; i < leapSeconds.length; i++) {
       if (leapSeconds[i][1] != 0) {
@@ -168,6 +168,14 @@ public class GpsTimeConverter {
   }
 
   /**
+   A private constructor to deter application code from creating an
+   * instance of this class.
+  */
+  private GpsTimeConverter() {
+
+  }
+
+  /**
    * Convert a GPS time to milliseconds since the Java epoch 1 January 1970.
    * This value will be the time that would have been presented by a call to
    * the Java System.currentTimeMillis() at the instant indicated by the GPS
@@ -184,7 +192,7 @@ public class GpsTimeConverter {
    * measured from the GPS epoch 6 January 1980.
    * @return a valid Java time in milliseconds
    */
-  public long gpsToMillis(double gpsTime) {
+  public static long gpsToMillis(double gpsTime) {
     if (gpsTime < 0) {
       // a negative input is not handled correctly.
       return (long)(javaTime[0]-gpsTime*1000);
@@ -218,30 +226,11 @@ public class GpsTimeConverter {
    * measured from the GPS epoch 6 January 1980.
    * @return a valid Java time in milliseconds
    */
-  public Date gpsToDate(double gpsTime) {
+  public static Date gpsToDate(double gpsTime) {
     long t = gpsToMillis(gpsTime);
     return new Date(t);
   }
 
-  /**
-   * A private class to implement the initialization-on-demand holder idiom
-   * introduced by Bull Pugh and described at
-   * https://en.wikipedia.org/wiki/Singleton_pattern
-   */
-  private static class GpsTimeConverterHolder {
-
-    private static final GpsTimeConverter INSTANCE = new GpsTimeConverter(); //NOPMD
-  }
-
-  /**
-   * Gets a single instance of the time converter for use throughout the
-   * application without redundant initializations.
-   *
-   * @return a single, valid instance for all calls.
-   */
-  public static GpsTimeConverter getInstance() {
-    return GpsTimeConverterHolder.INSTANCE;
-  }
 
   //public static void main(String[] args) {
   //    SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.S");

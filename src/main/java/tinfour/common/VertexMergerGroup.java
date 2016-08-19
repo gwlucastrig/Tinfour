@@ -173,6 +173,7 @@ public class VertexMergerGroup extends Vertex {
         if(rule==null || rule == this.rule){
            return;
         }
+        this.rule = rule;
         applyRule();
     }
 
