@@ -29,6 +29,7 @@
  */
 package tinfour.utils;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import tinfour.common.Vertex;
@@ -153,7 +154,7 @@ public class NearestNeighborPointCollector {
 
     if (mergeDuplicates) {
       // the merge threshold is 1/10000th of the average spacing
-      double averageSpacing = xDelta * yDelta / nV / 0.866;
+      double averageSpacing = Math.sqrt(xDelta * yDelta / (nV * 0.866));
       double mergeThreshold = averageSpacing / 1.0e+5;
       double m2 = mergeThreshold * mergeThreshold;
       boolean mergeFound = false;
@@ -458,6 +459,26 @@ public class NearestNeighborPointCollector {
       }
     }
     return n;
+  }
+
+  /**
+   * Gets a list of the vertices currently stored in the collection.
+   * The result may be slightly smaller than the original input
+   * if merge rules were in effect and causes some co-located vertices
+   * to be merged.
+   *
+   * @return a valid list.
+   */
+  public List<Vertex> getVertices() {
+    int n = 0;
+    for (int i = 0; i < nBins; i++) {
+      n += bins[i].length;
+    }
+    List<Vertex> list = new ArrayList<Vertex>(n);
+    for (int i = 0; i < nBins; i++) {
+      list.addAll(Arrays.asList(bins[i]));
+    }
+    return list;
   }
 
 }
