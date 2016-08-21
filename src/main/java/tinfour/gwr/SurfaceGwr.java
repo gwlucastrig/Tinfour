@@ -1717,22 +1717,26 @@ public class SurfaceGwr {
     //    S is the hat matrix
     //    sigma is the "estimate of the standard deviation of the residuals"
     // When I first coded this routine, I assumed that by sigma,
-    // Charlton and Fotheringham meant the unbiased estimate of standard
-    // deviation as computed in the computeVarianceAndHat() method
+    // Charlton and Fotheringham meant the unbiased estimate of "population"
+    // standard deviation as computed in the computeVarianceAndHat() method
     // of this class.  However, in comparing the output of this method with
     // their GWR4 program, I was unable to match the results.  Fortunately,
-    // GWR4 displays a result it labels as "ML sigma". By replacing
-    // sigmal with the ML sigma, I was able to get the output from this
+    // GWR4 exposes a value it labels as "ML sigma" in its output text and
+    // a little investigation showed that to be the value GWR4 was using in
+    // its own calculations. The ML sigma is the "sample" standard deviation
+    // (or the biased estimator for the population standard deviation).
+    // By replacing sigma with ML sigma, I was able to get the output from this
     // method to consistently agree with the values computed by GWR4.
     //
     // The value of ML sigma (for "maximum likihood sigma"?) is just
     //    ML_sigma = sqrt(RSS/n)
     //    where RSS is the sum of the squared residuals (squared errors).
     //
-    //   Statistics is not my area of expertise, but I have reviewed a number
-    // of web articles and I think that this use (rather than the unbiased sigma)
-    // may actually be the correct interpretation of the AICc defintion.
-    // In any case, I tested this change by comparing the prediction results
+    //   Statistics and information theory are not my areas of expertise,
+    // but I have reviewed a number of web articles and I think that this use
+    // (rather than the unbiased sigma) may actually be the correct
+    // interpretation of the AICc defintion.
+    //   In any case, I tested this change by comparing the prediction results
     // from Tinfour using automatic bandwidth selection (which depends on the
     // AICc value) against known checkpoint values.  The ML_sigma variation
     // appears to give a small improvement in the agreement of the
