@@ -61,7 +61,7 @@ import java.util.SimpleTimeZone;
  * from 30 June to 1 July in 2015. Thus the GPS times 1119744016 and
  * 1119744017 both map to 2015-07-01 00:00:00 UTC.
  */
-public class GpsTimeConverter {
+public final class GpsTimeConverter {
 
   /**
    * A table of leap-second adjustments by year. By convention, adjustments

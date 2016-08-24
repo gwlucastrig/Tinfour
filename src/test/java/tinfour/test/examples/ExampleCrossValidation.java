@@ -44,6 +44,7 @@ import tinfour.interpolation.GwrTinInterpolator;
 import tinfour.interpolation.NaturalNeighborInterpolator;
 import tinfour.interpolation.TriangularFacetInterpolator;
 import tinfour.test.utils.IDevelopmentTest;
+import tinfour.test.utils.TabulatorDelta;
 import tinfour.test.utils.TestOptions;
 import tinfour.test.utils.VertexLoader;
 import tinfour.utils.TinInstantiationUtility;
@@ -102,9 +103,9 @@ public class ExampleCrossValidation implements IDevelopmentTest {
   @Override
   public void runTest(PrintStream ps, String[] args) throws IOException {
     Date date = new Date();
-    SimpleDateFormat sdFormat = new SimpleDateFormat("dd MMM yyyy HH:mm");
+    SimpleDateFormat sdFormat = new SimpleDateFormat("dd MMM yyyy HH:mm"); //NOPMD
     sdFormat.setTimeZone(new SimpleTimeZone(0, "UTC"));
-    ps.println("ExampleCrossValidation\n");
+    ps.println("Example Cross Validation\n");
     ps.format("Date/time of test: %s (UTC)\n", sdFormat.format(date));
 
     // Load Options ---------------------------------------------
@@ -160,13 +161,13 @@ public class ExampleCrossValidation implements IDevelopmentTest {
     // triangulated mesh (consisting of equilateral triangles). There would
     // be 3*N triangules of area s^2*sqrt(3)/4.
     double area = (xmax - xmin) * (ymax - ymin);
-    double sSpace = 0.87738 * Math.sqrt(area / nVertices);
+    double sSpace = Math.sqrt(area / nVertices / 0.866);
     double nominalPointSpacing = sSpace; //used as an input into TIN class/
 
-    double geoScaleX = 0;
-    double geoScaleY = 0;
-    double geoOffsetX = 0;
-    double geoOffsetY = 0;
+    double geoScaleX;
+    double geoScaleY;
+    double geoOffsetX;
+    double geoOffsetY;
     if (loader.isSourceInGeographicCoordinates()) {
       geoScaleX = loader.getGeoScaleX();
       geoScaleY = loader.getGeoScaleY();
@@ -265,23 +266,24 @@ public class ExampleCrossValidation implements IDevelopmentTest {
     SurfaceModel sm3 = SurfaceModel.CubicWithCrossTerms;
 
     BandwidthSelectionMethod bsmFixed = BandwidthSelectionMethod.FixedBandwidth;
-    double bandwidth = nominalPointSpacing;// * 0.707;
+    double bandwidth = nominalPointSpacing;
 
     BandwidthSelectionMethod bsmPro
       = BandwidthSelectionMethod.FixedProportionalBandwidth;
 
 
     // Construct some tabulators to keep track of our results
-    Tabulator tabNni = new Tabulator();
-    Tabulator tabTri = new Tabulator();
-    Tabulator tabFix = new Tabulator();
-    Tabulator tabPro = new Tabulator();
-    Tabulator tabAdp = new Tabulator();
+    TabulatorDelta tabNni = new TabulatorDelta();
+    TabulatorDelta tabTri = new TabulatorDelta();
+    TabulatorDelta tabFix = new TabulatorDelta();
+    TabulatorDelta tabPro = new TabulatorDelta();
+    TabulatorDelta tabAdp = new TabulatorDelta();
     SurfaceModel[] smValues = SurfaceModel.values();
     int[] adpModelCount = new int[smValues.length];
-    Tabulator tabProB = new Tabulator();
-    Tabulator tabBdw = new Tabulator(); // just used for avg. auto bandwidth
-    Tabulator tabBdwPro = new Tabulator(); // used for avg. auto bandwidth scaled
+    TabulatorDelta tabProB = new TabulatorDelta();
+    TabulatorDelta tabBdw = new TabulatorDelta(); // just used for avg. auto bandwidth
+    TabulatorDelta tabBdwPro = new TabulatorDelta(); // used for avg. auto bandwidth scaled
+    TabulatorDelta tabSampleCount = new TabulatorDelta();
 
     // The list of vertices contained in the TIN may be slightly differnt
     // than the input list.  The input list may have contained duplicates or
@@ -297,7 +299,6 @@ public class ExampleCrossValidation implements IDevelopmentTest {
     for (Vertex v : vertexList) {
       double x = v.getX();
       double y = v.getY();
-      double z = v.getZ();
       if (x0 <= x && x <= x1 && y0 <= y && y <= y1) {
         nExpected++;
       }
@@ -331,6 +332,8 @@ public class ExampleCrossValidation implements IDevelopmentTest {
           tabFix.tabulate(zFix - z);
           tabPro.tabulate(zPro - z);
 
+          tabSampleCount.tabulate(inGwr.getSampleCount());
+
           // abulate the actual bandwidth selected by the
           // proportional bandwidth setting
           tabProB.tabulate(inGwr.getBandwidth() );
@@ -343,8 +346,7 @@ public class ExampleCrossValidation implements IDevelopmentTest {
               timePrior = time1;
               double rate = progressModulus/deltaT;  // test per ms
               long estTimeRemaining = (long)((nExpected-nTest)/rate);
-              Date estFinish = new Date(System.currentTimeMillis()+estTimeRemaining);
-
+              Date estFinish = new Date(System.currentTimeMillis()+estTimeRemaining); //NOPMD
               System.out.format("Completed %3d%%   (%f per sec)    est finish %s\n",
                 percentDone, rate*1000.0, estFinish.toString());
               System.out.flush();
@@ -403,103 +405,16 @@ public class ExampleCrossValidation implements IDevelopmentTest {
               nAdpTest, adpRate);
     }
     ps.format("\nValues for proportionately selected bandwidth\n");
-    ps.format("Mean:   %12.6f\n", tabProB.getMeanAbsValue());
-    ps.format("Std Dev %12.6f\n", tabProB.getStdDevAbsValue());
+    ps.format("Mean:    %12.6f\n", tabProB.getMeanAbsValue());
+    ps.format("Std Dev: %12.6f\n", tabProB.getStdDevAbsValue());
 
+    ps.format("\nNumber of samples used for GWR\n");
+    ps.format("Mean:    %12.6f\n", tabSampleCount.getMeanAbsValue());
+    ps.format("Std Dev: %12.6f\n", tabSampleCount.getStdDevAbsValue());
     ps.println("Example application processing complete.");
-  }
-
-  private class Tabulator {
-
-    double sumE;
-    double sumE2;
-    double sumSignedE;
-    double maxE;
-    double minE;
-
-    double cE; // compensator for Kahan Summation
-    double cE2;
-
-    int nE;
-    int nNaN;
-
-    Tabulator(){
-      minE = Double.POSITIVE_INFINITY;
-      maxE = Double.NEGATIVE_INFINITY;
-    }
-    void tabulate(double zE) {
-      double e2 = zE * zE;
-      double e = Math.abs(zE);
-      if (Double.isNaN(zE)) {
-        nNaN++;
-      } else {
-        double y, t;
-        nE++;
-        sumSignedE += zE;
-
-        // to avoid numeric issues, apply Kahan summation algorithm.
-        y = e - cE;
-        t = sumE + y;
-        cE = (t - sumE) - y;
-        sumE = t;
-
-        y = e2 - cE2;
-        t = sumE2 + y;
-        cE2 = (t - sumE2) - y;
-        sumE2 = t;
-
-        if (zE > maxE) {
-          maxE = zE;
-        }
-        if (zE < minE) {
-          minE = zE;
-        }
-      }
-    }
-
-    void summarize(PrintStream ps, String label) {
-      double meanE = 0;
-      double signedE = 0;
-      double sigma = 0;
-      if (nE > 1) {
-        meanE = sumE / nE;
-        // to reduce errors due to loss of precision,
-        // rather than using the conventional form for std dev
-        // nE*sumE2-sumE*sumE)/((nE*(nE-1))
-        // use the form below
-        sigma = Math.sqrt((sumE2 - (sumE / nE) * sumE) / (nE - 1));
-      }
-      ps.format("%s %13.6f %13.6f %10.3f %8.3f %9.3f\n",
-        label, meanE, sigma, minE, maxE, sumSignedE);
-    }
-
-    double getMeanAbsValue() {
-      if (nE == 0) {
-        return 0;
-      }
-      return sumE / nE;
-    }
-
-    double getStdDevAbsValue() {
-      if (nE < 1) {
-        return 0;
-      }
-
-      // to reduce errors due to loss of precision,
-      // rather than using the conventional form for std dev
-      // nE*sumE2-sumE*sumE)/((nE*(nE-1))
-      // use the form below
-      return Math.sqrt((sumE2 - (sumE / nE) * sumE) / (nE - 1));
-    }
-
-    double getMinValue(){
-      return minE;
-    }
-
-    double getMaxValue(){
-      return maxE;
-    }
 
   }
+
+
 
 }
