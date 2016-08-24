@@ -176,7 +176,7 @@ public class NearestNeighborPointCollector {
             if (b[i] instanceof VertexMergerGroup) {
               g = (VertexMergerGroup) b[i];
             } else {
-              g = new VertexMergerGroup(b[i]);
+              g = new VertexMergerGroup(b[i]); // NOPMD
               g.setResolutionRule(resolutionRule);
             }
             g.addVertex(v);

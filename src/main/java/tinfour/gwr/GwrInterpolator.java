@@ -240,6 +240,10 @@ public class GwrInterpolator {
         continue;
       }
 
+      // make sure there are enough samples for the model
+      if(nSamples<model.getCoefficientCount()+1){
+        continue;
+      }
       gwr.initWeightsMatrixUsingGaussianKernel(samples, nSamples, bandwidth, sampleWeightsMatrix);
       double AICc = gwr.evaluateAICc(
         model, qx, qy, nSamples, samples, weights, sampleWeightsMatrix);
