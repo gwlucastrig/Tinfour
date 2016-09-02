@@ -75,6 +75,8 @@ class DataViewerUI {
   private JFrame frame;
   private DataViewingPanel dvPanel;
   private JDialog viewOptionsDialog;
+  private JDialog zoomToFeatureDialog;
+  private ZoomToFeaturePanel zoomToFeaturePanel;
   private BufferedImage appIconImage;
   private ViewOptions viewOptions;
   private JFileChooser fileChooser;
@@ -339,6 +341,7 @@ class DataViewerUI {
     });
 
     final JCheckBoxMenuItem scaleEnabled = new JCheckBoxMenuItem("Show Scale");
+    scaleEnabled.setToolTipText("Select scale for inclusion in view");
     scaleEnabled.addActionListener(new ActionListener() {
 
       @Override
@@ -350,6 +353,7 @@ class DataViewerUI {
     });
 
     final JCheckBoxMenuItem legendEnabled = new JCheckBoxMenuItem("Show Legend");
+    legendEnabled.setToolTipText("Select legend for inclusion in view");
     legendEnabled.addActionListener(new ActionListener() {
 
       @Override
@@ -362,19 +366,59 @@ class DataViewerUI {
 
 
     JMenuItem zoomToSource = new JMenuItem("Zoom to source");
+     zoomToSource.setToolTipText("Zoom to show entire coverage area of model");
     zoomToSource.addActionListener(new ActionListener() {
       @Override
       public void actionPerformed(ActionEvent e) {
         dvPanel.zoomToSource();
       }
+    });
+
+    JMenuItem zoomToFeature = new JMenuItem("Zoom to feature/position");
+    zoomToFeature.setToolTipText("Raise a dialog for selecting feature or coordinates for zoom");
+    zoomToFeature.addActionListener(new ActionListener() {
+      @Override
+      public void actionPerformed(ActionEvent ae) {
+        if (zoomToFeatureDialog == null) {
+          // construct a new zoom-to-feature panel and register
+          // it with the dvPanel.  this register method call also
+          // adds the panel as a model-changed listener.
+          zoomToFeaturePanel = new ZoomToFeaturePanel();
+          zoomToFeaturePanel.registerDataViewingPanel(dvPanel);
+
+          zoomToFeatureDialog = new JDialog(frame,
+            "Zoom to Feature or Position",
+            false);
+          zoomToFeatureDialog.setIconImage(appIconImage);
+          zoomToFeatureDialog.setContentPane(zoomToFeaturePanel);
+          zoomToFeatureDialog.setDefaultCloseOperation(
+            JDialog.HIDE_ON_CLOSE);
+
+          zoomToFeatureDialog.pack();
+          zoomToFeatureDialog.setLocationRelativeTo(frame);
+          zoomToFeatureDialog.setVisible(true);
+
+        } else {
+          // if the dialog is not visible, the values it contains
+          // may be out-of-date.  transfer values from panel.
+          if(!zoomToFeatureDialog.isVisible()){
+            zoomToFeaturePanel.transferValuesFromPanel();
+          }
+          zoomToFeatureDialog.setLocationRelativeTo(frame);
+          zoomToFeatureDialog.setVisible(true);
+        }
+
+      }
 
     });
+
     viewMenu.add(optionsMenu);
     viewMenu.add(new JSeparator());
     viewMenu.add(scaleEnabled);
     viewMenu.add(legendEnabled);
     viewMenu.add(new JSeparator());
     viewMenu.add(zoomToSource);
+    viewMenu.add(zoomToFeature);
     return viewMenu;
   }
 

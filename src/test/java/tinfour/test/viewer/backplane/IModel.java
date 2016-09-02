@@ -175,6 +175,8 @@ public interface IModel {
    */
   public boolean isLoaded();
 
+
+
   /**
    * Gets the "reference" TIN that was created when the data was
    * first loaded. It is expected that application code will
@@ -227,4 +229,27 @@ public interface IModel {
    */
   public LinearUnits getLinearUnits();
 
+    /**
+   * Indicates whether the coordinates used by this instance are
+   * geographic in nature.
+   *
+   * @return true if coordinates are geographic; otherwise, false.
+   */
+  public boolean isCoordinateSystemGeographic();
+
+  /**
+   * Gets the unique serial index associated with this model. Each time
+   * a new model instance is constructed, it is assigned a unique serial
+   * index number.
+   * @return a valid integer.
+   */
+  public int getModelSerialIndex();
+
+
+  /**
+   * Get the vertex with the specified vertex index.
+   * @param index an arbitrary integer.
+   * @return if matched, a valid vertex; otherwise, a null;
+   */
+  public Vertex getVertexForIndex(int index);
 }

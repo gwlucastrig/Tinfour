@@ -24,6 +24,8 @@
  * 04/2016  G. Lucas     Created
  *
  * Notes:
+ *   In this model, the vertex list is ALWAYS sorted by index
+ *   If that ever changes, getVertexListSortedByIndex must also change.
  *
  * -----------------------------------------------------------------------
  */
@@ -32,6 +34,8 @@ package tinfour.test.viewer.backplane;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Random;
 import tinfour.common.IIncrementalTin;
@@ -50,6 +54,7 @@ public class UnitSquareModel implements IModel {
   List<Vertex> vList;
   IIncrementalTin referenceTin;
   List<Vertex> perimeterList;
+  final int modelSerialIndex;
 
   /**
    * Create an instance of the model with the specified number of points.
@@ -57,6 +62,9 @@ public class UnitSquareModel implements IModel {
    * @param count an integer greater than 3.
    */
   public UnitSquareModel(int count) {
+    // In this model, the vertex list is ALWAYS sorted by index
+    // If that ever changes, getVertexListSortedByIndex must also change.
+    modelSerialIndex = ModelAdapter.getNextModelSerialIndex();
     vList = new ArrayList<>();
     vList.add(new Vertex(0, 0, 0, 1));
     vList.add(new Vertex(1, 0, 1, 2));
@@ -127,7 +135,7 @@ public class UnitSquareModel implements IModel {
 
   @Override
   public double getNominalPointSpacing(){
-     return Math.sqrt(1 / vList.size() / 0.866);
+     return Math.sqrt(1.0 / vList.size() / 0.866);
   }
 
   @Override
@@ -212,4 +220,34 @@ public class UnitSquareModel implements IModel {
   public LinearUnits getLinearUnits() {
     return LinearUnits.UNKNOWN;
   }
+
+  @Override
+  public boolean isCoordinateSystemGeographic() {
+    return false;
+  }
+
+   @Override
+  public int getModelSerialIndex() {
+    return modelSerialIndex;
+  }
+
+    @Override
+  public Vertex getVertexForIndex(int index) {
+    Vertex key = new Vertex(0, 0, 0, index);
+
+    int i = Collections.binarySearch(vList, key, new Comparator<Vertex>() {
+      @Override
+      public int compare(Vertex t, Vertex t1) {
+        return t.getIndex() - t1.getIndex();
+      }
+
+    });
+
+    if (i >= 0) {
+      return vList.get(i);
+    }
+    return null;
+  }
+
 }
+
