@@ -66,6 +66,8 @@ import java.awt.geom.Point2D;
 import java.awt.geom.Rectangle2D;
 import java.awt.image.BufferedImage;
 import java.io.File;
+import java.util.ArrayList;
+import java.util.List;
 import javax.swing.JEditorPane;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
@@ -73,6 +75,7 @@ import javax.swing.JPanel;
 import javax.swing.Timer;
 import tinfour.test.viewer.backplane.BackplaneManager;
 import tinfour.test.viewer.backplane.IModel;
+import tinfour.test.viewer.backplane.IModelChangeListener;
 import tinfour.test.viewer.backplane.ModelFromLas;
 import tinfour.test.viewer.backplane.MvComposite;
 import tinfour.test.viewer.backplane.MvQueryResult;
@@ -130,12 +133,19 @@ public class DataViewingPanel extends JPanel {
 
   Timer redrawTimer;
 
+  private final List<IModelChangeListener>modelChangeListeners = new ArrayList<>();
+
   DataViewingPanel() {
     super();
     viewOptions = new ViewOptions();
   }
 
   void clear() {
+    if (mvComposite != null && mvComposite.getModel().isLoaded()) {
+      for (IModelChangeListener listener : modelChangeListeners) {
+        listener.modelRemoved();
+      }
+    }
     backplaneManager.clear();
     mvComposite = null;
     compositeImage = null;
@@ -435,12 +445,28 @@ public class DataViewingPanel extends JPanel {
     }
   }
 
+  private void triggerModelRemoved() {
+    if (mvComposite != null) {
+      for (IModelChangeListener listener : modelChangeListeners) {
+        listener.modelRemoved();
+      }
+    }
+  }
+
+  private void triggerModelAdded(IModel model) {
+    for (IModelChangeListener listener : modelChangeListeners) {
+      listener.modelAdded(model);
+    }
+  }
+
+
   /**
    * Load the specified image and display in panel.
    *
    * @param file A valid file
    */
   void loadModel(File file) {
+    triggerModelRemoved();
     backplaneManager.loadModel(file);
     renderProducts[0] = null;
     renderProducts[1] = null;
@@ -466,10 +492,10 @@ public class DataViewingPanel extends JPanel {
       component = component.getParent();
     }
     repaint();
-
   }
 
   void loadModel(IModel model) {
+    triggerModelRemoved();
     backplaneManager.loadModel(model);
     mvComposite = null;
     mvQueryResult = null;
@@ -503,6 +529,8 @@ public class DataViewingPanel extends JPanel {
    * the display.
    */
   void zoomToSource() {
+    // TO DO: there is no reason to load the model.  Just set the
+    // transform and trigger a redraw.
     if (mvComposite != null && mvComposite.isReady()) {
       IModel model = mvComposite.getModel();
       loadModel(model);
@@ -539,6 +567,11 @@ public class DataViewingPanel extends JPanel {
 
     assembleComposite();
     repaint();
+  }
+
+  public void postMvComposite(MvComposite composite){
+    setMvComposite(composite);
+    this.triggerModelAdded(composite.getModel());
   }
 
   void assembleComposite() {
@@ -752,7 +785,7 @@ public class DataViewingPanel extends JPanel {
       ModelFromLas lasModel = (ModelFromLas) model;
       LidarPointSelection oldPointSelection = lasModel.getLidarPointSelection();
       LidarPointSelection newPointSelection = view.getLidarPointSelection();
-      if (oldPointSelection != newPointSelection) {
+      if (!oldPointSelection.equals(newPointSelection)) {
         model = new ModelFromLas(
           lasModel.getFile(),
           newPointSelection);
@@ -814,6 +847,70 @@ public class DataViewingPanel extends JPanel {
     }
   }
 
+  void zoomToModelPosition(double x, double y, double targetModelWidth) {
+    if (mvComposite == null || !mvComposite.isReady()) {
+      return;
+    }
+    if (redrawTimer != null) {
+      redrawTimer.stop();
+      redrawTimer = null;
+    }
+
+
+    int pad = viewOptions.getPadding();
+
+    IModel model = mvComposite.getModel();
+    int w = getWidth();
+    int h = getHeight();
+    double currentUnitPerPixel = Math.sqrt(Math.abs(p2m.getDeterminant()));
+    double currentModelWidth = w*currentUnitPerPixel;
+    double scaleFactor = targetModelWidth/currentModelWidth;
+    double unitPerPixel = currentUnitPerPixel*scaleFactor;
+    double pixelPerUnit = 1/unitPerPixel;
+
+    // compute model to composite transform
+    AffineTransform m2c
+      = new AffineTransform(
+        pixelPerUnit, 0, 0, -pixelPerUnit,
+        (w / 2 + pad) - pixelPerUnit * x,
+        (h / 2 + pad) + pixelPerUnit * y);
+
+    // verify that transform is invertible... it should always be so.
+    AffineTransform c2m;
+    try {
+      c2m = m2c.createInverse();
+    } catch (NoninvertibleTransformException ex) {
+      ex.printStackTrace(System.out);
+      return;
+    }
+
+     renderProducts[0] = null;
+    renderProducts[1] = null;
+    mvComposite = null;
+    mvQueryResult = null;
+    compositeImage = null;
+    legendImage = null;
+    resizeAnchorX = Double.NaN;
+    resizeAnchorY = Double.NaN;
+    reportPane.setText(null);
+    queryPane.setText(null);
+    readoutLabel.setText("");
+        c2p = AffineTransform.getTranslateInstance(-pad, -pad);
+    p2c = AffineTransform.getTranslateInstance(pad, pad);
+    // perform a heavy-weight render, building up new TINs as necessary
+    MvComposite newComposite = backplaneManager.queueHeavyweightRenderTask(
+      model, viewOptions,
+      getWidth() + 2 * pad,
+      getHeight() + 2 * pad,
+      m2c, c2m);
+
+    // call setMvComposite... this will also set up the proper
+    // panel-to-model transforms
+    setMvComposite(newComposite);
+    assembleLegend();
+
+  }
+
   void setShowScale(boolean showScale) {
     this.showScale = showScale;
     repaint();
@@ -837,4 +934,55 @@ public class DataViewingPanel extends JPanel {
     }
   }
 
+  /**
+   * Gets the current model-view composite (note that there is no
+   * guarantee that the model is loaded and ready when this
+   * method is called).
+   * @return if populated, a valid instance; otherwise, a null.
+   */
+  MvComposite getMvComposite(){
+    return mvComposite;
+  }
+
+  /**
+   * Gets the panel to model transform.
+   * @return if available, a valid transform. Otherwise, a null
+   */
+  AffineTransform getPanelToModelTransform(){
+    return p2m;
+  }
+
+
+  /**
+   * Adds a model change listener to the panel
+   * @param listener a valid model change listener.
+   */
+  public void addModelChangeListener(IModelChangeListener listener){
+     modelChangeListeners.add(listener);
+  }
+
+  /**
+   * Removes a model change listener from the panel
+   * @param listener a valid model change listener.
+   */
+  public void removeModelChangeListener(IModelChangeListener listener){
+    modelChangeListeners.remove(listener);
+  }
+
+  /**
+   * Gets an instance of the current model, provided that the model
+   * is fully loaded. While this method guarantees that a non-null
+   * model will be fully loaded, rendering operations may be in progress
+   * when it is invoked.
+   * @return if available, a valid model; otherwise, a null.
+   */
+  public IModel getModel(){
+    if(mvComposite !=null){
+      IModel model = mvComposite.getModel();
+      if(model.isLoaded()){
+        return model;
+      }
+    }
+    return null;
+  }
 }

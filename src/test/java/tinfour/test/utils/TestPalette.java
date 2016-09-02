@@ -750,7 +750,7 @@ public class TestPalette {
       }
       String name = list.get(0);
       int count = Integer.parseInt(list.get(1));
-      float[][] rgb = new float[count][3];
+      float[][] rgb = new float[count][3];  //NOPMD
       int k = (flip ? count - 1 : 0);
 
       rgb[k][0] = Integer.parseInt(list.get(2));
@@ -766,7 +766,7 @@ public class TestPalette {
         rgb[k][1] = Integer.parseInt(list.get(3));
         rgb[k][2] = Integer.parseInt(list.get(4));
       }
-      rList.add(new Recipe(name, rgb));
+      rList.add(new Recipe(name, rgb)); //NOPMD
     }
     namedPalettes = rList.toArray(new Recipe[rList.size()]);
   }

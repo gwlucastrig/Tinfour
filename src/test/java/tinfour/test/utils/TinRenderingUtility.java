@@ -181,8 +181,6 @@ public class TinRenderingUtility {
 
     g2d.setStroke(new BasicStroke(2.0f));
 
-    int nEdgeLen = 0;
-    double sumEdgeLen = 0;
     List<IQuadEdge> edges = tin.getEdges();
     for (IQuadEdge edge : edges) {
       Vertex v0 = edge.getA();
@@ -196,8 +194,6 @@ public class TinRenderingUtility {
         p1.setLocation(v1.getX(), v1.getY());
         af.transform(p0, p0);
         af.transform(p1, p1);
-        nEdgeLen++;
-        sumEdgeLen += p0.distance(p1);
         l2d.setLine(p0, p1);
         double z0 = v0.getZ();
         double z1 = v1.getZ();
@@ -211,11 +207,6 @@ public class TinRenderingUtility {
         }
         g2d.draw(l2d);
       }
-    }
-
-    double avgLen = 0;
-    if (nEdgeLen > 0) {
-      avgLen = sumEdgeLen / nEdgeLen;
     }
 
     List<Vertex> vertexList = tin.getVertices();

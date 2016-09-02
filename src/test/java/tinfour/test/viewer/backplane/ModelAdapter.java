@@ -38,7 +38,10 @@ package tinfour.test.viewer.backplane;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicInteger;
 import tinfour.common.IIncrementalTin;
 import tinfour.common.IMonitorWithCancellation;
 import tinfour.common.IQuadEdge;
@@ -55,9 +58,24 @@ public class ModelAdapter implements IModel {
 
   private static final int MAX_VERTICES_IN_TIN = 100000;
 
+  private static AtomicInteger modelSerialIndexSource = new AtomicInteger(0);
+
+  /**
+   * Gets the next serial index to be used when constructing new models.
+   * This method is used as a way of ensuring that every model has
+   * a unique serial index. It should be used when constructing new models
+   * (and only when constructing new models).
+   * @return a valid integer
+   */
+  public final static int getNextModelSerialIndex(){
+    return modelSerialIndexSource.incrementAndGet();
+  }
+
+  final int modelSerialIndex;
   final File file;
 
   List<Vertex> vertexList;
+  List<Vertex> vertexListSortedByIndex;
 
   double xMin;
   double yMin;
@@ -78,6 +96,8 @@ public class ModelAdapter implements IModel {
 
   List<Vertex> perimeterList;
 
+
+
   /**
    * Construct a model tied to the specified file.
    *
@@ -87,6 +107,7 @@ public class ModelAdapter implements IModel {
   public ModelAdapter(File file ) {
     this.file = file;
     vertexList = new ArrayList<>();
+    modelSerialIndex = getNextModelSerialIndex();
   }
 
   /**
@@ -117,6 +138,8 @@ public class ModelAdapter implements IModel {
     if(monitor.isCanceled()){
       return;
     }
+    vertexListSortedByIndex = new ArrayList<>(list.size());
+    vertexListSortedByIndex.addAll(list);
     monitor.postMessage("Preparing model for rendering");
     long time0 = System.currentTimeMillis();
     if (list.size() > 16) {
@@ -360,6 +383,35 @@ public class ModelAdapter implements IModel {
   @Override
   public LinearUnits getLinearUnits() {
     return LinearUnits.UNKNOWN;
+  }
+
+  @Override
+  public boolean isCoordinateSystemGeographic() {
+    return false;
+  }
+
+
+  @Override
+  public int getModelSerialIndex() {
+    return modelSerialIndex;
+  }
+
+  @Override
+  public Vertex getVertexForIndex(int index) {
+    Vertex key = new Vertex(0, 0, 0, index);
+
+    int i = Collections.binarySearch(vertexListSortedByIndex, key, new Comparator<Vertex>() {
+      @Override
+      public int compare(Vertex t, Vertex t1) {
+        return t.getIndex() - t1.getIndex();
+      }
+
+    });
+
+    if (i >= 0) {
+      return vertexListSortedByIndex.get(i);
+    }
+    return null;
   }
 
 }

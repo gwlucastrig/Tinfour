@@ -87,6 +87,8 @@ public class BackplaneManager {
     });
   }
 
+
+
   /**
    * Cancel all running tasks and clear all current status posts.
    */
@@ -238,7 +240,8 @@ public class BackplaneManager {
         //   0   s   yOffset
         //   0   0   1
         AffineTransform m2p
-          = new AffineTransform(uPerPixel, 0, 0, -uPerPixel,
+          = new AffineTransform(
+            uPerPixel, 0, 0, -uPerPixel,
             xOffset - uPerPixel * mx0,
             yOffset + uPerPixel * my1);
 
@@ -263,6 +266,7 @@ public class BackplaneManager {
             width + 2 * pad, height + 2 * pad,
             m2c, c2m, taskIndex);
 
+        viewingPanel.postMvComposite(mvComposite);
         MvTaskBuildTinAndRender renderTask
           = new MvTaskBuildTinAndRender(self, mvComposite, taskIndex);
         BackplaneExecutor.getInstance().runTask(renderTask);
@@ -271,6 +275,8 @@ public class BackplaneManager {
 
     });
   }
+
+
 
   /**
    * Queues a render task; typically invoked from the UI when the user changes

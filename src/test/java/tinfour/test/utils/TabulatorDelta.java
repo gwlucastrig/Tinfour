@@ -98,7 +98,6 @@ public class TabulatorDelta {
    */
   public void summarize(PrintStream ps, String label) {
     double meanE = 0;
-    double signedE = 0;
     double sigma = 0;
     if (nD > 1) {
       meanE = sumD / nD;
