@@ -75,11 +75,6 @@ public class ViewOptions {
     ExtraFine;
   }
 
-  public enum LidarPointSelection {
-    GroundPoints,
-    FirstReturn,
-    AllPoints
-  }
 
   public enum RasterInterpolationMethod {
     NaturalNeighbor,

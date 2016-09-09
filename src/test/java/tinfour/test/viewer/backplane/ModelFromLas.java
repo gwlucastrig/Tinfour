@@ -15,7 +15,7 @@
  * ---------------------------------------------------------------------
  */
 
-/*
+ /*
  * -----------------------------------------------------------------------
  *
  * Revision History:
@@ -45,7 +45,6 @@ import tinfour.las.LasPoint;
 import tinfour.las.LasRecordFilterByClass;
 import tinfour.las.LasRecordFilterByFirstReturn;
 import tinfour.test.utils.VertexLoader;
-import tinfour.test.viewer.backplane.ViewOptions.LidarPointSelection;
 import tinfour.utils.LinearUnits;
 
 /**
@@ -63,7 +62,7 @@ public class ModelFromLas extends ModelAdapter implements IModel {
    * Lidar classification descriptions as given in LAS Specification
    * Version 1.4-R13 15 July 2013. Table 9 "ASPRS Standard LIDAR Point CLasses"
    */
-  private static final String [] classificationDescription = {
+  private static final String[] classificationDescription = {
     "Created, never classified",
     "Unclassified",
     "Ground",
@@ -79,7 +78,7 @@ public class ModelFromLas extends ModelAdapter implements IModel {
     "Overlap Point"
   };
 
-   LidarPointSelection lidarPointSelection;
+  LidarPointSelection lidarPointSelection;
 
   double geoScaleX;
   double geoScaleY;
@@ -91,8 +90,6 @@ public class ModelFromLas extends ModelAdapter implements IModel {
   int groundPoints;
 
   LinearUnits linearUnits = LinearUnits.UNKNOWN;
-
-
 
   /**
    * Construct a model tied to the specified file with
@@ -131,29 +128,27 @@ public class ModelFromLas extends ModelAdapter implements IModel {
     long time0 = System.currentTimeMillis();
     VertexLoader loader = new VertexLoader();
 
-
     ILasRecordFilter vFilter = null;
-    switch(lidarPointSelection){
+    switch (lidarPointSelection) {
       case GroundPoints:
-         vFilter = new LasRecordFilterByClass(2);
-         break;
+        vFilter = new LasRecordFilterByClass(2);
+        break;
       case FirstReturn:
         vFilter = new LasRecordFilterByFirstReturn();
         break;
       default:
     }
 
-
     List<Vertex> list = loader.readLasFile(file, vFilter, monitor);
-    if(list.isEmpty()){
+    if (list.isEmpty()) {
       monitor.reportDone(); // remove the progress bar
-      if(lidarPointSelection != LidarPointSelection.AllPoints){
+      if (lidarPointSelection != LidarPointSelection.AllPoints) {
         // the source data contained no ground points. this can
         // happen when a LAS file is not classified or in the case of
         // bathymetric lidar (which may contain all water points)
         throw new IOException(
-          "Source Lidar file does not contain samples for "+lidarPointSelection);
-      }else{
+          "Source Lidar file does not contain samples for " + lidarPointSelection);
+      } else {
         throw new IOException("Unable to read points from file");
       }
     }
@@ -182,12 +177,10 @@ public class ModelFromLas extends ModelAdapter implements IModel {
 
   }
 
-
   @Override
   public String getDescription() {
-      return "Lidar ("+lidarPointSelection+")";
+    return "Lidar (" + lidarPointSelection + ")";
   }
-
 
   @Override
   public String getFormattedCoordinates(double x, double y) {
@@ -243,14 +236,14 @@ public class ModelFromLas extends ModelAdapter implements IModel {
       } else {
         q = 'N';
       }
-      fmt.format("%02d\u00b0 %02d' %05.2f\" %c", deg, min, sec/100.0, q);
+      fmt.format("%02d\u00b0 %02d' %05.2f\" %c", deg, min, sec / 100.0, q);
     } else {
       if (c < 0) {
         q = 'W';
       } else {
         q = 'E';
       }
-      fmt.format("%03d\u00b0 %02d' %05.2f\" %c", deg, min, sec/100.0, q);
+      fmt.format("%03d\u00b0 %02d' %05.2f\" %c", deg, min, sec / 100.0, q);
     }
   }
 
@@ -263,8 +256,6 @@ public class ModelFromLas extends ModelAdapter implements IModel {
   public boolean isCoordinateSystemGeographic() {
     return this.geographicCoordinates;
   }
-
-
 
   void formatLidarFields(Formatter fmt, int vertexId) {
     if (vertexId < 0) {
@@ -279,10 +270,10 @@ public class ModelFromLas extends ModelAdapter implements IModel {
       LasPoint record = new LasPoint();
       reader.readRecord(vertexId, record);
       String description;
-      if(record.classification<classificationDescription.length){
+      if (record.classification < classificationDescription.length) {
         description = classificationDescription[record.classification];
-      }else{
-        description = "Reserved ("+record.classification+")";
+      } else {
+        description = "Reserved (" + record.classification + ")";
       }
       fmt.format("   Classification: %s\n", description);
       fmt.format("   Return:    %d of %d\n",
@@ -313,15 +304,14 @@ public class ModelFromLas extends ModelAdapter implements IModel {
     }
   }
 
-
   /**
    * Gets the point selection option used to load the model.
+   *
    * @return a valid enumeration instance
    */
-  public LidarPointSelection getLidarPointSelection(){
+  public LidarPointSelection getLidarPointSelection() {
     return lidarPointSelection;
   }
-
 
   /**
    * Gets the linear units for the coordinate system used by the
@@ -335,4 +325,28 @@ public class ModelFromLas extends ModelAdapter implements IModel {
   public LinearUnits getLinearUnits() {
     return linearUnits;
   }
+
+  @Override
+  public void xy2geo(double x, double y, double[] geo) {
+    if (geographicCoordinates) {
+      geo[0] = y / geoScaleY + geoOffsetY;
+      geo[1] = x / geoScaleX + geoOffsetX;
+    }
+  }
+
+  @Override
+  public void geo2xy(double latitude, double longitude, double[] xy) {
+    if (this.geographicCoordinates) {
+
+      double delta = longitude - geoOffsetX;
+      if (delta < -180) {
+        delta += 360;
+      } else if (delta >= 180) {
+        delta -= 360;
+      }
+      xy[0] = delta * geoScaleX;
+      xy[1] = (latitude - geoOffsetY) * geoScaleY;
+    }
+  }
+
 }

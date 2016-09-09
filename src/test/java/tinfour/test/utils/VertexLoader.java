@@ -36,6 +36,7 @@ import java.util.List;
 import java.util.Random;
 import tinfour.common.IMonitorWithCancellation;
 import tinfour.common.Vertex;
+import tinfour.las.GeoTiffData;
 import tinfour.las.ILasRecordFilter;
 import tinfour.las.LasFileReader;
 import tinfour.las.LasPoint;
@@ -288,8 +289,23 @@ public class VertexLoader
         // compute simple scale for transforming x and y coordinates
       // from lat/lon to meters
       double r = eRadius;
+
       if (geoCoordOpt == TestOptions.GeoCoordinateOption.Feet) {
         r = eRadius * 1.0936 * 3;
+      }else{
+        // if the LAS file contains GeoTiffData, it may tell us
+        // what kind of linear units to use.  Most often, if it's
+        // not meters, it will be from a U.S State Plane coordinate
+        // system given in feet.
+        GeoTiffData gtd = reader.getGeoTiffData();
+        if(gtd!=null && gtd.containsKey(GeoTiffData.ProjLinearUnitsGeoKey)){
+          int linUnits = gtd.getInteger(GeoTiffData.ProjLinearUnitsGeoKey);
+          if(linUnits==GeoTiffData.LinearUnitCodeFeet
+            || linUnits==GeoTiffData.LinearUnitCodeFeetUS)
+          {
+            r = eRadius*1.0936*3;
+          }
+        }
       }
 
         // adjust the earth radius according to latitude.

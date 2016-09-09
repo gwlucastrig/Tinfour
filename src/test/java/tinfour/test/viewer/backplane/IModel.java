@@ -87,7 +87,7 @@ public interface IModel {
   /**
    * Gets the overall area of the model, in the units squared associated
    * with the horizontal coordinate system.
-   * @return
+   * @return a positive real value
    */
   double getArea();
   /**
@@ -237,14 +237,6 @@ public interface IModel {
    */
   public boolean isCoordinateSystemGeographic();
 
-  /**
-   * Gets the unique serial index associated with this model. Each time
-   * a new model instance is constructed, it is assigned a unique serial
-   * index number.
-   * @return a valid integer.
-   */
-  public int getModelSerialIndex();
-
 
   /**
    * Get the vertex with the specified vertex index.
@@ -252,4 +244,28 @@ public interface IModel {
    * @return if matched, a valid vertex; otherwise, a null;
    */
   public Vertex getVertexForIndex(int index);
+
+
+  /**
+   * If defined, converts a pair of scaled Cartesian coordinates
+   * to a latitude and longitude. If undefined, no operation is performed.
+   * @param x a valid scaled Cartesian coordinate
+   * @param y a valid scaled Cartesian coordinate
+   * @param geo an array of dimension two to store the results
+   * (where geo[0]=latitude, geo[1]=longitude)
+
+   */
+  public void xy2geo(double x, double y, double []geo);
+
+
+
+    /**
+   * If defined, converts a pair of geographic (latitude,longitude)
+   * coordinates to a pair of scaled Cartesian coordinates.
+   * If undefined, no operation is performed.
+   * @param latitude the latitude
+   * @param longitude the longitude
+   * @param xy a array of dimension two to store the results.
+   */
+  public void geo2xy(double latitude, double longitude, double []xy);
 }

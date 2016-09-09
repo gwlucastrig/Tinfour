@@ -39,7 +39,6 @@ import javax.swing.SwingUtilities;
 import tinfour.common.IMonitorWithCancellation;
 import tinfour.test.viewer.DataViewingPanel;
 import tinfour.test.viewer.StatusPanel;
-import tinfour.test.viewer.backplane.ViewOptions.LidarPointSelection;
 
 public class BackplaneManager {
 

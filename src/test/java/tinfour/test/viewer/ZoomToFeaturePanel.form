@@ -31,7 +31,7 @@
           <Group type="102" alignment="0" attributes="0">
               <EmptySpace max="-2" attributes="0"/>
               <Component id="optionsPanel" min="-2" max="-2" attributes="0"/>
-              <EmptySpace pref="17" max="32767" attributes="0"/>
+              <EmptySpace max="32767" attributes="0"/>
               <Component id="actionsPanel" min="-2" max="-2" attributes="0"/>
               <EmptySpace min="-2" max="-2" attributes="0"/>
           </Group>
@@ -54,22 +54,17 @@
               <Group type="102" attributes="0">
                   <EmptySpace max="-2" attributes="0"/>
                   <Group type="103" groupAlignment="0" attributes="0">
-                      <Group type="102" attributes="0">
-                          <Group type="103" groupAlignment="0" attributes="0">
-                              <Component id="coordinatesLabel" alignment="0" min="-2" max="-2" attributes="0"/>
-                              <Component id="featureLabel" alignment="0" min="-2" max="-2" attributes="0"/>
-                              <Component id="widthLabel" alignment="0" min="-2" max="-2" attributes="0"/>
-                          </Group>
-                          <EmptySpace max="-2" attributes="0"/>
-                          <Group type="103" groupAlignment="0" max="-2" attributes="0">
-                              <Component id="coordinatesTextField" max="32767" attributes="0"/>
-                              <Component id="featureTextField" max="32767" attributes="0"/>
-                              <Component id="widthTextField" max="32767" attributes="0"/>
-                          </Group>
-                      </Group>
-                      <Component id="statementOfRegretLabel" alignment="0" min="-2" max="-2" attributes="0"/>
+                      <Component id="coordinatesLabel" alignment="0" min="-2" max="-2" attributes="0"/>
+                      <Component id="featureLabel" alignment="0" min="-2" max="-2" attributes="0"/>
+                      <Component id="widthLabel" alignment="0" min="-2" max="-2" attributes="0"/>
                   </Group>
-                  <EmptySpace max="32767" attributes="0"/>
+                  <EmptySpace max="-2" attributes="0"/>
+                  <Group type="103" groupAlignment="0" max="-2" attributes="0">
+                      <Component id="coordinatesTextField" max="32767" attributes="0"/>
+                      <Component id="featureTextField" max="32767" attributes="0"/>
+                      <Component id="widthTextField" max="32767" attributes="0"/>
+                  </Group>
+                  <EmptySpace pref="66" max="32767" attributes="0"/>
               </Group>
           </Group>
         </DimensionLayout>
@@ -91,9 +86,7 @@
                       <Component id="widthLabel" alignment="3" min="-2" max="-2" attributes="0"/>
                       <Component id="widthTextField" alignment="3" min="-2" max="-2" attributes="0"/>
                   </Group>
-                  <EmptySpace min="-2" pref="26" max="-2" attributes="0"/>
-                  <Component id="statementOfRegretLabel" min="-2" max="-2" attributes="0"/>
-                  <EmptySpace max="32767" attributes="0"/>
+                  <EmptySpace pref="26" max="32767" attributes="0"/>
               </Group>
           </Group>
         </DimensionLayout>
@@ -117,7 +110,7 @@
         <Component class="javax.swing.JTextField" name="coordinatesTextField">
           <Properties>
             <Property name="columns" type="int" value="24"/>
-            <Property name="toolTipText" type="java.lang.String" value="Enter coordinates to center display"/>
+            <Property name="toolTipText" type="java.lang.String" value="Enter a pair of coordinates separated by a space"/>
           </Properties>
           <Events>
             <EventHandler event="keyReleased" listener="java.awt.event.KeyListener" parameters="java.awt.event.KeyEvent" handler="coordinatesTextFieldKeyReleased"/>
@@ -143,11 +136,6 @@
           <Events>
             <EventHandler event="keyReleased" listener="java.awt.event.KeyListener" parameters="java.awt.event.KeyEvent" handler="widthTextFieldKeyReleased"/>
           </Events>
-        </Component>
-        <Component class="javax.swing.JLabel" name="statementOfRegretLabel">
-          <Properties>
-            <Property name="text" type="java.lang.String" value="Note: Entry of coordinates is not yet implemented"/>
-          </Properties>
         </Component>
       </SubComponents>
     </Container>

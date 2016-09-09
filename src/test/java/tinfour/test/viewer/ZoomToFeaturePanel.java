@@ -39,9 +39,12 @@ import java.awt.Color;
 import java.awt.Component;
 import java.awt.geom.AffineTransform;
 import java.awt.geom.Point2D;
+import java.text.ParseException;
 import javax.swing.JDialog;
 import javax.swing.JTextField;
 import tinfour.common.Vertex;
+import tinfour.test.utils.TextCoordCartesian;
+import tinfour.test.utils.TextCoordGeo;
 import tinfour.test.viewer.backplane.IModel;
 import tinfour.test.viewer.backplane.IModelChangeListener;
 import tinfour.test.viewer.backplane.MvComposite;
@@ -56,10 +59,12 @@ class ZoomToFeaturePanel extends javax.swing.JPanel implements IModelChangeListe
   private DataViewingPanel dvPanel;
 
   // variables for tracking current vertex
-  private int currentModelSerialIndex;
   private Vertex currentFeature;
   private double currentWidth;
   private Point2D currentCoordinates;
+
+  private final TextCoordGeo latLonParser = new TextCoordGeo();
+  private final TextCoordCartesian cartParser = new TextCoordCartesian();
 
   /**
    * Creates new form ViewOptions
@@ -167,7 +172,6 @@ class ZoomToFeaturePanel extends javax.swing.JPanel implements IModelChangeListe
     coordinatesTextField = new javax.swing.JTextField();
     featureTextField = new javax.swing.JTextField();
     widthTextField = new javax.swing.JTextField();
-    statementOfRegretLabel = new javax.swing.JLabel();
     actionsPanel = new javax.swing.JPanel();
     applyButton = new javax.swing.JButton();
     cancelButton = new javax.swing.JButton();
@@ -182,7 +186,7 @@ class ZoomToFeaturePanel extends javax.swing.JPanel implements IModelChangeListe
     widthLabel.setText("Width:");
 
     coordinatesTextField.setColumns(24);
-    coordinatesTextField.setToolTipText("Enter coordinates to center display");
+    coordinatesTextField.setToolTipText("Enter a pair of coordinates separated by a space");
     coordinatesTextField.addKeyListener(new java.awt.event.KeyAdapter() {
       public void keyReleased(java.awt.event.KeyEvent evt) {
         coordinatesTextFieldKeyReleased(evt);
@@ -212,8 +216,6 @@ class ZoomToFeaturePanel extends javax.swing.JPanel implements IModelChangeListe
       }
     });
 
-    statementOfRegretLabel.setText("Note: Entry of coordinates is not yet implemented");
-
     javax.swing.GroupLayout optionsPanelLayout = new javax.swing.GroupLayout(optionsPanel);
     optionsPanel.setLayout(optionsPanelLayout);
     optionsPanelLayout.setHorizontalGroup(
@@ -221,18 +223,15 @@ class ZoomToFeaturePanel extends javax.swing.JPanel implements IModelChangeListe
       .addGroup(optionsPanelLayout.createSequentialGroup()
         .addContainerGap()
         .addGroup(optionsPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-          .addGroup(optionsPanelLayout.createSequentialGroup()
-            .addGroup(optionsPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-              .addComponent(coordinatesLabel)
-              .addComponent(featureLabel)
-              .addComponent(widthLabel))
-            .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-            .addGroup(optionsPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
-              .addComponent(coordinatesTextField)
-              .addComponent(featureTextField)
-              .addComponent(widthTextField)))
-          .addComponent(statementOfRegretLabel))
-        .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+          .addComponent(coordinatesLabel)
+          .addComponent(featureLabel)
+          .addComponent(widthLabel))
+        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+        .addGroup(optionsPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
+          .addComponent(coordinatesTextField)
+          .addComponent(featureTextField)
+          .addComponent(widthTextField))
+        .addContainerGap(66, Short.MAX_VALUE))
     );
     optionsPanelLayout.setVerticalGroup(
       optionsPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
@@ -249,9 +248,7 @@ class ZoomToFeaturePanel extends javax.swing.JPanel implements IModelChangeListe
         .addGroup(optionsPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
           .addComponent(widthLabel)
           .addComponent(widthTextField, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
-        .addGap(26, 26, 26)
-        .addComponent(statementOfRegretLabel)
-        .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+        .addContainerGap(26, Short.MAX_VALUE))
     );
 
     applyButton.setText("Apply");
@@ -322,7 +319,7 @@ class ZoomToFeaturePanel extends javax.swing.JPanel implements IModelChangeListe
       .addGroup(layout.createSequentialGroup()
         .addContainerGap()
         .addComponent(optionsPanel, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, 17, Short.MAX_VALUE)
+        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
         .addComponent(actionsPanel, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
         .addContainerGap())
     );
@@ -335,7 +332,7 @@ class ZoomToFeaturePanel extends javax.swing.JPanel implements IModelChangeListe
   }//GEN-LAST:event_okButtonActionPerformed
 
   private void cancelButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_cancelButtonActionPerformed
-   hideDialog();
+    hideDialog();
   }//GEN-LAST:event_cancelButtonActionPerformed
 
   private void applyButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_applyButtonActionPerformed
@@ -352,7 +349,34 @@ class ZoomToFeaturePanel extends javax.swing.JPanel implements IModelChangeListe
   }
 
   private void coordinatesTextFieldKeyReleased(java.awt.event.KeyEvent evt) {//GEN-FIRST:event_coordinatesTextFieldKeyReleased
+    IModel model = getModel();
+    if (model == null) {
+      return;
+    }
 
+    currentFeature = null;
+    featureTextField.setText("");
+    featureTextField.setForeground(Color.black);
+    String s = coordinatesTextField.getText();
+    if (s == null || s.isEmpty()) {
+      coordinatesTextField.setForeground(Color.black);
+    } else {
+      try {
+        double[] c = new double[2];
+        if (model.isCoordinateSystemGeographic()) {
+          double[] geo = latLonParser.parse(s);
+          model.geo2xy(geo[0], geo[1], c);
+        } else {
+          c = cartParser.parse(s);
+        }
+        currentCoordinates = new Point2D.Double(c[0], c[1]);
+        coordinatesTextField.setForeground(Color.black);
+      } catch (IllegalArgumentException | ParseException ex) {
+        currentCoordinates = null;
+        coordinatesTextField.setForeground(Color.red);
+      }
+    }
+    setControlsForInputState();
   }//GEN-LAST:event_coordinatesTextFieldKeyReleased
 
   private void featureTextFieldKeyReleased(java.awt.event.KeyEvent evt) {//GEN-FIRST:event_featureTextFieldKeyReleased
@@ -423,14 +447,23 @@ class ZoomToFeaturePanel extends javax.swing.JPanel implements IModelChangeListe
   private void transferCurrentFeatureToPositionField(IModel model) {
     double vx = currentFeature.getX();
     double vy = currentFeature.getY();
-    String s = model.getFormattedCoordinates(vx, vy);
-    this.coordinatesTextField.setText(s);
+    String s;
+    if (model.isCoordinateSystemGeographic()) {
+      double[] geo = new double[2];
+      model.xy2geo(vx, vy, geo);
+      s = latLonParser.format(geo[0], geo[1]);
+    } else {
+      s = cartParser.format(vx, vy);
+    }
+
+    coordinatesTextField.setText(s);
+    coordinatesTextField.setForeground(Color.black);
     currentCoordinates = new Point2D.Double(vx, vy);
 
-    double modelWidth = model.getMaxX()-model.getMinX();
+    double modelWidth = model.getMaxX() - model.getMinX();
     double nps = model.getNominalPointSpacing();
-    currentWidth = nps*6;
-    if(currentWidth>modelWidth){
+    currentWidth = nps * 6;
+    if (currentWidth > modelWidth) {
       currentWidth = modelWidth;
     }
     s = String.format("%f", currentWidth);
@@ -447,7 +480,6 @@ class ZoomToFeaturePanel extends javax.swing.JPanel implements IModelChangeListe
   private javax.swing.JTextField featureTextField;
   private javax.swing.JButton okayButton;
   private javax.swing.JPanel optionsPanel;
-  private javax.swing.JLabel statementOfRegretLabel;
   private javax.swing.JLabel widthLabel;
   private javax.swing.JTextField widthTextField;
   // End of variables declaration//GEN-END:variables
@@ -482,13 +514,13 @@ class ZoomToFeaturePanel extends javax.swing.JPanel implements IModelChangeListe
     coordinatesTextField.setForeground(Color.black);
     widthTextField.setText("");
     widthTextField.setForeground(Color.black);
-    statementOfRegretLabel.setVisible(false);
   }
 
-  void transferValuesFromPanel(){
+  void transferValuesFromPanel() {
     IModel model = dvPanel.getModel();
     transferValuesFromModel(model);
   }
+
   /**
    * Determines if the current model-view composite associated with the
    * DataViewPanel is valid and, if so, transfers its data to the UI.
@@ -510,19 +542,10 @@ class ZoomToFeaturePanel extends javax.swing.JPanel implements IModelChangeListe
       return;
     }
 
-
     currentFeature = null;
     featureTextField.setForeground(Color.black);
     featureTextField.setText("");
     featureTextField.setEnabled(true);
-
-    // TO DO: a place holder until we get coordinate entry implemented
-    //if (model.isCoordinateSystemGeographic()) {
-    //  statementOfRegretLabel.setVisible(true);
-    //} else {
-    //  statementOfRegretLabel.setVisible(false);
-    //}
-    statementOfRegretLabel.setVisible(true);
 
     String s;
     int xP = dvPanel.getWidth() / 2;
@@ -531,17 +554,17 @@ class ZoomToFeaturePanel extends javax.swing.JPanel implements IModelChangeListe
     Point2D mPoint = new Point2D.Double();
     p2m.transform(pPoint, mPoint);
     currentCoordinates = mPoint;
-    s = model.getFormattedCoordinates(mPoint.getX(), mPoint.getY());
+
     if (model.isCoordinateSystemGeographic()) {
-      coordinatesTextField.setText(s);
-      coordinatesTextField.setEnabled(false);
+      double[] g = new double[2];
+      model.xy2geo(mPoint.getX(), mPoint.getY(), g);
+      s = latLonParser.format(g[0], g[1]);
     } else {
-      coordinatesTextField.setText(s);
-      coordinatesTextField.setEnabled(true);
+      s = cartParser.format(mPoint.getX(), mPoint.getY());
     }
-    // temporarily set coordinateTextField to disabled
-    // until we write the data entry
-    coordinatesTextField.setEnabled(false);
+
+    coordinatesTextField.setText(s);
+
     double scale = Math.sqrt(Math.abs(p2m.getDeterminant()));
     double pWidth = dvPanel.getWidth();
     currentWidth = pWidth * scale;

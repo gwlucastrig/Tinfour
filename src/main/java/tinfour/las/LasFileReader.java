@@ -570,6 +570,7 @@ public class LasFileReader {
       unitsCode = gtData.getInteger(GeoTiffData.ProjLinearUnitsGeoKey);
     }
 
+    // The following values are from GeoTIFF spec paragraph 6.3.1.3
     if (unitsCode == 9001) {
       lasLinearUnits = LinearUnits.METERS;
     } else if (9002 <= unitsCode && unitsCode <= 9006) {

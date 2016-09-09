@@ -76,7 +76,22 @@ public class GeoTiffData {
     /**
      * Key code for the VerticalLinearUnitsGeoKey specification
      */
-    public static final int VerticalUnitsGeoKey = 4099;
+  public static final int VerticalUnitsGeoKey = 4099;
+
+  /**
+   * Linear Unit Code for feet, from GeoTiff spec 6.3.1.3
+   */
+  public static final int LinearUnitCodeMeter = 9001;
+
+  /**
+   * Linear Unit Code for feet, from GeoTiff spec 6.3.1.3
+   */
+  public static final int LinearUnitCodeFeet = 9002;
+
+    /**
+   * Linear Unit Code for feet, from GeoTiff spec 6.3.1.3
+   */
+  public static final int LinearUnitCodeFeetUS = 9003;
 
     private final List<GeoTiffKey> keyList;
     private final HashMap<Integer, GeoTiffKey> keyMap;
