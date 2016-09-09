@@ -41,7 +41,6 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
-import java.util.concurrent.atomic.AtomicInteger;
 import tinfour.common.IIncrementalTin;
 import tinfour.common.IMonitorWithCancellation;
 import tinfour.common.IQuadEdge;
@@ -57,21 +56,6 @@ import tinfour.virtual.VirtualIncrementalTin;
 public class ModelAdapter implements IModel {
 
   private static final int MAX_VERTICES_IN_TIN = 100000;
-
-  private static AtomicInteger modelSerialIndexSource = new AtomicInteger(0);
-
-  /**
-   * Gets the next serial index to be used when constructing new models.
-   * This method is used as a way of ensuring that every model has
-   * a unique serial index. It should be used when constructing new models
-   * (and only when constructing new models).
-   * @return a valid integer
-   */
-  public final static int getNextModelSerialIndex(){
-    return modelSerialIndexSource.incrementAndGet();
-  }
-
-  final int modelSerialIndex;
   final File file;
 
   List<Vertex> vertexList;
@@ -107,7 +91,6 @@ public class ModelAdapter implements IModel {
   public ModelAdapter(File file ) {
     this.file = file;
     vertexList = new ArrayList<>();
-    modelSerialIndex = getNextModelSerialIndex();
   }
 
   /**
@@ -391,10 +374,6 @@ public class ModelAdapter implements IModel {
   }
 
 
-  @Override
-  public int getModelSerialIndex() {
-    return modelSerialIndex;
-  }
 
   @Override
   public Vertex getVertexForIndex(int index) {
@@ -412,6 +391,17 @@ public class ModelAdapter implements IModel {
       return vertexListSortedByIndex.get(i);
     }
     return null;
+  }
+
+
+  @Override
+  public  void  xy2geo(double x, double y, double []geo) {
+
+  }
+
+  @Override
+  public void geo2xy(double latitude, double longitude, double []xy) {
+
   }
 
 }

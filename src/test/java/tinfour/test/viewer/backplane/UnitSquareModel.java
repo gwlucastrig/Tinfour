@@ -54,7 +54,6 @@ public class UnitSquareModel implements IModel {
   List<Vertex> vList;
   IIncrementalTin referenceTin;
   List<Vertex> perimeterList;
-  final int modelSerialIndex;
 
   /**
    * Create an instance of the model with the specified number of points.
@@ -64,7 +63,6 @@ public class UnitSquareModel implements IModel {
   public UnitSquareModel(int count) {
     // In this model, the vertex list is ALWAYS sorted by index
     // If that ever changes, getVertexListSortedByIndex must also change.
-    modelSerialIndex = ModelAdapter.getNextModelSerialIndex();
     vList = new ArrayList<>();
     vList.add(new Vertex(0, 0, 0, 1));
     vList.add(new Vertex(1, 0, 1, 2));
@@ -226,10 +224,6 @@ public class UnitSquareModel implements IModel {
     return false;
   }
 
-   @Override
-  public int getModelSerialIndex() {
-    return modelSerialIndex;
-  }
 
     @Override
   public Vertex getVertexForIndex(int index) {
@@ -247,6 +241,16 @@ public class UnitSquareModel implements IModel {
       return vList.get(i);
     }
     return null;
+  }
+
+    @Override
+  public  void  xy2geo(double x, double y, double []geo) {
+
+  }
+
+  @Override
+  public void geo2xy(double latitude, double longitude, double []xy) {
+
   }
 
 }

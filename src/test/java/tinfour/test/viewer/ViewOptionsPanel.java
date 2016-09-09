@@ -41,8 +41,8 @@ import javax.swing.JOptionPane;
 import javax.swing.JTextField;
 import javax.swing.ListCellRenderer;
 import tinfour.test.utils.TestPalette;
+import tinfour.test.viewer.backplane.LidarPointSelection;
 import tinfour.test.viewer.backplane.ViewOptions;
-import tinfour.test.viewer.backplane.ViewOptions.LidarPointSelection;
 import tinfour.test.viewer.backplane.ViewOptions.RasterInterpolationMethod;
 
 /**

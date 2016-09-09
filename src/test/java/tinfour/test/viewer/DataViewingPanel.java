@@ -76,12 +76,12 @@ import javax.swing.Timer;
 import tinfour.test.viewer.backplane.BackplaneManager;
 import tinfour.test.viewer.backplane.IModel;
 import tinfour.test.viewer.backplane.IModelChangeListener;
+import tinfour.test.viewer.backplane.LidarPointSelection;
 import tinfour.test.viewer.backplane.ModelFromLas;
 import tinfour.test.viewer.backplane.MvComposite;
 import tinfour.test.viewer.backplane.MvQueryResult;
 import tinfour.test.viewer.backplane.RenderProduct;
 import tinfour.test.viewer.backplane.ViewOptions;
-import tinfour.test.viewer.backplane.ViewOptions.LidarPointSelection;
 import tinfour.test.viewer.backplane.ViewOptions.RasterInterpolationMethod;
 
 /**

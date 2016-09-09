@@ -127,7 +127,7 @@ public class TabulatorDelta {
    * Get an unbiased estimate of the standard deviation of the population
    * based on the tabulated samples.
    *
-   * @return
+   * @return the standard deviation of the absolute values of the inputs.
    */
   public double getStdDevAbsValue() {
     if (nD < 1) {
