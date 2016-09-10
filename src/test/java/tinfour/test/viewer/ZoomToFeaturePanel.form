@@ -31,7 +31,7 @@
           <Group type="102" alignment="0" attributes="0">
               <EmptySpace max="-2" attributes="0"/>
               <Component id="optionsPanel" min="-2" max="-2" attributes="0"/>
-              <EmptySpace max="32767" attributes="0"/>
+              <EmptySpace pref="23" max="32767" attributes="0"/>
               <Component id="actionsPanel" min="-2" max="-2" attributes="0"/>
               <EmptySpace min="-2" max="-2" attributes="0"/>
           </Group>
@@ -62,9 +62,13 @@
                   <Group type="103" groupAlignment="0" max="-2" attributes="0">
                       <Component id="coordinatesTextField" max="32767" attributes="0"/>
                       <Component id="featureTextField" max="32767" attributes="0"/>
-                      <Component id="widthTextField" max="32767" attributes="0"/>
+                      <Group type="102" alignment="0" attributes="0">
+                          <Component id="widthTextField" min="-2" pref="97" max="-2" attributes="0"/>
+                          <EmptySpace type="unrelated" max="-2" attributes="0"/>
+                          <Component id="unitsLabel" min="-2" max="-2" attributes="0"/>
+                      </Group>
                   </Group>
-                  <EmptySpace pref="66" max="32767" attributes="0"/>
+                  <EmptySpace pref="84" max="32767" attributes="0"/>
               </Group>
           </Group>
         </DimensionLayout>
@@ -85,6 +89,7 @@
                   <Group type="103" groupAlignment="3" attributes="0">
                       <Component id="widthLabel" alignment="3" min="-2" max="-2" attributes="0"/>
                       <Component id="widthTextField" alignment="3" min="-2" max="-2" attributes="0"/>
+                      <Component id="unitsLabel" alignment="3" min="-2" max="-2" attributes="0"/>
                   </Group>
                   <EmptySpace pref="26" max="32767" attributes="0"/>
               </Group>
@@ -137,6 +142,11 @@
             <EventHandler event="keyReleased" listener="java.awt.event.KeyListener" parameters="java.awt.event.KeyEvent" handler="widthTextFieldKeyReleased"/>
           </Events>
         </Component>
+        <Component class="javax.swing.JLabel" name="unitsLabel">
+          <Properties>
+            <Property name="text" type="java.lang.String" value="Unspecified Units"/>
+          </Properties>
+        </Component>
       </SubComponents>
     </Container>
     <Container class="javax.swing.JPanel" name="actionsPanel">
@@ -144,8 +154,9 @@
       <Layout>
         <DimensionLayout dim="0">
           <Group type="103" groupAlignment="0" attributes="0">
-              <Group type="102" alignment="1" attributes="0">
-                  <EmptySpace pref="127" max="32767" attributes="0"/>
+              <Group type="102" attributes="0">
+                  <Component id="resetButton" linkSize="1" min="-2" max="-2" attributes="0"/>
+                  <EmptySpace max="32767" attributes="0"/>
                   <Component id="okayButton" linkSize="1" min="-2" max="-2" attributes="0"/>
                   <EmptySpace max="-2" attributes="0"/>
                   <Component id="cancelButton" linkSize="1" min="-2" max="-2" attributes="0"/>
@@ -163,6 +174,7 @@
                       <Component id="okayButton" linkSize="2" alignment="3" min="-2" max="-2" attributes="0"/>
                       <Component id="cancelButton" linkSize="2" alignment="3" min="-2" max="-2" attributes="0"/>
                       <Component id="applyButton" linkSize="2" alignment="3" min="-2" max="-2" attributes="0"/>
+                      <Component id="resetButton" linkSize="2" alignment="3" min="-2" max="-2" attributes="0"/>
                   </Group>
               </Group>
           </Group>
@@ -194,6 +206,15 @@
           </Properties>
           <Events>
             <EventHandler event="actionPerformed" listener="java.awt.event.ActionListener" parameters="java.awt.event.ActionEvent" handler="okButtonActionPerformed"/>
+          </Events>
+        </Component>
+        <Component class="javax.swing.JButton" name="resetButton">
+          <Properties>
+            <Property name="text" type="java.lang.String" value="Reset"/>
+            <Property name="toolTipText" type="java.lang.String" value="Reset coordinates using current model and view"/>
+          </Properties>
+          <Events>
+            <EventHandler event="actionPerformed" listener="java.awt.event.ActionListener" parameters="java.awt.event.ActionEvent" handler="resetButtonActionPerformed"/>
           </Events>
         </Component>
       </SubComponents>

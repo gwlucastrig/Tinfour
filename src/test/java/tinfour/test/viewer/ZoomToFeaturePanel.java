@@ -48,6 +48,7 @@ import tinfour.test.utils.TextCoordGeo;
 import tinfour.test.viewer.backplane.IModel;
 import tinfour.test.viewer.backplane.IModelChangeListener;
 import tinfour.test.viewer.backplane.MvComposite;
+import tinfour.utils.LinearUnits;
 
 /**
  * Provides UI for showing viewing options
@@ -172,10 +173,12 @@ class ZoomToFeaturePanel extends javax.swing.JPanel implements IModelChangeListe
     coordinatesTextField = new javax.swing.JTextField();
     featureTextField = new javax.swing.JTextField();
     widthTextField = new javax.swing.JTextField();
+    unitsLabel = new javax.swing.JLabel();
     actionsPanel = new javax.swing.JPanel();
     applyButton = new javax.swing.JButton();
     cancelButton = new javax.swing.JButton();
     okayButton = new javax.swing.JButton();
+    resetButton = new javax.swing.JButton();
 
     optionsPanel.setBorder(javax.swing.BorderFactory.createEtchedBorder());
 
@@ -216,6 +219,8 @@ class ZoomToFeaturePanel extends javax.swing.JPanel implements IModelChangeListe
       }
     });
 
+    unitsLabel.setText("Unspecified Units");
+
     javax.swing.GroupLayout optionsPanelLayout = new javax.swing.GroupLayout(optionsPanel);
     optionsPanel.setLayout(optionsPanelLayout);
     optionsPanelLayout.setHorizontalGroup(
@@ -230,8 +235,11 @@ class ZoomToFeaturePanel extends javax.swing.JPanel implements IModelChangeListe
         .addGroup(optionsPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
           .addComponent(coordinatesTextField)
           .addComponent(featureTextField)
-          .addComponent(widthTextField))
-        .addContainerGap(66, Short.MAX_VALUE))
+          .addGroup(optionsPanelLayout.createSequentialGroup()
+            .addComponent(widthTextField, javax.swing.GroupLayout.PREFERRED_SIZE, 97, javax.swing.GroupLayout.PREFERRED_SIZE)
+            .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
+            .addComponent(unitsLabel)))
+        .addContainerGap(84, Short.MAX_VALUE))
     );
     optionsPanelLayout.setVerticalGroup(
       optionsPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
@@ -247,7 +255,8 @@ class ZoomToFeaturePanel extends javax.swing.JPanel implements IModelChangeListe
         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
         .addGroup(optionsPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
           .addComponent(widthLabel)
-          .addComponent(widthTextField, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
+          .addComponent(widthTextField, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+          .addComponent(unitsLabel))
         .addContainerGap(26, Short.MAX_VALUE))
     );
 
@@ -275,12 +284,21 @@ class ZoomToFeaturePanel extends javax.swing.JPanel implements IModelChangeListe
       }
     });
 
+    resetButton.setText("Reset");
+    resetButton.setToolTipText("Reset coordinates using current model and view");
+    resetButton.addActionListener(new java.awt.event.ActionListener() {
+      public void actionPerformed(java.awt.event.ActionEvent evt) {
+        resetButtonActionPerformed(evt);
+      }
+    });
+
     javax.swing.GroupLayout actionsPanelLayout = new javax.swing.GroupLayout(actionsPanel);
     actionsPanel.setLayout(actionsPanelLayout);
     actionsPanelLayout.setHorizontalGroup(
       actionsPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-      .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, actionsPanelLayout.createSequentialGroup()
-        .addContainerGap(127, Short.MAX_VALUE)
+      .addGroup(actionsPanelLayout.createSequentialGroup()
+        .addComponent(resetButton)
+        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
         .addComponent(okayButton)
         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
         .addComponent(cancelButton)
@@ -289,7 +307,7 @@ class ZoomToFeaturePanel extends javax.swing.JPanel implements IModelChangeListe
         .addContainerGap())
     );
 
-    actionsPanelLayout.linkSize(javax.swing.SwingConstants.HORIZONTAL, new java.awt.Component[] {applyButton, cancelButton, okayButton});
+    actionsPanelLayout.linkSize(javax.swing.SwingConstants.HORIZONTAL, new java.awt.Component[] {applyButton, cancelButton, okayButton, resetButton});
 
     actionsPanelLayout.setVerticalGroup(
       actionsPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
@@ -298,10 +316,11 @@ class ZoomToFeaturePanel extends javax.swing.JPanel implements IModelChangeListe
         .addGroup(actionsPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
           .addComponent(okayButton)
           .addComponent(cancelButton)
-          .addComponent(applyButton)))
+          .addComponent(applyButton)
+          .addComponent(resetButton)))
     );
 
-    actionsPanelLayout.linkSize(javax.swing.SwingConstants.VERTICAL, new java.awt.Component[] {applyButton, cancelButton, okayButton});
+    actionsPanelLayout.linkSize(javax.swing.SwingConstants.VERTICAL, new java.awt.Component[] {applyButton, cancelButton, okayButton, resetButton});
 
     javax.swing.GroupLayout layout = new javax.swing.GroupLayout(this);
     this.setLayout(layout);
@@ -319,7 +338,7 @@ class ZoomToFeaturePanel extends javax.swing.JPanel implements IModelChangeListe
       .addGroup(layout.createSequentialGroup()
         .addContainerGap()
         .addComponent(optionsPanel, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, 23, Short.MAX_VALUE)
         .addComponent(actionsPanel, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
         .addContainerGap())
     );
@@ -438,6 +457,13 @@ class ZoomToFeaturePanel extends javax.swing.JPanel implements IModelChangeListe
     }
   }//GEN-LAST:event_widthTextFieldKeyReleased
 
+  private void resetButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_resetButtonActionPerformed
+    IModel model = getModel();
+    if(model!=null){
+    transferValuesFromModel(model);
+    }
+  }//GEN-LAST:event_resetButtonActionPerformed
+
   /**
    * Transfers position data from current feature, only invoked when
    * model is non-null.
@@ -480,6 +506,8 @@ class ZoomToFeaturePanel extends javax.swing.JPanel implements IModelChangeListe
   private javax.swing.JTextField featureTextField;
   private javax.swing.JButton okayButton;
   private javax.swing.JPanel optionsPanel;
+  private javax.swing.JButton resetButton;
+  private javax.swing.JLabel unitsLabel;
   private javax.swing.JLabel widthLabel;
   private javax.swing.JTextField widthTextField;
   // End of variables declaration//GEN-END:variables
@@ -492,6 +520,7 @@ class ZoomToFeaturePanel extends javax.swing.JPanel implements IModelChangeListe
     widthTextField.setEnabled(false);
     okayButton.setEnabled(false);
     applyButton.setEnabled(false);
+    resetButton.setEnabled(false);
     this.repaint();
   }
 
@@ -499,6 +528,7 @@ class ZoomToFeaturePanel extends javax.swing.JPanel implements IModelChangeListe
   public void modelAdded(IModel model) {
     this.transferValuesFromModel(model);
     setControlsForInputState();
+    resetButton.setEnabled(true);
   }
 
   /**
@@ -559,8 +589,10 @@ class ZoomToFeaturePanel extends javax.swing.JPanel implements IModelChangeListe
       double[] g = new double[2];
       model.xy2geo(mPoint.getX(), mPoint.getY(), g);
       s = latLonParser.format(g[0], g[1]);
+      coordinatesTextField.setToolTipText("Enter geographic coordinate pair separated by slash or space");
     } else {
       s = cartParser.format(mPoint.getX(), mPoint.getY());
+      coordinatesTextField.setToolTipText("Enter Cartesian coordinate pair separated by space");
     }
 
     coordinatesTextField.setText(s);
@@ -571,6 +603,13 @@ class ZoomToFeaturePanel extends javax.swing.JPanel implements IModelChangeListe
     s = String.format("%f", currentWidth);
     widthTextField.setText(s);
     widthTextField.setEnabled(true);
+
+    LinearUnits linearUnits =model.getLinearUnits();
+    if(linearUnits == LinearUnits.UNKNOWN){
+      unitsLabel.setText("Unspecified units");
+    }else{
+      unitsLabel.setText(linearUnits.getName());
+    }
 
     setControlsForInputState();
   }
