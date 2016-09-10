@@ -34,17 +34,19 @@ package tinfour.utils;
  * An enumeration for specifying linear units of measure.
  */
 public enum LinearUnits {
-  UNKNOWN("unknown", 1.0),
-  METERS("m", 1.0),
-  FEET("ft", 0.3048),
-  FATHOMS("fathoms", 1.8288);
+  UNKNOWN("unknown", 1.0, "Unknown"),
+  METERS("m", 1.0, "Meters"),
+  FEET("ft", 0.3048, "Feet"),
+  FATHOMS("fathoms", 1.8288, "Fathoms");
 
   final String abbreviation;
   final double metersConversion;
+  final String name;
 
-  private LinearUnits(String abbreviation, double metersConversion){
+  private LinearUnits(String abbreviation, double metersConversion, String name){
     this.abbreviation = abbreviation;
     this.metersConversion = metersConversion;
+    this.name = name;
 }
 
   /**
@@ -64,6 +66,14 @@ public enum LinearUnits {
    */
   public double toMeters(double value){
     return value*metersConversion;
+  }
+
+  /**
+   * Gets the name of the units in a form suitable for user interface display.
+   * @return a valid string.
+   */
+  public String getName(){
+    return name;
   }
 
 }
