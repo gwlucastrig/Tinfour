@@ -48,6 +48,9 @@ import tinfour.utils.LinearUnits;
  */
 public class VertexLoader
 {
+  static final double eRadius = 6378137; // WGS-84 equatorial radius
+  static final double eFlattening = 1 / 298.257223560; // WGS-84
+
 
   double xMin, xMax, yMin, yMax, zMin, zMax;
   long maximumNumberOfVertices = Integer.MAX_VALUE;
@@ -250,8 +253,6 @@ public class VertexLoader
     return list;
   }
 
-  static final double eRadius = 6378137; // WGS-84 equatorial radius
-  static final double eFlattening = 1 / 298.257223560; // WGS-84
 
   /**
    * Reads the vertices from the specified LAS file reader instance. The
@@ -563,6 +564,7 @@ public class VertexLoader
     int xColumn = 0;
     int yColumn = 1;
     int zColumn = 2;
+    boolean geoText = false;
     int k = 0;
     for (String s : sList) {
       char c = s.charAt(0);
@@ -574,25 +576,70 @@ public class VertexLoader
           yColumn = k;
         } else if ("z".equalsIgnoreCase(s)) {
           zColumn = k;
+        } else if (s.toLowerCase().startsWith("lon")) {
+          geoText = true;
+          xColumn = k;
+        } else if (s.toUpperCase().startsWith("lat")) {
+          geoText = true;
+          yColumn = k;
         }
       }
       k++;
     }
 
-    k = 0;
-    if (!headerRow) {
+    if (headerRow && geoText) {
+      // geographic coordinates get special treatment
+      geoScaleX = 1;
+      geoScaleY = 1;
+      isSourceInGeographicCoordinates = true;
+      sList = dlim.readStrings();
+      if (sList.isEmpty()) {
+        return vList; // failure to read file
+      }
       double x = Double.parseDouble(sList.get(xColumn));
       double y = Double.parseDouble(sList.get(yColumn));
       double z = Double.parseDouble(sList.get(zColumn));
-      vList.add(new Vertex(x, y, z, k));
-      k++;
-    }
-    while (!(sList = dlim.readStrings()).isEmpty()) {
-      double x = Double.parseDouble(sList.get(xColumn));
-      double y = Double.parseDouble(sList.get(yColumn));
-      double z = Double.parseDouble(sList.get(zColumn));
-      vList.add(new Vertex(x, y, z, k)); // NOPMD
-      k++;
+      // adjust the earth radius according to latitude.
+      // if cenLat were zero, the adjusted radius would be the
+      // equatorial radius. If it were 90, it would be the polar radius.
+      double cenLat = y;
+      double phi = Math.toRadians(cenLat);
+      double sinPhi = Math.sin(phi);
+      double adjustment = (1 - eFlattening * sinPhi * sinPhi);
+      double adjRadius = adjustment * eRadius;
+
+      geoScaleX = adjRadius * Math.cos(phi) * (Math.PI / 180);
+      geoScaleY = adjRadius * (Math.PI / 180);
+      geoOffsetX = x;
+      geoOffsetY = y;
+
+      vList.add(new Vertex(0, 0, z, 0));
+      k = 1;
+      while (!(sList = dlim.readStrings()).isEmpty()) {
+        x = Double.parseDouble(sList.get(xColumn));
+        y = Double.parseDouble(sList.get(yColumn));
+        z = Double.parseDouble(sList.get(zColumn));
+        x = (x - geoOffsetX) * geoScaleX;
+        y = (y - geoOffsetY) * geoScaleY;
+        vList.add(new Vertex(x, y, z, k)); // NOPMD
+        k++;
+      }
+    } else {
+      k = 0;
+      if (!headerRow) {
+        double x = Double.parseDouble(sList.get(xColumn));
+        double y = Double.parseDouble(sList.get(yColumn));
+        double z = Double.parseDouble(sList.get(zColumn));
+        vList.add(new Vertex(x, y, z, k));
+        k++;
+      }
+      while (!(sList = dlim.readStrings()).isEmpty()) {
+        double x = Double.parseDouble(sList.get(xColumn));
+        double y = Double.parseDouble(sList.get(yColumn));
+        double z = Double.parseDouble(sList.get(zColumn));
+        vList.add(new Vertex(x, y, z, k)); // NOPMD
+        k++;
+      }
     }
     postProcessList(vList);
 
