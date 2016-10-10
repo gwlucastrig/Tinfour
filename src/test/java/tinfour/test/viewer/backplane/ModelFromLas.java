@@ -253,6 +253,7 @@ public class ModelFromLas extends ModelAdapter implements IModel {
    *
    * @return true if coordinates are geographic; otherwise, false.
    */
+  @Override
   public boolean isCoordinateSystemGeographic() {
     return this.geographicCoordinates;
   }
