@@ -277,8 +277,8 @@ public class GeometricOperations {
   * respect to a directed edge.
    * @param ax the x coordinate of the first vertex in the segment
    * @param ay the y coordinate of the first vertex in the segment
-   * @param bx the x coordinate of the first vertex in the segment
-   * @param by the y coordinate of the first vertex in the segment
+   * @param bx the x coordinate of the second vertex in the segment
+   * @param by the y coordinate of the second vertex in the segment
    * @param cx the x coordinate of the point of interest
    * @param cy the y coordinate of the point of interest
   * @return  positive if the point is to the left of the edge,
