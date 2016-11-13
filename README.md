@@ -18,7 +18,7 @@ the implementation gives a great deal of attention to performance and
 memory use. On a conventional laptop it is capable of processing sample
 points at a rate of better than one million points per second.
 
-The Tinfour source code includes extensive Javadoc. This project also includes
+The Tinfour source code includes extensive documentation. This project also includes
 an informal paper that describes the uses, algorithms, and implementation
 of the software with enough detail to support potential developers 
 who may wish to contribute code or employ Tinfour in their own work. For more details, see
@@ -84,6 +84,8 @@ that I decided to include one of my own.
 ### Why are there external project dependencies? ###
 The only external dependency in the Tinfour package is the
 [Apache Commons Math Library](https://commons.apache.org/proper/commons-math/).
+For your convenience, a copy of the Commons math package is included
+with the Tinfour download.
 This dependency is required by the linear algebra and statistics functions
 needed by the Geographically Weighted Regression classes. If you have
 an alternate linear algebra library in your own software, it would be
@@ -105,19 +107,25 @@ Configuring Tinfour in an IDE is pretty simple:
    large datasets, you may include the Java runtime option -Xmx1500m or larger
    to increase the heap size.
  
+### Current Work ###
+The primary feature missing from the current version of Tinfour is support
+for the Constrained Delaunay Triangulation (CDT). This feature will
+handle breakline features, boundaries, and other linear features 
+representing discontinuities in the modeled surface. 
+As of 12 November 2016, I have completed the preliminary 
+implementation of this feature and am debugging and testing the code. 
+Expect to see an update adding CDT's to Tinfour just in time for Christmas.
+ 
+ 
 ### The Wish List ###
-The primary feature remaining for future work in Tinfour is support
-for the constrained Delaunay triangulation to handle breakline features,
-boundaries, and other linear features representing discontinuities in
-the modeled surface. I am currently planning an implementationfor this
-feature and welcome any insights into practical issues that you
-may have.
+If you are interested in seeing new capabilities added to Tinfour,
+I have a couple of ideas and would like to hear about yours.
 
 I would very much like to extend the Lidar file reader to be able
 to process the compressed LAZ format files. Doing so would 
 make file access far more conveient. I'd also like to have the
-reader obtain the metadata from LAS files, particularly those
-elements using Well-Known Text (WKT) format and GeoTIFF tags.
+extend the support for metadata obtained from LAS files, particularly
+those elements using Well-Known Text (WKT) format and GeoTIFF tags.
 
 I'd like to see an extension of Tinfour to build Voronoi Diagrams 
 and perhaps conduct rendering and analysis using that graphical structure
