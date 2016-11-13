@@ -109,7 +109,8 @@ Configuring Tinfour in an IDE is pretty simple:
  
 ### Current Work ###
 The primary feature missing from the current version of Tinfour is support
-for the Constrained Delaunay Triangulation (CDT). This feature will
+for the Constrained Delaunay Triangulation (CDT). When it becomes
+available, the CDT capability will enable Tinfour to
 handle breakline features, boundaries, and other linear features 
 representing discontinuities in the modeled surface. 
 As of 12 November 2016, I have completed the preliminary 
