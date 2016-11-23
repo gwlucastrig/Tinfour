@@ -108,14 +108,27 @@ Configuring Tinfour in an IDE is pretty simple:
    to increase the heap size.
  
 ### Current Work ###
-The primary feature missing from the current version of Tinfour is support
-for the Constrained Delaunay Triangulation (CDT). When it becomes
-available, the CDT capability will enable Tinfour to
-handle breakline features, boundaries, and other linear features 
-representing discontinuities in the modeled surface. 
+The current focus of Tinfour development is the introduction of the
+Constrained Delaunay Triangulation (CDT) to the software. The CDT
+is a technique for representing
+discontinuities in a Triangulated Irregular Network. For example, geographic
+applications often need a way to represent "breaklines" -- features including
+rivers, roads, coastlines and escarpments which mark a sudden changes in
+the local slope or terrain. Conventional Delaunay Triangulations
+have a limited ability to treat boundaries where the surface undergoes a
+nearly instantaneous change.  By introducing linear and polygon features to
+the construction of a TIN, the Constrained Delaunay Triangulation provides
+an effective way of representing such features.
+
 As of 12 November 2016, I have completed the preliminary 
 implementation of this feature and am debugging and testing the code. 
 Expect to see an update adding CDT's to Tinfour just in time for Christmas.
+And just to illustrate the idea that the Constrained Delaunay Triangulation
+is useful for applications beyond geography, the picture below was
+created using the latest version of Tinfour. 
+
+![An Ordinary and a Constrained Delaunay Triangulation](doc/images/ConstrainedDelaunayTriangulation.jpg "An Ordinary and a Constrained Delaunay Triangulation")
+
  
  
 ### The Wish List ###
