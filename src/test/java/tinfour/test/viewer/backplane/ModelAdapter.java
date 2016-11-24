@@ -47,7 +47,7 @@ import tinfour.common.IQuadEdge;
 import tinfour.common.Vertex;
 import tinfour.utils.HilbertSort;
 import tinfour.utils.LinearUnits;
-import tinfour.virtual.VirtualIncrementalTin;
+import tinfour.semivirtual.SemiVirtualIncrementalTin;
 
 /**
  * A model for managing data taken from a text or comma-separated-value
@@ -144,7 +144,7 @@ public class ModelAdapter implements IModel {
     nominalPointSpacing = Math.sqrt(area / nVertices / 0.866);
 
 
-    IIncrementalTin tin = new VirtualIncrementalTin(nominalPointSpacing);
+    IIncrementalTin tin = new SemiVirtualIncrementalTin(nominalPointSpacing);
 
 
     if (nVertices <= MAX_VERTICES_IN_TIN) {

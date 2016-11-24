@@ -27,12 +27,12 @@
  *
  * -----------------------------------------------------------------------
  */
-package tinfour.virtual;
+package tinfour.semivirtual;
 
 import java.util.Arrays;
 import tinfour.common.Vertex;
 
-class VirtualEdgePage {
+class SemiVirtualEdgePage {
 
   /** The number of pairs per page is limited to the range of the
    * short integer used for the freePairs array, so the maximum
@@ -59,9 +59,9 @@ class VirtualEdgePage {
   final Vertex[] vertices;
   final int[] links;
   short[] freePairs;
-  VirtualEdgePage nextPage;
+  SemiVirtualEdgePage nextPage;
 
-  VirtualEdgePage(int pageID) {
+  SemiVirtualEdgePage(int pageID) {
 
     this.pageID = pageID;
     pageOffset = pageID * INDICES_PER_PAGE;

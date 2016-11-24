@@ -27,7 +27,7 @@
  *
  * -----------------------------------------------------------------------
  */
-package tinfour.virtual;
+package tinfour.semivirtual;
 
 
 import tinfour.common.INeighborEdgeLocator;
@@ -39,21 +39,21 @@ import tinfour.common.Vertex;
  * Provides a specific instance of the INeighborEdge interface tuned for
  * efficient use with this package's TIN implementation.
  */
-class VirtualNeighborEdgeLocator implements INeighborEdgeLocator {
+class SemiVirtualNeighborEdgeLocator implements INeighborEdgeLocator {
 
-  VirtualEdge neighborEdge;
-  final VirtualStochasticLawsonsWalk walker;
-  final VirtualIncrementalTin tin;
+  SemiVirtualEdge neighborEdge;
+  final SemiVirtualStochasticLawsonsWalk walker;
+  final SemiVirtualIncrementalTin tin;
 
   /**
    * Constructs an instance coupled to the specified TIN.
    * @param tin a valid instance
    */
-  VirtualNeighborEdgeLocator(VirtualIncrementalTin tin) {
+  SemiVirtualNeighborEdgeLocator(SemiVirtualIncrementalTin tin) {
 
     this.tin = tin;
     double nominalPointSpacing = tin.getNominalPointSpacing();
-    walker = new VirtualStochasticLawsonsWalk(nominalPointSpacing);
+    walker = new SemiVirtualStochasticLawsonsWalk(nominalPointSpacing);
 
   }
 
@@ -65,7 +65,7 @@ class VirtualNeighborEdgeLocator implements INeighborEdgeLocator {
     if (neighborEdge == null) {
       neighborEdge = tin.getStartingEdge();
     }
-    VirtualEdge e = walker.findAnEdgeFromEnclosingTriangle(neighborEdge, x, y);
+    SemiVirtualEdge e = walker.findAnEdgeFromEnclosingTriangle(neighborEdge, x, y);
     neighborEdge = e;
     return e;
   }
@@ -76,7 +76,7 @@ class VirtualNeighborEdgeLocator implements INeighborEdgeLocator {
     if (neighborEdge == null) {
       neighborEdge = tin.getStartingEdge();
     }
-    final VirtualEdge e = walker.findAnEdgeFromEnclosingTriangle(neighborEdge, x, y);
+    final SemiVirtualEdge e = walker.findAnEdgeFromEnclosingTriangle(neighborEdge, x, y);
     neighborEdge = e;
     Vertex a = e.getA();
     Vertex b = e.getB();

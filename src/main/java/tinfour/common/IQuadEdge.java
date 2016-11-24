@@ -103,4 +103,66 @@ public interface IQuadEdge {
    */
   IQuadEdge getDualFromReverse();
 
+  /**
+   * Gets the index of the constraint associated with this edge.
+   *
+   * @return a positive value; may be zero if not specified.
+   */
+  public int getConstraintIndex();
+
+
+   /**
+   * Sets the constraint index for this edge.  This method does not
+   * necessarily set an edge to a constrained status.  In some implementations
+   * the constraint index may be used as a way of associating ordinary edges
+   * with a neighboring constraint.
+   * Constraint index values must be positive integers. The
+   * range of supported values will depend on the specific class that
+   * implements this interface. Please refer to the class documentation
+   * for specific values.
+   *
+   * @param constraintIndex a positive number indicating which constraint
+   * a particular edge is associated with.
+   */
+  public void setConstraintIndex(int constraintIndex);
+
+  /**
+   * Indicates whether an edge is constrained.
+   *
+   * @return true if the edge is constrained; otherwise, false.
+   */
+  public boolean isConstrained();
+
+
+  /**
+   * Sets an edge as constrained and sets its constraint index. Note that
+   * once an edge is constrained, it cannot be set to a non-constrained
+   * status.  Constraint index values must be positive integers. The
+   * range of supported values will depend on the specific class that
+   * implements this interface. Please refer to the class documentation
+   * for specific values.
+   * @param  constraintIndex positive number indicating which constraint
+   * a particular edge is associated with.
+   */
+  public void setConstrained(int constraintIndex);
+
+  /**
+   * Indicates whether the edge is a member of a constrained area.
+   * @return true if the constraint is a member of an area; otherwise false.
+   */
+  public boolean isConstrainedAreaMember();
+
+  /**
+   * Indicates whether an edge is constrained and a member of a
+   * constraint which defines the data area.
+   * @return true if the edge is the boundary of the data area;
+   * otherwise, false.
+   */
+  public boolean isConstrainedAreaEdge();
+
+
+  /**
+   * Sets the constrained area membership flag for the edge to true.
+   */
+  public void setConstrainedAreaMemberFlag( );
 }
