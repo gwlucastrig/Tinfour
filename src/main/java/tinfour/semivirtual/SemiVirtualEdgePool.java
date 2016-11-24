@@ -54,7 +54,7 @@
  * freed, it can modify the appropriate page.
  *--------------------------------------------------------------------------
  */
-package tinfour.virtual;
+package tinfour.semivirtual;
 
 import java.io.PrintStream;
 import java.util.ArrayList;
@@ -63,10 +63,10 @@ import java.util.Iterator;
 import java.util.List;
 import tinfour.common.IQuadEdge;
 import tinfour.common.Vertex;
-import static tinfour.virtual.VirtualEdgePage.INDEX_MASK;
-import static tinfour.virtual.VirtualEdgePage.INDICES_PER_PAGE;
-import static tinfour.virtual.VirtualEdgePage.MASK_LOW_BIT_CLEAR;
-import static tinfour.virtual.VirtualEdgePage.PAIRS_PER_PAGE;
+import static tinfour.semivirtual.SemiVirtualEdgePage.INDEX_MASK;
+import static tinfour.semivirtual.SemiVirtualEdgePage.INDICES_PER_PAGE;
+import static tinfour.semivirtual.SemiVirtualEdgePage.MASK_LOW_BIT_CLEAR;
+import static tinfour.semivirtual.SemiVirtualEdgePage.PAIRS_PER_PAGE;
 
 /**
  * Provides an object-pool implementation that the manages
@@ -81,16 +81,16 @@ import static tinfour.virtual.VirtualEdgePage.PAIRS_PER_PAGE;
  * Note that this class is <strong>not thread safe</strong>.
  */
 @SuppressWarnings("PMD.AvoidArrayLoops")
-class VirtualEdgePool implements Iterable<VirtualEdge> {
+class SemiVirtualEdgePool implements Iterable<SemiVirtualEdge> {
 
-  VirtualEdgePool self;
-  VirtualEdgePage[] pages;
+  SemiVirtualEdgePool self;
+  SemiVirtualEdgePage[] pages;
   /**
    * The next page that includes available Edges. This reference is never
    * null. There is always at least one page with at least one free QuadEdge
    * in it.
    */
-  VirtualEdgePage nextAvailablePage;
+  SemiVirtualEdgePage nextAvailablePage;
   int nAllocated;
   int nFree;
   int nAllocationOperations;
@@ -101,10 +101,10 @@ class VirtualEdgePool implements Iterable<VirtualEdge> {
    * of initial edges.
    *
    */
-  VirtualEdgePool() {
+  SemiVirtualEdgePool() {
     self = this;
-    pages = new VirtualEdgePage[1];
-    pages[0] = new VirtualEdgePage(0);
+    pages = new SemiVirtualEdgePage[1];
+    pages[0] = new SemiVirtualEdgePage(0);
     nextAvailablePage = pages[0];
     nAllocated = 0;
     nFree = pages.length * PAIRS_PER_PAGE;
@@ -151,7 +151,7 @@ class VirtualEdgePool implements Iterable<VirtualEdge> {
     int nP = oldLen + pagesNeeded;
     pages = Arrays.copyOf(pages, nP);
     for (int i = oldLen; i < nP; i++) {
-      pages[i] = new VirtualEdgePage(i); //NOPMD
+      pages[i] = new SemiVirtualEdgePage(i); //NOPMD
     }
     for (int i = 0; i < nP - 1; i++) {
       pages[i].nextPage = pages[i + 1];
@@ -162,9 +162,9 @@ class VirtualEdgePool implements Iterable<VirtualEdge> {
 
   private void allocatePage() {
     int oldLength = pages.length;
-    VirtualEdgePage[] newPages = new VirtualEdgePage[oldLength + 1];
+    SemiVirtualEdgePage[] newPages = new SemiVirtualEdgePage[oldLength + 1];
     System.arraycopy(pages, 0, newPages, 0, pages.length);
-    newPages[oldLength] = new VirtualEdgePage(oldLength);
+    newPages[oldLength] = new SemiVirtualEdgePage(oldLength);
     pages = newPages;
     nFree += PAIRS_PER_PAGE;
     nextAvailablePage = pages[oldLength];
@@ -173,12 +173,12 @@ class VirtualEdgePool implements Iterable<VirtualEdge> {
     }
   }
 
-  VirtualEdge allocateUnassignedEdge() {
-    return new VirtualEdge(this);
+  SemiVirtualEdge allocateUnassignedEdge() {
+    return new SemiVirtualEdge(this);
   }
 
-  void allocateEdgeWithReceiver(VirtualEdge receiver, Vertex a, Vertex b) {
-    VirtualEdgePage page = nextAvailablePage;
+  void allocateEdgeWithReceiver(SemiVirtualEdge receiver, Vertex a, Vertex b) {
+    SemiVirtualEdgePage page = nextAvailablePage;
     int absIndex = page.allocateEdge(a, b);
     if (page.isFullyAllocated()) {
       nextAvailablePage = page.nextPage;
@@ -198,8 +198,8 @@ class VirtualEdgePool implements Iterable<VirtualEdge> {
     receiver.b = page.vertices[offset | (side ^ 1)];
   }
 
-  VirtualEdge allocateEdge(Vertex a, Vertex b) {
-    VirtualEdgePage page = nextAvailablePage;
+  SemiVirtualEdge allocateEdge(Vertex a, Vertex b) {
+    SemiVirtualEdgePage page = nextAvailablePage;
     int absIndex = page.allocateEdge(a, b);
     if (page.isFullyAllocated()) {
       nextAvailablePage = page.nextPage;
@@ -210,34 +210,34 @@ class VirtualEdgePool implements Iterable<VirtualEdge> {
     nFree--;
     nAllocated++;
     nAllocationOperations++;
-    return new VirtualEdge(this, page, absIndex);
+    return new SemiVirtualEdge(this, page, absIndex);
   }
 
-  public VirtualEdge getStartingEdge() {
-    for (VirtualEdgePage page : pages) {
+  public SemiVirtualEdge getStartingEdge() {
+    for (SemiVirtualEdgePage page : pages) {
       int[] allocatedEdges = page.getAllocations();
 
       for (int j = 0; j < allocatedEdges.length; j++) {
         int iEdge = allocatedEdges[j];
         int index = iEdge & INDEX_MASK;
         if (page.vertices[index] != null && page.vertices[index + 1] != null) {
-          return new VirtualEdge(this, page, iEdge);
+          return new SemiVirtualEdge(this, page, iEdge);
         }
       }
     }
     return null;
   }
 
-  public VirtualEdge getStartingGhostEdge() {
+  public SemiVirtualEdge getStartingGhostEdge() {
     for (int i = 0; i < pages.length; i++) {
-      VirtualEdgePage page = pages[i];
+      SemiVirtualEdgePage page = pages[i];
       int[] allocatedEdges = page.getAllocations();
 
       for (int j = 0; j < allocatedEdges.length; j++) {
         int iEdge = allocatedEdges[j];
         int index = iEdge & INDEX_MASK;
         if (page.vertices[index] != null && page.vertices[index + 1] == null) {
-          return new VirtualEdge(this, page, iEdge);
+          return new SemiVirtualEdge(this, page, iEdge);
         }
       }
     }
@@ -252,7 +252,7 @@ class VirtualEdgePool implements Iterable<VirtualEdge> {
   void deallocateEdge(int absIndex) {
 
     int iPage = absIndex / INDICES_PER_PAGE;
-    VirtualEdgePage page = pages[iPage];
+    SemiVirtualEdgePage page = pages[iPage];
     if (page.isFullyAllocated()) {
       // since it will no longer be fully allocated,
       // add it to the linked list
@@ -265,11 +265,11 @@ class VirtualEdgePool implements Iterable<VirtualEdge> {
     nFreeOperations++;
   }
 
-  void deallocateEdge(VirtualEdge e) {
+  void deallocateEdge(SemiVirtualEdge e) {
     deallocateEdge(e.getIndex());
   }
 
-  VirtualEdgePage getPageForIndex(int index) {
+  SemiVirtualEdgePage getPageForIndex(int index) {
     return pages[index / INDICES_PER_PAGE];
   }
 
@@ -289,21 +289,21 @@ class VirtualEdgePool implements Iterable<VirtualEdge> {
    */
   public List<IQuadEdge> getEdges() {
     ArrayList<IQuadEdge> eList = new ArrayList<>(nAllocated);
-    for (VirtualEdgePage p : pages) {
+    for (SemiVirtualEdgePage p : pages) {
       int[] map = p.getAllocations();
       for (int i = 0; i < map.length; i++) {
-        eList.add(new VirtualEdge(this, p, map[i])); //NOPMD
+        eList.add(new SemiVirtualEdge(this, p, map[i])); //NOPMD
       }
     }
     return eList;
   }
 
-  public List<VirtualEdge> getVirtualEdges() {
-    ArrayList<VirtualEdge> eList = new ArrayList<>(nAllocated);
-    for (VirtualEdgePage p : pages) {
+  public List<SemiVirtualEdge> getVirtualEdges() {
+    ArrayList<SemiVirtualEdge> eList = new ArrayList<>(nAllocated);
+    for (SemiVirtualEdgePage p : pages) {
       int[] map = p.getAllocations();
       for (int i = 0; i < map.length; i++) {
-        eList.add(new VirtualEdge(this, p, map[i])); //NOPMD
+        eList.add(new SemiVirtualEdge(this, p, map[i])); //NOPMD
       }
     }
     return eList;
@@ -332,7 +332,7 @@ class VirtualEdgePool implements Iterable<VirtualEdge> {
    * list. Does not delete any existing objects.
    */
   void clear() {
-    for (VirtualEdgePage p : pages) {
+    for (SemiVirtualEdgePage p : pages) {
       p.clear();
     }
 
@@ -364,7 +364,7 @@ class VirtualEdgePool implements Iterable<VirtualEdge> {
    */
   public void printDiagnostics(PrintStream ps) {
     int nPartials = 0;
-    VirtualEdgePage p = nextAvailablePage;
+    SemiVirtualEdgePage p = nextAvailablePage;
     while (p != null) {
       nPartials++;
       p = p.nextPage;
@@ -386,7 +386,7 @@ class VirtualEdgePool implements Iterable<VirtualEdge> {
    */
   public int getMaximumAllocationIndex() {
     for (int iPage = pages.length - 1; iPage >= 0; iPage--) {
-      VirtualEdgePage p = pages[iPage];
+      SemiVirtualEdgePage p = pages[iPage];
       if (p.nPairsAllocated > 0) {
         return (p.pageID + 1) * INDICES_PER_PAGE;
       }
@@ -394,15 +394,15 @@ class VirtualEdgePool implements Iterable<VirtualEdge> {
     return 0;
   }
 
-  VirtualEdge getEdgeForIndex(int index) {
+  SemiVirtualEdge getEdgeForIndex(int index) {
     int iPage = index / INDICES_PER_PAGE;
-    VirtualEdgePage page = pages[iPage];
-    return new VirtualEdge(this, page, index);
+    SemiVirtualEdgePage page = pages[iPage];
+    return new SemiVirtualEdge(this, page, index);
   }
 
-  void getEdgeForIndexWithReceiver(final VirtualEdge receiver, final int index, Vertex a, Vertex b) {
+  void getEdgeForIndexWithReceiver(final SemiVirtualEdge receiver, final int index, Vertex a, Vertex b) {
     int iPage = index / INDICES_PER_PAGE;
-    VirtualEdgePage page = pages[iPage];
+    SemiVirtualEdgePage page = pages[iPage];
     receiver.page = page;
     receiver.index = index;
     receiver.indexOnPage = index & INDEX_MASK;
@@ -422,9 +422,9 @@ class VirtualEdgePool implements Iterable<VirtualEdge> {
    * @return a valid iterator.
    */
   @Override
-  public Iterator<VirtualEdge> iterator() {
-    return new Iterator<VirtualEdge>() {
-      VirtualEdgePool pool;
+  public Iterator<SemiVirtualEdge> iterator() {
+    return new Iterator<SemiVirtualEdge>() {
+      SemiVirtualEdgePool pool;
       int iEdge;
       int iPage;
       int[] map = pages[0].getAllocations();
@@ -451,14 +451,14 @@ class VirtualEdgePool implements Iterable<VirtualEdge> {
       }
 
       @Override
-      public VirtualEdge next() {
+      public SemiVirtualEdge next() {
         if (!hasNext) {
           return null;
         }
         int index = map[iEdge];
-        VirtualEdgePage page = pages[iPage];
+        SemiVirtualEdgePage page = pages[iPage];
 
-        VirtualEdge e = new VirtualEdge(self, page, index);
+        SemiVirtualEdge e = new SemiVirtualEdge(self, page, index);
         hasNext = processHasNext(iPage, iEdge);
         return e;
       }

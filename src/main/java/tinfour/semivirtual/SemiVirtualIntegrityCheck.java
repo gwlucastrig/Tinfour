@@ -27,7 +27,7 @@
  *
  * -----------------------------------------------------------------------
  */
-package tinfour.virtual;
+package tinfour.semivirtual;
 
 import java.io.PrintStream;
 import java.util.Formatter;
@@ -45,12 +45,12 @@ import tinfour.common.VertexMergerGroup;
  * a "relational integrity check" in relational database management systems. And
  * that choice of nomenclature should give some sense of its intended role.
  */
-class VirtualIntegrityCheck implements IIntegrityCheck {
+class SemiVirtualIntegrityCheck implements IIntegrityCheck {
 
-  private final VirtualIncrementalTin tin;
+  private final SemiVirtualIncrementalTin tin;
   private final Thresholds thresholds;
   private final GeometricOperations geoOp;
-  private final List<VirtualEdge> edges;
+  private final List<SemiVirtualEdge> edges;
 
   private String message;
   private int nDelaunayViolations;
@@ -63,7 +63,7 @@ class VirtualIntegrityCheck implements IIntegrityCheck {
    * @param tin A valid instance of a class that implements the
    * IIncrementalTin interface.
    */
-  VirtualIntegrityCheck(VirtualIncrementalTin tin) {
+  SemiVirtualIntegrityCheck(SemiVirtualIncrementalTin tin) {
     this.tin = tin;
     thresholds = new Thresholds(tin.getNominalPointSpacing());
     geoOp = new GeometricOperations(thresholds);
@@ -124,9 +124,9 @@ class VirtualIntegrityCheck implements IIntegrityCheck {
    */
   public boolean inspectLinks() {
 
-    final VirtualEdge s = edges.get(0).getUnassignedEdge();
-    final VirtualEdge dual = s.getUnassignedEdge();
-    for (VirtualEdge e : edges) {
+    final SemiVirtualEdge s = edges.get(0).getUnassignedEdge();
+    final SemiVirtualEdge dual = s.getUnassignedEdge();
+    for (SemiVirtualEdge e : edges) {
       s.loadForwardFromEdge(e);
       if (e.equals(s)) {
         message = "Edge has forward reference to itself " + e;
@@ -212,8 +212,8 @@ class VirtualIntegrityCheck implements IIntegrityCheck {
       return false;
     }
     int nGhostEdges = 0;
-    VirtualEdge p = null;
-    for (VirtualEdge e : edges) {
+    SemiVirtualEdge p = null;
+    for (SemiVirtualEdge e : edges) {
       if (e.getB() == null) {
         p = e;
         nGhostEdges++;
@@ -224,8 +224,8 @@ class VirtualIntegrityCheck implements IIntegrityCheck {
     }
 
 
-    VirtualEdge s0 = p.getReverse();
-    VirtualEdge s = s0;
+    SemiVirtualEdge s0 = p.getReverse();
+    SemiVirtualEdge s = s0;
     int n=0;
     do {
           n++;
@@ -291,8 +291,8 @@ class VirtualIntegrityCheck implements IIntegrityCheck {
     // three times.  Since we aren't interested in performance,
     // we simply allow it to do so rather than complicating the
     // code (and potentially coding the thing incorrectly).
-    final VirtualEdge d = edges.get(0).copy();
-    for (VirtualEdge e : edges) {
+    final SemiVirtualEdge d = edges.get(0).copy();
+    for (SemiVirtualEdge e : edges) {
       if (e.getA() != null && e.getB() != null) {
         if (e.getForward().getB() != null && !checkAreaAndInCircle(e)) {
             return false;
@@ -306,7 +306,7 @@ class VirtualIntegrityCheck implements IIntegrityCheck {
     return true;
   }
 
-  private boolean checkAreaAndInCircle(final VirtualEdge e) {
+  private boolean checkAreaAndInCircle(final SemiVirtualEdge e) {
     final Vertex a = e.getA();
     final Vertex b = e.getB();
     final Vertex c = e.getTriangleApex(); //e.getForward().getB();
@@ -331,7 +331,7 @@ class VirtualIntegrityCheck implements IIntegrityCheck {
       return false;
     }
 
-    final VirtualEdge dual = e.getDual();
+    final SemiVirtualEdge dual = e.getDual();
 
     final Vertex d = dual.getTriangleApex();
     if (d == null) {

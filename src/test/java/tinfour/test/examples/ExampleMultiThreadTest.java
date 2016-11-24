@@ -47,7 +47,7 @@ import tinfour.standard.IncrementalTin;
 import tinfour.test.utils.IDevelopmentTest;
 import tinfour.test.utils.TestOptions;
 import tinfour.test.utils.VertexLoader;
-import tinfour.virtual.VirtualIncrementalTin;
+import tinfour.semivirtual.SemiVirtualIncrementalTin;
 
 /**
  * Provides an example of code to build a GRID from an LAS file
@@ -249,7 +249,7 @@ public class ExampleMultiThreadTest implements IDevelopmentTest {
         tin = new IncrementalTin();
       } else {
         ps.format("Virtual edge representation selected\n");
-        tin = new VirtualIncrementalTin();
+        tin = new SemiVirtualIncrementalTin();
       }
     }
 

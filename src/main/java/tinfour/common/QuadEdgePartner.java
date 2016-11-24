@@ -26,9 +26,8 @@
  * Notes:
  *
  * The index element which is inherited from the parent class QuadEdge
- * is currently uncommitted and available for use. The plan is to
- * use at least part of it as a bitmap to represent constrained edges
- * in a proposed implementation of the Constrained Delaunay Triangulation
+ * is used as a way of representing constraints according to
+ * the definition of the Constrained Delaunay Triangulation.
  *
  * See the parent class for discussion of memory layout and conservation.
  *
@@ -48,6 +47,7 @@ class QuadEdgePartner extends QuadEdge {
    */
   QuadEdgePartner(final QuadEdge partner) {
     super(partner);
+    index = 0;
   }
 
   @Override
@@ -77,4 +77,103 @@ class QuadEdgePartner extends QuadEdge {
     return 1;
   }
 
+
+  /**
+   * Sets all vertices and link references to null (the link to a dual
+   * is not affected).
+   */
+  @Override
+  public void clear() {
+    // note that the index of the QuadEdgePartner is set to zero but the
+    // index of the base QuadEdge, which is used for management purposes
+    // is left alone.
+    this.v = null;
+    this.f = null;
+    this.r = null;
+    dual.v = null;
+    dual.f = null;
+    dual.r = null;
+    index = 0;
+  }
+
+  /**
+   * Gets the index of the constraint associated with this edge.
+   * Constraint index values must be in the range 0 to 65534
+   * with negative numbers being reserved.
+   * @return if constrained, a positive integer; otherwise, a negative value.
+   */
+  @Override
+    public int getConstraintIndex(){
+    return (index&CONSTRAINT_INDEX_MASK);
+  }
+
+  /**
+   * Sets the constraint index for this edge.  Note that setting the constraint
+   * index does not necessarily set an edge to a constrained status.
+   * In some cases it may be used to indicate the constraint with which a
+   * non-constrained edge is associated. Index values must be in the range
+   * 0 to QuadEdge&#46;CONSTAINT_INDEX_MAX (1048575).
+   * @param constraintIndex a positive number in the range 0 to 1048575
+   * indicating the constraint with which the edge is associated.
+   */
+    @Override
+    public void setConstraintIndex(int constraintIndex) {
+        if (constraintIndex < 0 || constraintIndex > QuadEdge.CONSTRAINT_INDEX_MAX) {
+            throw new IllegalArgumentException(
+                    "Constraint index "
+                    + constraintIndex
+                    + " is out of range [0.."
+                    + QuadEdge.CONSTRAINT_INDEX_MAX
+                    + "]");
+        }
+        index = ((index & ~CONSTRAINT_INDEX_MASK) |  constraintIndex) ;
+    }
+
+  @Override
+
+
+    /**
+   * Sets an edge as constrained and sets its constraint index. Note that
+   * once an edge is constrained, it cannot be set to a non-constrained
+   * status.  Constraint index values must be positive integers in
+   * the range   0 to QuadEdge&#46;CONSTAINT_INDEX_MAX (1048575).
+   * @param  constraintIndex positive number indicating which constraint
+   * a particular edge is associated with, in the range 0 to 1048575.
+   */
+    public void setConstrained(int constraintIndex){
+     index = CONSTRAINT_FLAG | ((index & ~CONSTRAINT_INDEX_MASK) |  constraintIndex) ;
+    }
+
+  /**
+   * Gets the index of the constrain associated with
+   * @return true if the edge is constrained; otherwise, false.
+   */
+  @Override
+  public boolean isConstrained() {
+    return index<0;  // the CONSTRAINT_FLAG is also the sign bit.
+  }
+
+  @Override
+  public boolean isConstrainedAreaEdge() {
+    return index<0 && (index&CONSTRAINT_AREA_FLAG)!=0;
+  }
+
+  @Override
+  public boolean isConstrainedAreaMember() {
+    return (index&CONSTRAINT_AREA_FLAG)!=0;
+  }
+
+  @Override
+  public void setConstrainedAreaMemberFlag() {
+   index|=CONSTRAINT_AREA_FLAG;
+  }
+
+  @Override
+    void setConstrainedAreaMemberFlag(int sideBit){
+      index|=(CONSTRAINT_AREA_FLAG|sideBit);
+  }
+  @Override
+      public boolean isConstraintAreaOnThisSide(){
+      return (index&CONSTRAINT_AREA_BASE_FLAG)==0;
+  }
 }

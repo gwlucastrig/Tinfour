@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-/*
+ /*
  * -----------------------------------------------------------------------
  *
  * Revision History:
@@ -43,8 +43,6 @@ import tinfour.common.VertexMergerGroup;
 // is exactly what we want to do.  The main motivation for doing so is
 // performance, though it also conveys the meaning of what is being
 // done (ascertaining that two references are the same object).
-
-
 /**
  * A tool for checking the correctness of a tin, in particular the relationship
  * between adjacent triangles. The name of this class is inspired by the idea of
@@ -63,6 +61,7 @@ public class IntegrityCheck implements IIntegrityCheck {
   private int nDelaunayViolations;
   private double sumDelaunayViolations;
   private double maxDelaunayViolation;
+  private int nDelaunayViolationsConstrained;
 
   /**
    * Constructs an instance to be associated with a specified TIN.
@@ -94,6 +93,7 @@ public class IntegrityCheck implements IIntegrityCheck {
    * <li>Ensure that all triangle pairs are Delaunay or
    * close-to-Delaunay optimal</li>
    * </ul>
+   *
    * @return if the TIN passes inspection, true; otherwise, false.
    */
   @Override
@@ -223,9 +223,9 @@ public class IntegrityCheck implements IIntegrityCheck {
    */
   public boolean inspectPerimeterLinks() {
 
-        // by convention, ghost edges are always stored in the edge pool
+    // by convention, ghost edges are always stored in the edge pool
     // so that the base edge ends at the null vertex.
-    if(edges.isEmpty()){
+    if (edges.isEmpty()) {
       message = "TIN was not successfully bootstrapped";
       return false;
     }
@@ -301,7 +301,7 @@ public class IntegrityCheck implements IIntegrityCheck {
    * @return true if all inspection criteria are met; otherwise false.
    */
   public boolean inspectTriangleGeometry() {
-        // the following loop will inspect the area of each triangle
+    // the following loop will inspect the area of each triangle
     // three times.  Since we aren't interested in performance,
     // we simply allow it to do so rather than complicating the
     // code (and potentially coding the thing incorrectly).
@@ -352,22 +352,26 @@ public class IntegrityCheck implements IIntegrityCheck {
     double h = geoOp.inCircle(a, b, c, d);
 
     if (h > 0) {
-      this.nDelaunayViolations++;
-      this.sumDelaunayViolations += h;
-      if (h > this.maxDelaunayViolation) {
-        this.maxDelaunayViolation = h;
-      }
+      if (e.isConstrained()) {
+        this.nDelaunayViolationsConstrained++;
+      } else {
+        this.nDelaunayViolations++;
+        this.sumDelaunayViolations += h;
+        if (h > this.maxDelaunayViolation) {
+          this.maxDelaunayViolation = h;
+        }
 
-      if (h > thresholds.getDelaunayThreshold()) {
-        message = "InCircle failure h=" + h
-          + ", starting at edge " + e
-          + ": ("
-          + a.getIndex()
-          + ", " + b.getIndex()
-          + ", " + c.getIndex()
-          + ", " + d.getIndex() + ")";
-        return false;
+        if (h > thresholds.getDelaunayThreshold()) {
+          message = "InCircle failure h=" + h
+            + ", starting at edge " + e
+            + ": ("
+            + a.getIndex()
+            + ", " + b.getIndex()
+            + ", " + c.getIndex()
+            + ", " + d.getIndex() + ")";
+          return false;
 
+        }
       }
     }
     return true;
@@ -408,13 +412,17 @@ public class IntegrityCheck implements IIntegrityCheck {
       fmt.format("      Avg Violation: %8.4e\n", sumDelaunayViolations / nDelaunayViolations);
       fmt.format("      Max Violation: %8.4e\n", maxDelaunayViolation);
     }
+    if (nDelaunayViolationsConstrained > 0) {
+      fmt.format("   Suppressed %d violations due to constraints\n",
+        nDelaunayViolationsConstrained);
+    }
 
     fmt.flush();
   }
 
-
   /**
    * Restore the index values of the original input vertices
+   *
    * @param inputList the input vertices.
    * @param inputIndex the original input indices.
    */
@@ -431,12 +439,15 @@ public class IntegrityCheck implements IIntegrityCheck {
    * to the original list of input vertices and determines whether they
    * are consistent. The getVertices method must return one, and only
    * one, instance of each vertex in the input list.
-   * <p>This method temporarily changes the index of the vertices in
+   * <p>
+   * This method temporarily changes the index of the vertices in
    * the input set to a sequential order. They are restored when the
    * routine returns.
-   * <p><strong>Important: </strong>The test assumes that each vertex
-   * in the input set is unique.  If a vertex occurs more than once,
+   * <p>
+   * <strong>Important: </strong>The test assumes that each vertex
+   * in the input set is unique. If a vertex occurs more than once,
    * the test will fail.
+   *
    * @param inputList the list of vertices input into the TIN.
    * @return true if the test passes; otherwise false
    */
@@ -485,7 +496,7 @@ public class IntegrityCheck implements IIntegrityCheck {
         count[index]++;
       }
     }
-   restoreInputIndices(inputList, inputIndex);
+    restoreInputIndices(inputList, inputIndex);
 
     k = 0;
     for (Vertex v : inputList) {

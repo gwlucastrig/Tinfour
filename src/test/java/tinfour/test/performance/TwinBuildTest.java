@@ -58,7 +58,7 @@ public class TwinBuildTest implements IDevelopmentTest {
   // run test against self to establish that there is no bias
   // depending on the order in which builds are performed.
   static final String testClassA = "tinfour.standard.IncrementalTin";
-  static final String testClassB = "tinfour.virtual.VirtualIncrementalTin";
+  static final String testClassB = "tinfour.semivirtual.SemiVirtualIncrementalTin";
 
   /**
    * Perform a simple test of the TIN building functions a fixed number of

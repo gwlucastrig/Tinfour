@@ -30,8 +30,8 @@ import java.io.PrintStream;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import tinfour.common.IIncrementalTin;
+import tinfour.semivirtual.SemiVirtualIncrementalTin;
 import tinfour.standard.IncrementalTin;
-import tinfour.virtual.VirtualIncrementalTin;
 
 /**
  * Provides a utility for instantiating either the QuadEdge or virtual
@@ -110,7 +110,7 @@ public class TinInstantiationUtility {
     if (nBytesNeededForStandard < maxAllowedForUse) {
       tinClass = IncrementalTin.class;
     } else {
-      tinClass = VirtualIncrementalTin.class;
+      tinClass = SemiVirtualIncrementalTin.class;
     }
 
   }
@@ -226,7 +226,7 @@ public class TinInstantiationUtility {
       maxAllowedForUse / 1024.0 / 1024.0);
     ps.format("Memory required for standard edge class:    %12.3f megabytes\n",
       nBytesNeededForStandard / 1024.0 / 1024.0);
-    ps.format("Memory required for virtual edge class:     %12.3f megabytes\n",
+    ps.format("Memory required for semi-virtual edge class:%12.3f megabytes\n",
       nBytesNeededForVirtual / 1024.0 / 1024.0);
     ps.format("Selected class:                             %s\n",
       tinClass.getName());

@@ -27,7 +27,7 @@
  *
  * -----------------------------------------------------------------------
  */
-package tinfour.virtual;
+package tinfour.semivirtual;
 
 import tinfour.common.GeometricOperations;
 import tinfour.common.Vertex;
@@ -35,20 +35,20 @@ import tinfour.common.Vertex;
 /**
  * A representation of a "ear" from Devillers' algorithm for vertex removal
  */
-class DevillersEar {
+class SemiVirtualDevillersEar {
 
     int index;
-    DevillersEar prior;
-    DevillersEar next;
-    VirtualEdge c;
-    VirtualEdge p;
-    VirtualEdge n;
+    SemiVirtualDevillersEar prior;
+    SemiVirtualDevillersEar next;
+    SemiVirtualEdge c;
+    SemiVirtualEdge p;
+    SemiVirtualEdge n;
     Vertex v0, v1, v2;
     boolean degenerate;
 
     double score;
 
-    DevillersEar(int index, DevillersEar priorEar, VirtualEdge current, VirtualEdge prior) {
+    SemiVirtualDevillersEar(int index, SemiVirtualDevillersEar priorEar, SemiVirtualEdge current, SemiVirtualEdge prior) {
         this.index = index;
         this.prior = priorEar;
         if (priorEar != null) {
@@ -62,7 +62,7 @@ class DevillersEar {
         v2 = n.getB();
     }
 
-    void setReferences(DevillersEar priorEar, VirtualEdge current, VirtualEdge prior) {
+    void setReferences(SemiVirtualDevillersEar priorEar, SemiVirtualEdge current, SemiVirtualEdge prior) {
         this.prior = priorEar;
         if (priorEar != null) {
             priorEar.next = this;
@@ -134,7 +134,7 @@ class DevillersEar {
   @SuppressWarnings("PMD.CompareObjectsWithEquals")
   @Override
   public boolean equals(Object o) {
-    if (o instanceof DevillersEar) {
+    if (o instanceof SemiVirtualDevillersEar) {
       return (o == this);
     }
     return false;

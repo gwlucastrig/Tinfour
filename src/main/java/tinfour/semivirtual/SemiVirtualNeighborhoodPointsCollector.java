@@ -33,7 +33,7 @@
  *
  * -----------------------------------------------------------------------
  */
-package tinfour.virtual;
+package tinfour.semivirtual;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -46,13 +46,13 @@ import tinfour.common.Vertex;
  * Obtains vertices in the neighborhood of a specified set of coordinates
  * by using a TIN traversal scheme.
  */
-class VirtualNeighborhoodPointsCollector implements IProcessUsingTin, INeighborhoodPointsCollector {
+class SemiVirtualNeighborhoodPointsCollector implements IProcessUsingTin, INeighborhoodPointsCollector {
 
-  final VirtualStochasticLawsonsWalk walker;
-  final VirtualIncrementalTin tin;
+  final SemiVirtualStochasticLawsonsWalk walker;
+  final SemiVirtualIncrementalTin tin;
   final double vertexTolerance2;
 
-  VirtualEdge searchEdge;
+  SemiVirtualEdge searchEdge;
 
   // diagnostic values
   boolean isQueryPointToExterior;
@@ -63,10 +63,10 @@ class VirtualNeighborhoodPointsCollector implements IProcessUsingTin, INeighborh
    *
    * @param tin a valid TIN to be accessed on a read-only basis.
    */
-  VirtualNeighborhoodPointsCollector(VirtualIncrementalTin tin, Thresholds thresholds) {
+  SemiVirtualNeighborhoodPointsCollector(SemiVirtualIncrementalTin tin, Thresholds thresholds) {
     //   vList = new ArrayList<>();
     this.tin = tin;
-    walker = new VirtualStochasticLawsonsWalk(thresholds);
+    walker = new SemiVirtualStochasticLawsonsWalk(thresholds);
     vertexTolerance2 = thresholds.getVertexTolerance2();
   }
 
@@ -96,7 +96,7 @@ class VirtualNeighborhoodPointsCollector implements IProcessUsingTin, INeighborh
   }
 
   private List<Vertex> pinwheel(
-    VirtualEdge e0,
+    SemiVirtualEdge e0,
     int searchDepth,
     int targetMinVertexCount
   ) {
@@ -104,7 +104,7 @@ class VirtualNeighborhoodPointsCollector implements IProcessUsingTin, INeighborh
     List<Vertex> vList = new ArrayList<>();
     Vertex v0 = e0.getA();
     vList.add(v0);
-    VirtualEdge c = e0;
+    SemiVirtualEdge c = e0;
     do {
       c = c.getForward();
       Vertex a = c.getA();
@@ -120,7 +120,7 @@ class VirtualNeighborhoodPointsCollector implements IProcessUsingTin, INeighborh
         c = c.getForward();
         Vertex a = c.getA();
         if (a != null) {
-          VirtualEdge sDual = c.getDual();
+          SemiVirtualEdge sDual = c.getDual();
           standardSearch(vList, sDual.getForward().getDual(), 2, searchDepth);
           standardSearch(vList, sDual.getReverse().getDual(), 2, searchDepth);
         }
@@ -140,7 +140,7 @@ class VirtualNeighborhoodPointsCollector implements IProcessUsingTin, INeighborh
         c = c.getForward();
         Vertex a = c.getA();
         if (a != null) {
-          VirtualEdge sDual = c.getDual();
+          SemiVirtualEdge sDual = c.getDual();
           extendedSearch(vList, sDual.getForward().getDual(), 2, searchDepth, searchDepth + nExtras);
           extendedSearch(vList, sDual.getReverse().getDual(), 2, searchDepth, searchDepth + nExtras);
         }
@@ -176,7 +176,7 @@ class VirtualNeighborhoodPointsCollector implements IProcessUsingTin, INeighborh
       searchEdge = tin.getStartingEdge();
     }
     searchEdge = walker.findAnEdgeFromEnclosingTriangle(searchEdge, x, y);
-    VirtualEdge eEdge = searchEdge;
+    SemiVirtualEdge eEdge = searchEdge;
 
     // The walker found an edge of the triangle that encloses (x,y)
     // or a perimeter edge if the point is outside the TIN.
@@ -235,9 +235,9 @@ class VirtualNeighborhoodPointsCollector implements IProcessUsingTin, INeighborh
       v0 = temp;
     }
 
-    final VirtualEdge rEdge = eEdge.getReverse();
-    final VirtualEdge fEdge = eEdge.getForward();
-    final VirtualEdge dEdge = eEdge.getDual();
+    final SemiVirtualEdge rEdge = eEdge.getReverse();
+    final SemiVirtualEdge fEdge = eEdge.getForward();
+    final SemiVirtualEdge dEdge = eEdge.getDual();
 
     Vertex vq = null;
     if (ambiguity) {
@@ -257,8 +257,8 @@ class VirtualNeighborhoodPointsCollector implements IProcessUsingTin, INeighborh
       // is within a triangle and does not lie on an edge.
       vList.add(v2);
 
-      final VirtualEdge mEdge = rEdge.getDual();
-      final VirtualEdge nEdge = fEdge.getDual();
+      final SemiVirtualEdge mEdge = rEdge.getDual();
+      final SemiVirtualEdge nEdge = fEdge.getDual();
       standardSearch(vList, dEdge, 1, searchDepth);
       standardSearch(vList, mEdge, 1, searchDepth);
       standardSearch(vList, nEdge, 1, searchDepth);
@@ -297,10 +297,10 @@ class VirtualNeighborhoodPointsCollector implements IProcessUsingTin, INeighborh
         vList.add(vq);
         vList.add(v2);
       }
-      final VirtualEdge mEdge = rEdge.getDual();
-      final VirtualEdge nEdge = fEdge.getDual();
-      final VirtualEdge sEdge = dEdge.getForward().getDual();
-      final VirtualEdge tEdge = dEdge.getReverse().getDual();
+      final SemiVirtualEdge mEdge = rEdge.getDual();
+      final SemiVirtualEdge nEdge = fEdge.getDual();
+      final SemiVirtualEdge sEdge = dEdge.getForward().getDual();
+      final SemiVirtualEdge tEdge = dEdge.getReverse().getDual();
       standardSearch(vList, mEdge, 1, searchDepth);
       standardSearch(vList, nEdge, 1, searchDepth);
       standardSearch(vList, sEdge, 1, searchDepth);
@@ -335,7 +335,7 @@ class VirtualNeighborhoodPointsCollector implements IProcessUsingTin, INeighborh
 
   private void standardSearch(
     List<Vertex> vList,
-    VirtualEdge e,
+    SemiVirtualEdge e,
     int depth,
     int traversalDepth) {
     Vertex b = e.getForward().getB();
@@ -355,7 +355,7 @@ class VirtualNeighborhoodPointsCollector implements IProcessUsingTin, INeighborh
 
   private void extendedSearch(
     List<Vertex> vList,
-    VirtualEdge e,
+    SemiVirtualEdge e,
     int depth,
     int previousDepth,
     int traversalDepth) {

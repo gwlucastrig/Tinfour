@@ -222,11 +222,10 @@ class EdgePool implements Iterable<QuadEdge> {
    * @param e a valid QuadEdge
    */
   void deallocateEdge(QuadEdge e) {
-
     int iPage = e.getIndex() / pageSize;
     Page page = pages[iPage];
     if (page.isFullyAllocated()) {
-            // since it will no longer be fully allocated,
+      // since it will no longer be fully allocated,
       // add it to the linked list
       page.nextPage = nextAvailablePage;
       nextAvailablePage = page;

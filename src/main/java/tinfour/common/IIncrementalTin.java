@@ -27,6 +27,7 @@
  *
  * -----------------------------------------------------------------------
  */
+
 package tinfour.common;
 
 import java.awt.geom.Rectangle2D;
@@ -289,6 +290,36 @@ public interface IIncrementalTin {
    */
   public void setResolutionRuleForMergedVertices(
     final VertexMergerGroup.ResolutionRule resolutionRule);
+
+
+  /**
+   * Adds constraints to the TIN.
+   * <p>
+   * <strong>Using Constraints</strong>
+   * <p>
+   * There are a number of important restrictions to the use of constraints.
+   * Constraints must only be added to the TIN once, after all other vertices
+   * have already been added. Furthermore, the addConstraint method can only
+   * be called once. Logic is implemented as a safety measure to ensure that
+   * these restrictions are not accidentally violated.
+   * <p>
+   * There are also important restrictions on the geometry of constraints.
+   * Most importantly, constraints must never intersect each other except
+   * at the endpoints of the segments that define them (i.e. segments
+   * in constraints must never cross each other). Due to the high cost of
+   * processing required to check that this restriction is observed,
+   * it is not  directly enforced by the Tinfour implementations.
+   * @param constraints a valid, potentially empty list.
+   */
+   public void addConstraints(List<IConstraint> constraints);
+
+
+   /**
+    * Gets a shallow copy of the list of constraints currently
+    * stored in the TIN.
+    * @return a valid, potentially empty list of constraint instances.
+    */
+   public List<IConstraint>getConstraints();
 
 
 }
