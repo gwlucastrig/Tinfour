@@ -127,7 +127,7 @@ And just to illustrate the idea that the Constrained Delaunay Triangulation
 is useful for applications beyond geography, the picture below was
 created using the latest version of Tinfour. 
 
-![An Ordinary and a Constrained Delaunay Triangulation](doc/images/ConstrainedDelaunayTriangulation.png "An Ordinary and a Constrained Delaunay Triangulation")
+![Constrained Delaunay Triangulation from the LogoCDT demo application](doc/images/ConstrainedDelaunayTriangulation.png "Constrained Delaunay Triangulation from the LogoCDT example application")
 
  
  
