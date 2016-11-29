@@ -288,7 +288,7 @@ class SemiVirtualNeighborhoodPointsCollector implements IProcessUsingTin, INeigh
       // this is the ambiguous case where (x,y) lies on the edge.
       // the searches start with the FOUR neighboring edges.
       // Before beginning, add both v2 and vq to the vList,
-      // adding the one closes to (x,y) first so as to guarantee that
+      // adding the one closest to (x,y) first so as to guarantee that
       // the first three vertices in vList are the closest to (x,y).
       if (v2.getDistanceSq(x, y) < vq.getDistanceSq(x, y)) {
         vList.add(v2);

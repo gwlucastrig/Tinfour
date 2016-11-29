@@ -19,8 +19,9 @@
  *
  * Revision History:
  * Date Name Description
- * ------ --------- -------------------------------------------------
- * 05/2014 G. Lucas Created
+ * ------  --------- -------------------------------------------------
+ * 05/2014 G. Lucas  Created
+ * 11/2016 G. Lucas  Added support for constrained Delaunay
  *
  * Notes:
  *

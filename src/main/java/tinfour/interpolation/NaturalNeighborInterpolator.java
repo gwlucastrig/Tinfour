@@ -29,7 +29,8 @@
  *                     to double-check correctness of implementation and
  *                     adjusted calculation to map vertex coordinates so that
  *                     the query point is at the origin.
- * 01/2015 G. Lucas  Added calculation for surface normal
+ * 01/2016 G. Lucas  Added calculation for surface normal
+ * 11/2016 G. Lucas  Added support for constrained Delaunay
  *
  * Notes:
  *
@@ -65,6 +66,7 @@ public class NaturalNeighborInterpolator implements IInterpolatorOverTin {
   // as a single point.
   final private double vertexTolerance2; // square of vertexTolerance;
   final private double inCircleThreshold;
+  final private double halfPlaneThreshold;
 
   final IIncrementalTin tin;
   final GeometricOperations geoOp;
@@ -105,10 +107,10 @@ public class NaturalNeighborInterpolator implements IInterpolatorOverTin {
 
     vertexTolerance2 = thresholds.getVertexTolerance2();
     inCircleThreshold = thresholds.getInCircleThreshold();
+    halfPlaneThreshold = thresholds.getHalfPlaneThreshold();
 
     this.tin = tin;
     locator = tin.getNeighborEdgeLocator();
-
   }
 
   /**
@@ -130,6 +132,9 @@ public class NaturalNeighborInterpolator implements IInterpolatorOverTin {
    * The domain of the interpolator is limited to the interior
    * of the convex hull. Methods for extending to the edge of the
    * TIN or beyond are being investigated.
+   * <p>
+   * The interpolation is treated as undefined at points that lie
+   * directly on a constrained edge.
    *
    * @param x the x coordinate for the interpolation point
    * @param y the y coordinate for the interpolation point
@@ -140,7 +145,7 @@ public class NaturalNeighborInterpolator implements IInterpolatorOverTin {
    */
   @Override
   public double interpolate(double x, double y, IVertexValuator valuator) {
-    // in the logic below, we access the Vertex x and z coordinates directly
+    // in the logic below, we access the Vertex x and y coordinates directly
     // but we use the getZ() method to get the z value.  Some vertices
     // may actually be VertexMergerGroup instances and so the Z value must
     // be selected according to whatever rules were configured for the TIN.
@@ -163,7 +168,7 @@ public class NaturalNeighborInterpolator implements IInterpolatorOverTin {
       // (x,y) is outside defined area
       return Double.NaN;
     } else if (nEdge == 1) {
-      // (x,y) is an exact match with the one edge in the list
+      // (x,y) matches the first vertex of the one edge in the list
       IQuadEdge e = eList.get(0);
       Vertex v = e.getA();
       return vq.value(v);
@@ -364,7 +369,7 @@ public class NaturalNeighborInterpolator implements IInterpolatorOverTin {
    * @return a valid, potentially empty, list.
    */
   public List<IQuadEdge> getBowyerWatsonPolygon(double x, double y) {
-    // in the logic below, we access the Vertex x and z coordinates directly
+    // in the logic below, we access the Vertex x and y coordinates directly
     // but we use the getZ() method to get the z value.  Some vertices
     // may actually be VertexMergerGroup instances
 
@@ -376,17 +381,24 @@ public class NaturalNeighborInterpolator implements IInterpolatorOverTin {
       return eList;
     }
 
-    Vertex q = locatorEdge.getForward().getB();
-    if (q == null) {
-      // the locator edge puts the (x,y) outside the TIN.
-      return eList;
-    }
-
     IQuadEdge e = locatorEdge;
+    IQuadEdge f = e.getForward();
+    IQuadEdge r = e.getReverse();
 
     Vertex v0 = e.getA();
     Vertex v1 = e.getB();
     Vertex v2 = e.getForward().getB();
+
+    double h;
+
+    // by the way the getNeighborEdge() method is defined, if
+    // the query is outside the TIN or on the perimeter edge,
+    // the edge v0, v1 will be the perimeter edge and v2 will
+    // be the ghost vertex (e.g. a null). In either case, v2 will
+    // not be defined. So, if v2 is null, the NNI interpolation is not defined.
+    if (v2 == null) {
+      return eList; // empty list, NNI undefined.
+    }
 
     if (v0.getDistanceSq(x, y) < vertexTolerance2) {
       eList.add(e);
@@ -398,16 +410,31 @@ public class NaturalNeighborInterpolator implements IInterpolatorOverTin {
       return eList; // edge starting with v1
     }
 
-    if (v2 == null) {
-      // (x,y) is either on perimeter or outside the TIN.
-      // if on perimeter, in either case, the Natural Neighbor
-      // interpolation is not defined.
-      return eList; //Double.NaN;
-    }
-
     if (v2.getDistanceSq(x, y) < vertexTolerance2) {
       eList.add(e.getReverse());
       return eList; // edge starting with v2
+    }
+
+    if (e.isConstrained()) {
+      h = geoOp.halfPlane(v0.x, v0.y, v1.x, v1.y, x, y);
+      if (h < halfPlaneThreshold) {
+        // (x,y) is on the edge v0, v1)
+        return eList; // empty list, NNI undefined.
+      }
+    }
+
+    if (f.isConstrained()) {
+      h = geoOp.halfPlane(v1.x, v1.y, v2.x, v2.y, x, y);
+      if (h < halfPlaneThreshold) {
+        return eList; // empty list, NNI undefined.
+      }
+    }
+
+    if (r.isConstrained()) {
+      h = geoOp.halfPlane(v2.x, v2.y, v0.x, v0.y, x, y);
+      if (h < halfPlaneThreshold) {
+        return eList; // empty list, NNI undefined.
+      }
     }
 
     // ------------------------------------------------------
@@ -433,8 +460,11 @@ public class NaturalNeighborInterpolator implements IInterpolatorOverTin {
       n0 = c.getDual();
       n1 = n0.getForward();
 
-      double h;
-      if (n1.getB() == null) {
+      if (c.isConstrained()) {
+        // the search does not extend past a constrained edge.
+        // set h=-1 to suppress further testing and add th edge.
+        h = -1;
+      } else if (n1.getB() == null) {
         // the search has reached a perimeter edge
         // just add the edge and continue.
         h = -1;

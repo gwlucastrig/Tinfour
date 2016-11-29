@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-/*
+ /*
  * -----------------------------------------------------------------------
  *
  * Revision History:
@@ -23,7 +23,9 @@
  * 08/2014  G. Lucas    Initial implementation
  * 08/2015  G. Lucas    Refactored for QuadEdge implementation
  * 02/2016  G. Lucas    Added pinwheel method for case where there is
- *                        an exact vertex match.
+ *                        an exact vertex match. Also logic for cases where
+ *                        vertex lies exactly on an edge.
+ * 11/2016  G. Lucas    Added support for constrained Delaunay
  *
  * Notes:
  *
@@ -37,6 +39,7 @@ package tinfour.standard;
 
 import java.util.ArrayList;
 import java.util.List;
+import tinfour.common.GeometricOperations;
 import tinfour.common.INeighborhoodPointsCollector;
 import tinfour.common.IProcessUsingTin;
 import tinfour.common.QuadEdge;
@@ -52,6 +55,8 @@ class NeighborhoodPointsCollector implements IProcessUsingTin, INeighborhoodPoin
   final StochasticLawsonsWalk walker;
   final IncrementalTin tin;
   final double vertexTolerance2;
+  final double halfPlaneThreshold;
+  final GeometricOperations geoOp;
 
   QuadEdge searchEdge;
 
@@ -69,6 +74,8 @@ class NeighborhoodPointsCollector implements IProcessUsingTin, INeighborhoodPoin
     this.tin = tin;
     walker = tin.getCompatibleWalker();
     vertexTolerance2 = thresholds.getVertexTolerance2();
+    halfPlaneThreshold = thresholds.getHalfPlaneThreshold();
+    geoOp = new GeometricOperations(thresholds);
   }
 
   /**
@@ -85,18 +92,46 @@ class NeighborhoodPointsCollector implements IProcessUsingTin, INeighborhoodPoin
     isQueryPointToExterior = false;
   }
 
-
-  boolean checkForAmbiguity(Vertex a, Vertex b, double x, double y){
+  /**
+   * Check to see if (x,y) is lying directly on edge(a,b). The point
+   * is already known to be in triangle(a,b,c). So the half-plane value
+   * of (x,y) will be positive. Note that this code is a little different
+   * than other uses of half-plane in Tinfour in that it is considered
+   * ambiguous only if the half-plane value is zero.
+   *
+   * @param a initial vertex of edge to be tested
+   * @param b second vertex of edge to be tested
+   * @param x coordinate to be tested
+   * @param y coordinate to be tested
+   * @return true if (x,y) lies on edge(a,b)
+   */
+  boolean checkForAmbiguity(Vertex a, Vertex b, double x, double y) {
     double ax = a.getX();
     double ay = a.getY();
-    double dx = b.getX()-ax;
-    double dy = b.getY()-ay;
-    double vx = x-ax;
-    double vy = y-ay;
-    double h =  vx*dy - vy*dx;
-    return (h == 0);
+    double dx = b.getX() - ax;
+    double dy = b.getY() - ay;
+    double vx = x - ax;
+    double vy = y - ay;
+    double h = vx * dy - vy * dx;
+    if (h < halfPlaneThreshold) {
+      h = geoOp.halfPlane(ax, ay, b.getX(), b.getY(), x, y);
+    }
+    return h == 0;
   }
 
+  /**
+   * Called when the query point is coincident with the initial point
+   * of edge e0. The search proceeds down each outer edge of the
+   * pinwheel. Note that this search becomes undefined if any of the\
+   * radial edges of the pinwheel are constrained since it would
+   * be impossible to disambiguate which side of the partition the
+   * search point belongs.
+   *
+   * @param e0 an edge that starts with the query point
+   * @param searchDepth the depth to which the collection may search
+   * @param targetMinVertexCount the desired minimum number of vertices.
+   * @return a valid, potentially empty list.
+   */
   private List<Vertex> pinwheel(
     QuadEdge e0,
     int searchDepth,
@@ -107,6 +142,11 @@ class NeighborhoodPointsCollector implements IProcessUsingTin, INeighborhoodPoin
     vList.add(v0);
     QuadEdge c = e0;
     do {
+      if (c.isConstrained()) {
+        // cancel the collection, return an empty result.
+        vList.clear();
+        return vList;
+      }
       c = c.getForward();
       Vertex a = c.getA();
       if (a != null) {
@@ -216,13 +256,25 @@ class NeighborhoodPointsCollector implements IProcessUsingTin, INeighborhoodPoin
 
     // check for ambiguous case where (x,y) lies on the edge of
     // a triangle. If discovered, reassign the edges if necessary so that
-    // (x,y) lies on eEdge.
+    // (x,y) lies on eEdge.  Beyond that, there are two possible
+    // branches of the code:
+    //    a) if the edge is constrained, it is impossible to determine
+    //       which side of the constaint is to be used for the collection
+    //       of points.  The collection effort fails.
+    //    b) if the edge is ordinary, the collection proceeds on both
+    //       sides of the edge.
     boolean ambiguity = false;
     if (checkForAmbiguity(v0, v1, x, y)) {
+      if (eEdge.isConstrained()) {
+        return new ArrayList<>();
+      }
       ambiguity = true;
     } else if (checkForAmbiguity(v1, v2, x, y)) {
       ambiguity = true;
       eEdge = eEdge.getForward();
+      if (eEdge.isConstrained()) {
+        return new ArrayList<>();
+      }
       Vertex temp = v0;
       v0 = v1;
       v1 = v2;
@@ -230,6 +282,9 @@ class NeighborhoodPointsCollector implements IProcessUsingTin, INeighborhoodPoin
     } else if (checkForAmbiguity(v2, v0, x, y)) {
       ambiguity = true;
       eEdge = eEdge.getReverse();
+      if (eEdge.isConstrained()) {
+        return new ArrayList<>();
+      }
       Vertex temp = v2;
       v2 = v1;
       v1 = v0;
@@ -242,10 +297,13 @@ class NeighborhoodPointsCollector implements IProcessUsingTin, INeighborhoodPoin
 
     Vertex vq = null;
     if (ambiguity) {
-      // set vq to the vertex opposite the dual of eEdge.
-      // if (x,y) lies on a perimeter edge, then
-      // this action may end up seeing vq to null
-      // and the logic below will treat this case as a standard search
+      // vq will be used as an indicator of whether the code is
+      // to process the ambiguous case.  At this point, it is
+      // still possible that the coordinates (x,y) are lying on a
+      // perimeter edge.  Of so, the logic that assigns a vertex reference to
+      // vq will assign it a reference to the ghost vertex, which of course
+      // is null.  Thus vq will be null and the logic below will treat
+      // the collection effort as a standard search.
       vq = dEdge.getForward().getB();
     }
 
@@ -253,7 +311,7 @@ class NeighborhoodPointsCollector implements IProcessUsingTin, INeighborhoodPoin
     vList.add(v0);
     vList.add(v1);
 
-    if(vq == null){
+    if (vq == null) {
       // treat this as the standard, unamiguous case where (x,y)
       // is within a triangle and does not lie on an edge.
       vList.add(v2);
@@ -285,11 +343,11 @@ class NeighborhoodPointsCollector implements IProcessUsingTin, INeighborhoodPoin
           nFound = vList.size();
         } while (nFound < targetMinVertexCount);
       }
-    }  else {
+    } else {
       // this is the ambiguous case where (x,y) lies on the edge.
       // the searches start with the FOUR neighboring edges.
       // Before beginning, add both v2 and vq to the vList,
-      // adding the one closes to (x,y) first so as to guarantee that
+      // adding the one closest to (x,y) first so as to guarantee that
       // the first three vertices in vList are the closest to (x,y).
       if (v2.getDistanceSq(x, y) < vq.getDistanceSq(x, y)) {
         vList.add(v2);
@@ -334,12 +392,14 @@ class NeighborhoodPointsCollector implements IProcessUsingTin, INeighborhoodPoin
     return vList;
   }
 
-
   private void standardSearch(
     List<Vertex> vList,
     QuadEdge e,
     int depth,
     int traversalDepth) {
+    if (e.isConstrained()) {
+      return;
+    }
     Vertex b = e.getForward().getB();
     if (b == null) {
       return;
@@ -363,6 +423,9 @@ class NeighborhoodPointsCollector implements IProcessUsingTin, INeighborhoodPoin
     int traversalDepth) {
     if (depth > maxDepthSearched) {
       maxDepthSearched = depth;
+    }
+    if (e.isConstrained()) {
+      return;
     }
     Vertex b = e.getForward().getB();
     if (b == null) {
