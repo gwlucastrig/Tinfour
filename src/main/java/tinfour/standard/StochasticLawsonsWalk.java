@@ -34,7 +34,6 @@
 package tinfour.standard;
 
 import java.io.PrintStream;
-import java.util.Random;
 import tinfour.common.GeometricOperations;
 import tinfour.common.QuadEdge;
 import tinfour.common.Thresholds;
@@ -50,6 +49,20 @@ import tinfour.common.Vertex;
  * (2012)
  * "Walking algorithms for point location in TIN models", Computational
  * Geoscience 16:853-869</cite>.
+ * <p>
+ * The randomization in this class uses a custom implementation of the
+ * XORShift Random Number Generator which was discovered by George Marsaglia
+ * in 2003. This method is faster than the java.util.Random class.
+ * While it is slower than Java's ThreadLocalRandom, that Java class has the
+ * disadvantage that there is no way to set the seed value for the random
+ * sequence. For debugging and development purposes, the Tinfour team requires
+ * that the behavior of the code be reproduced every time it is run.
+ * The sequence produced by ThreadLocalRandom is always different.
+ * The exact form used here is taken from
+ * http://www.javamex.com/tutorials/random_numbers/xorshift.shtml#.WEC2g7IrJQL
+ * The technique used here were studied extensively by Sebastiano Vigna
+ * see <cite>An experimental exploration of Marsaglia's xorshift generators,
+ * scrambled</cite> at http://vigna.di.unimi.it/ftp/papers/xorshift.pdf
  */
 @SuppressWarnings("PMD.AvoidBranchingStatementAsLastInLoop")
 public class StochasticLawsonsWalk {
@@ -98,11 +111,11 @@ public class StochasticLawsonsWalk {
   private final GeometricOperations geoOp;
 
   /**
-   * A randomization source used to select which side of a triangle
-   * is tested first for potential transfer duing a walk.
-   * Seeded with zero during a reset operation.
+   * A randomization seed used to select which side of a triangle
+   * is tested first for potential transfer during a walk.
+   * Seeded with 1 during a reset operation.
    */
-  private final Random random;
+  private long seed = 1L;
 
   /**
    * Construct an instance based on the specified nominal point spacing.
@@ -115,7 +128,6 @@ public class StochasticLawsonsWalk {
     geoOp = new GeometricOperations(thresholds);
     halfPlaneThreshold = thresholds.getHalfPlaneThreshold();
     halfPlaneThresholdNeg = -thresholds.getHalfPlaneThreshold();
-    random = new Random(0);
   }
 
   /**
@@ -126,7 +138,6 @@ public class StochasticLawsonsWalk {
     geoOp = new GeometricOperations(thresholds);
     halfPlaneThreshold = thresholds.getHalfPlaneThreshold();
     halfPlaneThresholdNeg = -thresholds.getHalfPlaneThreshold();
-    random = new Random(0);
   }
 
   /**
@@ -138,7 +149,6 @@ public class StochasticLawsonsWalk {
     geoOp = new GeometricOperations(thresholds);
     halfPlaneThreshold = thresholds.getHalfPlaneThreshold();
     halfPlaneThresholdNeg = -thresholds.getHalfPlaneThreshold();
-    random = new Random(0);
   }
 
   /**
@@ -219,8 +229,8 @@ public class StochasticLawsonsWalk {
       // Lawson showed that when the TIN is not an optimum
       // Delauny Triangulation the walk could fall into an infinite loop.
       // The random operation prevents that (thus the "stochastic" in the name)
-      int edgeSelectionForNextTest = random.nextInt();
-      if (edgeSelectionForNextTest < 0) {
+      long edgeSelectionForNextTest = randomNext();
+      if ((edgeSelectionForNextTest&1) == 0) {
         nSLWTests++;
         vX1 = x - v1.x;
         vY1 = y - v1.y;
@@ -466,7 +476,7 @@ public class StochasticLawsonsWalk {
 
   /**
    * Clear all diagnostic fields. For debugging purposes, the
-   * random seed is set back to zero so that a sequence of operations
+   * random seed is set back to 1 so that a sequence of operations
    * can be reproduced.
    */
   void clearDiagnostics() {
@@ -475,7 +485,7 @@ public class StochasticLawsonsWalk {
     nSLW = 0;
     nSLWTests = 0;
     nSLWGhost = 0;
-    random.setSeed(0L);
+    seed = 1L;
   }
 
   /**
@@ -501,7 +511,14 @@ public class StochasticLawsonsWalk {
    * Reset the random seed for the stochastic functions to zero.
    */
   public void reset() {
-    random.setSeed(0);
+    seed = 1;
+  }
+
+  private long randomNext() {
+    seed ^= (seed << 21);
+    seed ^= (seed >>> 35);
+    seed ^= (seed << 4);
+    return seed;
   }
 
 }

@@ -37,6 +37,7 @@ import java.io.PrintStream;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.List;
+import java.util.Locale;
 import java.util.SimpleTimeZone;
 import tinfour.common.IIncrementalTin;
 import tinfour.common.IIntegrityCheck;
@@ -104,8 +105,9 @@ static final String[] usage = {
     int nTests = options.getTestCount(8);
 
     File input = options.getInputFile();
+    Locale locale = Locale.getDefault();
     Date date = new Date();
-    SimpleDateFormat sdFormat = new SimpleDateFormat("dd MMM yyyy HH:mm");
+    SimpleDateFormat sdFormat = new SimpleDateFormat("dd MMM yyyy HH:mm", locale);
     sdFormat.setTimeZone(new SimpleTimeZone(0, "UTC"));
 
     long time0;

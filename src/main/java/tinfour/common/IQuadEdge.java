@@ -165,4 +165,15 @@ public interface IQuadEdge {
    * Sets the constrained area membership flag for the edge to true.
    */
   public void setConstrainedAreaMemberFlag( );
+
+  /**
+   * Gets an instance of an iterable that performs a pinwheel operation.
+   * This instance may be used in a Java for statement
+   * <code>
+   *    for(IQuadEdge e: startingEdge.pinwheel()){
+   *    }
+   * </code>
+   * @return a valid Iterable.
+   */
+  public Iterable<IQuadEdge>pinwheel();
 }
