@@ -58,7 +58,7 @@ public class LogoPanel extends JPanel {
 
     IIncrementalTin tin;
 
-    
+
     public LogoPanel(IIncrementalTin tin) {
         super(new BorderLayout());
         this.tin = tin;
@@ -113,7 +113,6 @@ public class LogoPanel extends JPanel {
         AffineTransform af
                 = new AffineTransform(scale, 0, 0, -scale, xOffset, yOffset);
 
-        Point2D p = new Point2D.Double();
         Point2D p0 = new Point2D.Double();
         Point2D p1 = new Point2D.Double();
         Line2D l2d = new Line2D.Double();
