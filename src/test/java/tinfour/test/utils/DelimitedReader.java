@@ -38,25 +38,51 @@ import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * A utility for reading a file consisting of strings separated
+ * by a delimiter character, such as the classic comma-separated-value (CSV)
+ * or tab-delimited file formats. Strings are extracted with leading and
+ * trailing white space removed. Embedded white space characters are
+ * preserved.
+ */
 public class DelimitedReader {
 
   final InputStream fins;
   final BufferedInputStream bins;
   final int delimiter;
+  boolean isClosed  = false;
 
+  /**
+   * Open a file and prepare to read it using the specified
+   * delimiter character.
+   * @param file a valid file reference
+   * @param delimiter a delimiter character
+   * @throws IOException in the event of an unsuccessful I/O operation
+   */
   public DelimitedReader(File file, char delimiter) throws IOException {
       fins = new FileInputStream(file);
       bins = new BufferedInputStream(fins);
       this.delimiter = delimiter;
   }
 
+  /**
+   * Prepares to read an input stream using the specified
+   * delimiter character.
+   * @param ins a valid input stream reference
+   * @param delimiter a delimiter character
+   * @throws IOException in the event of an unsuccessful I/O operation
+   */
    public DelimitedReader(InputStream ins, char delimiter) throws IOException {
       fins = ins;
       bins = new BufferedInputStream(fins);
       this.delimiter = delimiter;
   }
 
-
+  /**
+   * Read a row of strings from the file
+   * @return a list of strings (potentially empty)
+   * @throws IOException in the event of an unsuccessful I/O operation.
+   */
   public List<String> readStrings() throws IOException {
     int c;
     final StringBuilder sb= new StringBuilder();
@@ -97,4 +123,13 @@ public class DelimitedReader {
     return sList;
   }
 
+
+  /**
+   * CLoses all open IO channels.
+   * @throws IOException in the event of an unexpected I/O condition.
+   */
+  public void close() throws IOException {
+    bins.close();
+    fins.close();
+  }
 }
