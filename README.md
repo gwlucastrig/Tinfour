@@ -22,7 +22,8 @@ The Tinfour source code includes extensive documentation. This project also incl
 an informal paper that describes the uses, algorithms, and implementation
 of the software with enough detail to support potential developers 
 who may wish to contribute code or employ Tinfour in their own work. For more details, see
-[Data Elements and Algorithms for the Tinfour Libary](doc/TinfourAlgorithmsAndDataElements.pdf "Data Elements and Algorithms")
+[Data Elements and Algorithms for the Tinfour Libary](http://gwlucastrig.github.io/Tinfour/doc/TinfourAlgorithmsAndDataElements.pdf "Data Elements and Algorithms").
+The Tinfour API documentation is available at [Tinfour API](http://gwlucastrig.github.io/Tinfour/doc/javadoc/ "Javadoc for Tinfour API").
 
 ### The Tinfour Viewer ###
 When someone first sees a project like Tinfour, they might reasonably ask
