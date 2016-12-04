@@ -15,7 +15,7 @@
  * ---------------------------------------------------------------------
  */
 
-/*
+ /*
  * -----------------------------------------------------------------------
  *
  * Revision History:
@@ -30,6 +30,11 @@
 package tinfour.semivirtual;
 
 import tinfour.common.IQuadEdge;
+import static tinfour.common.QuadEdge.CONSTRAINT_AREA_BASE_FLAG;
+import static tinfour.common.QuadEdge.CONSTRAINT_AREA_FLAG;
+import static tinfour.common.QuadEdge.CONSTRAINT_FLAG;
+import static tinfour.common.QuadEdge.CONSTRAINT_INDEX_MASK;
+import static tinfour.common.QuadEdge.CONSTRAINT_INDEX_MAX;
 import tinfour.common.Vertex;
 import static tinfour.semivirtual.SemiVirtualEdgePage.INDEX_MASK;
 import static tinfour.semivirtual.SemiVirtualEdgePage.INDICES_PER_PAGE;
@@ -484,36 +489,104 @@ public final class SemiVirtualEdge implements IQuadEdge {
 
   @Override
   public void setConstraintIndex(int constraintIndex) {
-     throw new UnsupportedOperationException("Not supported yet.");
+    if (constraintIndex < 0 || constraintIndex > CONSTRAINT_INDEX_MAX) {
+      throw new IllegalArgumentException(
+        "Constraint index " + constraintIndex
+        + " is out of range [0.." + CONSTRAINT_INDEX_MAX + "]");
+    }
+
+    // this one sets the constraint index, but does not affect
+    // whether the edge is constrained or not.  An edge that is
+    // a constraint-area member may have a constraint index even if
+    // it is not a constrained edge.
+    int ix = indexOnPage / 2;
+    int c[] = page.readyConstraints();
+    c[ix] = ((c[ix] & ~CONSTRAINT_INDEX_MASK) | constraintIndex);
   }
 
-    @Override
+  @Override
   public void setConstrained(int constraintIndex) {
-     throw new UnsupportedOperationException("Not supported yet.");
+    if (constraintIndex < 0 || constraintIndex > CONSTRAINT_INDEX_MAX) {
+      throw new IllegalArgumentException(
+        "Constraint index " + constraintIndex
+        + " is out of range [0.." + CONSTRAINT_INDEX_MAX + "]");
+    }
+
+    int ix = indexOnPage / 2;
+    int c[] = page.readyConstraints();
+    c[ix] = CONSTRAINT_FLAG | (c[ix] & ~CONSTRAINT_INDEX_MASK) | constraintIndex;
+
   }
+
   @Override
   public boolean isConstrained() {
-   return false;
+    if (page.constraints == null) {
+      return false;
+    } else {
+      // the CONSTRAINT_FLAG is also the sign bit.
+      return page.constraints[indexOnPage / 2] < 0;
+    }
   }
 
   @Override
   public boolean isConstrainedAreaEdge() {
-    throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+    if (page.constraints == null) {
+      return false;
+    } else {
+      // this test requires that the edge be both constrained
+      // and have its constrained-area flag set.
+      // recall that the CONSTRAINT_FLAG is also the sign bit.
+      int test = page.constraints[indexOnPage / 2];
+      return test < 0 & (test & CONSTRAINT_AREA_FLAG) != 0;
+    }
   }
 
   @Override
   public boolean isConstrainedAreaMember() {
-    throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+    if (page.constraints == null) {
+      return false;
+    } else {
+      // this tests to see if the edge is a constrained-area member
+      // and doesn't care whether or not it is a constraint edge.
+      return (page.constraints[indexOnPage / 2] & CONSTRAINT_AREA_FLAG) != 0;
+    }
+  }
+
+  public boolean isConstraintAreaOnThisSide() {
+    if (page.constraints == null) {
+      return false;
+    } else {
+      int flags = page.constraints[indexOnPage / 2];
+      if ((flags & CONSTRAINT_AREA_FLAG) != 0) {
+        int side = indexOnPage & LOW_BIT;
+        if (side == 0) {
+          return (flags & CONSTRAINT_AREA_BASE_FLAG) != 0;
+        } else {
+          return (flags & CONSTRAINT_AREA_BASE_FLAG) == 0;
+        }
+      } else {
+        return false;
+      }
+    }
   }
 
   @Override
   public void setConstrainedAreaMemberFlag() {
-    throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+    int ix = indexOnPage / 2;
+    int side = indexOnPage & LOW_BIT;
+    int constraintAreaFlag;
+    if (side == 0) {
+      constraintAreaFlag = CONSTRAINT_AREA_FLAG | CONSTRAINT_AREA_BASE_FLAG;
+    } else {
+      constraintAreaFlag = CONSTRAINT_AREA_FLAG;
+    }
+    int c[] = page.readyConstraints();
+    c[ix] |= constraintAreaFlag;
   }
 
   @Override
   public Iterable<IQuadEdge> pinwheel() {
-     return new SemiVirtualPinwheel(this);
+    return new SemiVirtualPinwheel(this);
   }
 
 }

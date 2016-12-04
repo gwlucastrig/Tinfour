@@ -51,6 +51,12 @@ import tinfour.standard.IncrementalTin;
  */
 public class TestOptions {
 
+  private static final String virtualClassName
+    = "tinfour.semivirtual.SemiVirtualIncrementalTin";
+
+  private static final String standardClassName
+    = "tinfour.standard.IncrementalTin";
+
   /**
    * An enumeration giving options for how an input LAS file
    * with a geographic coordinate system is to be treated.
@@ -142,6 +148,14 @@ public class TestOptions {
     }
 
     if (tinClassName != null) {
+      // check to see if user supplied short names.
+      if("virtual".equalsIgnoreCase(tinClassName)){
+        tinClassName = virtualClassName;
+      }else if("semivirtual".equalsIgnoreCase(tinClassName)){
+        tinClassName = virtualClassName;
+      }else if("standard".equalsIgnoreCase(tinClassName)){
+        tinClassName = standardClassName;
+      }
       ClassLoader classLoader = this.getClass().getClassLoader();
       try {
         tinClass = classLoader.loadClass(tinClassName);

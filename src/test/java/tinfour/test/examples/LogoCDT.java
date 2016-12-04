@@ -38,9 +38,10 @@ import java.awt.geom.PathIterator;
 import java.util.ArrayList;
 import java.util.List;
 import tinfour.common.IConstraint;
+import tinfour.common.IIncrementalTin;
 import tinfour.common.PolygonConstraint;
 import tinfour.common.Vertex;
-import tinfour.standard.IncrementalTin;
+import tinfour.test.utils.TestOptions;
 
 /**
  * A simple demonstrator class to plot text characters
@@ -49,23 +50,33 @@ import tinfour.standard.IncrementalTin;
 public class LogoCDT {
 
     /**
-     * Run the demonstrator.  If a string is passed on the command
-     * line, use it for the demonstration text.  Otherwise,
-     * use the initials "CDT".
+     * Run the demonstrator.
+     * Default options are:
+     * <ul>
+     * <li> -text &lt;String&gt; The text to display, default: "CDT" </li>
+     * <li> -tinClass &lt;class name&gt; The Incremental tin class to use, default: standard </li>
+     * </ul>
      * @param args a valid, potentially zero-length array
      */
     public static void main(String[] args) {
+       TestOptions options = new TestOptions();
+       boolean[] optionsMatched = options.argumentScan(args);
+
+       // set up text, using "CDT" as the default
         String text = "CDT";
-        if(args.length>0){
-            String s = args[0].trim();
-            if(s.length()>0){
-                text = s;
-            }
+        String test = options.scanStringOption(args, "-text", optionsMatched);
+        if(test!=null){
+          text = test;
         }
+
+
+        Class<?>tinClass = options.getTinClass();
+        String title = "Constrained Delaunay Triangulation -- "
+          +tinClass.getSimpleName();
         List<IConstraint> outlineList = getOutlineConstraints(text);
-        IncrementalTin tin = new IncrementalTin(1.0);
+        IIncrementalTin tin = options.getNewInstanceOfTestTin();
         tin.addConstraints(outlineList);
-        LogoPanel.plot(tin, "Constrained Delaunay Triangulation");
+        LogoPanel.plot(tin, title);
     }
 
     private static List<IConstraint> getOutlineConstraints(String text) {
