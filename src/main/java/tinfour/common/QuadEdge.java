@@ -124,26 +124,28 @@ public class QuadEdge implements IQuadEdge {
    * index field to extract the constraint index,
    * equivalent to the 20 low-order bits.
    */
-  static final int CONSTRAINT_INDEX_MASK = 0x000fffff;
+  public static final int CONSTRAINT_INDEX_MASK = 0x000fffff;
 
   /**
    * A bit indicating that an edge is constrained. This bit just happens
    * to be the sign bit, a feature that is exploited by the isConstrained()
    * method.
    */
-  static final int CONSTRAINT_FLAG = (1<<31);
+  public static final int CONSTRAINT_FLAG = (1<<31);
 
   /**
    * A bit indicating that an edge is part of a constrained area.
    */
-  static final int CONSTRAINT_AREA_FLAG = (1<<30);
+  public static final int CONSTRAINT_AREA_FLAG = (1<<30);
 
   /**
    * A bit indicating that the constrained area is to the base side
-   * of the edge.  If this bit is clear, and CONSTRAINT_AREA_FLAG is set,
-   * then the constraint area will be to the dual side.
+   * of the edge.  This bit is only meaningful when CONSTRAINT_AREA_FLAG is set.
+   * If CONSTRAINT_AREA_FLAG is set, then this bit tells which side the
+   * constraint area lies on: if the bit is set, it's on the base side
+   * and if the bit is clear, it's on the dual side.
    */
-  static final int CONSTRAINT_AREA_BASE_FLAG = (1<<29);
+  public static final int CONSTRAINT_AREA_BASE_FLAG = (1<<29);
 
   /**
    * An arbitrary index value. For IncrementalTin, the index
@@ -514,17 +516,14 @@ public class QuadEdge implements IQuadEdge {
 
   @Override
   public void setConstrainedAreaMemberFlag() {
-    dual.setConstrainedAreaMemberFlag(CONSTRAINT_AREA_BASE_FLAG);
+    dual.index |= CONSTRAINT_AREA_FLAG | CONSTRAINT_AREA_BASE_FLAG;
   }
 
-  void setConstrainedAreaMemberFlag(int sideBit){
-      dual.setConstrainedAreaMemberFlag(sideBit);
-  }
 
   public boolean isConstraintAreaOnThisSide(){
       return (dual.index&CONSTRAINT_AREA_BASE_FLAG)!=0;
   }
-  
+
   @Override
   public Iterable<IQuadEdge>pinwheel(){
     return new QuadEdgePinwheel(this);

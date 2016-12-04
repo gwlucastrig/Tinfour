@@ -26,8 +26,12 @@
  * 05/2014 G. Lucas Implement Ghost Triangles
  * 05/2014 G. Lucas Broken into separate class
  * 06/2015 G. Lucas Refactored to use QuadEdge representation
+ * 12/2016 G. Lucas Replaced Random with faster custom implementation
  *
  * Notes:
+ *  One of the key features of the XORSHIFT psuedo-random function
+ *  is that every bit in the value passes conventional tests for
+ *  randomness.
  *
  * -----------------------------------------------------------------------
  */
@@ -229,6 +233,10 @@ public class StochasticLawsonsWalk {
       // Lawson showed that when the TIN is not an optimum
       // Delauny Triangulation the walk could fall into an infinite loop.
       // The random operation prevents that (thus the "stochastic" in the name)
+      //   One of the key features of the XORSHIFT psuedo-random function
+      // is that every bit in the value passes conventional tests for
+      // randomness. Thus the code below determines the branch based on
+      // the low-order bit value.
       long edgeSelectionForNextTest = randomNext();
       if ((edgeSelectionForNextTest&1) == 0) {
         nSLWTests++;

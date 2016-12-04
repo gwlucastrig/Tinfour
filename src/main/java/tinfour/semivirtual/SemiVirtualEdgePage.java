@@ -59,6 +59,7 @@ class SemiVirtualEdgePage {
   final Vertex[] vertices;
   final int[] links;
   short[] freePairs;
+  int []constraints;
   SemiVirtualEdgePage nextPage;
 
   SemiVirtualEdgePage(int pageID) {
@@ -72,6 +73,7 @@ class SemiVirtualEdgePage {
   void clear() {
     nPairsAllocated = 0;
     freePairs = null;
+    constraints = null;
     Arrays.fill(vertices, 0, vertices.length, null);
     Arrays.fill(links, 0, links.length, 0);
   }
@@ -82,6 +84,7 @@ class SemiVirtualEdgePage {
     }
     nPairsAllocated = 0;
     freePairs = null;
+    constraints = null;
   }
 
   int allocateEdge(Vertex a, Vertex b) {
@@ -177,6 +180,13 @@ class SemiVirtualEdgePage {
     //  allocations = scratch;
     //}
     return allocations;
+  }
+
+  int [] readyConstraints() {
+     if(constraints==null){
+       constraints = new int[PAIRS_PER_PAGE];
+     }
+     return constraints;
   }
 
 }

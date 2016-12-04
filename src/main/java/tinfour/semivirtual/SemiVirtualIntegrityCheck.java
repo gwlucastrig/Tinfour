@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-/*
+ /*
  * -----------------------------------------------------------------------
  *
  * Revision History:
@@ -22,6 +22,7 @@
  * ------  --------- -------------------------------------------------
  * 10/2015 G. Lucas  Adapted from original IntegrityCheck implementation
  *                     to use virtual edges.
+ * 11/2016 G. Lucas  Added support for constrained Delaunay
  *
  * Notes:
  *
@@ -56,6 +57,7 @@ class SemiVirtualIntegrityCheck implements IIntegrityCheck {
   private int nDelaunayViolations;
   private double sumDelaunayViolations;
   private double maxDelaunayViolation;
+  private int nDelaunayViolationsConstrained;
 
   /**
    * Constructs an instance to be associated with a specified TIN.
@@ -223,12 +225,11 @@ class SemiVirtualIntegrityCheck implements IIntegrityCheck {
       }
     }
 
-
     SemiVirtualEdge s0 = p.getReverse();
     SemiVirtualEdge s = s0;
-    int n=0;
+    int n = 0;
     do {
-          n++;
+      n++;
       if (n > edges.size()) {
         // infinite loop
         message = "Infinite loop building perimeter ";
@@ -240,14 +241,12 @@ class SemiVirtualIntegrityCheck implements IIntegrityCheck {
       s = s.getReverse();
     } while (!s.equals(s0));
 
-
     List<IQuadEdge> pList = tin.getPerimeter();
     if (n != nGhostEdges) {
       message = "Perimeter edge count," + n + ", does not match number of ghost edges, " + nGhostEdges;
 
       return false;
     }
-
 
     double aSum = 0;
     for (IQuadEdge e : pList) {
@@ -295,7 +294,7 @@ class SemiVirtualIntegrityCheck implements IIntegrityCheck {
     for (SemiVirtualEdge e : edges) {
       if (e.getA() != null && e.getB() != null) {
         if (e.getForward().getB() != null && !checkAreaAndInCircle(e)) {
-            return false;
+          return false;
         }
         d.loadDualFromEdge(e);
         if (d.getTriangleApex() != null && !checkAreaAndInCircle(d)) {
@@ -341,22 +340,26 @@ class SemiVirtualIntegrityCheck implements IIntegrityCheck {
     double h = geoOp.inCircle(a, b, c, d);
 
     if (h > 0) {
-      this.nDelaunayViolations++;
-      this.sumDelaunayViolations += h;
-      if (h > this.maxDelaunayViolation) {
-        this.maxDelaunayViolation = h;
-      }
+      if (e.isConstrained()) {
+        this.nDelaunayViolationsConstrained++;
+      } else {
+        this.nDelaunayViolations++;
+        this.sumDelaunayViolations += h;
+        if (h > this.maxDelaunayViolation) {
+          this.maxDelaunayViolation = h;
+        }
 
-      if (h > thresholds.getDelaunayThreshold()) {
-        message = "InCircle failure h=" + h
-          + ", starting at edge " + e
-          + ": ("
-          + a.getIndex()
-          + ", " + b.getIndex()
-          + ", " + c.getIndex()
-          + ", " + d.getIndex() + ")";
-        return false;
+        if (h > thresholds.getDelaunayThreshold()) {
+          message = "InCircle failure h=" + h
+            + ", starting at edge " + e
+            + ": ("
+            + a.getIndex()
+            + ", " + b.getIndex()
+            + ", " + c.getIndex()
+            + ", " + d.getIndex() + ")";
+          return false;
 
+        }
       }
     }
     return true;
@@ -396,6 +399,10 @@ class SemiVirtualIntegrityCheck implements IIntegrityCheck {
       fmt.format("      N Violations:  %8d\n", nDelaunayViolations);
       fmt.format("      Avg Violation: %8.4e\n", sumDelaunayViolations / nDelaunayViolations);
       fmt.format("      Max Violation: %8.4e\n", maxDelaunayViolation);
+    }
+    if (nDelaunayViolationsConstrained > 0) {
+      fmt.format("   Suppressed %d violations due to constraints\n",
+        nDelaunayViolationsConstrained);
     }
 
     fmt.flush();

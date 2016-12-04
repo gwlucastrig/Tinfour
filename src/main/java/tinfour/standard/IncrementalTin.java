@@ -231,7 +231,7 @@ import tinfour.common.VertexMergerGroup;
  * <p>
  * The logic for adding constraints to the TIN was adapted from
  * <cite>Sloan, S.W. (1993) "A Fast Algorithm for Generating Constrained
- * Delaunay Triangulations", Computers & Structures Vol 47. No 3, 1993,
+ * Delaunay Triangulations", Computers &amp; Structures Vol 47. No 3, 1993,
  * p. 441-450.</cite>
  */
 @SuppressWarnings("PMD.CompareObjectsWithEquals") // we do that on purpose!
@@ -2389,13 +2389,13 @@ public class IncrementalTin implements IIncrementalTin {
   }
 
 
-  private void fillConstraintDataAreas(){
-    for(QuadEdge e: this.edgePool){
-      if(e.isConstrainedAreaEdge()){
-        if(e.isConstraintAreaOnThisSide()){
-        fillConstraintDataAreaRecursion(e);
-        }else{
-            fillConstraintDataAreaRecursion(e.getDual());
+  private void fillConstraintDataAreas() {
+    for (QuadEdge e : this.edgePool) {
+      if (e.isConstrainedAreaEdge()) {
+        if (e.isConstraintAreaOnThisSide()) {
+          fillConstraintDataAreaRecursion(e);
+        } else {
+          fillConstraintDataAreaRecursion(e.getDual());
         }
       }
     }
