@@ -405,6 +405,7 @@ public class IncrementalTin implements IIncrementalTin {
    */
   private final StochasticLawsonsWalk walker;
 
+
   /**
    * Constructs an incremental TIN using numerical thresholds appropriate for
    * the default nominal point spacing of 1 unit.
@@ -772,9 +773,20 @@ public class IncrementalTin implements IIncrementalTin {
       return false;
     }
 
-    QuadEdge buffer = null;
+
+    // The build buffer provides temporary tracking of edges that are
+    // removed and replaced while building the TIN.  Because the
+    // delete method of the EdgePool has to do a lot of bookkeeping,
+    // we can gain speed by using the buffer.   The buffer is only large
+    // enough to hold one edge. Were it larger, there would be times
+    // when it would hold more than one edge. Tests reveal that the overhead
+    // of maintaining an array rather than a single reference overwhelms
+    // the potential saving. However, the times for the two approaches are quite
+    // close and it is hard to remove the effect of measurement error.
+
     Vertex anchor = searchEdge.getA();
 
+    QuadEdge buffer = null;
     QuadEdge c, n0, n1, n2;
     QuadEdge pStart = edgePool.allocateEdge(v, anchor);
     QuadEdge p = pStart;
@@ -846,8 +858,13 @@ public class IncrementalTin implements IIncrementalTin {
         // that any ghost edges we create will start with a
         // non-null vertex and end with a null.
         c = c.getBaseReference();
-        c.makeDeadLink(buffer);
-        buffer = c;
+        if (buffer!=null) {
+          edgePool.deallocateEdge(c);
+        } else {
+          c.clear();
+          buffer = c;
+        }
+
         c = n1;
         nReplacements++;
       } else {
@@ -860,10 +877,8 @@ public class IncrementalTin implements IIncrementalTin {
           //        happen in a case where an insertion decreased
           //        the number of edge. so the following code
           //        is probably unnecessary
-          while (buffer != null) {
-            n1 = buffer.getForward();
+          if(buffer!=null){
             edgePool.deallocateEdge(buffer);
-            buffer = n1;
           }
 
           nEdgesReplacedDuringBuild += nReplacements;
@@ -879,10 +894,9 @@ public class IncrementalTin implements IIncrementalTin {
         if (buffer == null) {
           e = edgePool.allocateEdge(v, c.getB());
         } else {
+          buffer.setVertices(v, c.getB());
           e = buffer;
-          buffer = buffer.getForward();
-          e.clear();
-          e.setVertices(v, c.getB());
+          buffer = null;
         }
         e.setForward(n1);
         e.getDual().setForward(p);

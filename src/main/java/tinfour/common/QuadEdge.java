@@ -446,17 +446,7 @@ public class QuadEdge implements IQuadEdge {
     return s;
   }
 
-  /**
-   * Sets the forward link of the edge to value which is, by convention,
-   * not part of a valid graph (and thus is "dead"). The reverse link
-   * of the specified edge is not set to this reference. Intended for use
-   * for temporary storage and memory management during processing.
-   * @param m a valid or null reference.
-   */
-  public void makeDeadLink(final QuadEdge m) {
-    f = m;
-  }
-
+  
   /**
    * Gets the length of the edge.
    * @return a positive floating point value
