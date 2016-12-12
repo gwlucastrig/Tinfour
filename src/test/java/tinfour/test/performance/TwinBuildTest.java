@@ -35,6 +35,7 @@ import java.io.PrintStream;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.List;
+import java.util.Locale;
 import java.util.SimpleTimeZone;
 import tinfour.common.IIncrementalTin;
 import tinfour.common.Vertex;
@@ -57,12 +58,19 @@ public class TwinBuildTest implements IDevelopmentTest {
 
   // run test against self to establish that there is no bias
   // depending on the order in which builds are performed.
-  static final String testClassA = "tinfour.standard.IncrementalTin";
-  static final String testClassB = "tinfour.semivirtual.SemiVirtualIncrementalTin";
+  static final String defaultClassA = "tinfour.standard.IncrementalTin";
+  static final String defaultClassB =  "tinfour.semivirtual.SemiVirtualIncrementalTin";
 
   /**
    * Perform a simple test of the TIN building functions a fixed number of
    * times collecting timing statistics.
+   * <p>
+   * Uses the standard Tinfour test application arguments and the following
+   * special-purpose elements:
+   * <ul>
+   * <li>-classA The canonical class name for test class A</li>
+   * <li>-classB The canonical class name for test class B</li>
+   * </ul>
    *
    * @param args the command-line arguments
    */
@@ -84,8 +92,17 @@ public class TwinBuildTest implements IDevelopmentTest {
   public void runTest(PrintStream ps, String args[]) throws IOException {
     TestOptions options = new TestOptions();
     boolean[] optionsMatched = options.argumentScan(args);
-    options.checkForUnrecognizedArgument(args, optionsMatched);
     options.checkForMandatoryOptions(args, mandatoryOptions);
+
+    String nameClassA = options.scanStringOption(args, "-classA", optionsMatched);
+    if (nameClassA == null) {
+      nameClassA = defaultClassA;
+    }
+    String nameClassB = options.scanStringOption(args, "-classB", optionsMatched);
+    if (nameClassB == null) {
+      nameClassB = defaultClassB;
+    }
+    options.checkForUnrecognizedArgument(args, optionsMatched);
 
     File target = options.getInputFile();
     boolean usePreAlloc = options.isPreAllocateEnabled(false);
@@ -94,8 +111,8 @@ public class TwinBuildTest implements IDevelopmentTest {
     Class<?> classA, classB;
     try {
       ClassLoader classLoader = this.getClass().getClassLoader();
-      classA = classLoader.loadClass(testClassA);
-      classB = classLoader.loadClass(testClassB);
+      classA = classLoader.loadClass(nameClassA);
+      classB = classLoader.loadClass(nameClassB);
     } catch (ClassNotFoundException cnfe) {
       throw new IllegalArgumentException(
         "Error loading classes " + cnfe.getMessage(), cnfe);
@@ -104,7 +121,8 @@ public class TwinBuildTest implements IDevelopmentTest {
     ps.println("TwinBuildTest");
 
     Date date = new Date();
-    SimpleDateFormat sdFormat = new SimpleDateFormat("dd MMM yyyy HH:mm");
+    Locale locale = Locale.getDefault();
+    SimpleDateFormat sdFormat = new SimpleDateFormat("dd MMM yyyy HH:mm", locale);
     sdFormat.setTimeZone(new SimpleTimeZone(0, "UTC"));
     ps.println("Date:    " + sdFormat.format(date));
     ps.println("Class A: " + classA.getCanonicalName());
