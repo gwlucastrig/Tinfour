@@ -642,11 +642,7 @@ public class SemiVirtualIncrementalTin implements IIncrementalTin {
     return h;
   }
 
-  /**
-   * Defines the size for the temporary buffer to hold deleted
-   * edges while building.
-   */
-  private final static int BUILD_BUFFER_SIZE=8;   //NOPMD
+
   /**
    * Performs processing for the public add() methods by adding the vertex
    * to a fully bootstrapped mesh. The vertex will be either inserted
@@ -660,16 +656,17 @@ public class SemiVirtualIncrementalTin implements IIncrementalTin {
     final double x = v.x;
     final double y = v.y;
 
-    // The build buffer provides temporary storage of edges that are
+    // The build buffer provides temporary tracking of edges that are
     // removed and replaced while building the TIN.  Because the
-    // delete method of the EdgePool hsa to do a lot of bookkeeping,
-    // we can gain speed by using the buffer.  Ironically, test reveals
-    // that too large a buffer (more than about 8) tends to degrade
-    // performance.
+    // delete method of the EdgePool has to do a lot of bookkeeping,
+    // we can gain speed by using the buffer.   The buffer is only large
+    // enough to hold one edge. Were it larger, there would be times
+    // when it would hold more than one edge. Tests reveal that the overhead
+    // of maintaining an array rather than a single integer overwhelms
+    // the potential saving. However, the times for the two approaches are quite
+    // close and it is hard to remove the effect of measurement error.
 
-    final int []buffer = new int[BUILD_BUFFER_SIZE];
-    int nBuffer = 0;
-
+    int buffer= -1;
     int nReplacements = 0;
 
     if (x < boundsMinX) {
@@ -767,8 +764,8 @@ public class SemiVirtualIncrementalTin implements IIncrementalTin {
         // that any ghost edges we create will start with a
         // non-null vertex and end with a null.
         nReplacements++;
-        if(nBuffer<buffer.length){
-          buffer[nBuffer++] = c.getBaseIndex();
+        if(buffer==-1){
+          buffer = c.getBaseIndex();
         }else{
           edgePool.deallocateEdge(c);
         }
@@ -785,8 +782,8 @@ public class SemiVirtualIncrementalTin implements IIncrementalTin {
           //        happen in a case where an insertion decreased
           //        the number of edge. so the following code
           //        is probably unnecessary
-          for(int i=0; i<nBuffer; i++){
-            edgePool.deallocateEdge(buffer[i]);
+          if(buffer!=-1){
+            edgePool.deallocateEdge(buffer);
           }
 
           nEdgesReplacedDuringBuild += nReplacements;
@@ -797,11 +794,11 @@ public class SemiVirtualIncrementalTin implements IIncrementalTin {
         }
 
         n1.loadForwardFromEdge(c); // n1 = c.getForward()
-        if (nBuffer==0) {
+        if (buffer==-1) {
            edgePool.allocateEdgeWithReceiver(e, v, c.getB());
         } else {
-          nBuffer--;
-          edgePool.getEdgeForIndexWithReceiver(e, buffer[nBuffer], v, c.getB());
+          edgePool.getEdgeForIndexWithReceiver(e, buffer, v, c.getB());
+          buffer=-1;
         }
         e.setForward(n1);
         n0.loadDualFromEdge(e); //  e.getDual().setForward(p);
