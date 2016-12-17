@@ -121,14 +121,15 @@ nearly instantaneous change.  By introducing linear and polygon features to
 the construction of a TIN, the Constrained Delaunay Triangulation provides
 an effective way of representing such features.
 
-As of 12 November 2016, I have completed the preliminary 
-implementation of this feature and am debugging and testing the code. 
-Expect to see an update adding CDT's to Tinfour just in time for Christmas.
-And just to illustrate the idea that the Constrained Delaunay Triangulation
-is useful for applications beyond geography, the picture below was
-created using the latest version of Tinfour. 
-
-![Constrained Delaunay Triangulation from the LogoCDT demo application](doc/images/ConstrainedDelaunayTriangulation.png "Constrained Delaunay Triangulation from the LogoCDT example application")
+As of 17 December 2016, I have completed the preliminary 
+implementation of this feature and have posted the code to github.
+I am currently implementing Rognant's algorithm for restoring
+Delaunay conformity after the constraints are added. 
+Beyond that, my plan is to integrate CDT's into the Tinfour Viewer.
+I expect to be complete with all work by the end of January 2017.
+For an illustrated explanation of why CDT's are important, see
+the Tinfour wiki page 
+[CDT wiki page](https://github.com/gwlucastrig/Tinfour/wiki/About-the-Constrained-Delaunay-Triangulation "CDT wiki page")
 
  
  
