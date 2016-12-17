@@ -114,7 +114,7 @@ Constrained Delaunay Triangulation (CDT) to the software. The CDT
 is a technique for representing
 discontinuities in a Triangulated Irregular Network. For example, geographic
 applications often need a way to represent "breaklines" -- features including
-rivers, roads, coastlines and escarpments which mark a sudden change in
+rivers, roads, coastlines and escarpments -- which mark a sudden change in
 the local slope or terrain. Conventional Delaunay Triangulations
 have a limited ability to treat boundaries where the surface undergoes a
 nearly instantaneous change.  By introducing linear and polygon features to
