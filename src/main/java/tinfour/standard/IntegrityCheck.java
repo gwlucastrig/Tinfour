@@ -70,7 +70,7 @@ public class IntegrityCheck implements IIntegrityCheck {
    * @param tin A valid instance of a class that implements the
    * IIncrementalTin interface.
    */
-  public IntegrityCheck(IIncrementalTin tin) {
+   IntegrityCheck(IIncrementalTin tin) {
     this.tin = tin;
     thresholds = new Thresholds(tin.getNominalPointSpacing());
     geoOp = new GeometricOperations(thresholds);
@@ -350,8 +350,10 @@ public class IntegrityCheck implements IIntegrityCheck {
       return true; // no further testing is possible or required
     }
 
+    if(!e.getBaseReference().equals(e)){
+      return true;
+    }
     double h = geoOp.inCircle(a, b, c, d);
-
     if (h > 0) {
       if (e.isConstrained()) {
         this.nDelaunayViolationsConstrained++;
@@ -514,4 +516,8 @@ public class IntegrityCheck implements IIntegrityCheck {
     return true;
   }
 
+  @Override
+  public int getConstrainedViolationCount(){
+    return nDelaunayViolationsConstrained;
+  }
 }

@@ -75,7 +75,7 @@ public class LogoCDT {
           +tinClass.getSimpleName();
         List<IConstraint> outlineList = getOutlineConstraints(text);
         IIncrementalTin tin = options.getNewInstanceOfTestTin();
-        tin.addConstraints(outlineList);
+        tin.addConstraints(outlineList, false);
         LogoPanel.plot(tin, title);
     }
 
@@ -113,9 +113,9 @@ public class LogoCDT {
             int flag = path.currentSegment(d);
             if (flag == PathIterator.SEG_MOVETO) {
                 vList.clear();
-                vList.add(new Vertex(d[0], d[1], 0, k));
+                vList.add(new Vertex(d[0], d[1], 0, k)); // NOPMD
             } else if (flag == PathIterator.SEG_LINETO) {
-                vList.add(new Vertex(d[0], d[1], 0, k));
+                vList.add(new Vertex(d[0], d[1], 0, k));  // NOPMD
             } else if (flag == PathIterator.SEG_CLOSE) {
                 // the list of vertices for the character outline polygon
                 // has been completed.  Java produces these polygons in
@@ -127,12 +127,12 @@ public class LogoCDT {
                 // This action reversed the orientation of the polygons.
                 // So we need to reverse their order to restore the orientation
                 // to the proper form for Tinfour.
-                PolygonConstraint poly = new PolygonConstraint();
+                PolygonConstraint poly = new PolygonConstraint(); // NOPMD
                 poly.setDefinesDataArea(true);
                 int n = vList.size();
                 for (int i = n - 1; i >= 0; i--) {
                     Vertex v = vList.get(i);
-                    v.setIndex(pList.size() * 1000 + (n - i));
+                    v.setIndex(pList.size() * 1000 + (n - i)); // NOPMD
                     poly.add(v);
                 }
                 poly.complete();

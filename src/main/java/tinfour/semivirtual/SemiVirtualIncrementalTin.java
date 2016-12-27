@@ -15,7 +15,7 @@
  * ---------------------------------------------------------------------
  */
 
-/*
+ /*
  * -----------------------------------------------------------------------
  *
  * Revision History:
@@ -56,7 +56,7 @@ import tinfour.common.VertexMergerGroup;
 /**
  * Provides a memory-conserving variation on the IncrementalTin class
  * for building and maintaining a Triangulated Irregular Network (TIN)
- * that is optimal with regard to the Delaunay criterion.  For background
+ * that is optimal with regard to the Delaunay criterion. For background
  * information and tactics for using this class,
  * see the documentation for the IncrementalTin class.
  * <p>
@@ -65,7 +65,7 @@ import tinfour.common.VertexMergerGroup;
  * elegant code, the nature of the Java language (and object-oriented coding
  * in general) results in relatively expensive memory requirements,
  * approximately 244 bytes per vertex inserted into the TIN (counting the
- * storage for both edges and vertices).  Since it is common for lidar
+ * storage for both edges and vertices). Since it is common for lidar
  * data sets to include multiple-millions of points, that memory use
  * adds up fast.
  * <p>
@@ -87,10 +87,11 @@ import tinfour.common.VertexMergerGroup;
  * virtual implementation uses half the memory of the direct implementation,
  * the onset of degraded conditions when working with a fixed memory size
  * can be pushed back considerably using the virtual implementation.
- * <p>This class also dramatically reduces the number of objects that
+ * <p>
+ * This class also dramatically reduces the number of objects that
  * are used to represent the TIN. The IncrementalTIN class uses about 7.005
  * objects per vertex (including vertices and edges) while the virtual
- * implementation uses only about 1.012.  This reduction can be
+ * implementation uses only about 1.012. This reduction can be
  * valuable in reducing the impact of garbage collection when processing
  * large data sets.
  * <h1>Support for the Constrained Delaunay Triangulation (CDT)</h1>
@@ -143,7 +144,7 @@ public class SemiVirtualIncrementalTin implements IIncrementalTin {
    */
   private final List<VertexMergerGroup> coincidenceList = new ArrayList<>();
 
-   private final List<IConstraint> constraintList = new ArrayList<>();
+  private final List<IConstraint> constraintList = new ArrayList<>();
   /**
    * The collection of edges using the classic object-pool concept.
    */
@@ -153,7 +154,6 @@ public class SemiVirtualIncrementalTin implements IIncrementalTin {
    * most recent search results.
    */
   private SemiVirtualEdge searchEdge;
-
 
   /**
    * Indicates that the TIN is locked and that calls to
@@ -298,6 +298,10 @@ public class SemiVirtualIncrementalTin implements IIncrementalTin {
    */
   private int maxEdgesReplacedDuringBuild;
 
+  /**
+   * Tracks the number of synthetic vertices added during construction.
+   */
+  private int nSyntheticVertices;
 
   /**
    * The rule used for disambiguating z values in a vertex merger group.
@@ -473,7 +477,6 @@ public class SemiVirtualIncrementalTin implements IIncrementalTin {
       }
     }
 
-
     nVerticesInserted += list.size();
     List<Vertex> aList = list;
     if (!isBootstrapped) {
@@ -521,7 +524,6 @@ public class SemiVirtualIncrementalTin implements IIncrementalTin {
     return true;
   }
 
-
   /**
    * Create the initial three-vertex mesh by selecting vertices from
    * the input list. Logic is provided to attempt to identify a
@@ -534,8 +536,8 @@ public class SemiVirtualIncrementalTin implements IIncrementalTin {
    * @return if successful, true; otherwise, false.
    */
   private boolean bootstrap(final List<Vertex> list) {
-    Vertex []v = (new BootstrapUtility(thresholds)).bootstrap(list, geoOp);
-    if(v == null){
+    Vertex[] v = (new BootstrapUtility(thresholds)).bootstrap(list, geoOp);
+    if (v == null) {
       return false;
     }
 
@@ -642,7 +644,6 @@ public class SemiVirtualIncrementalTin implements IIncrementalTin {
     return h;
   }
 
-
   /**
    * Performs processing for the public add() methods by adding the vertex
    * to a fully bootstrapped mesh. The vertex will be either inserted
@@ -665,8 +666,7 @@ public class SemiVirtualIncrementalTin implements IIncrementalTin {
     // of maintaining an array rather than a single integer overwhelms
     // the potential saving. However, the times for the two approaches are quite
     // close and it is hard to remove the effect of measurement error.
-
-    int buffer= -1;
+    int buffer = -1;
     int nReplacements = 0;
 
     if (x < boundsMinX) {
@@ -685,7 +685,7 @@ public class SemiVirtualIncrementalTin implements IIncrementalTin {
     }
     walker.findAnEdgeFromEnclosingTriangleInternal(searchEdge, x, y);
 
-    if(checkTriangleVerticesForMatchInternal(searchEdge, x, y, vertexTolerance2)){
+    if (checkTriangleVerticesForMatchInternal(searchEdge, x, y, vertexTolerance2)) {
       mergeVertexOrIgnore(searchEdge, v);
       return false;
     }
@@ -694,7 +694,7 @@ public class SemiVirtualIncrementalTin implements IIncrementalTin {
 
     final SemiVirtualEdge e = edgePool.allocateUnassignedEdge();
     final SemiVirtualEdge pStart = edgePool.allocateEdge(v, anchor);
-    final  SemiVirtualEdge p = pStart.copy();
+    final SemiVirtualEdge p = pStart.copy();
     p.setForward(searchEdge);
     final SemiVirtualEdge n0 = p.getDual();
     final SemiVirtualEdge n1 = searchEdge.getForward();
@@ -764,9 +764,9 @@ public class SemiVirtualIncrementalTin implements IIncrementalTin {
         // that any ghost edges we create will start with a
         // non-null vertex and end with a null.
         nReplacements++;
-        if(buffer==-1){
+        if (buffer == -1) {
           buffer = c.getBaseIndex();
-        }else{
+        } else {
           edgePool.deallocateEdge(c);
         }
 
@@ -782,23 +782,23 @@ public class SemiVirtualIncrementalTin implements IIncrementalTin {
           //        happen in a case where an insertion decreased
           //        the number of edge. so the following code
           //        is probably unnecessary
-          if(buffer!=-1){
+          if (buffer != -1) {
             edgePool.deallocateEdge(buffer);
           }
 
           nEdgesReplacedDuringBuild += nReplacements;
-          if(nReplacements>maxEdgesReplacedDuringBuild){
+          if (nReplacements > maxEdgesReplacedDuringBuild) {
             maxEdgesReplacedDuringBuild = nReplacements;
           }
           break;
         }
 
         n1.loadForwardFromEdge(c); // n1 = c.getForward()
-        if (buffer==-1) {
-           edgePool.allocateEdgeWithReceiver(e, v, c.getB());
+        if (buffer == -1) {
+          edgePool.allocateEdgeWithReceiver(e, v, c.getB());
         } else {
           edgePool.getEdgeForIndexWithReceiver(e, buffer, v, c.getB());
-          buffer=-1;
+          buffer = -1;
         }
         e.setForward(n1);
         n0.loadDualFromEdge(e); //  e.getDual().setForward(p);
@@ -811,12 +811,11 @@ public class SemiVirtualIncrementalTin implements IIncrementalTin {
     return true;
   }
 
-
   /**
    * Tests the vertices of the triangle that includes the reference edge
    * to see if any of them are an exact (instance) match for the specified
    * vertex. If so, the VirtualEdge is loaded with the edge that starts
-   * with the specified vertex.  If the vertex is a member of a
+   * with the specified vertex. If the vertex is a member of a
    * VertexMergerGroup, the edge that starts with the containing group
    * is returned.
    *
@@ -827,7 +826,7 @@ public class SemiVirtualIncrementalTin implements IIncrementalTin {
    */
   @SuppressWarnings("PMD.CompareObjectsWithEquals")
   private boolean checkTriangleVerticesForMatchingReference(
-    final SemiVirtualEdge sEdge, Vertex v ) {
+    final SemiVirtualEdge sEdge, Vertex v) {
     Vertex a = sEdge.getA();
     Vertex b = sEdge.getB();
     Vertex c = sEdge.getTriangleApex();
@@ -856,8 +855,7 @@ public class SemiVirtualIncrementalTin implements IIncrementalTin {
     return false;
   }
 
-
- /**
+  /**
    * Tests the vertices of the triangle that includes the reference edge
    * to see if any of them are an exact match for the specified
    * coordinates. Typically, this method is employed after a search
@@ -873,7 +871,6 @@ public class SemiVirtualIncrementalTin implements IIncrementalTin {
    * for accepting a vertex as a match for the coordinates
    * @return true if a match is found; otherwise, false
    */
-
   private boolean checkTriangleVerticesForMatchInternal(
     final SemiVirtualEdge sEdge,
     double x,
@@ -1146,7 +1143,7 @@ public class SemiVirtualIncrementalTin implements IIncrementalTin {
       return pList;
     }
 
-        IQuadEdge g = edgePool.getStartingGhostEdge();
+    IQuadEdge g = edgePool.getStartingGhostEdge();
     IQuadEdge s0 = g.getReverse();
     IQuadEdge s = s0;
     do {
@@ -1209,8 +1206,8 @@ public class SemiVirtualIncrementalTin implements IIncrementalTin {
     ps.format("Number Ordinary Edges:        %8d\n", nOrdinary);
     ps.format("Number Ghost Edges:           %8d\n", nGhost);
     ps.format("Number Edge Replacements:     %8d    (avg: %3.1f)\n",
-       nEdgesReplacedDuringBuild,
-       (double)nEdgesReplacedDuringBuild/(double)(nVerticesInserted-nCoincident));
+      nEdgesReplacedDuringBuild,
+      (double) nEdgesReplacedDuringBuild / (double) (nVerticesInserted - nCoincident));
     ps.format("Max Edge Replaced by add op:  %8d\n", maxEdgesReplacedDuringBuild);
     ps.format("Average Point Spacing:        %11.2f\n", avgPointSpacing);
     ps.format("Application's Nominal Spacing:%11.2f\n", nominalPointSpacing);
@@ -1256,8 +1253,7 @@ public class SemiVirtualIncrementalTin implements IIncrementalTin {
     return edgePool.getEdges();
   }
 
-
-    List<SemiVirtualEdge> getVirtualEdges() {
+  List<SemiVirtualEdge> getVirtualEdges() {
     if (!isBootstrapped) {
       return new ArrayList<SemiVirtualEdge>();
     }
@@ -1320,7 +1316,7 @@ public class SemiVirtualIncrementalTin implements IIncrementalTin {
    * the overhead related to multiple edge object implementation.
    */
   public void clear() {
-        if(isDisposed){
+    if (isDisposed) {
       return;
     }
     isLocked = false;
@@ -1335,6 +1331,7 @@ public class SemiVirtualIncrementalTin implements IIncrementalTin {
     }
     constraintList.clear();
     walker.reset();
+    nSyntheticVertices = 0;
   }
 
   /**
@@ -1418,7 +1415,7 @@ public class SemiVirtualIncrementalTin implements IIncrementalTin {
     // perform special handling for a merger group
     final Vertex matchA = matchEdge.getA();
     if (matchA instanceof VertexMergerGroup && vRemove != matchA) {
-        // when vRemove==the A vertex of the matched edge, we have the special
+      // when vRemove==the A vertex of the matched edge, we have the special
       // case where the calling application is trying to remove the
       // whole group and the logic will just fall through and
       // perform a normal removal.  When they are not equal,
@@ -1431,10 +1428,9 @@ public class SemiVirtualIncrementalTin implements IIncrementalTin {
       if (group.getSize() > 0) {
         return true;
       }
-        // if the group is empty, it must now be removed from the TIN
+      // if the group is empty, it must now be removed from the TIN
       // just like any other vertex.
     }
-
 
     // because we are going to delete a point, the state data in
     // the matchedEdge will become obsolete.
@@ -1607,7 +1603,6 @@ public class SemiVirtualIncrementalTin implements IIncrementalTin {
    *
    * @return An ordinary (non-ghost) edge.
    */
-
   public SemiVirtualEdge getStartingEdge() {
     // because this method may be accessed simultaneously by multiple threads,
     // it must not modify the internal state of the instance.
@@ -1696,9 +1691,8 @@ public class SemiVirtualIncrementalTin implements IIncrementalTin {
     return new SemiVirtualNeighborhoodPointsCollector(this, thresholds);
   }
 
-
   @Override
-  public IIntegrityCheck getIntegrityCheck(){
+  public IIntegrityCheck getIntegrityCheck() {
     return new SemiVirtualIntegrityCheck(this);
   }
 
@@ -1725,7 +1719,7 @@ public class SemiVirtualIncrementalTin implements IIncrementalTin {
   }
 
   @Override
-  public void addConstraints(List<IConstraint> constraints) {
+  public void addConstraints(List<IConstraint> constraints, boolean restoreConformity) {
     if (isLocked) {
       if (isDisposed) {
         throw new IllegalStateException(
@@ -1794,6 +1788,18 @@ public class SemiVirtualIncrementalTin implements IIncrementalTin {
       k++;
     }
 
+    // TO DO:  Use an iterator instead
+    //         eliminate down-casting
+    if (restoreConformity) {
+      List<IQuadEdge> eList = edgePool.getEdges();
+      for (IQuadEdge e : eList) {
+        if (e.isConstrained()) {
+          SemiVirtualEdge sEdge = (SemiVirtualEdge)e;
+          restoreConformity(sEdge);
+        }
+      }
+    }
+
     if (foundDataAreaDefinition) {
       fillConstraintDataAreas();
     }
@@ -1839,7 +1845,7 @@ public class SemiVirtualIncrementalTin implements IIncrementalTin {
       e0 = searchEdge.getReverse();
     }
     Vertex a = e0.getA();
-    if (a != v0 && a instanceof VertexMergerGroup) {
+    if (a instanceof VertexMergerGroup && a != v0) {  // NOPMD
       VertexMergerGroup g = (VertexMergerGroup) a;
       if (g.contains(v0)) {
         cvList.set(0, a);
@@ -1879,7 +1885,7 @@ public class SemiVirtualIncrementalTin implements IIncrementalTin {
             // ghost vertex
             priorNull = true;
           } else {
-            if (b == v1) {
+            if (b == v1) { // NOPMD
               setConstrained(e, constraint);
               e0 = e.getDual(); // set up e0 for next iteration of iSegment
               continue segmentLoop;
@@ -2128,6 +2134,82 @@ public class SemiVirtualIncrementalTin implements IIncrementalTin {
 
   }
 
+  private void restoreConformity(SemiVirtualEdge ab) {
+    SemiVirtualEdge ba = ab.getDual();
+    SemiVirtualEdge bc = ab.getForward();
+    SemiVirtualEdge ad = ba.getForward();
+    Vertex a = ab.getA();
+    Vertex b = ab.getB();
+    Vertex c = bc.getB();
+    Vertex d = ad.getB();
+    if (a == null || b == null || c == null || d == null) {
+      return;
+    }
+    double h = geoOp.inCircle(a, b, c, d);
+    if (h <= 0) {
+      return;
+    }
+
+    SemiVirtualEdge ca = ab.getReverse();
+    SemiVirtualEdge db = ba.getReverse();
+
+    if (ab.isConstrained()) {
+      // subdivide the constraint edge to restore conformity
+      double mx = (a.getX() + b.getX()) / 2.0;
+      double my = (a.getY() + b.getY()) / 2.0;
+      double mz = (a.getZ() + b.getZ()) / 2.0;
+      Vertex m = new Vertex(mx, my, mz, nSyntheticVertices++);
+      m.setSynthetic(true);
+
+      // reuse edge ab, change name just to avoid confusion
+      SemiVirtualEdge mb = ab;
+      SemiVirtualEdge bm = ba;
+      mb.setVertices(m, b);
+
+      // create new edges
+      SemiVirtualEdge am = edgePool.allocateEdge(a, m);
+      SemiVirtualEdge cm = edgePool.allocateEdge(c, m);
+      SemiVirtualEdge dm = edgePool.allocateEdge(d, m);
+      SemiVirtualEdge ma = am.getDual();
+      SemiVirtualEdge mc = cm.getDual();
+      SemiVirtualEdge md = dm.getDual();
+
+      am.setConstrained(mb.getConstraintIndex());
+
+      ma.setForward(ad);  // should already be set
+      ad.setForward(dm);
+      dm.setForward(ma);
+
+      mb.setForward(bc);
+      bc.setForward(cm);
+      cm.setForward(mb);
+
+      mc.setForward(ca);
+      ca.setForward(am); // should already be set
+      am.setForward(mc);
+
+      md.setForward(db);
+      db.setForward(bm);
+      bm.setForward(md);
+      restoreConformity(am);
+      restoreConformity(mb);
+    } else {
+      // the edge is not constrained, so perform a flip to restore Delaunay
+      ab.setVertices(d, c);
+      ab.setReverse(ad);
+      ab.setForward(ca);
+      ba.setReverse(bc);
+      ba.setForward(db);
+      ca.setForward(ad);
+      db.setForward(bc);
+    }
+
+    restoreConformity(bc.getDual());
+    restoreConformity(ca.getDual());
+    restoreConformity(ad.getDual());
+    restoreConformity(db.getDual());
+  }
+
   private void removeEdge(SemiVirtualEdge e) {
     SemiVirtualEdge d = e.getDual();
     SemiVirtualEdge dr = d.getReverse();
@@ -2227,7 +2309,7 @@ public class SemiVirtualIncrementalTin implements IIncrementalTin {
 
     SemiVirtualDevillersEar eC = firstEar.next;
     fillScore(firstEar);
-    while (eC != firstEar) {
+    while (eC != firstEar) {  //NOPMD
       fillScore(eC);
       eC = eC.next;
     }
@@ -2243,7 +2325,7 @@ public class SemiVirtualIncrementalTin implements IIncrementalTin {
           earMin = ear;
         }
         ear = ear.next;
-      } while (ear != firstEar);
+      } while (ear != firstEar);  //NOPMD
 
       if (earMin == null) {
         throw new IllegalStateException(
@@ -2329,12 +2411,12 @@ public class SemiVirtualIncrementalTin implements IIncrementalTin {
   }
 
   private void fillConstraintDataAreas() {
-    for(SemiVirtualEdge e: this.edgePool){
-      if(e.isConstrainedAreaEdge()){
-        if(e.isConstraintAreaOnThisSide()){
-        fillConstraintDataAreaRecursion(e);
-        }else{
-            fillConstraintDataAreaRecursion(e.getDual());
+    for (SemiVirtualEdge e : this.edgePool) {
+      if (e.isConstrainedAreaEdge()) {
+        if (e.isConstraintAreaOnThisSide()) {
+          fillConstraintDataAreaRecursion(e);
+        } else {
+          fillConstraintDataAreaRecursion(e.getDual());
         }
       }
     }
@@ -2361,6 +2443,11 @@ public class SemiVirtualIncrementalTin implements IIncrementalTin {
     List<IConstraint> result = new ArrayList<>();
     result.addAll(constraintList);
     return result;
+  }
+
+  @Override
+  public int getSyntheticVertexCount() {
+    return nSyntheticVertices;
   }
 
 }

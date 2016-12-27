@@ -438,15 +438,15 @@ public class QuadEdge implements IQuadEdge {
     String s = String.format("%9s  %9s <-- (%9s,%9s) --> %9s%s",
       getName(),
       (r == null ? "null" : r.getName()),
-      (a == null ? "gv" : Integer.toString(a.getIndex())),
-      (b == null ? "gv" : Integer.toString(b.getIndex())),
+      (a == null ? "gv" : a.getLabel()),
+      (b == null ? "gv" : b.getLabel()),
       (f == null ? "null" : f.getName()),
       (this.isConstrained()?"    constrained":"")
     );
     return s;
   }
 
-  
+
   /**
    * Gets the length of the edge.
    * @return a positive floating point value

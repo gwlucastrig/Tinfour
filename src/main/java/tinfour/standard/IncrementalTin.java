@@ -395,6 +395,11 @@ public class IncrementalTin implements IIncrementalTin {
   private int maxEdgesReplacedDuringBuild;
 
   /**
+   * Tracks the number of synthetic vertices added while restoring
+   * Delaunay conformity after adding constraints
+   */
+  private int nSyntheticVertices;
+  /**
    * The rule used for disambiguating z values in a vertex merger group.
    */
   private VertexMergerGroup.ResolutionRule vertexMergeRule
@@ -404,7 +409,6 @@ public class IncrementalTin implements IIncrementalTin {
    * An instance of a SLW set with thresholds established in the constructor.
    */
   private final StochasticLawsonsWalk walker;
-
 
   /**
    * Constructs an incremental TIN using numerical thresholds appropriate for
@@ -773,7 +777,6 @@ public class IncrementalTin implements IIncrementalTin {
       return false;
     }
 
-
     // The build buffer provides temporary tracking of edges that are
     // removed and replaced while building the TIN.  Because the
     // delete method of the EdgePool has to do a lot of bookkeeping,
@@ -783,7 +786,6 @@ public class IncrementalTin implements IIncrementalTin {
     // of maintaining an array rather than a single reference overwhelms
     // the potential saving. However, the times for the two approaches are quite
     // close and it is hard to remove the effect of measurement error.
-
     Vertex anchor = searchEdge.getA();
 
     QuadEdge buffer = null;
@@ -858,11 +860,11 @@ public class IncrementalTin implements IIncrementalTin {
         // that any ghost edges we create will start with a
         // non-null vertex and end with a null.
         c = c.getBaseReference();
-        if (buffer!=null) {
-          edgePool.deallocateEdge(c);
-        } else {
+        if (buffer == null) {
           c.clear();
           buffer = c;
+        } else {
+          edgePool.deallocateEdge(c);
         }
 
         c = n1;
@@ -877,7 +879,7 @@ public class IncrementalTin implements IIncrementalTin {
           //        happen in a case where an insertion decreased
           //        the number of edge. so the following code
           //        is probably unnecessary
-          if(buffer!=null){
+          if (buffer != null) {
             edgePool.deallocateEdge(buffer);
           }
 
@@ -1403,8 +1405,9 @@ public class IncrementalTin implements IIncrementalTin {
       vertexList.clear();
     }
     coincidenceList.clear();
+    walker.reset();
     constraintList.clear();
-    this.walker.reset();
+    nSyntheticVertices = 0;
   }
 
   /**
@@ -1781,7 +1784,6 @@ public class IncrementalTin implements IIncrementalTin {
     return vList;
   }
 
-
   // Code related to the addition of constraints ------------------------
   @Override
   public boolean isPointInsideTin(double x, double y) {
@@ -1798,7 +1800,9 @@ public class IncrementalTin implements IIncrementalTin {
   }
 
   @Override
-  public void addConstraints(List<IConstraint> constraints) {
+  public void addConstraints(
+    List<IConstraint> constraints,
+    boolean restoreConformity) {
     if (isLocked) {
       if (isDisposed) {
         throw new IllegalStateException(
@@ -1851,6 +1855,7 @@ public class IncrementalTin implements IIncrementalTin {
       }
       constraintList.add(c);
       this.add(vList, null);
+
     }
 
     // Step 2 -- Construct new edges for constraint and mark any existing
@@ -1859,7 +1864,7 @@ public class IncrementalTin implements IIncrementalTin {
     boolean foundDataAreaDefinition = false;
     int k = 0;
     for (IConstraint c : constraintList) {
-      if(c.definesDataArea()){
+      if (c.definesDataArea()) {
         foundDataAreaDefinition = true;
       }
       c.setConstraintIndex(k);
@@ -1867,7 +1872,18 @@ public class IncrementalTin implements IIncrementalTin {
       k++;
     }
 
-    if(foundDataAreaDefinition){
+    // TO DO:  Use an iterator instead
+    //         eliminate down-casting
+    if (restoreConformity) {
+      List<IQuadEdge> eList = edgePool.getEdges();
+      for (IQuadEdge e : eList) {
+        if (e.isConstrained()) {
+          restoreConformity((QuadEdge) e);
+        }
+      }
+    }
+
+    if (foundDataAreaDefinition) {
       fillConstraintDataAreas();
     }
 
@@ -1883,9 +1899,9 @@ public class IncrementalTin implements IIncrementalTin {
     return false;
   }
 
-  private void setConstrained(QuadEdge edge, IConstraint constraint){
+  private void setConstrained(QuadEdge edge, IConstraint constraint) {
     edge.setConstrained(constraint.getConstraintIndex());
-    if(constraint.definesDataArea()){
+    if (constraint.definesDataArea()) {
       edge.setConstrainedAreaMemberFlag();
     }
   }
@@ -1960,7 +1976,7 @@ public class IncrementalTin implements IIncrementalTin {
               VertexMergerGroup g = (VertexMergerGroup) b;
               if (g.contains(v1)) {
                 cvList.set(iSegment + 1, g);
-                setConstrained(e,constraint);
+                setConstrained(e, constraint);
                 e0 = e.getDual(); // set up e0 for next iteration of iSegment
                 continue segmentLoop;
               }
@@ -2037,7 +2053,7 @@ public class IncrementalTin implements IIncrementalTin {
         // next segment, and advance to the next segment in the constraint.
         cvList.add(iSegment + 1, b);
         nSegments++;
-        setConstrained(e0,constraint);
+        setConstrained(e0, constraint);
         e0 = e0.getDual(); // set up e0 for next iteration of iSegment
         continue; // continue segmentLoop;
       }
@@ -2095,7 +2111,7 @@ public class IncrementalTin implements IIncrementalTin {
             cvList.add(iSegment + 1, b);
             nSegments++;
             e0 = e.getReverse(); // will be (b, v0), set up for next iSegment
-            setConstrained(e,constraint);
+            setConstrained(e, constraint);
             continue segmentLoop;
           }
         }
@@ -2253,6 +2269,7 @@ public class IncrementalTin implements IIncrementalTin {
    * Fills a cavity that was created by removing edges from the
    * TIN. It is assumed that all the edges of the cavity are either
    * Delaunay or are constrained edge.
+   *
    * @param cavityEdge a valid edge.
    */
   private void fillCavity(QuadEdge cavityEdge) {
@@ -2271,8 +2288,6 @@ public class IncrementalTin implements IIncrementalTin {
     //          occur often enough, there might be efficiency in counting up
     //          the edges before creating ears.  If it is not often enough,
     //          then we might be better served by just leaving it as is.
-
-
     // Step 1 -- Ear Creation
     //    Create a set of Devillers Ears around
     //    the polygonal cavity.
@@ -2363,45 +2378,146 @@ public class IncrementalTin implements IIncrementalTin {
       firstEar = priorEar;
       nEar--;
     }
-
     // Step 2 -- Edge correction
-    //  Loop through the nearly created edges and
-    //  flip any edges that violate the Delaunay criterion.
-    //  Flipping one edge may change the Delaynay correctness of its
-    //  neighbors.
-    int k = list.size();
-    int k2 = k * k;
-    for (int i = 0; i < k2; i++) {
-      int flipped = 0;
-      for (QuadEdge n : list) {
-        QuadEdge d = n.getDual();
-        QuadEdge nf = n.getForward();
-        QuadEdge df = d.getForward();
-        Vertex a = n.getA();
-        Vertex b = n.getB();
-        Vertex c = nf.getB();
-        Vertex t = df.getB();
-        double h = geoOp.inCircle(a, b, c, t);
-        if (h > 0) {
-          flipped++;
-          // flip n
-          QuadEdge nr = n.getReverse();
-          QuadEdge dr = d.getReverse();
-          n.setVertices(t, c);
-          n.setForward(nr);
-          n.setReverse(df);
-          d.setForward(dr);
-          d.setReverse(nf);
-          dr.setForward(nf);
-          nr.setForward(df);
-        }
-      }
-      if (flipped == 0) {
-        break;
-      }
+    //  Loop through the nearly created edges and the non-constrained
+    //  perimeter edges to flip and edges that violate the Delaunay criterion.]
+    //  If the addition of the constraint did not involve the creation
+    //  of synthetic points to restore Delaunay conformality, then
+    //  the perimeter edges are still Delaunay and will not need to
+    //  be flipped.  But if synthetic points were added, it is possible
+    //  that they will fall within the circumcircle of a triangle adjacent
+    //  to the cavity.  In which case, the flip operation will propagate
+    //  to edges on the edge of the cavity and potentially beyond,
+    for (QuadEdge n : list) {
+      recursiveRestoreDelaunay(n);
     }
   }
 
+  /**
+   * Tests the edge to see if it is non-Delaunay and, if so,
+   * flips it and recursively tests the neighboring edges.
+   * It is assumed that n is an interior-facing edge of the
+   * TIN. This method does not test constrained edges and
+   * perimeter edges.
+   *
+   * @param n a valid, interior facing edge
+   * @return true if an edge was flipped.
+   */
+  private boolean recursiveRestoreDelaunay(QuadEdge n) {
+    if (n.isConstrained()) {
+      return false;
+    }
+    QuadEdge nf = n.getForward();
+    Vertex a = n.getA();
+    Vertex b = n.getB();
+    Vertex c = nf.getB();
+    if (c == null) {
+      return false;
+    }
+    QuadEdge d = n.getDual();
+    QuadEdge df = d.getForward();
+    Vertex t = df.getB();
+    if (t == null) {
+      return false;
+    }
+
+    double h = geoOp.inCircle(a, b, c, t);
+    if (h > 0) {
+      // flip n
+      QuadEdge nr = n.getReverse();
+      QuadEdge dr = d.getReverse();
+      n.setVertices(t, c);
+      n.setForward(nr);
+      n.setReverse(df);
+      d.setForward(dr);
+      d.setReverse(nf);
+      dr.setForward(nf);
+      nr.setForward(df);
+      recursiveRestoreDelaunay(nf);
+      recursiveRestoreDelaunay(nr);
+      recursiveRestoreDelaunay(df);
+      recursiveRestoreDelaunay(dr);
+      return true;
+    }
+    return false;
+  }
+
+  private void restoreConformity(QuadEdge ab) {
+
+    QuadEdge ba = ab.getDual();
+    QuadEdge bc = ab.getForward();
+    QuadEdge ad = ba.getForward();
+    Vertex a = ab.getA();
+    Vertex b = ab.getB();
+    Vertex c = bc.getB();
+    Vertex d = ad.getB();
+    if (a == null || b == null || c == null || d == null) {
+      return;
+    }
+    double h = geoOp.inCircle(a, b, c, d);
+    if (h <= 0) {
+      return;
+    }
+
+    QuadEdge ca = ab.getReverse();
+    QuadEdge db = ba.getReverse();
+
+    if (ab.isConstrained()) {
+      // subdivide the constraint edge to restore conformity
+      double mx = (a.getX() + b.getX()) / 2.0;
+      double my = (a.getY() + b.getY()) / 2.0;
+      double mz = (a.getZ() + b.getZ()) / 2.0;
+      Vertex m = new Vertex(mx, my, mz, nSyntheticVertices++);
+      m.setSynthetic(true);
+
+      // reuse edge ab, change name just to avoid confusion
+      QuadEdge mb = ab;
+      QuadEdge bm = ba;
+      mb.setVertices(m, b);
+
+      // create new edges
+      QuadEdge am = edgePool.allocateEdge(a, m);
+      QuadEdge cm = edgePool.allocateEdge(c, m);
+      QuadEdge dm = edgePool.allocateEdge(d, m);
+      QuadEdge ma = am.getDual();
+      QuadEdge mc = cm.getDual();
+      QuadEdge md = dm.getDual();
+
+      am.setConstrained(mb.getConstraintIndex());
+
+      ma.setForward(ad);  // should already be set
+      ad.setForward(dm);
+      dm.setForward(ma);
+
+      mb.setForward(bc);
+      bc.setForward(cm);
+      cm.setForward(mb);
+
+      mc.setForward(ca);
+      ca.setForward(am); // should already be set
+      am.setForward(mc);
+
+      md.setForward(db);
+      db.setForward(bm);
+      bm.setForward(md);
+      restoreConformity(am);
+      restoreConformity(mb);
+    } else {
+      // the edge is not constrained, so perform a flip to restore Delaunay
+      ab.setVertices(d, c);
+      ab.setReverse(ad);
+      ab.setForward(ca);
+      ba.setReverse(bc);
+      ba.setForward(db);
+      ca.setForward(ad);
+      db.setForward(bc);
+    }
+
+    restoreConformity(bc.getDual());
+    restoreConformity(ca.getDual());
+    restoreConformity(ad.getDual());
+    restoreConformity(db.getDual());
+  }
 
   private void fillConstraintDataAreas() {
     for (QuadEdge e : this.edgePool) {
@@ -2431,11 +2547,16 @@ public class IncrementalTin implements IIncrementalTin {
     }
   }
 
+  @Override
+  public List<IConstraint> getConstraints() {
+    List<IConstraint> result = new ArrayList<>();
+    result.addAll(constraintList);
+    return result;
+  }
 
   @Override
-  public List<IConstraint>getConstraints(){
-      List<IConstraint>result = new ArrayList<>();
-      result.addAll(constraintList);
-      return result;
+  public int getSyntheticVertexCount() {
+    return nSyntheticVertices;
   }
+
 }

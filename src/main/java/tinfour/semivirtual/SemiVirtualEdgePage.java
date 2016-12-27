@@ -182,6 +182,7 @@ class SemiVirtualEdgePage {
     return allocations;
   }
 
+  @SuppressWarnings("PMD.MethodReturnsInternalArray")
   int [] readyConstraints() {
      if(constraints==null){
        constraints = new int[PAIRS_PER_PAGE];

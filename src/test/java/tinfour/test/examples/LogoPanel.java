@@ -132,7 +132,7 @@ public class LogoPanel extends JPanel {
                 // the second image appears below the first
                 // allow a vertical gap 15 percent of the rendered height of the TIN.
                 yOffset += 1.15 * scale * bounds.getHeight();
-                af = new AffineTransform(scale, 0, 0, -scale, xOffset, yOffset);
+                af = new AffineTransform(scale, 0, 0, -scale, xOffset, yOffset); // NOPMD
             }
             for (IQuadEdge e : edges) {
                 if (e.getB() == null) {

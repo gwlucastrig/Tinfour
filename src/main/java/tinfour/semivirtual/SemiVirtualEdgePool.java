@@ -192,10 +192,6 @@ class SemiVirtualEdgePool implements Iterable<SemiVirtualEdge> {
     receiver.page = page;
     receiver.index = absIndex;
     receiver.indexOnPage = absIndex & INDEX_MASK;
-    int side = absIndex & 1;
-    int offset = absIndex & (INDEX_MASK & MASK_LOW_BIT_CLEAR);
-    receiver.a = page.vertices[offset | side];
-    receiver.b = page.vertices[offset | (side ^ 1)];
   }
 
   SemiVirtualEdge allocateEdge(Vertex a, Vertex b) {
@@ -406,8 +402,7 @@ class SemiVirtualEdgePool implements Iterable<SemiVirtualEdge> {
     receiver.page = page;
     receiver.index = index;
     receiver.indexOnPage = index & INDEX_MASK;
-    receiver.a = a;
-    receiver.b = b;
+
     int side = index & 1;
     int offset = index & (INDEX_MASK & MASK_LOW_BIT_CLEAR);
     page.vertices[offset | side] = a;
