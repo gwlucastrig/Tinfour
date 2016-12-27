@@ -78,7 +78,7 @@ public class Vertex implements ISamplePoint {
 
   /**
    * An indexing value assigned to the Vertex. In this package, it is used
-   * primary for diagnostic purposes and labeling graphics. 
+   * primary for diagnostic purposes and labeling graphics.
    * Note that unlike the horizontal and vertical coordinates
    * for the vertex, the index element is not declared final, and may
    * be modified by the application code as needed.
@@ -99,6 +99,11 @@ public class Vertex implements ISamplePoint {
    * variable of (x,y).
    */
   final float z;
+
+  private byte status;
+  protected byte reserved0;
+  protected byte reserved1;
+  protected byte reserved2;
 
   /**
    * Construct a vertex with the specified coordinates and z value. Intended
@@ -137,9 +142,24 @@ public class Vertex implements ISamplePoint {
 
   }
 
+  /**
+   * Gets a string intended for labeling the vertex in images or
+   * reports. The default label is the index of the vertex preceeded
+   * by the letter S if the vertex is synthetic.  Note that the
+   * index of a vertex is not necessarily unique but left to the
+   * requirements of the application that constructs it.
+   * @return a valid, non-empty string.
+   */
+  public String getLabel(){
+    return (isSynthetic() ? "S" : "") + Integer.toString(index);
+  }
+
+
+
   @Override
   public String toString() {
-    String s = index + ": "
+    String s = (isSynthetic() ? "S" : " ")
+      + index + ": "
       + "x=" + x + ", "
       + "y=" + y + ", "
       + "z=" + z;
@@ -265,6 +285,28 @@ public class Vertex implements ISamplePoint {
    */
   public void setIndex(final int index) {
     this.index = index;
+  }
+
+
+  /**
+   * Indicates whether a vertex is synthetic (was created through
+   * a Tinfour procedure rather than supplied by an application).
+   * @return true if vertex is synthetic; otherwise, false
+   */
+  public boolean isSynthetic(){
+    return (status&0x01)!=0;
+  }
+
+  /**
+   * Sets or clears the is-synthetic status of a vertex.
+   * @param synthetic true if vertex is synthetic; otherwise, false
+   */
+  public void setSynthetic(boolean synthetic) {
+    if (synthetic) {
+      status |= 1;
+    } else {
+      status &= 0xfe;
+    }
   }
 
 }

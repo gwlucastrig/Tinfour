@@ -37,20 +37,21 @@ import java.text.SimpleDateFormat;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
+import java.util.Locale;
 import java.util.SimpleTimeZone;
 import javax.imageio.ImageIO;
 import tinfour.common.IIncrementalTin;
 import tinfour.common.Vertex;
 import tinfour.gwr.BandwidthSelectionMethod;
 import tinfour.gwr.SurfaceModel;
+import tinfour.interpolation.GwrTinInterpolator;
+import tinfour.interpolation.IInterpolatorOverTin;
 import tinfour.test.utils.GridSpecification;
 import tinfour.test.utils.IDevelopmentTest;
 import tinfour.test.utils.InterpolationMethod;
 import tinfour.test.utils.TestOptions;
 import tinfour.test.utils.TestPalette;
 import tinfour.test.utils.VertexLoader;
-import tinfour.interpolation.GwrTinInterpolator;
-import tinfour.interpolation.IInterpolatorOverTin;
 import tinfour.utils.TinInstantiationUtility;
 
 /**
@@ -73,7 +74,8 @@ public class ExampleGridAndHillshade implements IDevelopmentTest {
   @Override
   public void runTest(PrintStream ps, String[] args) throws IOException {
     Date date = new Date();
-    SimpleDateFormat sdFormat = new SimpleDateFormat("dd MMM yyyy HH:mm");
+    SimpleDateFormat sdFormat =
+      new SimpleDateFormat("dd MMM yyyy HH:mm", Locale.getDefault());
     sdFormat.setTimeZone(new SimpleTimeZone(0, "UTC"));
     ps.println("ExampleGridAndHillshade\n");
     ps.format("Date/time of test: %s (UTC)\n", sdFormat.format(date));

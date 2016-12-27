@@ -25,12 +25,27 @@
  *
  * Notes:
  *
+ *  TO DO:  Recently found a need to add the update method for cases
+ *          where the geometry of an edge is changed by the flip or
+ *          the split operation which were introduced for performing
+ *          constraint restorations.  However, I wonder if this could
+ *          be avoided by simple changing the code for getA() and getB()
+ *          to always consult the state data in the edge pool rather than
+ *          maintaining local copies of a,b.  This would be less error
+ *          vulnerable to coding errors.  But we must check to see how
+ *          often getA() and getB() are called.  If its more than a
+ *          couple, we probably should keep local copies.  If it's less
+ *          than an average of 2, we would probably gain performance by
+ *          not maintaining local copies and would benefit by being able
+ *          to get rid of the update() method.
+ *
  * -----------------------------------------------------------------------
  */
+
 package tinfour.semivirtual;
 
 import tinfour.common.IQuadEdge;
-import static tinfour.common.QuadEdge.CONSTRAINT_AREA_BASE_FLAG;
+import static tinfour.common.QuadEdge.CONSTRAINT_AREA_BASE_FLAG; 
 import static tinfour.common.QuadEdge.CONSTRAINT_AREA_FLAG;
 import static tinfour.common.QuadEdge.CONSTRAINT_FLAG;
 import static tinfour.common.QuadEdge.CONSTRAINT_INDEX_MASK;
@@ -53,8 +68,7 @@ public final class SemiVirtualEdge implements IQuadEdge {
   SemiVirtualEdgePage page;
   int index;
   int indexOnPage;
-  Vertex a;
-  Vertex b;
+
 
   /**
    * Constructs a virtual edge tied to the specifed edge pool.
@@ -68,10 +82,8 @@ public final class SemiVirtualEdge implements IQuadEdge {
     this.index = index;
     this.page = page;
     indexOnPage = index & INDEX_MASK;
-    int side = index & LOW_BIT;
-    int offset = indexOnPage & MASK_LOW_BIT_CLEAR;
-    a = page.vertices[offset | side];
-    b = page.vertices[offset | (side ^ LOW_BIT)];
+
+
   }
 
   /**
@@ -111,8 +123,7 @@ public final class SemiVirtualEdge implements IQuadEdge {
     this.page = e.page;
     this.index = e.index;
     this.indexOnPage = e.indexOnPage;
-    this.a = e.a;
-    this.b = e.b;
+
   }
 
   /**
@@ -129,10 +140,7 @@ public final class SemiVirtualEdge implements IQuadEdge {
     page = e.page;
     index = e.index ^ LOW_BIT;
     indexOnPage = e.indexOnPage ^ LOW_BIT;
-    Vertex aE = e.a;
-    Vertex bE = e.b;
-    a = bE;
-    b = aE;
+
   }
 
   /**
@@ -165,10 +173,7 @@ public final class SemiVirtualEdge implements IQuadEdge {
     this.page = pool.pages[index / INDICES_PER_PAGE];
     this.index = index;
     this.indexOnPage = index & INDEX_MASK;
-    int side = index & LOW_BIT;
-    int offset = indexOnPage & MASK_LOW_BIT_CLEAR;
-    a = page.vertices[offset | side];
-    b = page.vertices[offset | (side ^ LOW_BIT)];
+
   }
 
   /**
@@ -198,12 +203,17 @@ public final class SemiVirtualEdge implements IQuadEdge {
 
   @Override
   public Vertex getA() {
-    return a;
+    int side = index & LOW_BIT;
+    int offset = indexOnPage & MASK_LOW_BIT_CLEAR;
+   return page.vertices[offset | side];
+
   }
 
   @Override
   public Vertex getB() {
-    return b;
+       int side = index & LOW_BIT;
+    int offset = indexOnPage & MASK_LOW_BIT_CLEAR;
+    return page.vertices[offset | (side ^ LOW_BIT)];
   }
 
   @Override
@@ -352,6 +362,8 @@ public final class SemiVirtualEdge implements IQuadEdge {
 
   @Override
   public double getLength() {
+    Vertex a = getA();
+    Vertex b = getB();
     if (a == null || b == null) {
       return Double.NaN;
     }
@@ -376,7 +388,7 @@ public final class SemiVirtualEdge implements IQuadEdge {
    */
   public void setA(Vertex a) {
     page.vertices[indexOnPage] = a;
-    this.a = a;
+
   }
 
   /**
@@ -387,7 +399,7 @@ public final class SemiVirtualEdge implements IQuadEdge {
    */
   public void setB(Vertex b) {
     page.vertices[indexOnPage ^ LOW_BIT] = b;
-    this.b = b;
+
   }
 
   /**
@@ -446,12 +458,13 @@ public final class SemiVirtualEdge implements IQuadEdge {
     int offset = indexOnPage & MASK_LOW_BIT_CLEAR;
     page.vertices[offset | side] = a;
     page.vertices[offset | (side ^ LOW_BIT)] = b;
-    this.a = a;
-    this.b = b;
+
   }
 
   @Override
   public String toString() {
+    Vertex a = getA();
+    Vertex b = getB();
     if (a == null && b == null) {
       return String.format("%9d -- Undefined", getIndex());
     }
@@ -460,8 +473,8 @@ public final class SemiVirtualEdge implements IQuadEdge {
     String s = String.format("%9d  %9s <-- (%9s,%9s) --> %9s",
       index,
       (r == 0 ? "null" : Integer.toString(r)),
-      (a == null ? "gv" : Integer.toString(a.getIndex())),
-      (b == null ? "gv" : Integer.toString(b.getIndex())),
+      (a == null ? "gv" : a.getLabel()),
+      (b == null ? "gv" : b.getLabel()),
       (f == 0 ? "null" : Integer.toString(f))
     );
     return s;
@@ -484,6 +497,14 @@ public final class SemiVirtualEdge implements IQuadEdge {
 
   @Override
   public int getConstraintIndex() {
+    if (page.constraints == null) {
+      return 0;
+    }
+    int test = page.constraints[indexOnPage / 2];
+    // the CONSTRAINT_FLAG is also the sign bit.
+    if (test < 0) {
+      return test & CONSTRAINT_INDEX_MASK;
+    }
     return 0;
   }
 
@@ -512,7 +533,7 @@ public final class SemiVirtualEdge implements IQuadEdge {
         + " is out of range [0.." + CONSTRAINT_INDEX_MAX + "]");
     }
 
-    int ix = indexOnPage / 2;
+    int ix = indexOnPage / 2; // both sides of the edge are constrained.
     int c[] = page.readyConstraints();
     c[ix] = CONSTRAINT_FLAG | (c[ix] & ~CONSTRAINT_INDEX_MASK) | constraintIndex;
 
@@ -557,15 +578,15 @@ public final class SemiVirtualEdge implements IQuadEdge {
       return false;
     } else {
       int flags = page.constraints[indexOnPage / 2];
-      if ((flags & CONSTRAINT_AREA_FLAG) != 0) {
+      if ((flags & CONSTRAINT_AREA_FLAG) == 0) {
+        return false;
+      }else{
         int side = indexOnPage & LOW_BIT;
         if (side == 0) {
           return (flags & CONSTRAINT_AREA_BASE_FLAG) != 0;
         } else {
           return (flags & CONSTRAINT_AREA_BASE_FLAG) == 0;
         }
-      } else {
-        return false;
       }
     }
   }
@@ -588,5 +609,6 @@ public final class SemiVirtualEdge implements IQuadEdge {
   public Iterable<IQuadEdge> pinwheel() {
     return new SemiVirtualPinwheel(this);
   }
+
 
 }

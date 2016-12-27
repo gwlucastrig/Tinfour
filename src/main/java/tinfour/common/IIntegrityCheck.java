@@ -71,4 +71,11 @@ public interface IIntegrityCheck {
    */
   boolean testGetVerticesAgainstInputList(List<Vertex> inputList);
 
+  /**
+   * Gets the number of constrained edges that would violate the Delaunay
+   * criterion
+   * @return a positive integer.
+   */
+   public int getConstrainedViolationCount();
+
 }

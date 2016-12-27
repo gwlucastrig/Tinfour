@@ -323,9 +323,9 @@ class SemiVirtualIntegrityCheck implements IIntegrityCheck {
     if (area == 0) {
       message
         = "Triangle with zero area  " + area + " starting at edge " + e
-        + ", vertices: " + a.getIndex()
-        + ", " + b.getIndex()
-        + ", " + c.getIndex();
+        + ", vertices: " + a.getLabel()
+        + ", " + b.getLabel()
+        + ", " + c.getLabel();
       geoOp.area(a, b, c); // just for debugging
       return false;
     }
@@ -499,6 +499,11 @@ class SemiVirtualIntegrityCheck implements IIntegrityCheck {
     }
 
     return true;
+  }
+
+  @Override
+  public int getConstrainedViolationCount() {
+    return nDelaunayViolationsConstrained;
   }
 
 }

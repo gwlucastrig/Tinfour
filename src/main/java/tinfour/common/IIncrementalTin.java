@@ -309,9 +309,27 @@ public interface IIncrementalTin {
    * in constraints must never cross each other). Due to the high cost of
    * processing required to check that this restriction is observed,
    * it is not  directly enforced by the Tinfour implementations.
+   * <p>
+   * <strong>Restoring Conformity</strong>
+   * <p>
+   * When constraints are added to a Delaunay triangulation, they often
+   * violate the Delaunay criterion and result in a non-conforming
+   * mesh. The addConstraint method can optionally restore conformity
+   * by inserting synthetic points into the the constraint edges.
+   * The cost of this process is additional processing time and
+   * an increase in the number of points in the TIN.
+   * <p>When points are synthesized, it is necessary to interpolate
+   * a value for the z-coordinate. At this time, the specific interpolation
+   * process is undefined. The current Tinfour implementations
+   * use linear interpolation between constraint points. While no
+   * viable alternative approach is currently under consideration, the
+   * choice of interpolation method is subject to change in the future.
+   *
    * @param constraints a valid, potentially empty list.
+   * @param restoreConformity restores conformity
    */
-   public void addConstraints(List<IConstraint> constraints);
+   public void addConstraints(
+     List<IConstraint> constraints, boolean restoreConformity);
 
 
    /**
@@ -321,5 +339,13 @@ public interface IIncrementalTin {
     */
    public List<IConstraint>getConstraints();
 
+   /**
+    * Gets the number of synthetic vertices added to the TIN.
+    * Vertices can be synthesized as part of the Delaunay restoration
+    * process when adding constraints. Future implementations of additional
+    * functions (such as Delaunay refinement) may also add synthetic points.
+    * @return a positive integer, potentially zero.
+    */
+   public int getSyntheticVertexCount();
 
 }

@@ -127,8 +127,8 @@ I am currently implementing Rognant's algorithm for restoring
 Delaunay conformity after the constraints are added. 
 Beyond that, my plan is to integrate CDT's into the Tinfour Viewer.
 I expect to be complete with all work by the end of January 2017.
-For an illustrated explanation of why CDT's are important, see
-the Tinfour wiki page titled
+For an illustrated explanation of why CDT's are important,
+see the Tinfour wiki page titled
 [About the Constrained Delaunay Triangulation](https://github.com/gwlucastrig/Tinfour/wiki/About-the-Constrained-Delaunay-Triangulation "About the Constrained Delaunay Triangulation")
 
  

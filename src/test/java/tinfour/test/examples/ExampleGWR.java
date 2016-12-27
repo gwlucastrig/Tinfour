@@ -35,6 +35,7 @@ import java.io.PrintStream;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.List;
+import java.util.Locale;
 import java.util.SimpleTimeZone;
 import tinfour.common.IIncrementalTin;
 import tinfour.common.Vertex;
@@ -98,7 +99,8 @@ public class ExampleGWR implements IDevelopmentTest {
   @Override
   public void runTest(PrintStream ps, String[] args) throws IOException {
     Date date = new Date();
-    SimpleDateFormat sdFormat = new SimpleDateFormat("dd MMM yyyy HH:mm");
+    SimpleDateFormat sdFormat =
+      new SimpleDateFormat("dd MMM yyyy HH:mm", Locale.getDefault());
     sdFormat.setTimeZone(new SimpleTimeZone(0, "UTC"));
     ps.println("Example Use of Geographically Weighted Regression (GWR)\n");
     ps.format("Date/time of test: %s (UTC)\n", sdFormat.format(date));
