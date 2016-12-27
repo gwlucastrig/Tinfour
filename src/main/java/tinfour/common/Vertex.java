@@ -52,20 +52,33 @@
  * floats as a way of conserving memory space.
  *
  * Recall that the size of a object instance must be a multiple of 8.
- * On a 32 bit JVM and many 64 bit JVM's, the design of this class results
- * in the following layout:
+ * On a 32 bit JVM and many 64 bit JVM's, the design of this class
+ * results  in the following layout:
  *    Java overhead:                      8 bytes  (JVM dependent)
  *    Class reference (used by Java)      4 bytes
  *    int index                           4 bytes
  *    double x                            8 bytes
  *    double y                            8 bytes
  *    float  z                            4 bytes
- *    padding (reserved by Java)          4 bytes (not committed at this time)
+ *    byte   status                       1 byte
+ *    padding (reserved by Java)          3 bytes (not committed at this time)
  *    --------------------------        ---------
  *    Total                              40 bytes
- *  So there is room to add one or more data elements totaling
- *  to 4 bytes or less without increasing the memory use for
- *  instances of this class.
+ *
+ *  Because of byte alignment, the one-byte status element does not
+ *  actually change the overall size of the Vertex objects.
+ *  And, in fact, there is room to add one or more data elements totaling
+ *  to 3 bytes or less without increasing the memory use for
+ *  instances of this class. This use can be accomplished by applications
+ *  that use Tinfour by creating derived classes from this class.
+ *  However, testing shows that, to make this approach work, some implementations
+ *  of Java require that the elements to exploit the padding must be declared
+ *  in the base class.  So the following elements are declared with
+ *  protected scope and left for the use of derived classed as required
+ *  by applications that use Tinfour:
+ *     reserved0
+ *     reserved1
+ *     reserved2
  *
  *--------------------------------------------------------------------------
  */
