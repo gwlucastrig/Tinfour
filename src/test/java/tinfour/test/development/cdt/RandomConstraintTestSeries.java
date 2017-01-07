@@ -15,7 +15,7 @@
  * ---------------------------------------------------------------------
  */
 
-/*
+ /*
  * -----------------------------------------------------------------------
  *
  * Revision History:
@@ -42,35 +42,27 @@ import tinfour.common.IIncrementalTin;
 import tinfour.common.IIntegrityCheck;
 import tinfour.common.LinearConstraint;
 import tinfour.common.Vertex;
+import tinfour.test.development.cdt.RandomConstraintTestOptions.ConstraintType;
 import tinfour.test.utils.TestOptions;
-import tinfour.test.utils.TestVertices;
 
+/**
+ * Provides a development tool for automated testing of the Tinfour
+ * Constrained Delaunay Triangulation (CDT) code. This class
+ * generates vertices and constraints at random, processes the
+ * data through the specified incremental-TIN class, and
+ * inspects the results using an integrity check. The intent for this
+ * class is to test thousands, or millions, of randomly generated geometries
+ * in order to exercise the code and look for unanticipated errors
+ * in implementation.
+ * <p>
+ * When an error result is detected, the application prints the
+ * random seeds that were used to create the problematic input data.
+ * This developer may then debug the process by re-run this test, specifying the
+ * vertex-seed and constraint-seed values. If desired, the
+ * seeds may also be passed into the RandomConstraintTestView class which
+ * provides a utility for displaying the results.
+ */
 public class RandomConstraintTestSeries {
-
-  /**
-   * Provides a representation of geometry type for test constraints
-   * based on a user argument string.
-   */
-  private enum ConstraintType {
-    SingleSegment,
-    ColinearSegments,
-    RandomSegmentPair;
-
-    static ConstraintType lenientValueOf(String s) {
-      if (s == null || s.isEmpty()) {
-        return RandomSegmentPair;
-      }
-      String test = s.toLowerCase();
-      if (test.startsWith("single")) {
-        return SingleSegment;
-      } else if (test.startsWith("Colin")) {
-        return ColinearSegments;
-      } else {
-        return RandomSegmentPair;
-      }
-    }
-
-  }
 
   /**
    * Performs a series of tests over a randomly generated set of
@@ -78,7 +70,6 @@ public class RandomConstraintTestSeries {
    *
    * @param args command line arguments providing specifications for test
    */
-
   private static final String[] usage = {
     "RandomConstraintTestSeries",
     "  Tests the constraint addition by inserting random constraints",
@@ -87,6 +78,7 @@ public class RandomConstraintTestSeries {
     "     SingleSegment      one randomly generated segment",
     "     ColinearSegments   a chain of two randomly generated colinear segments",
     "     RandomSegmentPair  a chain of two randomly generated segments (default)",
+    "     RandomCross        a pair of two perpendicular chains intersecting at a vertex",
     "",
     "Options: ",
     "  -constraintType [SingleSegment, ColinearSegments, RandomSegmentPair]",
@@ -125,19 +117,7 @@ public class RandomConstraintTestSeries {
 
   private void process(PrintStream ps, String[] args) {
 
-    TestOptions options = new TestOptions();
-    boolean[] matched = options.argumentScan(args);
-
-    int testCount = options.getTestCount(100);
-    int vertexCount = options.getVertexCount(20);
-    long vertexSeed = scanSeed(options, args, "-vertexSeed", matched);
-    long seed2 = scanSeed(options, args, "-constraintSeed", matched);
-
-    boolean restoreConformity = options.scanBooleanOption(
-      args, "-restoreConformity", matched, false);
-    String cTypeStr = options.scanStringOption(args, "-constraintType", matched);
-    ConstraintType constraintType = ConstraintType.lenientValueOf(cTypeStr);
-    Class<?> tinClass = options.getTinClass();
+    RandomConstraintTestOptions options = new RandomConstraintTestOptions(args, null);
 
     // -- Print test options ----------------------------
     SimpleDateFormat sdFormat
@@ -145,32 +125,31 @@ public class RandomConstraintTestSeries {
     sdFormat.setTimeZone(new SimpleTimeZone(0, "UTC"));
     Date date = new Date();
     ps.println("");
+    ps.println("Random Constraint Test Series");
     ps.println("Date of Test:                " + sdFormat.format(date) + " UTC");
-    ps.println("TIN class:                   " + tinClass.getName());
-    ps.println("Constraint type:             " + constraintType);
-    ps.println("Restore delaunay conformity: " + restoreConformity);
-    ps.format("Number of vertices to process:    %8d\n", vertexCount);
-    ps.format("Seed (for vertex generation):     %8d\n", vertexSeed);
-    ps.format("Seed (for constraint generation): %8d\n", seed2);
+    options.printSummary(ps);
 
     // -- Run tests --------------------------------
-    Random random = new Random(vertexSeed);
     int nTestsPerformed = 0;
     int nSyntheticPoints = 0;
-    IIncrementalTin tin = options.getNewInstanceOfTestTin();
+    int testCount = options.getTestCount();
+    boolean restoreConformity = options.isConformityRestoreSet();
+    RandomConstraintTestOptions.ConstraintType constraintType
+      = options.getConstraintType();
+    IIncrementalTin tin = options.makeNewInstanceOfTestTin();
     for (int i = 0; i < testCount; i++) {
       if ((i % 100) == 0) {
         ps.println("Testing vertex set " + i);
       }
-      long iSeed = vertexSeed + i;
-      List<Vertex> vertexList
-        = TestVertices.makeRandomVertices(vertexCount, (int) iSeed);
+
+      int vertexSeed = options.getVertexSeed(i);
+      List<Vertex> vertexList = options.makeRandomVertices(i);
       for (int j = 0; j < testCount * 10; j++) {
         tin.clear();
         tin.add(vertexList, null);
-        long jSeed = seed2 + j;
-        random.setSeed(jSeed);
-        List<IConstraint> constraintList = makeConstraints(random, constraintType);
+
+        int constraintSeed = options.getConstraintSeed(j);
+        List<IConstraint> constraintList = options.makeConstraints(j);
 
         try {
           tin.addConstraints(constraintList, restoreConformity);
@@ -178,20 +157,20 @@ public class RandomConstraintTestSeries {
           nSyntheticPoints += tin.getSyntheticVertexCount();
         } catch (Exception ex) {
           System.err.println("Unexpected exception in trial "
-            + iSeed + ", " + jSeed);
+            + vertexSeed + ", " + constraintSeed);
           ex.printStackTrace(System.err);
           System.exit(-1);
         }
         IIntegrityCheck iCheck = tin.getIntegrityCheck();
         if (!iCheck.inspect()) {
           System.out.println("TIN failed inspection for vertex seed "
-            + iSeed + ", constraint seed" + jSeed + " failed");
+            + vertexSeed + ", constraint seed" + constraintSeed + " failed");
           iCheck.printSummary(System.out);
           System.exit(-1);
         } else if (restoreConformity && iCheck.getConstrainedViolationCount() > 0) {
           int n = iCheck.getConstrainedViolationCount();
           System.out.println("TIN failed to restore conformity for vertex seed "
-            + iSeed + ", constraint seed" + jSeed
+            + vertexSeed + ", constraint seed" + constraintSeed
             + " constrained violation count " + n);
           System.exit(-1);
         }
@@ -201,7 +180,7 @@ public class RandomConstraintTestSeries {
 
     if (restoreConformity) {
       int edgesPerConstraint;
-      if (constraintType == ConstraintType.SingleSegment) {
+      if (constraintType == RandomConstraintTestOptions.ConstraintType.SingleSegment) {
         edgesPerConstraint = 1;
       } else {
         edgesPerConstraint = 2;
