@@ -134,17 +134,31 @@ public class TimeDueToSampleSize implements IDevelopmentTest {
 
   }
 
-  private static final String[] usage = {
+private static final String[] usage = {
     "usage: TimeDueToSampleSize",
     "   Mandatory Arguments:",
-    "       -in <valid LAS file>",
+    "       -in <valid LAS file or sample-point text file>",
     "   Optional Arguments:",
+    "       -tinClass <class>  the full path of the class to be tested",
+    "                          for example: tinfour.standard.IncrementalTin",
     "       -lidarClass <int> value in the range 0 to 255, default: not applied",
-    "       -prealloc, -noPrealloc  boolean, default noPreAlloc",
-    "       -preSort,  -noPreSort   boolean, dfault noPreSort",
-    "       -randomSize <float> randomly select a subset if points, the thinning factor",
-    "                     is determined by a random value in the range 0 to randomSize",
-    "                     If not specified, entire vertex set will be used"
+    "       -preallocate, -noPreallocate  boolean, default noPreAlloc",
+    "                                     preallocation permits a test to",
+    "                                     separate the cost of object creation",
+    "                                     from the algorithm-based",
+    "                                     cost of processing",
+    "       -preSort,  -noPreSort         boolean, dfault noPreSort",
+    "       -randomSize <float> randomly select a subset of points. If supplied",
+    "                           the thinning factor must be greater than zero",
+    "                           and less than or equal to 1.0. The most",
+    "                           common value is 1.0, though smaller values may",
+    "                           be used when an input file is so large that",
+    "                           it becomes unweildy.",
+    "                           The thinning factor is used to randomly ",
+    "                           select a subset of points so that the effect",
+    "                           of relative sample sizes can be assessed.",
+    "                           When not supplied, the full set of vertices is",
+    "                           processed by each iteration."
   };
 
 
