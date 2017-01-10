@@ -31,19 +31,14 @@ package tinfour.test.development.cdt;
 
 import java.io.PrintStream;
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.Locale;
-import java.util.Random;
 import java.util.SimpleTimeZone;
 import tinfour.common.IConstraint;
 import tinfour.common.IIncrementalTin;
 import tinfour.common.IIntegrityCheck;
-import tinfour.common.LinearConstraint;
 import tinfour.common.Vertex;
-import tinfour.test.development.cdt.RandomConstraintTestOptions.ConstraintType;
-import tinfour.test.utils.TestOptions;
 
 /**
  * Provides a development tool for automated testing of the Tinfour
@@ -106,15 +101,6 @@ public class RandomConstraintTestSeries {
     test.process(System.out, args);
   }
 
-  private long scanSeed(TestOptions options, String[] args, String target, boolean[] matched) {
-    Long seedObj = options.scanLongOption(args, target, matched);
-    if (seedObj == null) {
-      return 0;
-    } else {
-      return seedObj;
-    }
-  }
-
   private void process(PrintStream ps, String[] args) {
 
     RandomConstraintTestOptions options = new RandomConstraintTestOptions(args, null);
@@ -162,16 +148,22 @@ public class RandomConstraintTestSeries {
           System.exit(-1);
         }
         IIntegrityCheck iCheck = tin.getIntegrityCheck();
-        if (!iCheck.inspect()) {
+        if (iCheck.inspect()) {
+          // check was successful. The integrity check reports success
+          // when there are non-Delaunay edges, provided that those edges
+          // are constraints.  So if restore-conformity is set,
+          // also check to see that there were no constraint-edge violations.
+          if (restoreConformity && iCheck.getConstrainedViolationCount() > 0) {
+            int n = iCheck.getConstrainedViolationCount();
+            System.out.println("TIN failed to restore conformity for vertex seed "
+              + vertexSeed + ", constraint seed" + constraintSeed
+              + " constrained violation count " + n);
+            System.exit(-1);
+          }
+        } else {
           System.out.println("TIN failed inspection for vertex seed "
             + vertexSeed + ", constraint seed" + constraintSeed + " failed");
           iCheck.printSummary(System.out);
-          System.exit(-1);
-        } else if (restoreConformity && iCheck.getConstrainedViolationCount() > 0) {
-          int n = iCheck.getConstrainedViolationCount();
-          System.out.println("TIN failed to restore conformity for vertex seed "
-            + vertexSeed + ", constraint seed" + constraintSeed
-            + " constrained violation count " + n);
           System.exit(-1);
         }
       }
@@ -189,51 +181,4 @@ public class RandomConstraintTestSeries {
         + (double) nSyntheticPoints / (double) (nTestsPerformed * edgesPerConstraint));
     }
   }
-
-  private List<IConstraint> makeConstraints(Random random, ConstraintType cType) {
-    List<IConstraint> conList = new ArrayList<>();
-    LinearConstraint linCon = new LinearConstraint();
-    conList.add(linCon);
-
-    double x0 = random.nextDouble();
-    double y0 = random.nextDouble();
-    double x1 = random.nextDouble();
-    double y1 = random.nextDouble();
-    double x2 = random.nextDouble();
-    double y2 = random.nextDouble();
-
-    Vertex v0, v1, v2, vm;
-
-    switch (cType) {
-      case SingleSegment:
-        v0 = new Vertex(x0, y0, 1, 1000);
-        v1 = new Vertex(x1, y1, 1, 1001);
-        linCon.add(v0);
-        linCon.add(v1);
-        break;
-      case ColinearSegments:
-        v0 = new Vertex(x0, y0, 1, 1000);
-        v1 = new Vertex(x1, y1, 1, 1002);
-        double xm = (v0.getX() + v1.getX()) / 2.0;
-        double ym = (v0.getY() + v1.getY()) / 2.0;
-        vm = new Vertex(xm, ym, 1, 1001);
-        linCon.add(v0);
-        linCon.add(vm);
-        linCon.add(v1);
-        break;
-      case RandomSegmentPair:
-        v0 = new Vertex(x0, y0, 1, 1000);
-        v1 = new Vertex(x1, y1, 1, 1001);
-        v2 = new Vertex(x2, y2, 1, 1002);
-        linCon.add(v0);
-        linCon.add(v1);
-        linCon.add(v2);
-        break;
-      default:
-        return null; // never happens
-    }
-
-    return conList;
-  }
-
 }

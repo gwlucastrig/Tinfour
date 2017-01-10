@@ -349,6 +349,41 @@ public class BufferedRandomAccessForLidar implements  Closeable {
     return buffer.getInt();
   }
 
+    /**
+   * Read 4 bytes and return Java integer.
+   *
+   * @return A Java integer primitive.
+   * @throws IOException In the event of an unrecoverable I/O condition.
+   */
+  public int readIntBigEndian() throws IOException {
+      prepareBufferForRead(4);
+      int i = buffer.getInt();
+      return (i>>>24)|((i>>8)&0x0000ff00)|((i<<8)&0x00ff0000)|(i<<24);
+  }
+
+
+
+  /**
+   * Read 8 bytes from the file and returns a Java double.
+   *
+   * @return A Java double primitive.
+   * @throws IOException In the event of an unrecoverable I/O condition.
+   *
+   */
+  public double readDoubleBigEndian() throws IOException {
+    prepareBufferForRead(8);
+    long r = buffer.getLong();
+    long b
+      = (r >>> 56)
+      | ((r >> 48) & 0x000000000000ff00L)
+      | ((r >> 40) & 0x0000000000ff0000L)
+      | ((r >> 32) & 0x00000000ff000000L)
+      | ((r << 32) & 0x000000ff00000000L)
+      | ((r << 40) & 0x0000ff0000000000L)
+      | ((r << 48) & 0x00ff000000000000L)
+      | (r << 56);
+    return Double.longBitsToDouble(b);
+  }
   /**
    * Read 8 bytes from the file and returns a Java double.
    *

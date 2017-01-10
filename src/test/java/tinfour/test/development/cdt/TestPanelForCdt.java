@@ -77,9 +77,9 @@ class TestPanelForCdt extends JPanel {
   private TextLayout labelLayout;
   private Rectangle labelRectangle;
 
-  private boolean valueLabelEnabled = false;
+  private boolean valueLabelEnabled = false;  //NOPMD
   private boolean indexLabelEnabled = true;
-  private boolean directionEnabled = false;
+  private boolean directionEnabled = false;  //NOPMD
   private String valueLabelFormat = "%f";
 
   private final List<Vertex> specialVertexList = new ArrayList<>();
@@ -112,20 +112,22 @@ class TestPanelForCdt extends JPanel {
     this.specialChainList.clear();
   }
 
-  synchronized void setFilledTriangleByEdgeList(List<IQuadEdge> eList) {
-    this.eList = eList;
+  void addVertexToSpecialList(Vertex v) {
+    synchronized (this) {
+      specialVertexList.add(v);
+    }
   }
 
-  synchronized void addVertexToSpecialList(Vertex v) {
-    specialVertexList.add(v);
+  void addChainToSpecialList(Vertex[] v) {
+    synchronized (this) {
+      specialChainList.add(v);
+    }
   }
 
-  synchronized void addChainToSpecialList(Vertex[] v) {
-    specialChainList.add(v);
-  }
-
-  synchronized void clearSpecialChainList() {
-    specialChainList.clear();
+  void clearSpecialChainList() {
+    synchronized (this) {
+      specialChainList.clear();
+    }
   }
 
   void setOversize(double oversize) {
@@ -213,7 +215,7 @@ class TestPanelForCdt extends JPanel {
       g2d.setStroke(new BasicStroke(2.0f));
       g2d.setColor(Color.lightGray);
       for (IQuadEdge e : eList) {
-        Path2D path2D = new Path2D.Double();
+        Path2D path2D = new Path2D.Double();  //NOPMD
         path2D.moveTo(e.getA().getX(), e.getA().getY());
         path2D.lineTo(e.getB().getX(), e.getB().getY());
         Vertex c = e.getForward().getB();
@@ -327,7 +329,6 @@ class TestPanelForCdt extends JPanel {
     ArrayList<Vertex> junk = new ArrayList<>();
     for (IQuadEdge e : edges) {
       if (e.getA() == null) {
-        System.err.println("epic fail");
         continue;
       }
       if (!junk.contains(e.getA())) {
@@ -338,23 +339,25 @@ class TestPanelForCdt extends JPanel {
       }
     }
     Vertex[] v = junk.toArray(new Vertex[junk.size()]);
+    StringBuilder builder = new StringBuilder();
     for (int i = 0; i < v.length; i++) {
+      builder.setLength(0);
       p0.setLocation(v[i].x, v[i].y);
       af.transform(p0, p1);
       e2d.setFrame(p1.getX() - 2, p1.getY() - 2, 4.0f, 4.0f);
       g2d.draw(e2d);
       g2d.fill(e2d);
-      String s = "";
+
       if (indexLabelEnabled) {
-        s += Integer.toString(v[i].getIndex());
+        builder.append(Integer.toString(v[i].getIndex()));
       }
       if (valueLabelEnabled) {
         if (indexLabelEnabled) {
-          s += "|";
+          builder.append("|");
         }
-        s += String.format(valueLabelFormat, v[i].getZ());
+        builder.append(String.format(valueLabelFormat, v[i].getZ()));
       }
-      g2d.drawString(s, (float) p1.getX() + 3f, (float) p1.getY() - 3f);
+      g2d.drawString(builder.toString(), (float) p1.getX() + 3f, (float) p1.getY() - 3f);
     }
 
     g2d.setStroke(new BasicStroke(1.0f));
