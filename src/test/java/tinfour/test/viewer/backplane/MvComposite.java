@@ -993,7 +993,7 @@ public class MvComposite {
           //      N1 = (C-B) X (A-B)
           //      N2 = (A-D) X (C-D)
           // Note that the interior angles CBA and ADC are both taken
-          // counterclockwise order (BC torns onto BA, etc)
+          // counterclockwise order (BC turns onto BA, etc)
           // We then take the vector sum N = N1+N2.  The normal is needed for
           // hillshading. Although we could store the entire 3-element normal
           // in the zGrid array, we wish to save some space by just storing
@@ -1001,7 +1001,7 @@ public class MvComposite {
           // the values and the partial derivatives of the surface f as
           //     zGrid[index]   = z
           //     zGrid[index+1] = @z/@x
-          //     zGrid[index+2] = @z/%y
+          //     zGrid[index+2] = @z/@y
           // and
           //     @z/@x = -xN/zN
           //     @z/@y = -yN/zN
