@@ -137,8 +137,12 @@ see the Tinfour wiki page titled
 If you are interested in seeing new capabilities added to Tinfour,
 I have a couple of ideas and would like to hear about yours.
 
+I recently discovered a github project that is developing a
+Java API for reading Lidar files written in the compressed LAZ format
+see [LAS Zip for Java](https://github.com/mreutegg/laszip4j) .
 I would very much like to extend the Lidar file reader to be able
-to process the compressed LAZ format files. Doing so would 
+to process LAZfiles since that form is used by the majority
+of the websites distributing Lidar data today. Doing so would 
 make file access far more conveient. I'd also like to have the
 extend the support for metadata obtained from LAS files, particularly
 those elements using Well-Known Text (WKT) format and GeoTIFF tags.

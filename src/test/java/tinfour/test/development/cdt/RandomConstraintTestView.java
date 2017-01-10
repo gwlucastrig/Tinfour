@@ -46,7 +46,7 @@ import tinfour.interpolation.IInterpolatorOverTin;
  */
 public class RandomConstraintTestView {
 
-  IIncrementalTin tin = null;
+  IIncrementalTin tin;
   TestPanelForCdt testPanel;
   IInterpolatorOverTin interpolator;
   LinearConstraint linCon = new LinearConstraint();
@@ -72,7 +72,6 @@ public class RandomConstraintTestView {
     options.printSummary(ps);
     List<Vertex> vertices = options.makeRandomVertices(0);
     List<IConstraint> constraints = options.makeConstraints(0);
-    RandomConstraintTestView iPanel = new RandomConstraintTestView();
 
     tin = options.makeNewInstanceOfTestTin();
     tin.add(vertices, null);
@@ -89,7 +88,7 @@ public class RandomConstraintTestView {
 
     for (IConstraint con : constraints) {
       List<Vertex> vList = con.getVertices();
-      Vertex[] vArray = vList.toArray(new Vertex[vList.size()]);
+      Vertex[] vArray = vList.toArray(new Vertex[vList.size()]); // NOPMD
       testPanel.addChainToSpecialList(vArray);
     }
 

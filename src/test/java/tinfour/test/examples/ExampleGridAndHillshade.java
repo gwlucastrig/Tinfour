@@ -15,7 +15,7 @@
  * ---------------------------------------------------------------------
  */
 
-/*
+ /*
  * -----------------------------------------------------------------------
  *
  * Revision History:
@@ -42,9 +42,6 @@ import java.util.SimpleTimeZone;
 import javax.imageio.ImageIO;
 import tinfour.common.IIncrementalTin;
 import tinfour.common.Vertex;
-import tinfour.gwr.BandwidthSelectionMethod;
-import tinfour.gwr.SurfaceModel;
-import tinfour.interpolation.GwrTinInterpolator;
 import tinfour.interpolation.IInterpolatorOverTin;
 import tinfour.test.utils.GridSpecification;
 import tinfour.test.utils.IDevelopmentTest;
@@ -74,8 +71,8 @@ public class ExampleGridAndHillshade implements IDevelopmentTest {
   @Override
   public void runTest(PrintStream ps, String[] args) throws IOException {
     Date date = new Date();
-    SimpleDateFormat sdFormat =
-      new SimpleDateFormat("dd MMM yyyy HH:mm", Locale.getDefault());
+    SimpleDateFormat sdFormat
+      = new SimpleDateFormat("dd MMM yyyy HH:mm", Locale.getDefault());
     sdFormat.setTimeZone(new SimpleTimeZone(0, "UTC"));
     ps.println("ExampleGridAndHillshade\n");
     ps.format("Date/time of test: %s (UTC)\n", sdFormat.format(date));
@@ -149,10 +146,10 @@ public class ExampleGridAndHillshade implements IDevelopmentTest {
       geoScaleY = loader.getGeoScaleY();
       geoOffsetX = loader.getGeoOffsetX();
       geoOffsetY = loader.getGeoOffsetY();
-      double gx0 = geoOffsetX+xmin / geoScaleX;
-      double gx1 = geoOffsetX+xmax / geoScaleX;
-      double gy0 = geoOffsetY+ymin / geoScaleY;
-      double gy1 = geoOffsetY+ymax / geoScaleY;
+      double gx0 = geoOffsetX + xmin / geoScaleX;
+      double gx1 = geoOffsetX + xmax / geoScaleX;
+      double gy0 = geoOffsetY + ymin / geoScaleY;
+      double gy1 = geoOffsetY + ymax / geoScaleY;
       double gArea = (gx1 - gx0) * (gy1 - gy0);
       double gsSpace = 0.87738 * Math.sqrt(gArea / nVertices);
       ps.format("Source data was in geographic coordinates\n");
@@ -162,7 +159,7 @@ public class ExampleGridAndHillshade implements IDevelopmentTest {
       ps.format("Geographic coordinates are mapped to projected coordinates\n");
     }
 
-    if(Double.isNaN(cellSize)){
+    if (Double.isNaN(cellSize)) {
       cellSize = nominalPointSpacing;
     }
 
@@ -247,10 +244,8 @@ public class ExampleGridAndHillshade implements IDevelopmentTest {
 
     int kVisible = 0;
     for (Vertex v : vertexList) {
-      if (x0 <= v.getX() && v.getX() <= x1) {
-        if (y0 <= v.getY() && v.getY() <= y1) {
+      if (x0 <= v.getX() && v.getX() <= x1 && y0 <= v.getY() && v.getY() <= y1) {
           kVisible++;
-        }
       }
     }
     ps.format("Estimated visible vertices: %11d\n", kVisible);
@@ -295,10 +290,7 @@ public class ExampleGridAndHillshade implements IDevelopmentTest {
     int nCells = nRows * nCols;
     int[] argb = new int[nCells];
     TestPalette palette;
-    if (!options.isPaletteSet()) {
-      ps.println("No palette specified, filling background image with white");
-      Arrays.fill(argb, 0xffffffff);
-    } else {
+    if (options.isPaletteSet()) {
       palette = options.getPalette();
       ps.println("Color-coding elevation data using palette: " + palette.getName());
 
@@ -313,6 +305,9 @@ public class ExampleGridAndHillshade implements IDevelopmentTest {
           }
         }
       }
+    } else {
+      ps.println("No palette specified, filling background image with white");
+      Arrays.fill(argb, 0xffffffff);
     }
 
     // Build hillshade data ---------------------------------
@@ -323,7 +318,7 @@ public class ExampleGridAndHillshade implements IDevelopmentTest {
     // simplify the example code.
     ps.println("Building grid of hillshade data");
     time0 = System.nanoTime();
-    float[][] hillshade = this.buildHillshadeGrid(tin, grid);
+    float[][] hillshade = buildHillshadeGrid(tin, method, grid);
     time1 = System.nanoTime();
     ps.format("Hillshade grid processing completed in %3.2f ms\n",
       (time1 - time0) / 1000000.0);
@@ -406,24 +401,27 @@ public class ExampleGridAndHillshade implements IDevelopmentTest {
   }
 
   /**
-   * Builds a 2 dimensional array of illumination values in the
-   * range 0 to 1 based on the normal vector at each (x,y)
-   * coordinate specified by the supplied grid object.
-   * The Geographically Weighted Regression method is used to derive
-   * a model for the surface and the model's first derivatives are
-   * used to compute the normal.
+   * Builds a 2 dimensional array of illumination values in the range 0 to 1
+   * based on the normal vector at each (x,y) coordinate specified by the
+   * supplied grid object. The Geographically Weighted Regression method is
+   * used to derive a model for the surface and the model's first derivatives
+   * are used to compute the normal.
    *
-   * @param tin a valid Triangulated Irregular Network populated with
-   * vertices lying within the area specified by the grid object.
-   * @param grid a grid object derived from the bounds of the vertex set
-   * and the cell-spacing method specified at the command-line.
-   * @return if successful, a fully populated array of illumination
-   * values in the range 0 to 1.
+   * @param tin a valid Triangulated Irregular Network populated with vertices
+   * lying within the area specified by the grid object.
+   * @param method the interpolation method to be used to derive hillshade data.
+   * @param grid a grid object derived from the bounds of the vertex set and
+   * the cell-spacing method specified at the command-line.
+   * @return if successful, a fully populated array of illumination values in
+   * the range 0 to 1.
    */
   float[][] buildHillshadeGrid(
     IIncrementalTin tin,
+    InterpolationMethod method,
     GridSpecification grid
   ) {
+
+    IInterpolatorOverTin interpolator = method.getInterpolator(tin);
 
     // for brevity, copy out values.
     int nRows = grid.getRowCount();
@@ -432,7 +430,7 @@ public class ExampleGridAndHillshade implements IDevelopmentTest {
     double yUL = grid.getUpperRightY();
     double cellSize = grid.getCellSize();
 
-    // The lightning model assumes an illumination point source at an
+    // The lighting model assumes an illumination point source at an
     // infinite distance and a non-directional component providing
     // ambient illumination.  Light intensity values from from 1.0
     // (fully illuminated) to 0.0 (fully dark). The azimuth and elevation settings
@@ -461,58 +459,163 @@ public class ExampleGridAndHillshade implements IDevelopmentTest {
     double ySun = sinA * cosE;
     double zSun = sinE;
 
-    GwrTinInterpolator interpolator = new GwrTinInterpolator(tin);
     float results[][] = new float[nRows][nCols];
+    if (method == InterpolationMethod.NaturalNeighbor) {
+      // consider the model as defining a surface z = f(x,y)
+      // the hillshade for NNI is computed by considering the four
+      // points at the corner of the pixel.  In the Model coordinate
+      // space (which is Cartesian), we label them in counterclockwise order
+      //        A --- D
+      //        |     |
+      //        B --- C
+      // We compute the normal vectors at B and D using cross products
+      //      N1 = (C-B) X (A-B)
+      //      N2 = (A-D) X (C-D)
+      // Note that the interior angles CBA and ADC are both taken
+      // counterclockwise order (BC turns onto BA, etc)
+      // We then take the vector sum N = N1+N2.  The normal is needed for
+      // hillshading. Although we could store the entire 3-element normal
+      // in the zGrid array, we wish to save some space by just storing
+      // the partial derivatives. So,  the zGrid stores
+      // the values and the partial derivatives of the surface f as
+      //     zGrid[index]   = z
+      //     zGrid[index+1] = @z/@x
+      //     zGrid[index+2] = @z/@y
+      // and
+      //     @z/@x = -xN/zN
+      //     @z/@y = -yN/zN
 
-    for (int iRow = 0; iRow < nRows; iRow++) {
-      float[] row = results[iRow];
-      // the first row is at the top of the raster
-      double yRow = yUL - iRow * cellSize;
-      for (int iCol = 0; iCol < nCols; iCol++) {
-        double xCol = iCol * cellSize + xLL;
-        // for details of the regression, see the Javadoc for the
-        // class implementation. The interpolate method performs a linear
-        // regression which derives coefficients for a polynomial
-        // model of the surface in the vicinity of the query point.
-        // The results from the calculation are retained by the
-        // interpolator instance and then used by the call to get the
-        // unit normal to the surface at the interpolation point.
-        // The regression class allows an application to pick different
-        // models. After some experimentation, I chose a cubic model.
-        // Neighboring points are weighted by their distance based on the
-        // "bandwidth selection method".  I used a computed bandwidth
-        // that is proportional to the mean distance of the sample points from
-        // the query coordinates (the proportion parameter, 0.5, was chosen
-        // through experimentation).
-        double z = interpolator.interpolate(SurfaceModel.CubicWithCrossTerms,
-          BandwidthSelectionMethod.FixedProportionalBandwidth, 1.0,
-          xCol, yRow, null);
-        if (Double.isNaN(z)) {
-          row[iCol] = 0;
-        } else {
-          double[] n = interpolator.getSurfaceNormal();
-          // n[0], n[1], n[2]  give x, y, and z values
-          double cosTheta = n[0] * xSun + n[1] * ySun + n[2] * zSun;
-          if (cosTheta < 0) {
-            // the surface is facing more than 90 degrees away from the
-            // illumination source.  The illumination source contributes
-            // no light to the surface, but a negative value is undefined and
-            // so it is constrained to zero.  The surface will be treated as
-            // receiving only ambient light.
-            cosTheta = 0;
+      double ax, ay, az;
+      double bx, by, bz;
+      double cx, cy, cz;
+      double dx, dy, dz;
+      for (int iRow = -0; iRow < nRows; iRow++) {
+        float[] row = results[iRow];
+        // the first row is at the top of the raster
+        double yRow = yUL - iRow * cellSize;
+        dx = xLL - cellSize / 2;
+        dy = yRow + cellSize / 2;
+        dz = interpolator.interpolate(dx, dy, null);
+        cx = xLL - cellSize / 2;
+        cy = yRow - cellSize / 2;
+        cz = interpolator.interpolate(cx, cy, null);
+
+        for (int iCol = 0; iCol < nCols; iCol++) {
+          double xCol = iCol * cellSize + xLL;
+          ax = dx;
+          ay = dy;
+          az = dz;
+          bx = cx;
+          by = cy;
+          bz = cz;
+
+          dx = xCol + cellSize / 2;
+          dy = yRow + cellSize / 2;
+          dz = Double.NaN;
+          cx = xCol - cellSize / 2;
+          cy = yRow - cellSize / 2;
+          cz = Double.NaN;
+
+          double z = interpolator.interpolate(xCol, yRow, null);
+          dz = interpolator.interpolate(dx, dy, null);
+          cz = interpolator.interpolate(cx, cy, null);
+          // we define a grid point as valid only if all 4 corners
+          // have valid data.   We can't shade it if we don't have
+          // a complete set of information.
+          if (Double.isNaN(z)
+            || Double.isNaN(az)
+            || Double.isNaN(bz)
+            || Double.isNaN(cz)
+            || Double.isNaN(dz)) {
+            row[iCol] = 0;
+          } else {
+            double xA = ax - bx;
+            double yA = ay - by;
+            double zA = az - bz;
+            double xC = cx - bx;
+            double yC = cy - by;
+            double zC = cz - bz;
+            double xN = yC * zA - zC * yA;
+            double yN = zC * xA - xC * zA;
+            double zN = xC * yA - yC * xA;
+            xA = ax - dx;
+            yA = ay - dy;
+            zA = az - dz;
+            xC = cx - dx;
+            yC = cy - dy;
+            zC = cz - dz;
+            xN += yA * zC - zA * yC;
+            yN += zA * xC - xA * zC;
+            zN += xA * yC - yA * xC;
+            double n = Math.sqrt(xN * xN + yN * yN + zN * zN);
+            double cosTheta = (xN * xSun + yN * ySun + zN * zSun) / n;
+            if (cosTheta < 0) {
+              // the surface is facing more than 90 degrees away from the
+              // illumination source.  The illumination source contributes
+              // no light to the surface, but a negative value is undefined and
+              // so it is constrained to zero.  The surface will be treated as
+              // receiving only ambient light.
+              cosTheta = 0;
+            }
+            double intensity = cosTheta * directLight + ambient;
+            if (intensity > 1) {
+              intensity = 1;
+            } else if (intensity <= 0) {
+              intensity = 0;
+            }
+
+            row[iCol] = (float) intensity;
+
           }
-          double intensity = cosTheta * directLight + ambient;
-          if (intensity > 1) {
-            intensity = 1;
-          } else if (intensity <= 0) {
-            intensity = 0;
-          }
-
-
-          row[iCol] = (float) intensity;
         }
       }
+    } else {
+      for (int iRow = 0; iRow < nRows; iRow++) {
+        float[] row = results[iRow];
+        // the first row is at the top of the raster
+        double yRow = yUL - iRow * cellSize;
+        for (int iCol = 0; iCol < nCols; iCol++) {
+          double xCol = iCol * cellSize + xLL;
+          // for details of the regression, see the Javadoc for the
+          // class implementation. The interpolate method performs a linear
+          // regression which derives coefficients for a polynomial
+          // model of the surface in the vicinity of the query point.
+          // The results from the calculation are retained by the
+          // interpolator instance and then used by the call to get the
+          // unit normal to the surface at the interpolation point.
+          // The regression class allows an application to pick different
+          // models. After some experimentation, I chose a cubic model.
+          // Neighboring points are weighted by their distance based on the
+          // "bandwidth selection method".  I used a computed bandwidth
+          // that is proportional to the mean distance of the sample points from
+          // the query coordinates (the proportion parameter, 0.5, was chosen
+          // through experimentation).
+          double z = interpolator.interpolate(xCol, yRow, null);
+          if (Double.isNaN(z)) {
+            row[iCol] = 0;
+          } else {
+            double[] n = interpolator.getSurfaceNormal();
+            // n[0], n[1], n[2]  give x, y, and z values
+            double cosTheta = n[0] * xSun + n[1] * ySun + n[2] * zSun;
+            if (cosTheta < 0) {
+              // the surface is facing more than 90 degrees away from the
+              // illumination source.  The illumination source contributes
+              // no light to the surface, but a negative value is undefined and
+              // so it is constrained to zero.  The surface will be treated as
+              // receiving only ambient light.
+              cosTheta = 0;
+            }
+            double intensity = cosTheta * directLight + ambient;
+            if (intensity > 1) {
+              intensity = 1;
+            } else if (intensity <= 0) {
+              intensity = 0;
+            }
 
+            row[iCol] = (float) intensity;
+          }
+        }
+      }
     }
     return results;
   }

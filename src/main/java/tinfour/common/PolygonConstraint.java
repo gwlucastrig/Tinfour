@@ -67,6 +67,7 @@ public class PolygonConstraint implements IConstraint {
     if (v.getX() == x && v.getY() == y) {
       return;  // quiently ignore duplicate points
     }
+    v.setConstraintMember(true);
     x = v.getX();
     y = v.getY();
     list.add(v);

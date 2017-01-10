@@ -90,6 +90,18 @@ package tinfour.common;
 public class Vertex implements ISamplePoint {
 
   /**
+   * A bit flag indicating that the vertex is synthetic and was created
+   * through some form of mesh processing rather than being supplied
+   * as a data sample.
+   */
+  public static final int BIT_SYNTHETIC = 0x01;
+
+  /**
+   * A bit flag indicating that the vertex is a member of a constraint edge.
+   */
+  public static final int BIT_CONSTRAINT = 0x02;
+
+  /**
    * An indexing value assigned to the Vertex. In this package, it is used
    * primary for diagnostic purposes and labeling graphics.
    * Note that unlike the horizontal and vertical coordinates
@@ -113,9 +125,22 @@ public class Vertex implements ISamplePoint {
    */
   final float z;
 
-  private byte status;
+  /**
+   * The bit-mapped status flags for the vertex. The assignment of meaning
+   * to the bits for this field are defined by static members of this class.
+   */
+  protected byte status;
+  /**
+   * An unused field reserved for use by applications and derived classes
+   */
   protected byte reserved0;
+  /**
+   * An unused field reserved for use by applications and derived classes
+   */
   protected byte reserved1;
+  /**
+   * An unused field reserved for use by applications and derived classes
+   */
   protected byte reserved2;
 
   /**
@@ -307,8 +332,9 @@ public class Vertex implements ISamplePoint {
    * @return true if vertex is synthetic; otherwise, false
    */
   public boolean isSynthetic(){
-    return (status&0x01)!=0;
+    return (status&BIT_SYNTHETIC)!=0;
   }
+
 
   /**
    * Sets or clears the is-synthetic status of a vertex.
@@ -316,10 +342,53 @@ public class Vertex implements ISamplePoint {
    */
   public void setSynthetic(boolean synthetic) {
     if (synthetic) {
-      status |= 1;
+      status |= BIT_SYNTHETIC;
     } else {
-      status &= 0xfe;
+      status &= ~BIT_SYNTHETIC;
     }
   }
+
+
+  /**
+   * Sets or clears the is-constraint-member status of a vertex.
+   * @param constraintMember true if vertex is a constraint member; otherwise, false
+   */
+  public void setConstraintMember(boolean constraintMember) {
+    if (constraintMember) {
+      status |= BIT_CONSTRAINT;
+    } else {
+      status &= ~BIT_CONSTRAINT;
+    }
+  }
+
+  /**
+   * Sets the status value of the vertex.  This method is intended to
+   * provide an efficient way of setting multiple status flags at once.
+   * @param status a valid status value.  Because the status is defined as
+   * a single byte, higher-order bytes will be ignored.
+   */
+  public void setStatus(int status){
+    this.status=(byte)status;
+  }
+
+
+  /**
+   * Gets the current value of the status flags for this vertex.
+   * @return a positive integer in the range 0 to 255.
+   */
+  public int getStatus(){
+    return ((int)status)&0xff;
+  }
+
+
+  /**
+   * Indicates whether a vertex is a constraint member..
+   * @return true if vertex is a constraint member; otherwise, false
+   */
+  public boolean isConstraintMember(){
+    return (status&BIT_CONSTRAINT)!=0;
+  }
+
+
 
 }

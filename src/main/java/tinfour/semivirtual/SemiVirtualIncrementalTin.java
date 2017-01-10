@@ -2159,7 +2159,7 @@ public class SemiVirtualIncrementalTin implements IIncrementalTin {
       double my = (a.getY() + b.getY()) / 2.0;
       double mz = (a.getZ() + b.getZ()) / 2.0;
       Vertex m = new Vertex(mx, my, mz, nSyntheticVertices++);
-      m.setSynthetic(true);
+      m.setStatus(Vertex.BIT_SYNTHETIC|Vertex.BIT_CONSTRAINT);
 
       // reuse edge ab, change name just to avoid confusion
       SemiVirtualEdge mb = ab;
