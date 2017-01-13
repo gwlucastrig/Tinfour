@@ -465,10 +465,11 @@ public class QuadEdge implements IQuadEdge {
    * Indicates which side of an edge a particular QuadEdge instance is
    * attached to. The side value is a strictly arbitrary index used for
    * algorithms that need to be able to assign a unique index to
-   * both edges.
+   * both sides of an edge.
    *
    * @return a value of 0 or 1.
    */
+  @Override
   public int getSide() {
     return 0;
   }

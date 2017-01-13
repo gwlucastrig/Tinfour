@@ -100,6 +100,7 @@ public class TestOptions {
 
   File inputFile;
   File outputFile;
+  File constraintsFile;
 
   Integer nVertices;
   Integer nRows;
@@ -466,16 +467,22 @@ public class TestOptions {
       checkOptions();
       return matched;
     } else {
-      String inputFileName = this.scanStringOption(args, "-in", matched);
+      String inputFileName = scanStringOption(args, "-in", matched);
       if (inputFileName != null) {
         inputFile = new File(inputFileName);
       }
     }
 
-    String outputFileName = this.scanStringOption(args, "-out", matched);
+    String outputFileName = scanStringOption(args, "-out", matched);
     if (outputFileName != null) {
       outputFile = new File(outputFileName);
     }
+
+    String constraintsFileName = scanStringOption(args, "-constraints", matched);
+    if (constraintsFileName != null) {
+      constraintsFile = new File(constraintsFileName);
+    }
+
 
     nRows = scanIntOption(args, "-nRows", matched, null);
     nColumns = scanIntOption(args, "-nColumns", matched, null);
@@ -979,5 +986,13 @@ public class TestOptions {
     }else{
       return interpolationMethod;
     }
+  }
+
+  /**
+   * Gets the constraints file (if specified).
+   * @return if specified, a valid file; otherwise, a null.
+   */
+  public File getConstraintsFile(){
+    return constraintsFile;
   }
 }

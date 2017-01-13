@@ -51,6 +51,7 @@ public class DelimitedReader {
   final BufferedInputStream bins;
   final int delimiter;
   boolean isClosed  = false;
+  int lineIndex;
 
   /**
    * Open a file and prepare to read it using the specified
@@ -63,6 +64,7 @@ public class DelimitedReader {
       fins = new FileInputStream(file);
       bins = new BufferedInputStream(fins);
       this.delimiter = delimiter;
+
   }
 
   /**
@@ -87,6 +89,7 @@ public class DelimitedReader {
     int c;
     final StringBuilder sb= new StringBuilder();
     final List<String>sList = new ArrayList<>();
+    boolean newLine = true;
     while(true){
       c = bins.read();
       if (c < 0) { // End of File
@@ -95,12 +98,19 @@ public class DelimitedReader {
           sb.setLength(0);
         }
          break; // end of file
-      }else if(c==0){
+      }
+      if(c==0){
         continue;
-      }else if(c==' ' && sb.length()==0){
+      }
+      if(newLine){
+        newLine=false;
+        lineIndex++;
+      }
+      if(c==' ' && sb.length()==0){
         // skip leading spaces
         continue;
       }else if(c=='\n'){
+        newLine=true;
         if(sb.length()>0){
           sList.add(sb.toString());
           sb.setLength(0);
@@ -131,5 +141,14 @@ public class DelimitedReader {
   public void close() throws IOException {
     bins.close();
     fins.close();
+  }
+
+
+  /**
+   * Gets the current position in the file as a line number.
+   * @return a value from 1 to the number of lines in the file.
+   */
+  public int getLineNumber(){
+    return lineIndex;
   }
 }

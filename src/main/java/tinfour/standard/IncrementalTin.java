@@ -1168,43 +1168,78 @@ public class IncrementalTin implements IIncrementalTin {
     while (iEdge.hasNext()) {
       QuadEdge e = iEdge.next();
       if (e.getA() == null || e.getB() == null) {
+        setMarkBit(map, e);
+        setMarkBit(map, e.getDual());
         continue;
       }
-      if (getMarkBit(map, e) != 0) {
-        continue;
-      }
-      setMarkBit(map, e);
-
-      QuadEdge f = e.getForward();
-      if (f.getB() == null) {
+      if (getMarkBit(map, e) == 0) {
+        setMarkBit(map, e);
+        QuadEdge f = e.getForward();
         // ghost triangle, not tabulated
-        continue;
+        if (f.getB() != null) {
+          QuadEdge r = e.getReverse();
+          // check to see that both neighbors are not marked.
+          if ((getMarkBit(map, f) | getMarkBit(map, r)) == 0) {
+            setMarkBit(map, f);
+            setMarkBit(map, r);
+            count++;
+
+            // compute the area and tabulate using the Kahan Summation Algorithm
+            double a, y, t;
+            a = geoOp.area(e.getA(), f.getA(), r.getA());
+
+            y = a - c;
+            t = sumArea + y;
+            c = (t - sumArea) - y;
+            sumArea = t;
+
+            y = a * a - c2;
+            t = sumArea2 + y;
+            c2 = (t - sumArea2) - y;
+            sumArea2 = t;
+
+            if (a < minArea) {
+              minArea = a;
+            }
+            if (a > maxArea) {
+              maxArea = a;
+            }
+          }
+        }
       }
-      QuadEdge r = e.getReverse();
-      if ((getMarkBit(map, f) | getMarkBit(map, r)) != 0) {
-        continue;
-      }
-      count++;
+      e = e.getDual();
+      if (getMarkBit(map, e) == 0) {
+        setMarkBit(map, e);
+        QuadEdge f = e.getForward();
+        // ghost triangle, not tabulated
+        if (f.getB() != null) {
+          QuadEdge r = e.getReverse();
+          // check to see that both neighbors are not marked.
+          if ((getMarkBit(map, f) | getMarkBit(map, r)) == 0) {
+            count++;
 
-      // compute the area and tabulate using the Kahan Summation Algorithm
-      double a, y, t;
-      a = geoOp.area(e.getA(), f.getA(), r.getA());
+            // compute the area and tabulate using the Kahan Summation Algorithm
+            double a, y, t;
+            a = geoOp.area(e.getA(), f.getA(), r.getA());
 
-      y = a - c;
-      t = sumArea + y;
-      c = (t - sumArea) - y;
-      sumArea = t;
+            y = a - c;
+            t = sumArea + y;
+            c = (t - sumArea) - y;
+            sumArea = t;
 
-      y = a * a - c2;
-      t = sumArea2 + y;
-      c2 = (t - sumArea2) - y;
-      sumArea2 = t;
+            y = a * a - c2;
+            t = sumArea2 + y;
+            c2 = (t - sumArea2) - y;
+            sumArea2 = t;
 
-      if (a < minArea) {
-        minArea = a;
-      }
-      if (a > maxArea) {
-        maxArea = a;
+            if (a < minArea) {
+              minArea = a;
+            }
+            if (a > maxArea) {
+              maxArea = a;
+            }
+          }
+        }
       }
 
     }
@@ -2468,7 +2503,7 @@ public class IncrementalTin implements IIncrementalTin {
       double my = (a.getY() + b.getY()) / 2.0;
       double mz = (a.getZ() + b.getZ()) / 2.0;
       Vertex m = new Vertex(mx, my, mz, nSyntheticVertices++);
-      m.setStatus(Vertex.BIT_SYNTHETIC|Vertex.BIT_CONSTRAINT);
+      m.setStatus(Vertex.BIT_SYNTHETIC | Vertex.BIT_CONSTRAINT);
 
       // reuse edge ab, change name just to avoid confusion
       QuadEdge mb = ab;

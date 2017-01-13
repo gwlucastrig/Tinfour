@@ -15,7 +15,7 @@
  * ---------------------------------------------------------------------
  */
 
-/*
+ /*
  * -----------------------------------------------------------------------
  *
  * Revision History:
@@ -46,11 +46,10 @@ import tinfour.utils.LinearUnits;
 /**
  * A utility for loading vertices from a file for testing
  */
-public class VertexLoader
-{
+public class VertexLoader {
+
   static final double eRadius = 6378137; // WGS-84 equatorial radius
   static final double eFlattening = 1 / 298.257223560; // WGS-84
-
 
   double xMin, xMax, yMin, yMax, zMin, zMax;
   long maximumNumberOfVertices = Integer.MAX_VALUE;
@@ -123,7 +122,7 @@ public class VertexLoader
 
     @Override
     public boolean accept(LasPoint record) {
-            // on the theory that withheld records are relatively uncommon
+      // on the theory that withheld records are relatively uncommon
       // test on classification first
       if (record.withheld) {
         return false;
@@ -159,6 +158,7 @@ public class VertexLoader
    * as file-not-found.
    */
   public List<Vertex> readInputFile(TestOptions options) throws IOException {
+    geoCoordOpt = options.getGeoCoordinateOption();
     File file = options.getInputFile();
     if (file == null) {
       throw new IllegalArgumentException("Missing specification for input file");
@@ -175,18 +175,15 @@ public class VertexLoader
       return readDelimitedFile(file, delimiter);
     }
 
-    geoCoordOpt = options.getGeoCoordinateOption();
-
     LasFileReader reader = new LasFileReader(file);
     long nRecords = reader.getNumberOfPointRecords();
-     linearUnits = reader.getLinearUnits();
+    linearUnits = reader.getLinearUnits();
 
     int classification = options.getLidarClass();
     double thinning = options.getLidarThinningFactor();
     maximumNumberOfVertices = options.getMaxVertices(Long.MAX_VALUE);
     if (maximumNumberOfVertices < Long.MAX_VALUE
-      && nRecords > maximumNumberOfVertices)
-    {
+      && nRecords > maximumNumberOfVertices) {
       double tv = (double) maximumNumberOfVertices / (double) nRecords;
       if (tv < thinning) {
         thinning = tv;
@@ -253,7 +250,6 @@ public class VertexLoader
     return list;
   }
 
-
   /**
    * Reads the vertices from the specified LAS file reader instance. The
    * reader is not closed when the process is complete. Options specified via
@@ -287,29 +283,28 @@ public class VertexLoader
 
     if (isSourceInGeographicCoordinates
       && geoCoordOpt != TestOptions.GeoCoordinateOption.Degrees) {
-        // compute simple scale for transforming x and y coordinates
+      // compute simple scale for transforming x and y coordinates
       // from lat/lon to meters
       double r = eRadius;
 
       if (geoCoordOpt == TestOptions.GeoCoordinateOption.Feet) {
         r = eRadius * 1.0936 * 3;
-      }else{
+      } else {
         // if the LAS file contains GeoTiffData, it may tell us
         // what kind of linear units to use.  Most often, if it's
         // not meters, it will be from a U.S State Plane coordinate
         // system given in feet.
         GeoTiffData gtd = reader.getGeoTiffData();
-        if(gtd!=null && gtd.containsKey(GeoTiffData.ProjLinearUnitsGeoKey)){
+        if (gtd != null && gtd.containsKey(GeoTiffData.ProjLinearUnitsGeoKey)) {
           int linUnits = gtd.getInteger(GeoTiffData.ProjLinearUnitsGeoKey);
-          if(linUnits==GeoTiffData.LinearUnitCodeFeet
-            || linUnits==GeoTiffData.LinearUnitCodeFeetUS)
-          {
-            r = eRadius*1.0936*3;
+          if (linUnits == GeoTiffData.LinearUnitCodeFeet
+            || linUnits == GeoTiffData.LinearUnitCodeFeetUS) {
+            r = eRadius * 1.0936 * 3;
           }
         }
       }
 
-        // adjust the earth radius according to latitude.
+      // adjust the earth radius according to latitude.
       // if cenLat were zero, the adjusted radius would be the
       // equatorial radius. If it were 90, it would be the polar radius.
       double cenLat = (reader.getMinY() + reader.getMaxY()) / 2;
@@ -354,7 +349,7 @@ public class VertexLoader
     for (long iRecord = 0; iRecord < nVertices; iRecord++) {
       if (pProgressThreshold == iProgressThreshold) {
         pProgressThreshold = 0;
-        progressMonitor.reportProgress((int) (0.1+(100.0 * (iRecord + 1)) / nVertices));
+        progressMonitor.reportProgress((int) (0.1 + (100.0 * (iRecord + 1)) / nVertices));
       }
       pProgressThreshold++;
       reader.readRecord(iRecord, p);
@@ -587,11 +582,15 @@ public class VertexLoader
       k++;
     }
 
-    if (headerRow && geoText) {
+    if(this.geoCoordOpt == TestOptions.GeoCoordinateOption.Degrees){
+       isSourceInGeographicCoordinates = true;
+    }else if(headerRow && geoText){
+       isSourceInGeographicCoordinates = true;
+    }
+    if (isSourceInGeographicCoordinates) {
       // geographic coordinates get special treatment
       geoScaleX = 1;
       geoScaleY = 1;
-      isSourceInGeographicCoordinates = true;
       sList = dlim.readStrings();
       if (sList.isEmpty()) {
         return vList; // failure to read file
@@ -657,4 +656,5 @@ public class VertexLoader
   public LinearUnits getLinearUnits() {
     return linearUnits;
   }
+
 }
