@@ -40,6 +40,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.SimpleTimeZone;
 import javax.imageio.ImageIO;
+import tinfour.common.IConstraint;
 import tinfour.common.IIncrementalTin;
 import tinfour.common.Vertex;
 import tinfour.interpolation.IInterpolatorOverTin;
@@ -49,6 +50,7 @@ import tinfour.test.utils.InterpolationMethod;
 import tinfour.test.utils.TestOptions;
 import tinfour.test.utils.TestPalette;
 import tinfour.test.utils.VertexLoader;
+import tinfour.test.utils.cdt.ConstraintLoader;
 import tinfour.utils.TinInstantiationUtility;
 
 /**
@@ -118,17 +120,21 @@ public class ExampleGridAndHillshade implements IDevelopmentTest {
     // (ground points only, etc.) and sorting options.
     File inputFile = options.getInputFile();
     File outputFile = options.getOutputFile();
-    ps.format("Input file: %s\n", inputFile.getAbsolutePath());
-    VertexLoader loader = new VertexLoader();
-    List<Vertex> vertexList = loader.readInputFile(options);
+    File constraintsFile = options.getConstraintsFile();
+    ps.format("Input file:       %s\n", fmtFileName(inputFile));
+    ps.format("Output file:      %s\n", fmtFileName(outputFile));
+    ps.format("Constraints file: %s\n", fmtFileName(constraintsFile));
+
+    VertexLoader vertexLoader = new VertexLoader();
+    List<Vertex> vertexList = vertexLoader.readInputFile(options);
     int nVertices = vertexList.size();
     ps.format("Number of vertices: %8d\n", nVertices);
-    double xmin = loader.getXMin();
-    double xmax = loader.getXMax();
-    double ymin = loader.getYMin();
-    double ymax = loader.getYMax();
-    double zmin = loader.getZMin();
-    double zmax = loader.getZMax();
+    double xmin = vertexLoader.getXMin();
+    double xmax = vertexLoader.getXMax();
+    double ymin = vertexLoader.getYMin();
+    double ymax = vertexLoader.getYMax();
+    double zmin = vertexLoader.getZMin();
+    double zmax = vertexLoader.getZMax();
     // estimate the point spacing.  The estimate is based on the simplifying
     // assumption that the points are arranged in a uniformly spaced
     // triangulated mesh (consisting of equilateral triangles). There would
@@ -141,11 +147,11 @@ public class ExampleGridAndHillshade implements IDevelopmentTest {
     double geoScaleY = 0;
     double geoOffsetX = 0;
     double geoOffsetY = 0;
-    if (loader.isSourceInGeographicCoordinates()) {
-      geoScaleX = loader.getGeoScaleX();
-      geoScaleY = loader.getGeoScaleY();
-      geoOffsetX = loader.getGeoOffsetX();
-      geoOffsetY = loader.getGeoOffsetY();
+    if (vertexLoader.isSourceInGeographicCoordinates()) {
+      geoScaleX = vertexLoader.getGeoScaleX();
+      geoScaleY = vertexLoader.getGeoScaleY();
+      geoOffsetX = vertexLoader.getGeoOffsetX();
+      geoOffsetY = vertexLoader.getGeoOffsetY();
       double gx0 = geoOffsetX + xmin / geoScaleX;
       double gx1 = geoOffsetX + xmax / geoScaleX;
       double gy0 = geoOffsetY + ymin / geoScaleY;
@@ -233,6 +239,25 @@ public class ExampleGridAndHillshade implements IDevelopmentTest {
     ps.format("Time to process vertices (milliseconds):    %12.3f\n",
       (time1 - time0) / 1000000.0);
 
+    if (constraintsFile != null) {
+      ConstraintLoader conLoader = new ConstraintLoader();
+      if(vertexLoader.isSourceInGeographicCoordinates()){
+           conLoader.setGeographic(geoScaleX, geoScaleY, geoOffsetX, geoOffsetY);
+      }
+
+      List<IConstraint> conList = conLoader.readConstraintsFile(constraintsFile);
+      ps.format("Adding %d constraints, %d vertices to TIN\n",
+        conList.size(), conLoader.getTotalPointCount());
+      time0 = System.nanoTime();
+      tin.addConstraints(conList, true);
+      time1 = System.nanoTime();
+      ps.format("Time to process constraints (milliseconds):%12.3f\n",
+        (time1 - time0) / 1000000.0);
+      ps.format("Added %d synthetic vertices to restore Delaunay\n",
+        tin.getSyntheticVertexCount());
+    }
+
+
     // ---------------------------------------------------------------
     // Write Output
     //   The output grid is build using an interpolation.
@@ -318,7 +343,7 @@ public class ExampleGridAndHillshade implements IDevelopmentTest {
     // simplify the example code.
     ps.println("Building grid of hillshade data");
     time0 = System.nanoTime();
-    float[][] hillshade = buildHillshadeGrid(tin, method, grid);
+    float[][] hillshade = buildHillshadeGrid(ps, tin, method, grid);
     time1 = System.nanoTime();
     ps.format("Hillshade grid processing completed in %3.2f ms\n",
       (time1 - time0) / 1000000.0);
@@ -407,6 +432,7 @@ public class ExampleGridAndHillshade implements IDevelopmentTest {
    * used to derive a model for the surface and the model's first derivatives
    * are used to compute the normal.
    *
+   * @param ps a print stream for writing build statistics.
    * @param tin a valid Triangulated Irregular Network populated with vertices
    * lying within the area specified by the grid object.
    * @param method the interpolation method to be used to derive hillshade data.
@@ -416,6 +442,7 @@ public class ExampleGridAndHillshade implements IDevelopmentTest {
    * the range 0 to 1.
    */
   float[][] buildHillshadeGrid(
+    PrintStream ps,
     IIncrementalTin tin,
     InterpolationMethod method,
     GridSpecification grid
@@ -460,6 +487,7 @@ public class ExampleGridAndHillshade implements IDevelopmentTest {
     double zSun = sinE;
 
     float results[][] = new float[nRows][nCols];
+
     if (method == InterpolationMethod.NaturalNeighbor) {
       // consider the model as defining a surface z = f(x,y)
       // the hillshade for NNI is computed by considering the four
@@ -558,13 +586,16 @@ public class ExampleGridAndHillshade implements IDevelopmentTest {
               cosTheta = 0;
             }
             double intensity = cosTheta * directLight + ambient;
+            if(Double.isNaN(intensity)){
+               row[iCol] = 0;
+            }else{
             if (intensity > 1) {
               intensity = 1;
             } else if (intensity <= 0) {
               intensity = 0;
             }
-
             row[iCol] = (float) intensity;
+            }
 
           }
         }
@@ -681,4 +712,12 @@ public class ExampleGridAndHillshade implements IDevelopmentTest {
     }
   }
 
+
+  private String fmtFileName(File file){
+    if(file==null){
+      return "Not Supplied";
+    }else{
+      return file.getAbsolutePath();
+    }
+  }
 }

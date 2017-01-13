@@ -45,7 +45,7 @@
 package tinfour.semivirtual;
 
 import tinfour.common.IQuadEdge;
-import static tinfour.common.QuadEdge.CONSTRAINT_AREA_BASE_FLAG; 
+import static tinfour.common.QuadEdge.CONSTRAINT_AREA_BASE_FLAG;
 import static tinfour.common.QuadEdge.CONSTRAINT_AREA_FLAG;
 import static tinfour.common.QuadEdge.CONSTRAINT_FLAG;
 import static tinfour.common.QuadEdge.CONSTRAINT_INDEX_MASK;
@@ -376,6 +376,7 @@ public final class SemiVirtualEdge implements IQuadEdge {
    *
    * @return a zero or a one.
    */
+  @Override
   public int getSide() {
     return index & LOW_BIT;
   }
