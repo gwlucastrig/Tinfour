@@ -37,6 +37,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
 import java.util.List;
+import java.util.Locale;
 import java.util.Random;
 import java.util.SimpleTimeZone;
 import tinfour.common.IIncrementalTin;
@@ -177,13 +178,12 @@ private static final String[] usage = {
     Class<?> tinClass = options.getTinClass();
 
     Double randomSize = options.scanDoubleOption(args, "-randomSize", recognized);
-    if (randomSize != null) {
-      if (randomSize <= 0 || randomSize > 1.0) {
-        throw new IllegalArgumentException(
-          "Random size " + randomSize
-          + " is not in valid range >0 to 1.0");
-      }
+    if (randomSize != null && (randomSize <= 0 || randomSize > 1.0)) {
+      throw new IllegalArgumentException(
+        "Random size " + randomSize
+        + " is not in valid range >0 to 1.0");
     }
+
 
     options.checkForUnrecognizedArgument(args, recognized);
 
@@ -203,7 +203,8 @@ private static final String[] usage = {
       int nVertices = vertexList.size();
 
     Date date = new Date();
-    SimpleDateFormat sdFormat = new SimpleDateFormat("dd MMM yyyy HH:mm");
+    SimpleDateFormat sdFormat =
+      new SimpleDateFormat("dd MMM yyyy HH:mm", Locale.getDefault());
     sdFormat.setTimeZone(new SimpleTimeZone(0, "UTC"));
     String dateString = sdFormat.format(date);
     ps.println("Date of test:     " + dateString);
@@ -227,7 +228,7 @@ private static final String[] usage = {
     // class loader and JIT have completed their initialization.
     ps.println("Running Pre-Test");
     for (int iPretest = 0; iPretest < 3; iPretest++) {
-       filter = new RecordFilter(classification, (iPretest + 1) / 3.0);
+      filter = new RecordFilter(classification, (iPretest + 1) / 3.0); //NOPMD
       vertexList = loader.readLasFile(target, filter, null);
       IIncrementalTin tin = options.getNewInstanceOfTestTin();
       if (tin == null) {
@@ -253,7 +254,7 @@ private static final String[] usage = {
       if (randomSize != null && randomSize > 0) {
         thinningFactor = randomSize * random.nextDouble();
       }
-      filter = new RecordFilter(classification, thinningFactor);
+      filter = new RecordFilter(classification, thinningFactor); //NOPMD
       vertexList = loader.readLasFile(target, filter, null);
       nVertices = vertexList.size();
       IIncrementalTin tin = options.getNewInstanceOfTestTin();
@@ -273,7 +274,7 @@ private static final String[] usage = {
       tin = null;
       getUsedMemory();
       double buildTime = deltaBuild / 1000000.0;
-      resultList.add(new Result(buildTime, nVertices));
+      resultList.add(new Result(buildTime, nVertices)); // NOPMD
       ps.format("%10d,  %10.7f, %10.2f,  %10.2f, %10.2f, %12d\n",
         nVertices,
         nVertices / 1000000.0,

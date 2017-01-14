@@ -35,6 +35,7 @@ import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Formatter;
 import java.util.List;
+import java.util.Locale;
 import java.util.SimpleTimeZone;
 import tinfour.common.IMonitorWithCancellation;
 import tinfour.common.Vertex;
@@ -142,15 +143,15 @@ public class ModelFromLas extends ModelAdapter implements IModel {
     List<Vertex> list = loader.readLasFile(file, vFilter, monitor);
     if (list.isEmpty()) {
       monitor.reportDone(); // remove the progress bar
-      if (lidarPointSelection != LidarPointSelection.AllPoints) {
+      if (lidarPointSelection == LidarPointSelection.AllPoints) {
+        throw new IOException("Unable to read points from file");
+      }else{
         // the source data contained no ground points. this can
         // happen when a LAS file is not classified or in the case of
         // bathymetric lidar (which may contain all water points)
         throw new IOException(
           "Source Lidar file does not contain samples for " + lidarPointSelection);
-      } else {
-        throw new IOException("Unable to read points from file");
-      }
+      } 
     }
 
     this.linearUnits = loader.getLinearUnits();
@@ -284,9 +285,9 @@ public class ModelFromLas extends ModelAdapter implements IModel {
       Date date = gpsType.transformGpsTimeToDate(record.gpsTime);
       SimpleDateFormat sdf;
       if (gpsType == LasGpsTimeType.WeekTime) {
-        sdf = new SimpleDateFormat("EEE hh:MM:ss.S");
+        sdf = new SimpleDateFormat("EEE hh:MM:ss.S", Locale.getDefault());
       } else {
-        sdf = new SimpleDateFormat("EEE YYYY-MM-dd HH:mm:ss.S");
+        sdf = new SimpleDateFormat("EEE YYYY-MM-dd HH:mm:ss.S", Locale.getDefault());
       }
       sdf.setTimeZone(new SimpleTimeZone(0, "UTC"));
       fmt.format("   Time/Date: %s UTC\n", sdf.format(date));

@@ -1035,7 +1035,7 @@ public class SemiVirtualIncrementalTin implements IIncrementalTin {
    * @return if the edge is marked, a non-zero value; otherwise,
    * a zero.
    */
-  private int getMarkBit(final int[] map, final SemiVirtualEdge edge) {
+  private int getMarkBit(final int[] map, final IQuadEdge edge) {
     int index = (edge.getIndex() * N_SIDES) | edge.getSide();
     return (map[index >> DIV_BY_32] >> (index & MOD_BY_32)) & BIT1;
   }
@@ -1047,28 +1047,46 @@ public class SemiVirtualIncrementalTin implements IIncrementalTin {
    * divided by 32
    * @param edge a valid edge
    */
-  private void setMarkBit(final int[] map, final SemiVirtualEdge edge) {
+  private void setMarkBit(final int[] map, final IQuadEdge edge) {
     int index = (edge.getIndex() * N_SIDES) | edge.getSide();
     map[index >> DIV_BY_32] |= (BIT1 << (index & MOD_BY_32));
   }
 
   /**
-   * Performs a survey of the TIN to gather statistics about
-   * the triangle formed during its construction.
+   * Process one side of an edge, develop a triangle if feasible.
+   *
+   * @param trigList a list to store triangles
+   * @param map a bitmap for tracking which edges have been added to
+   * triangles
+   * @param e the edge to inspect
+   */
+  void countTriangleEdge(TriangleCount tCount, int[] map, IQuadEdge e) {
+    if (getMarkBit(map, e) == 0) {
+      setMarkBit(map, e);
+      IQuadEdge f = e.getForward();
+      // ghost triangle, not tabulated
+      if (f.getB() != null) {
+        IQuadEdge r = e.getReverse();
+        // check to see that both neighbors are not marked.
+        if ((getMarkBit(map, f) | getMarkBit(map, r)) == 0) {
+          setMarkBit(map, f);
+          setMarkBit(map, r);
+          tCount.tabulateTriangle(e.getA(), f.getA(), r.getA());
+        }
+      }
+    }
+  }
+
+  /**
+   * Performs a survey of the TIN to gather statistics about the triangle
+   * formed during its construction.
    *
    * @return A valid instance of the TriangleCount class.
    */
   @Override
   public TriangleCount countTriangles() {
-    int count = 0;
-    double sumArea = 0;
-    double sumArea2 = 0;
-    double c = 0;  // compensator for Kahan summation
-    double c2 = 0;
-    double minArea = Double.POSITIVE_INFINITY;
-    double maxArea = Double.NEGATIVE_INFINITY;
     if (!isBootstrapped) {
-      return new TriangleCount(0, 0, 0, 0, 0);
+      return new TriangleCount();
     }
 
     int maxIndex = edgePool.getMaximumAllocationIndex();
@@ -1076,53 +1094,21 @@ public class SemiVirtualIncrementalTin implements IIncrementalTin {
     int mapSize = (maxMapIndex + INT_BITS - 1) / INT_BITS;
     int[] map = new int[mapSize];
 
+    TriangleCount tCount = new TriangleCount();
     Iterator<SemiVirtualEdge> iEdge = edgePool.iterator();
     while (iEdge.hasNext()) {
       SemiVirtualEdge e = iEdge.next();
       if (e.getA() == null || e.getB() == null) {
+        setMarkBit(map, e);
+        setMarkBit(map, e.getDual());
         continue;
       }
-      if (getMarkBit(map, e) != 0) {
-        continue;
-      }
-      setMarkBit(map, e);
-
-      SemiVirtualEdge f = e.getForward();
-      if (f.getB() == null) {
-        // ghost triangle, not tabulated
-        continue;
-      }
-      SemiVirtualEdge r = e.getReverse();
-      if ((getMarkBit(map, f) | getMarkBit(map, r)) != 0) {
-        continue;
-      }
-      count++;
-
-      // compute the area and tabulate using the Kahan Summation Algorithm
-      double a, y, t;
-      a = geoOp.area(e.getA(), f.getA(), r.getA());
-
-      y = a - c;
-      t = sumArea + y;
-      c = (t - sumArea) - y;
-      sumArea = t;
-
-      y = a * a - c2;
-      t = sumArea2 + y;
-      c2 = (t - sumArea2) - y;
-      sumArea2 = t;
-
-      if (a < minArea) {
-        minArea = a;
-      }
-      if (a > maxArea) {
-        maxArea = a;
-      }
-
+      this.countTriangleEdge(tCount, map, e);
+      this.countTriangleEdge(tCount, map, e.getDual());
     }
-    return new TriangleCount(count, sumArea, sumArea2, minArea, maxArea);
-
+    return tCount;
   }
+
 
   /**
    * Gets a list of edges currently defining the perimeter of the TIN.

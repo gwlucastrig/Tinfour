@@ -47,16 +47,17 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
+import java.util.Locale;
 import java.util.SimpleTimeZone;
 import javax.imageio.ImageIO;
 import tinfour.common.IIncrementalTin;
 import tinfour.common.IQuadEdge;
 import tinfour.common.Vertex;
+import tinfour.standard.IncrementalTin;
 import tinfour.test.utils.IDevelopmentTest;
 import tinfour.test.utils.TestOptions;
 import tinfour.test.utils.TestPalette;
 import tinfour.test.utils.VertexLoader;
-import tinfour.standard.IncrementalTin;
 import tinfour.utils.HilbertSort;
 
 /**
@@ -119,10 +120,10 @@ public class ExampleWireframeWithThinning implements IDevelopmentTest
     @Override
     public void runTest(PrintStream ps, String[] args) throws IOException
     {
-
         long time0, time1;
         Date date = new Date();
-        SimpleDateFormat sdFormat = new SimpleDateFormat("dd MMM yyyy HH:mm");
+        SimpleDateFormat sdFormat =
+          new SimpleDateFormat("dd MMM yyyy HH:mm", Locale.getDefault());
         sdFormat.setTimeZone(new SimpleTimeZone(0, "UTC"));
         ps.println("ExampleWireframeWithThinning\n");
         ps.format("Date/time of test: %s (UTC)\n", sdFormat.format(date));
@@ -347,6 +348,7 @@ public class ExampleWireframeWithThinning implements IDevelopmentTest
         return x0 <= x && x <= x1 && y0 <= y && y <= y1;
     }
 
+    @SuppressWarnings("PMD.AvoidInstantiatingObjectsInLoops")
     BufferedImage render(
             PrintStream ps,
             AffineTransform af,

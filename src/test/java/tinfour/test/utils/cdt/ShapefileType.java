@@ -68,4 +68,20 @@ enum ShapefileType {
 
     return null;
   }
+
+  /**
+   * Gets the integer code value for this Shapefile type.
+   * @return a positive integer
+   */
+  int getTypeCode(){
+    return shapeTypeCode;
+  }
+
+  /**
+   * Indicates if the specified Shapefile type defines a polygon geometry.
+   * @return
+   */
+  boolean isPolygon(){
+    return this==PolygonZ || this==Polygon || this==PolygonM;
+  }
 }

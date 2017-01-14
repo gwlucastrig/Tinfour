@@ -89,7 +89,7 @@ public class ConstraintLoader {
       return readShapefile(file);
     } else if ("txt".equalsIgnoreCase(ext)) {
       return readTextFile(file);
-    }else if ("csv".equalsIgnoreCase(ext)) {
+    } else if ("csv".equalsIgnoreCase(ext)) {
       return readTextFile(file);
     }
     return null;
@@ -112,10 +112,16 @@ public class ConstraintLoader {
         record = reader.readNextRecord(record);
         switch (shapefileType) {
           case PolyLineZ:
+          case PolygonZ:
             nPointsTotal += record.nPoints;
             int k = 0;
             for (int iPart = 0; iPart < record.nParts; iPart++) {
-              LinearConstraint con = new LinearConstraint();
+              IConstraint con;
+              if (shapefileType.isPolygon()) {
+                con = new PolygonConstraint(); //NOPMD
+              } else {
+                con = new LinearConstraint(); //NOPMD
+              }
               con.setApplicationData(record.recordNumber);
               int n = record.partStart[iPart + 1] - record.partStart[iPart];
               for (int i = 0; i < n; i++) {
@@ -126,7 +132,7 @@ public class ConstraintLoader {
                   x = (x - geoOffsetX) * geoScaleX;
                   y = (y - geoOffsetY) * geoScaleY;
                 }
-                Vertex v = new Vertex(x, y, z, vertexID++);
+                Vertex v = new Vertex(x, y, z, vertexID++); //NOPMD
                 con.add(v);
               }
               conList.add(con);
@@ -200,7 +206,7 @@ public class ConstraintLoader {
       vList.add(v);
     } catch (NumberFormatException nex) {
       throw new IOException("Invalid entry where x,y,z coordinates expected "
-        + "on line " + reader.getLineNumber());
+        + "on line " + reader.getLineNumber(), nex);
     }
   }
 
@@ -212,10 +218,9 @@ public class ConstraintLoader {
       reader = new DelimitedReader(file, ',');
       List<String> sList;
       int nCon = 0;
-      boolean firstRecord = true;
       List<Vertex> vList = new ArrayList<>();
       sList = reader.readStrings();
-      if (sList.size() == 0) {
+      if (sList.isEmpty()) {
         throw new IOException("Empty constraint file " + file.getAbsolutePath());
       }
 
@@ -225,7 +230,7 @@ public class ConstraintLoader {
         processLine(reader, vertexID++, sList, vList);
         while (true) {
           sList = reader.readStrings();
-          if (sList.size() == 0) {
+          if (sList.isEmpty()) {
             break;
           } else {
             processLine(reader, vertexID++, sList, vList);
@@ -233,13 +238,15 @@ public class ConstraintLoader {
         }
         IConstraint con;
 
-        if (vList.size() > 3 && (vList.get(0)).getDistance(vList.get(vList.size()-1)) < 1.0e-32) {
+        if (vList.size() > 3 &&
+          (vList.get(0)).getDistance(vList.get(vList.size() - 1)) < 1.0e-32)
+        {
           con = new PolygonConstraint();
         } else {
           con = new LinearConstraint();
         }
         con.setApplicationData(nCon);
-        for(Vertex v: vList){
+        for (Vertex v : vList) {
           con.add(v);
         }
         conList.add(con);
@@ -248,7 +255,7 @@ public class ConstraintLoader {
 
       int nPoints;
       while (true) {
-        if (sList.size() == 0) {
+        if (sList.isEmpty()) {
           break; //  end of file
         }
         if (sList.size() == 1) {
@@ -259,7 +266,7 @@ public class ConstraintLoader {
           } catch (NumberFormatException nex) {
             throw new IOException(
               "Invalid entry for point count,\"" + s + "\" on line "
-              + reader.getLineNumber());
+              + reader.getLineNumber(), nex);
           }
         } else {
           throw new IOException(
@@ -272,9 +279,9 @@ public class ConstraintLoader {
         }
         IConstraint con;
         if (nPoints > 3 && (vList.get(0)).getDistance(vList.get(1)) < 1.0e-32) {
-          con = new PolygonConstraint();
+          con = new PolygonConstraint(); //NOPMD
         } else {
-          con = new LinearConstraint();
+          con = new LinearConstraint(); //NOPMD
         }
         con.setApplicationData(nCon);
         nCon++;

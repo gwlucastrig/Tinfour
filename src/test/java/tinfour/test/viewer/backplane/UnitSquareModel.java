@@ -15,7 +15,7 @@
  * ---------------------------------------------------------------------
  */
 
-/*
+ /*
  * -----------------------------------------------------------------------
  *
  * Revision History:
@@ -127,13 +127,13 @@ public class UnitSquareModel implements IModel {
   }
 
   @Override
-  public double getArea(){
+  public double getArea() {
     return 1;
   }
 
   @Override
-  public double getNominalPointSpacing(){
-     return Math.sqrt(1.0 / vList.size() / 0.866);
+  public double getNominalPointSpacing() {
+    return Math.sqrt(1.0 / vList.size() / 0.866);
   }
 
   @Override
@@ -224,8 +224,7 @@ public class UnitSquareModel implements IModel {
     return false;
   }
 
-
-    @Override
+  @Override
   public Vertex getVertexForIndex(int index) {
     Vertex key = new Vertex(0, 0, 0, index);
 
@@ -243,15 +242,14 @@ public class UnitSquareModel implements IModel {
     return null;
   }
 
-    @Override
-  public  void  xy2geo(double x, double y, double []geo) {
-
+  @Override
+  public void xy2geo(double x, double y, double[] geo) {
+    // a do nothing implementation
   }
 
   @Override
-  public void geo2xy(double latitude, double longitude, double []xy) {
-
+  public void geo2xy(double latitude, double longitude, double[] xy) {
+    // a do nothing implementation
   }
 
 }
-
