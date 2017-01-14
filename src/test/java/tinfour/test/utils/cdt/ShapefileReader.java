@@ -38,7 +38,7 @@ import tinfour.las.BufferedRandomAccessForLidar;
  * support testing of the Constrained Delaunay Triangulation feature of the
  * Tinfour software library. The present version is based on the assumption
  * that the Shapefile supplies constraints. More general applicastions are
- * not currently supported.  Only a few Shapefile
+ * not currently supported. Only a few Shapefile
  * types are supported.
  */
 class ShapefileReader {
@@ -48,23 +48,23 @@ class ShapefileReader {
   final long fileLengthInBytes;
   final int version;
   ShapefileType shapefileType;
-  private double minX;
-  private double maxX;
-  private double minY;
-  private double maxY;
+  private final double minX;
+  private final double maxX;
+  private final double minY;
+  private final double maxY;
   private double minZ;
   private double maxZ;
-  private double minM;
-  private double maxM;
 
   private int nPointsTotal;
   private int nPartsTotal;
 
-
-   ShapefileReader(File file) throws IOException {
+  ShapefileReader(File file) throws IOException {
     raf = new BufferedRandomAccessForLidar(file);
 
     int fileCode = raf.readIntBigEndian();
+    if (fileCode != 9994) {
+      throw new IOException("Specified file is not a Shapefile " + file.getPath());
+    }
     raf.seek(24);
     fileLength = raf.readIntBigEndian();
     fileLengthInBytes = ((long) fileLength) * 2L;
@@ -81,12 +81,14 @@ class ShapefileReader {
     maxY = raf.readDouble();
     minZ = raf.readDouble();
     maxZ = raf.readDouble();
-    minM = raf.readDouble();
-    maxM = raf.readDouble();
+    // skip minM and maxM
+    // minM = raf.readDouble();
+    // maxM = raf.readDouble();
+    raf.skipBytes(16);
 
     // The minZ and maxZ are not always defined in a Shapefile, even
     // if the geometry type should supply z coordinates.
-    if(minZ==maxZ && minZ==0){
+    if (minZ == maxZ && minZ == 0) {
       minZ = Double.POSITIVE_INFINITY;
       maxZ = Double.NEGATIVE_INFINITY;
     }
@@ -95,9 +97,10 @@ class ShapefileReader {
 
   /**
    * Close the associated file
+   *
    * @throws IOException in the event of an unexpected I/O exception
    */
-   void close() throws IOException {
+  void close() throws IOException {
     raf.close();
   }
 
@@ -107,7 +110,7 @@ class ShapefileReader {
    *
    * @return the minimum value for the x coordinates in the file
    */
-   double getMinX() {
+  double getMinX() {
     return minX;
   }
 
@@ -117,7 +120,7 @@ class ShapefileReader {
    *
    * @return the maximum value for the x coordinates in the file
    */
-   double getMaxX() {
+  double getMaxX() {
     return maxX;
   }
 
@@ -127,7 +130,7 @@ class ShapefileReader {
    *
    * @return the minimum value for the y coordinates in the file
    */
-   double getMinY() {
+  double getMinY() {
     return minY;
   }
 
@@ -137,7 +140,7 @@ class ShapefileReader {
    *
    * @return the maximum value for the y coordinates in the file.
    */
-   double getMaxY() {
+  double getMaxY() {
     return maxY;
   }
 
@@ -147,7 +150,7 @@ class ShapefileReader {
    *
    * @return the minimum value for the z coordinates in the file.
    */
-   double getMinZ() {
+  double getMinZ() {
     return minZ;
   }
 
@@ -157,27 +160,25 @@ class ShapefileReader {
    *
    * @return the maximum value for the z coordinates in the file.
    */
-   double getMaxZ() {
+  double getMaxZ() {
     return maxZ;
   }
 
-
-
-
-
   /**
-   * Reads the next record in the Shapefile.  This method takes a
-   * reusable instance of the ShapefileRecord class.  If a null is
+   * Reads the next record in the Shapefile. This method takes a
+   * reusable instance of the ShapefileRecord class. If a null is
    * passed in, it creates a new instance. If a valid reference is supplied,
    * the method returns the reference that was supplied.
+   *
    * @param pRecord a reusable instance to store data, or a null
    * if the method is to allocate a new instance.
    * @return if successful, a valid instance of ShapefileRecord
    * @throws IOException
    */
-  ShapefileRecord readNextRecord( ShapefileRecord pRecord) throws IOException {
+  @SuppressWarnings("PMD.SwitchDensity")
+  ShapefileRecord readNextRecord(ShapefileRecord pRecord) throws IOException {
     ShapefileRecord record = pRecord;
-    if(record==null){
+    if (record == null) {
       record = new ShapefileRecord();
     }
     record.shapefileType = shapefileType;
@@ -187,10 +188,15 @@ class ShapefileReader {
     int recLen = raf.readIntBigEndian();
     record.recordNumber = recNo;
     record.offset = offset0;
+    int stc = raf.readInt();
+    if (stc != shapefileType.getTypeCode()) {
+      throw new IOException(
+        "Error reading Shapefile record, typecode mismatch, found " + stc
+        + ", expected " + shapefileType.getTypeCode());
+    }
     switch (shapefileType) {
       case PolyLineZ:
-      case PolygonZ:
-        int stc = raf.readInt();
+      case PolygonZ: {
         double x0 = raf.readDouble();
         double y0 = raf.readDouble();
         double x1 = raf.readDouble();
@@ -198,10 +204,10 @@ class ShapefileReader {
         int nParts = raf.readInt();
         int nPoints = raf.readInt();
         record.setSizes(nPoints, nParts);
-        int []partStart = record.partStart;
-        double []xyz = record.xyz;
-        nPointsTotal+=nPoints;
-        nPartsTotal+=nParts;
+        int[] partStart = record.partStart;
+        double[] xyz = record.xyz;
+        nPointsTotal += nPoints;
+        nPartsTotal += nParts;
         for (int iPart = 0; iPart < nParts; iPart++) {
           partStart[iPart] = raf.readInt();
         }
@@ -216,61 +222,93 @@ class ShapefileReader {
         double z0 = raf.readDouble();
         double z1 = raf.readDouble();
         record.setBounds(x0, x1, y0, y1, z0, z1);
-        if(z0<minZ){
+        if (z0 < minZ) {
           minZ = z0;
         }
-        if(z1>maxZ){
+        if (z1 > maxZ) {
           maxZ = z1;
         }
         for (int iPart = 0; iPart < nParts; iPart++) {
           int n = partStart[iPart + 1] - partStart[iPart];
           for (int i = 0; i < n; i++) {
-            xyz[i*3+2] = raf.readDouble();
+            xyz[i * 3 + 2] = raf.readDouble();
           }
         }
+      }
+      break;
 
-        raf.seek(offset0 + 8 + recLen * 2);
-        return record;
+      case PolyLine:
+      case Polygon: {
+        double x0 = raf.readDouble();
+        double y0 = raf.readDouble();
+        double x1 = raf.readDouble();
+        double y1 = raf.readDouble();
+        int nParts = raf.readInt();
+        int nPoints = raf.readInt();
+        record.setSizes(nPoints, nParts);
+        int[] partStart = record.partStart;
+        double[] xyz = record.xyz;
+        nPointsTotal += nPoints;
+        nPartsTotal += nParts;
+        for (int iPart = 0; iPart < nParts; iPart++) {
+          partStart[iPart] = raf.readInt();
+        }
+        partStart[nParts] = nPoints;
+
+        int k = 0;
+        for (int i = 0; i < nPoints; i++) {
+          xyz[k++] = raf.readDouble();
+          xyz[k++] = raf.readDouble();
+          xyz[k++] = 0; // undefined
+        }
+      }
+      break;
 
       default:
         throw new IOException("Non-supported Shapefile type " + shapefileType);
     }
+
+    raf.seek(offset0 + 8 + recLen * 2);
+    return record;
   }
+
   /**
    * Checks to see if there are any more records remaining to be read
+   *
    * @return true if more records remain; otherwise false.
    */
-   boolean hasNext() {
+  boolean hasNext() {
     long pos = raf.getFilePosition();
     return (fileLengthInBytes - pos) > 8;
   }
 
-
-
-/**
- * Gets the total number of points read from the Shapefile; or zero
- * if the content of the Shapefile hasn't been read.
- * @return a positive integer.
- */
-   int getTotalPointCount(){
+  /**
+   * Gets the total number of points read from the Shapefile; or zero
+   * if the content of the Shapefile hasn't been read.
+   *
+   * @return a positive integer.
+   */
+  int getTotalPointCount() {
     return nPointsTotal;
   }
 
-
   /**
- * Gets the total number of polyglines read from the Shapefile; or zero
- * if the content of the Shapefile hasn't been read.
- * @return a positive integer.
- */
-   int getTotalPartCount(){
+   * Gets the total number of polyglines read from the Shapefile; or zero
+   * if the content of the Shapefile hasn't been read.
+   *
+   * @return a positive integer.
+   */
+  int getTotalPartCount() {
     return nPartsTotal;
   }
 
-   /**
-    * Get the feature type of the Shapefile.
-    * @return a valid enumeration instance.
-    */
-   ShapefileType getShapefileType(){
-     return shapefileType;
-   }
+  /**
+   * Get the feature type of the Shapefile.
+   *
+   * @return a valid enumeration instance.
+   */
+  ShapefileType getShapefileType() {
+    return shapefileType;
+  }
+
 }

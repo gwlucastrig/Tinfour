@@ -54,7 +54,7 @@ public class TextCoordGeo {
   double[] coord = new double[2];
   CoordType[] coordType = new CoordType[2];
   int nV;
-  int nCoord = 0;
+  int nCoord;
   double latitude;
   double longitude;
 
@@ -88,6 +88,7 @@ public class TextCoordGeo {
    * geographic coordinates in the order latitude, longitude.
    * @throws java.text.ParseException in the event of invalid text
    */
+  @SuppressWarnings("PMD.CollapsibleIfStatements")  // helpful for debugging
   public double[] parse(String text) throws ParseException {
     nV = 0;
     nCoord = 0;
@@ -341,8 +342,9 @@ public class TextCoordGeo {
       v[nV++] = d;
       numStr.setLength(0);
     } catch (NumberFormatException nex) {
-      throw new ParseException(
-        "Invalid text where numeric expected " + numStr.toString(), iPos);
+      String complaint =
+        "Invalid text where numeric expected " + numStr.toString();
+      throw new ParseException(complaint, iPos); //NOPMD
     }
   }
 
@@ -399,7 +401,6 @@ public class TextCoordGeo {
       cLon = 0;
     }
 
-    String sLat;
     char quadLat = (lat >= 0 ? 'N' : 'S');
     char quadLon = (cLon >= 0 ? 'E' : 'W');
     StringBuilder sb = new StringBuilder(32);

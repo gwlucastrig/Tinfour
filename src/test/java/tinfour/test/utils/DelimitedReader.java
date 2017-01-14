@@ -50,7 +50,7 @@ public class DelimitedReader {
   final InputStream fins;
   final BufferedInputStream bins;
   final int delimiter;
-  boolean isClosed  = false;
+  boolean isClosed;
   int lineIndex;
 
   /**

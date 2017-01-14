@@ -47,7 +47,15 @@ import tinfour.test.utils.TestOptions;
  * A simple demonstrator class to plot text characters
  * in the form of a Constrained Delaunay Triangulation.
  */
-public class LogoCDT {
+final public class LogoCDT {
+
+  /**
+   * A private constructor to indicate that instances of this
+   * simple demonstration class are not desirable.
+   */
+  private LogoCDT(){
+
+  }
 
     /**
      * Run the demonstrator.

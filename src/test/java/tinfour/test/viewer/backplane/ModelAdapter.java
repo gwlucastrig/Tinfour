@@ -15,7 +15,7 @@
  * ---------------------------------------------------------------------
  */
 
-/*
+ /*
  * -----------------------------------------------------------------------
  *
  * Revision History:
@@ -45,9 +45,9 @@ import tinfour.common.IIncrementalTin;
 import tinfour.common.IMonitorWithCancellation;
 import tinfour.common.IQuadEdge;
 import tinfour.common.Vertex;
+import tinfour.semivirtual.SemiVirtualIncrementalTin;
 import tinfour.utils.HilbertSort;
 import tinfour.utils.LinearUnits;
-import tinfour.semivirtual.SemiVirtualIncrementalTin;
 
 /**
  * A model for managing data taken from a text or comma-separated-value
@@ -73,14 +73,11 @@ public class ModelAdapter implements IModel {
   long timeToLoad;
   long timeToSort;
 
-
   boolean loaded;
   IIncrementalTin referenceTin;
   double referenceReductionFactor;
 
   List<Vertex> perimeterList;
-
-
 
   /**
    * Construct a model tied to the specified file.
@@ -88,7 +85,7 @@ public class ModelAdapter implements IModel {
    * @param file a valid text or comma-separated value file
    *
    */
-  public ModelAdapter(File file ) {
+  public ModelAdapter(File file) {
     this.file = file;
     vertexList = new ArrayList<>();
   }
@@ -114,11 +111,12 @@ public class ModelAdapter implements IModel {
   /**
    * Called to prepare the reference TIN, perimeter, and other supporting
    * elements after the vertices for the model has been loaded.
+   *
    * @param list a valid list of the vertices for the model
    * @param monitor the monitor instantiation, if any
    */
-  void prepareModelForRendering(List<Vertex>list, IMonitorWithCancellation monitor){
-    if(monitor.isCanceled()){
+  void prepareModelForRendering(List<Vertex> list, IMonitorWithCancellation monitor) {
+    if (monitor.isCanceled()) {
       return;
     }
     vertexListSortedByIndex = new ArrayList<>(list.size());
@@ -143,9 +141,7 @@ public class ModelAdapter implements IModel {
     area = (mx1 - mx0) * (my1 - my0);
     nominalPointSpacing = Math.sqrt(area / nVertices / 0.866);
 
-
     IIncrementalTin tin = new SemiVirtualIncrementalTin(nominalPointSpacing);
-
 
     if (nVertices <= MAX_VERTICES_IN_TIN) {
       tin.add(list, monitor);
@@ -195,19 +191,19 @@ public class ModelAdapter implements IModel {
     // computed above.  Note that we adjust all the coordinates of the
     // perimeter to avoid numeric issues for large-magnitude coordinates.
     double s = 0;
-    double xC = perimeterList.get(perimeterList.size()-1).getX();
-    double yC = perimeterList.get(perimeterList.size()-1).getY();
+    double xC = perimeterList.get(perimeterList.size() - 1).getX();
+    double yC = perimeterList.get(perimeterList.size() - 1).getY();
     double x1 = 0;
     double y1 = 0;
-    for(Vertex v: perimeterList){
+    for (Vertex v : perimeterList) {
       double x0 = x1;
       double y0 = y1;
-      x1 = v.getX()-xC;
-      y1 = v.getY()-yC;
-      s += x0*y1 - x1*y0;
+      x1 = v.getX() - xC;
+      y1 = v.getY() - yC;
+      s += x0 * y1 - x1 * y0;
     }
-    area = s/2;
-    nominalPointSpacing =  Math.sqrt(area / nVertices / 0.866);
+    area = s / 2;
+    nominalPointSpacing = Math.sqrt(area / nVertices / 0.866);
 
     referenceTin = tin;
     vertexList = list;
@@ -276,12 +272,12 @@ public class ModelAdapter implements IModel {
   }
 
   @Override
-  public double getNominalPointSpacing(){
+  public double getNominalPointSpacing() {
     return nominalPointSpacing;
   }
 
   @Override
-  public double getArea(){
+  public double getArea() {
     return area;
   }
 
@@ -297,7 +293,7 @@ public class ModelAdapter implements IModel {
 
   @Override
   public String getDescription() {
-   return "ModelAdapter";
+    return "ModelAdapter";
   }
 
   @Override
@@ -373,8 +369,6 @@ public class ModelAdapter implements IModel {
     return false;
   }
 
-
-
   @Override
   public Vertex getVertexForIndex(int index) {
     Vertex key = new Vertex(0, 0, 0, index);
@@ -393,15 +387,14 @@ public class ModelAdapter implements IModel {
     return null;
   }
 
-
   @Override
-  public  void  xy2geo(double x, double y, double []geo) {
-
+  public void xy2geo(double x, double y, double[] geo) {
+    // do nothing implementation
   }
 
   @Override
-  public void geo2xy(double latitude, double longitude, double []xy) {
-
+  public void geo2xy(double latitude, double longitude, double[] xy) {
+    // do nothing implementation
   }
 
 }

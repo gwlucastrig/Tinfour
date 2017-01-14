@@ -35,6 +35,7 @@ import java.io.PrintStream;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.List;
+import java.util.Locale;
 import java.util.SimpleTimeZone;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ThreadPoolExecutor;
@@ -43,11 +44,11 @@ import tinfour.common.IIncrementalTin;
 import tinfour.common.Vertex;
 import tinfour.interpolation.GwrTinInterpolator;
 import tinfour.interpolation.IInterpolatorOverTin;
+import tinfour.semivirtual.SemiVirtualIncrementalTin;
 import tinfour.standard.IncrementalTin;
 import tinfour.test.utils.IDevelopmentTest;
 import tinfour.test.utils.TestOptions;
 import tinfour.test.utils.VertexLoader;
-import tinfour.semivirtual.SemiVirtualIncrementalTin;
 
 /**
  * Provides an example of code to build a GRID from an LAS file
@@ -112,7 +113,7 @@ public class ExampleMultiThreadTest implements IDevelopmentTest {
      * @param ymin the minimum y coordinate for the area of interest
      * @param ymax the maximum y coordinate for the area of interest
      */
-    private GridFromBounds(double cellSize,
+    GridFromBounds(double cellSize,
       double xmin,
       double xmax,
       double ymin,
@@ -154,7 +155,8 @@ public class ExampleMultiThreadTest implements IDevelopmentTest {
   @Override
   public void runTest(PrintStream ps, String[] args) throws IOException {
     Date date = new Date();
-    SimpleDateFormat sdFormat = new SimpleDateFormat("dd MMM yyyy HH:mm");
+    SimpleDateFormat sdFormat =
+      new SimpleDateFormat("dd MMM yyyy HH:mm", Locale.getDefault());
     sdFormat.setTimeZone(new SimpleTimeZone(0, "UTC"));
     ps.println("ExampleGridFromLasFile\n");
     ps.format("Date/time of test: %s (UTC)\n", sdFormat.format(date));
@@ -448,7 +450,15 @@ public class ExampleMultiThreadTest implements IDevelopmentTest {
     final float[][] results;
     final TestJobStatusBoard statusBoard;
 
-    TestJob(IIncrementalTin tin, GridFromBounds grid, int row0, int nRow, float[][] results, TestJobStatusBoard statusBoard) {
+    @SuppressWarnings("PMD.ArrayIsStoredDirectly")
+    TestJob(
+      IIncrementalTin tin,
+      GridFromBounds grid,
+      int row0,
+      int nRow,
+      float[][] results,
+      TestJobStatusBoard statusBoard)
+    {
       this.tin = tin;
       this.grid = grid;
       this.row0 = row0;

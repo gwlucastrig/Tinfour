@@ -76,8 +76,8 @@ public class TextCoordCartesian {
     double[] v = new double[2];
     for (int i = i0; i < text.length(); i++) {
       char c = text.charAt(i);
-      if (Character.isWhitespace(c)) {
-        if (numStr.length() > 0) {
+      if (Character.isWhitespace(c)) { //NOPMD
+        if (numStr.length() > 0) { //NOPMD
           try {
             double test = Double.parseDouble(numStr.toString());
             if (nV == 2) {
@@ -85,7 +85,7 @@ public class TextCoordCartesian {
             }
             v[nV++] = test;
           } catch (NumberFormatException nex) {
-            throw new ParseException("Invalid numeric " + numStr.toString(), i);
+            throw new ParseException("Invalid numeric " + numStr.toString(), i); //NOPMD
           }
         }
       }

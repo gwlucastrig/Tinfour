@@ -35,6 +35,7 @@ import java.io.PrintStream;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.List;
+import java.util.Locale;
 import java.util.SimpleTimeZone;
 import tinfour.common.IIncrementalTin;
 import tinfour.common.Vertex;
@@ -103,7 +104,8 @@ public class ExampleCrossValidation implements IDevelopmentTest {
   @Override
   public void runTest(PrintStream ps, String[] args) throws IOException {
     Date date = new Date();
-    SimpleDateFormat sdFormat = new SimpleDateFormat("dd MMM yyyy HH:mm"); //NOPMD
+    SimpleDateFormat sdFormat =
+       new SimpleDateFormat("dd MMM yyyy HH:mm", Locale.getDefault());
     sdFormat.setTimeZone(new SimpleTimeZone(0, "UTC"));
     ps.println("Example Cross Validation\n");
     ps.format("Date/time of test: %s (UTC)\n", sdFormat.format(date));
@@ -317,7 +319,7 @@ public class ExampleCrossValidation implements IDevelopmentTest {
       double y = v.getY();
       double z = v.getZ();
       if (x0 <= x && x <= x1 && y0 <= y && y <= y1) {
-        if (tin.remove(v)) {
+        if (tin.remove(v)) { //NOPMD
           nTest++;
           inNni.resetForChangeToTin();
           inTri.resetForChangeToTin();
