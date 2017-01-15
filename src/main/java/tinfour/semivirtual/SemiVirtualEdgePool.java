@@ -81,7 +81,7 @@ import static tinfour.semivirtual.SemiVirtualEdgePage.PAIRS_PER_PAGE;
  * Note that this class is <strong>not thread safe</strong>.
  */
 @SuppressWarnings("PMD.AvoidArrayLoops")
-class SemiVirtualEdgePool implements Iterable<SemiVirtualEdge> {
+class SemiVirtualEdgePool implements Iterable<IQuadEdge> {
 
   SemiVirtualEdgePool self;
   SemiVirtualEdgePage[] pages;
@@ -417,8 +417,8 @@ class SemiVirtualEdgePool implements Iterable<SemiVirtualEdge> {
    * @return a valid iterator.
    */
   @Override
-  public Iterator<SemiVirtualEdge> iterator() {
-    return new Iterator<SemiVirtualEdge>() {
+  public Iterator<IQuadEdge> iterator() {
+    return new Iterator<IQuadEdge>() {
       SemiVirtualEdgePool pool;
       int iEdge;
       int iPage;

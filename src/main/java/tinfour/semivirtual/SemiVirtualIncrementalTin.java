@@ -134,6 +134,11 @@ import tinfour.common.VertexMergerGroup;
 public class SemiVirtualIncrementalTin implements IIncrementalTin {
 
   /**
+   * Number of sides for an edge (2 of course).
+   */
+  private static final int N_SIDES = 2;  //NOPMD
+
+  /**
    * A temporary list of vertices maintained until the TIN is successfully
    * bootstrapped, and then discarded.
    */
@@ -1002,12 +1007,6 @@ public class SemiVirtualIncrementalTin implements IIncrementalTin {
   }
 
   /**
-   * Number of sides for an edge (2 of course).
-   */
-  private static final int N_SIDES = 2;  //NOPMD
-
-
-  /**
    * Set the mark bit for an edge to 1.
    *
    * @param map an array at least as large as the largest edge index divided
@@ -1018,7 +1017,6 @@ public class SemiVirtualIncrementalTin implements IIncrementalTin {
     int index = (edge.getIndex() * N_SIDES) | edge.getSide();
     bitset.set(index);
   }
-
 
   /**
    * Gets the edge mark bit.
@@ -1033,32 +1031,6 @@ public class SemiVirtualIncrementalTin implements IIncrementalTin {
     return bitset.get(index);
   }
 
-
-  /**
-   * Process one side of an edge, develop a triangle if feasible.
-   *
-   * @param trigList a list to store triangles
-   * @param map a bitmap for tracking which edges have been added to
-   * triangles
-   * @param e the edge to inspect
-   */
-  private void countTriangleEdge(TriangleCount tCount, BitSet bitset, IQuadEdge e) {
-    if (!getMarkBit(bitset, e)) {
-      setMarkBit(bitset, e);
-      IQuadEdge f = e.getForward();
-      // ghost triangle, not tabulated
-      if (f.getB() != null) {
-        IQuadEdge r = e.getReverse();
-        // check to see that both neighbors are not marked.
-        if (!getMarkBit(bitset, f) && !getMarkBit(bitset, r)) {
-          setMarkBit(bitset, f);
-          setMarkBit(bitset, r);
-          tCount.tabulateTriangle(e.getA(), f.getA(), r.getA());
-        }
-      }
-    }
-  }
-
   /**
    * Performs a survey of the TIN to gather statistics about the triangle
    * formed during its construction.
@@ -1067,29 +1039,9 @@ public class SemiVirtualIncrementalTin implements IIncrementalTin {
    */
   @Override
   public TriangleCount countTriangles() {
-    if (!isBootstrapped) {
-      return new TriangleCount();
-    }
+    return new TriangleCount(this);
 
-    int maxIndex = edgePool.getMaximumAllocationIndex();
-    int maxMapIndex = maxIndex * N_SIDES + 1;
-    BitSet bitset = new BitSet(maxMapIndex);
-
-    TriangleCount tCount = new TriangleCount();
-    Iterator<SemiVirtualEdge> iEdge = edgePool.iterator();
-    while (iEdge.hasNext()) {
-      SemiVirtualEdge e = iEdge.next();
-      if (e.getA() == null || e.getB() == null) {
-        setMarkBit(bitset, e);
-        setMarkBit(bitset, e.getDual());
-        continue;
-      }
-      this.countTriangleEdge(tCount, bitset, e);
-      this.countTriangleEdge(tCount, bitset, e.getDual());
-    }
-    return tCount;
   }
-
 
   /**
    * Gets a list of edges currently defining the perimeter of the TIN.
@@ -1150,9 +1102,9 @@ public class SemiVirtualIncrementalTin implements IIncrementalTin {
     int nOrdinary = 0;
     int nGhost = 0;
     double sumLength = 0;
-    Iterator<SemiVirtualEdge> iEdge = edgePool.iterator();
+    Iterator<IQuadEdge> iEdge = edgePool.iterator();
     while (iEdge.hasNext()) {
-      SemiVirtualEdge e = iEdge.next();
+      IQuadEdge e = iEdge.next();
       if (e.getB() == null) {
         nGhost++;
       } else {
@@ -1218,6 +1170,16 @@ public class SemiVirtualIncrementalTin implements IIncrementalTin {
       return new ArrayList<>();
     }
     return edgePool.getEdges();
+  }
+
+  @Override
+  public Iterator<IQuadEdge> getEdgeIterator() {
+    return edgePool.iterator();
+  }
+
+  @Override
+  public int getMaximumEdgeAllocationIndex() {
+    return edgePool.getMaximumAllocationIndex();
   }
 
   List<SemiVirtualEdge> getVirtualEdges() {
@@ -1617,25 +1579,25 @@ public class SemiVirtualIncrementalTin implements IIncrementalTin {
     BitSet bitset = new BitSet(maxMapIndex);
 
     ArrayList<Vertex> vList = new ArrayList<>(this.nVerticesInserted);
-    Iterator<SemiVirtualEdge> iEdge = edgePool.iterator();
+    Iterator<IQuadEdge> iEdge = edgePool.iterator();
     while (iEdge.hasNext()) {
-      SemiVirtualEdge e = iEdge.next();
+      IQuadEdge e = iEdge.next();
       Vertex v = e.getA();
       if (v != null && !getMarkBit(bitset, e)) {
         setMarkBit(bitset, e);
         vList.add(v);
-        SemiVirtualEdge c = e;
+        IQuadEdge c = e;
         do {
           c = c.getForward().getForward().getDual();
           setMarkBit(bitset, c);
         } while (!c.equals(e));
       }
-      SemiVirtualEdge d = e.getDual();
+      IQuadEdge d = e.getDual();
       v = d.getA();
       if (v != null && !getMarkBit(bitset, d)) {
         setMarkBit(bitset, d);
         vList.add(v);
-        SemiVirtualEdge c = d;
+        IQuadEdge c = d;
         do {
           c = c.getForward().getForward().getDual();
           setMarkBit(bitset, c);
@@ -1759,7 +1721,7 @@ public class SemiVirtualIncrementalTin implements IIncrementalTin {
       List<IQuadEdge> eList = edgePool.getEdges();
       for (IQuadEdge e : eList) {
         if (e.isConstrained()) {
-          SemiVirtualEdge sEdge = (SemiVirtualEdge)e;
+          SemiVirtualEdge sEdge = (SemiVirtualEdge) e;
           restoreConformity(sEdge);
         }
       }
@@ -2124,7 +2086,7 @@ public class SemiVirtualIncrementalTin implements IIncrementalTin {
       double my = (a.getY() + b.getY()) / 2.0;
       double mz = (a.getZ() + b.getZ()) / 2.0;
       Vertex m = new Vertex(mx, my, mz, nSyntheticVertices++);
-      m.setStatus(Vertex.BIT_SYNTHETIC|Vertex.BIT_CONSTRAINT);
+      m.setStatus(Vertex.BIT_SYNTHETIC | Vertex.BIT_CONSTRAINT);
 
       // reuse edge ab, change name just to avoid confusion
       SemiVirtualEdge mb = ab;
@@ -2376,7 +2338,7 @@ public class SemiVirtualIncrementalTin implements IIncrementalTin {
   }
 
   private void fillConstraintDataAreas() {
-    for (SemiVirtualEdge e : this.edgePool) {
+    for (IQuadEdge e : this.edgePool) {
       if (e.isConstrainedAreaEdge()) {
         if (e.isConstraintAreaOnThisSide()) {
           fillConstraintDataAreaRecursion(e);
@@ -2387,15 +2349,15 @@ public class SemiVirtualIncrementalTin implements IIncrementalTin {
     }
   }
 
-  private void fillConstraintDataAreaRecursion(SemiVirtualEdge e) {
+  private void fillConstraintDataAreaRecursion(IQuadEdge e) {
     int index = e.getConstraintIndex();
-    SemiVirtualEdge f = e.getForward();
+    IQuadEdge f = e.getForward();
     if (!f.isConstrainedAreaMember()) {
       f.setConstrainedAreaMemberFlag();
       f.setConstraintIndex(index);
       fillConstraintDataAreaRecursion(f.getDual());
     }
-    SemiVirtualEdge r = e.getReverse();
+    IQuadEdge r = e.getReverse();
     if (!r.isConstrainedAreaMember()) {
       r.setConstrainedAreaMemberFlag();
       r.setConstraintIndex(index);

@@ -32,6 +32,7 @@ package tinfour.common;
 
 import java.awt.geom.Rectangle2D;
 import java.io.PrintStream;
+import java.util.Iterator;
 import java.util.List;
 
 /**
@@ -95,6 +96,41 @@ public interface IIncrementalTin {
    * @return a valid, potentially empty list.
    */
   List<IQuadEdge> getEdges();
+
+
+  /**
+   * Gets an iterator for stepping through the list of current edges.
+   * <p>
+   * <strong>Warning:</strong> For efficiency purposes, the edges
+   * return by this routine are the same objects as those currently being used
+   * in the instance. Any modification of the edge objects will damage
+   * the TIN. Therefore, applications must not modify the edges returned by this
+   * method.
+   * <strong>Caution:</strong> For reasons of efficiency, the iterator
+   * does not offer any protection against concurrent modification.
+   * Therefore applications using this iterator must never modify the
+   * TIN during iteration.
+   * @return a valid iterator.
+   */
+  public Iterator<IQuadEdge>getEdgeIterator();
+
+
+  /**
+   * Gets the maximum index of the currently allocated edges. This
+   * method can be used in support of applications that require the need
+   * to survey the edge set and maintain a parallel array or
+   * collection instance that tracks information about the edges.
+   * In such cases, the edge index provides a way of indexing the
+   * array or collection.
+   * <p>
+   * Internally, Tinfour uses edge index values to manage edges in memory.
+   * The while there can be small gaps in the indexing sequence, this
+   * method provides a way of obtaining the absolute maximum value of
+   * currently allocated edges.
+   * @return
+   */
+    public int getMaximumEdgeAllocationIndex();
+
 
   /**
    * Gets the nominal point spacing used to determine numerical thresholds
@@ -216,6 +252,13 @@ public interface IIncrementalTin {
    * some vertices may have been incorporated into one or more vertex-merger
    * groups. Note that the list of vertices is not sorted and will usually
    * not be returned in the same order as the original input set.
+   * <p>
+   * <strong>Note:</strong> For efficiency purposes, the vertices
+   * return by this routine are the same objects as those currently being used
+   * in the instance. The index and "reserved" elements of the Vertex
+   * class are not used by the TIN and may be modified by application
+   * code as required. However, the geometry related fields must not be
+   * modified once a vertex is added to a TIN.
    * @return a valid list of vertices, potentially empty if the TIN has
    * not been initialized.
    */
