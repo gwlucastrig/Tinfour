@@ -56,6 +56,7 @@ package tinfour.standard;
 import java.awt.geom.Rectangle2D;
 import java.io.PrintStream;
 import java.util.ArrayList;
+import java.util.BitSet;
 import java.util.Iterator;
 import java.util.List;
 import tinfour.common.BootstrapUtility;
@@ -1090,30 +1091,23 @@ public class IncrementalTin implements IIncrementalTin {
   }
 
   /**
-   * Number of bits in an integer.
-   */
-  private static final int INT_BITS = 32;  //NOPMD
-
-  /**
-   * Used to perform a modulus 32 operation on an integer through a bitwise
-   * AND.
-   */
-  private static final int MOD_BY_32 = 0x1f; //NOPMD
-
-  /**
-   * Number of shifts to divide an integer by 32.
-   */
-  private static final int DIV_BY_32 = 5;  //NOPMD
-
-  /**
    * Number of sides for an edge (2 of course).
    */
   private static final int N_SIDES = 2;  //NOPMD
 
+
   /**
-   * Used to extract the low-order bit via a bitwise AND.
+   * Set the mark bit for an edge to 1.
+   *
+   * @param map an array at least as large as the largest edge index divided
+   * by 32
+   * @param edge a valid edge
    */
-  private static final int BIT1 = 0x01;   //NOPMD
+  private void setMarkBit(BitSet bitset, final IQuadEdge edge) {
+    int index = (edge.getIndex() * N_SIDES) | edge.getSide();
+    bitset.set(index);
+  }
+
 
   /**
    * Gets the edge mark bit.
@@ -1123,22 +1117,11 @@ public class IncrementalTin implements IIncrementalTin {
    * @param edge a valid edge
    * @return if the edge is marked, a non-zero value; otherwise, a zero.
    */
-  private int getMarkBit(final int[] map, final IQuadEdge edge) {
+  private boolean getMarkBit(BitSet bitset, final IQuadEdge edge) {
     int index = (edge.getIndex() * N_SIDES) | edge.getSide();
-    return (map[index >> DIV_BY_32] >> (index & MOD_BY_32)) & BIT1;
+    return bitset.get(index);
   }
 
-  /**
-   * Set the mark bit for an edge to 1.
-   *
-   * @param map an array at least as large as the largest edge index divided
-   * by 32
-   * @param edge a valid edge
-   */
-  private void setMarkBit(final int[] map, final IQuadEdge edge) {
-    int index = (edge.getIndex() * N_SIDES) | edge.getSide();
-    map[index >> DIV_BY_32] |= (BIT1 << (index & MOD_BY_32));
-  }
 
   /**
    * Process one side of an edge, develop a triangle if feasible.
@@ -1148,17 +1131,17 @@ public class IncrementalTin implements IIncrementalTin {
    * triangles
    * @param e the edge to inspect
    */
-  void countTriangleEdge(TriangleCount tCount, int[] map, IQuadEdge e) {
-    if (getMarkBit(map, e) == 0) {
-      setMarkBit(map, e);
+  private void countTriangleEdge(TriangleCount tCount, BitSet bitset, IQuadEdge e) {
+    if (!getMarkBit(bitset, e)) {
+      setMarkBit(bitset, e);
       IQuadEdge f = e.getForward();
       // ghost triangle, not tabulated
       if (f.getB() != null) {
         IQuadEdge r = e.getReverse();
         // check to see that both neighbors are not marked.
-        if ((getMarkBit(map, f) | getMarkBit(map, r)) == 0) {
-          setMarkBit(map, f);
-          setMarkBit(map, r);
+        if (!getMarkBit(bitset, f) && !getMarkBit(bitset, r)) {
+          setMarkBit(bitset, f);
+          setMarkBit(bitset, r);
           tCount.tabulateTriangle(e.getA(), f.getA(), r.getA());
         }
       }
@@ -1179,20 +1162,19 @@ public class IncrementalTin implements IIncrementalTin {
 
     int maxIndex = edgePool.getMaximumAllocationIndex();
     int maxMapIndex = maxIndex * N_SIDES + 1;
-    int mapSize = (maxMapIndex + INT_BITS - 1) / INT_BITS;
-    int[] map = new int[mapSize];
+    BitSet bitset = new BitSet(maxMapIndex);
 
     TriangleCount tCount = new TriangleCount();
     Iterator<QuadEdge> iEdge = edgePool.iterator();
     while (iEdge.hasNext()) {
       QuadEdge e = iEdge.next();
       if (e.getA() == null || e.getB() == null) {
-        setMarkBit(map, e);
-        setMarkBit(map, e.getDual());
+        setMarkBit(bitset, e);
+        setMarkBit(bitset, e.getDual());
         continue;
       }
-      this.countTriangleEdge(tCount, map, e);
-      this.countTriangleEdge(tCount, map, e.getDual());
+      this.countTriangleEdge(tCount, bitset, e);
+      this.countTriangleEdge(tCount, bitset, e.getDual());
     }
     return tCount;
   }
@@ -1324,6 +1306,7 @@ public class IncrementalTin implements IIncrementalTin {
     }
     return edgePool.getEdges();
   }
+
 
   /**
    * Gets the nominal point spacing used to determine numerical thresholds for
@@ -1736,32 +1719,31 @@ public class IncrementalTin implements IIncrementalTin {
     // of our control.
     int maxIndex = edgePool.getMaximumAllocationIndex();
     int maxMapIndex = maxIndex * N_SIDES + 1;
-    int mapSize = (maxMapIndex + INT_BITS - 1) / INT_BITS;
-    int[] map = new int[mapSize];
+    BitSet bitset = new BitSet(maxMapIndex);
 
     ArrayList<Vertex> vList = new ArrayList<>(this.nVerticesInserted);
     Iterator<QuadEdge> iEdge = edgePool.iterator();
     while (iEdge.hasNext()) {
       QuadEdge e = iEdge.next();
       Vertex v = e.getA();
-      if (v != null && getMarkBit(map, e) == 0) {
-        setMarkBit(map, e);
+      if (v != null && !getMarkBit(bitset, e)) {
+        setMarkBit(bitset, e);
         vList.add(v);
         QuadEdge c = e;
         do {
           c = c.getForward().getForward().getDual();
-          setMarkBit(map, c);
+          setMarkBit(bitset, c);
         } while (c != e);
       }
       QuadEdge d = e.getDual();
       v = d.getA();
-      if (v != null && getMarkBit(map, d) == 0) {
-        setMarkBit(map, d);
+      if (v != null && !getMarkBit(bitset, d)) {
+        setMarkBit(bitset, d);
         vList.add(v);
         QuadEdge c = d;
         do {
           c = c.getForward().getForward().getDual();
-          setMarkBit(map, c);
+          setMarkBit(bitset, c);
         } while (c != d);
       }
 
