@@ -511,6 +511,7 @@ public class QuadEdge implements IQuadEdge {
   }
 
 
+  @Override
   public boolean isConstraintAreaOnThisSide(){
       return (dual.index&CONSTRAINT_AREA_BASE_FLAG)!=0;
   }

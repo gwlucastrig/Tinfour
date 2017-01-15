@@ -574,6 +574,7 @@ public final class SemiVirtualEdge implements IQuadEdge {
     }
   }
 
+  @Override
   public boolean isConstraintAreaOnThisSide() {
     if (page.constraints == null) {
       return false;
