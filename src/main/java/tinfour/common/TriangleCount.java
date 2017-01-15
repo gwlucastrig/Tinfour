@@ -30,10 +30,18 @@
  */
 package tinfour.common;
 
+import java.util.BitSet;
+import java.util.Iterator;
+
 /**
  * Provides descriptive data for a Triangulated Irregular Network (TIN).
  */
 public class TriangleCount {
+
+  /**
+   * Number of sides for an edge (2 of course).
+   */
+  private static final int N_SIDES = 2;  //NOPMD
 
   private int count;
   private double sumArea;
@@ -47,10 +55,87 @@ public class TriangleCount {
 
   /**
    * Create an instance for tabulating a survey of
-   * the triangles in an Incremental TIN
+   * the triangles which may or may not be members of a TIN.
    */
   public TriangleCount() {
-     geoOp = new GeometricOperations();
+    geoOp = new GeometricOperations();
+  }
+
+  /**
+   * A constructor that performs a survey of the TIN to gather statistics
+   * about the triangles that comprise it.
+   *
+   * @param tin a valid instance of an incremental tin
+   */
+  public TriangleCount(IIncrementalTin tin) {
+    geoOp = new GeometricOperations();
+    if (tin.isBootstrapped()) {
+      int maxIndex = tin.getMaximumEdgeAllocationIndex();
+      int maxMapIndex = maxIndex * N_SIDES + 1;
+      BitSet bitset = new BitSet(maxMapIndex);
+
+      TriangleCount tCount = new TriangleCount();
+      Iterator<IQuadEdge> iEdge = tin.getEdgeIterator();
+      while (iEdge.hasNext()) {
+        IQuadEdge e = iEdge.next();
+        if (e.getA() == null || e.getB() == null) {
+          setMarkBit(bitset, e);
+          setMarkBit(bitset, e.getDual());
+          continue;
+        }
+        this.countTriangleEdge(bitset, e);
+        this.countTriangleEdge(bitset, e.getDual());
+      }
+    }
+  }
+
+  /**
+   * Set the mark bit for an edge to 1.
+   *
+   * @param map an array at least as large as the largest edge index divided
+   * by 32
+   * @param edge a valid edge
+   */
+  private void setMarkBit(BitSet bitset, final IQuadEdge edge) {
+    int index = (edge.getIndex() * N_SIDES) | edge.getSide();
+    bitset.set(index);
+  }
+
+  /**
+   * Gets the edge mark bit.
+   *
+   * @param map an array at least as large as the largest edge index divided
+   * by 32
+   * @param edge a valid edge
+   * @return if the edge is marked, a non-zero value; otherwise, a zero.
+   */
+  private boolean getMarkBit(BitSet bitset, final IQuadEdge edge) {
+    int index = (edge.getIndex() * N_SIDES) | edge.getSide();
+    return bitset.get(index);
+  }
+
+  /**
+   * Process one side of an edge, develop a triangle if feasible.
+   *
+   * @param bitset a bitmap for tracking which edges have been added to
+   * triangles
+   * @param e the edge to inspect
+   */
+  private void countTriangleEdge(BitSet bitset, IQuadEdge e) {
+    if (!getMarkBit(bitset, e)) {
+      setMarkBit(bitset, e);
+      IQuadEdge f = e.getForward();
+      // ghost triangle, not tabulated
+      if (f.getB() != null) {
+        IQuadEdge r = e.getReverse();
+        // check to see that both neighbors are not marked.
+        if (!getMarkBit(bitset, f) && !getMarkBit(bitset, r)) {
+          setMarkBit(bitset, f);
+          setMarkBit(bitset, r);
+          tabulateTriangle(e.getA(), f.getA(), r.getA());
+        }
+      }
+    }
   }
 
   /**

@@ -76,7 +76,7 @@ import tinfour.common.Vertex;
  * <p>Note that this class is <strong>not thread safe</strong>.
  */
 @SuppressWarnings("PMD.AvoidArrayLoops")
-class EdgePool implements Iterable<QuadEdge> {
+class EdgePool implements Iterable<IQuadEdge> {
 
   /**
    * The number of edges in an edge-pool page.
@@ -368,8 +368,8 @@ class EdgePool implements Iterable<QuadEdge> {
   }
 
   @Override
-  public Iterator<QuadEdge> iterator() {
-    Iterator<QuadEdge> ix = new Iterator<QuadEdge>() {
+  public Iterator<IQuadEdge> iterator() {
+    Iterator<IQuadEdge> ix = new Iterator<IQuadEdge>() {
       QuadEdge currentEdge;
       int nextPage;
       int nextEdge;
