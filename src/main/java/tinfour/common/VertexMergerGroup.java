@@ -107,6 +107,7 @@ public class VertexMergerGroup extends Vertex {
           status = true;
         }
       }
+      applyRule();
       return status;
     }
     if (list.contains(v)) {
@@ -126,7 +127,11 @@ public class VertexMergerGroup extends Vertex {
    * otherwise, false.
    */
   public boolean removeVertex(Vertex v) {
-    return list.remove(v);
+    boolean status = list.remove(v);
+    if(status){
+       applyRule();
+    }
+    return status;
   }
 
   private void applyRule() {
