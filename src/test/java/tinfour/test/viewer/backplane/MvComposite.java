@@ -42,12 +42,9 @@ import java.awt.geom.Line2D;
 import java.awt.geom.Point2D;
 import java.awt.geom.Rectangle2D;
 import java.awt.image.BufferedImage;
-import java.io.File;
-import java.io.IOException;
 import java.util.Formatter;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
-import javax.imageio.ImageIO;
 import tinfour.common.IConstraint;
 import tinfour.common.IIncrementalTin;
 import tinfour.common.INeighborEdgeLocator;
@@ -590,10 +587,6 @@ public class MvComposite {
     // because their indices are negative, they cannot be used in the
     // bitmap logic.
     int maxVertexIndex = 0;
-
-    if (wireframeTin == null) {
-      System.out.println("Diagnostic");
-    }
 
     List<IQuadEdge> edgeList = wireframeTin.getEdges();
     for (IQuadEdge e : edgeList) {
@@ -1501,23 +1494,7 @@ public class MvComposite {
   public boolean isReady() {
     return model.isLoaded() && interpolatingTin != null;
   }
-
-  void makeLegend() {
-    Font font = new Font("Arial", Font.BOLD, 10);
-    BufferedImage bImage = renderLegend(view, model, 50, 100, 5, font, true);
-    if (bImage != null) {
-      try {
-
-        File file = new File("legend.png");
-        ImageIO.write(bImage, "PNG", file);
-        System.out.println("wrote " + file);
-      } catch (IOException ioex) {
-
-      }
-    }
-
-  }
-
+ 
   /**
    * Render a legend for the current model and view. The width and height
    * are the dimensions of the color bar, but the actual legend will extend
