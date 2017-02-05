@@ -103,6 +103,7 @@ public interface IConstraint {
   /**
    * Sets the status of a polygon constraint to indicate whether it
    * defines a data area. This method is undefined for non-polygon constraints.
+   *
    * @param definesDataArea true if the constraint defines a data area;
    * otherwise false.
    */
@@ -110,11 +111,11 @@ public interface IConstraint {
 
   /**
    * Indicates whether the constraint is a data area definition.
+   *
    * @return true if the constraint is a data-area definition; otherwise
    * false.
    */
   public boolean definesDataArea();
-
 
   /**
    * Permits an application to add data elements to the constraint for
@@ -138,9 +139,10 @@ public interface IConstraint {
 
   /**
    * Sets an index value used for internal bookkeeping by Tinfour code;
-   * not intended for use by application code.  Application code
+   * not intended for use by application code. Application code
    * that sets a constraint index runs the risk of damaging the
    * internal data relations maintained by Tinfour.
+   *
    * @param index a positive integer.
    */
   public void setConstraintIndex(int index);
@@ -148,10 +150,30 @@ public interface IConstraint {
   /**
    * Gets an index value used for internal bookkeeping by Tinfour code;
    * not intended for use by application code.
+   *
    * @return the index of the constraint associated with the edge;
    * undefined if the edge is not constrained or a member of a constrained
    * area.
    */
   public int getConstraintIndex();
+
+  /**
+   * Gets the total length of the constraint. The length is the accumulated
+   * sum of the lengths of the line segments that comprise the constraint.
+   * In the case of a closed polygon constraint, the length is the
+   * perimeter of the polygon.
+   *
+   * @return if the constraint geometry is defined, a positive
+   * floating point value, otherwise a zero.
+   */
+  public double getLength();
+
+  /**
+   * Get the average distance between points for the constraint.
+   *
+   * @return if the constraint contains more than one point, a floating
+   * point value greater than zero; otherwise a NaN.
+   */
+  public double getNominalPointSpacing();
 
 }

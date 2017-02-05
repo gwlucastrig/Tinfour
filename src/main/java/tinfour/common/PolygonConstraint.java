@@ -22,6 +22,7 @@
  * Date     Name         Description
  * ------   ---------    -------------------------------------------------
  * 10/2016  G. Lucas     Created
+ * 01/2016  G. Lucas     Fixed bounds bug reported by Martin Janda
  *
  * Notes:
  *
@@ -29,8 +30,6 @@
  */
 package tinfour.common;
 
-import java.awt.geom.Rectangle2D;
-import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -47,36 +46,14 @@ import java.util.List;
  * is just the opposite of that taken by ESRI's Shapefile format, though
  * it is consistent with conventions used in general computational geometry,
  */
-public class PolygonConstraint implements IConstraint {
+public class PolygonConstraint extends PolyLineConstraintAdapter implements IConstraint {
 
-  private final List<Vertex> list = new ArrayList<>();
-  private final Rectangle2D bounds = new Rectangle2D.Double();
-  private double x = Double.NaN;
-  private double y = Double.NaN;
-  private Object applicationData;
   private boolean dataAreaDefinition;
-  private int constraintIndex;
+  private double squareArea;
 
   @Override
   public List<Vertex> getVertices() {
     return list;
-  }
-
-  @Override
-  public void add(Vertex v) {
-    if (v.getX() == x && v.getY() == y) {
-      return;  // quiently ignore duplicate points
-    }
-    v.setConstraintMember(true);
-    x = v.getX();
-    y = v.getY();
-    list.add(v);
-    bounds.add(v.getX(), v.getY());
-  }
-
-  @Override
-  public Rectangle2D getBounds() {
-    return bounds;
   }
 
   @Override
@@ -89,16 +66,15 @@ public class PolygonConstraint implements IConstraint {
     if (a.getX() != b.getX() || a.getY() != b.getY()) {
       list.add(a);
     }
-  }
 
-  @Override
-  public void setApplicationData(Object applicationData) {
-    this.applicationData = applicationData;
-  }
-
-  @Override
-  public Object getApplicationData() {
-    return applicationData;
+    a = b;
+    int n = list.size() - 1;
+    for (int i = 0; i < n; i++) {
+      b = list.get(i);
+      squareArea += a.getX() * b.getY() - a.getY() * b.getX();
+      a = b;
+    }
+    squareArea /= 2;
   }
 
   @Override
@@ -108,21 +84,26 @@ public class PolygonConstraint implements IConstraint {
 
   @Override
   public void setDefinesDataArea(boolean definesDataArea) {
-     dataAreaDefinition = definesDataArea;
+    dataAreaDefinition = definesDataArea;
   }
 
   @Override
   public boolean definesDataArea() {
-     return this.dataAreaDefinition;
+    return dataAreaDefinition;
   }
 
-   @Override
-  public void setConstraintIndex(int index) {
-     constraintIndex = index;
+  /**
+   * Get the computed square area for the constraint polygon.
+   * The area is not available until the complete() method is called.
+   * It is assumed that the area of a polygon with a counterclockwise
+   * orientation is positive and that the area of a polygon with a
+   * clockwise orientation is negative.
+   *
+   * @return if available, a non-zero (potentially negative) square area
+   * for the constraint; otherwise, a zero
+   */
+  public double getArea() {
+    return squareArea;
   }
 
-  @Override
-  public int getConstraintIndex() {
-    return constraintIndex;
-  }
 }

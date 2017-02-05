@@ -1,7 +1,8 @@
 
 <strong>Importing and Viewing Data</strong>
 <p>
-To add a model (data product) to the display, use the File&#8594;Open menu to 
+To add a model (data product) to the display, use the 
+Model&#8594;Load Model from File menu to 
 select a file. You may also use a drag-and-drop gesture from your file system
 (source data will be copied into application).
 <p>
@@ -26,8 +27,7 @@ The viewer attempts to manage the amount of clutter on the display
 as well as rendering times but selecting subsets of the data when
 it is appropriate to do so. As you zoom in, more and more data becomes available.
 <p>
-<strong>Display Options and Point Thinning</strong>
-<p>
+<strong>Display Options and Point Thinning</strong><br>
 You may configure the display options by accessing the View menu.
 Most of the options are self-explanatory, but the point-thinning options
 require special attention. When you are dealing with a very large
@@ -44,4 +44,15 @@ Tinfour requires 124 bytes per sample (vertex) to build a TIN.  So a TIN
 containing 1 million points requires roughly 124 megabytes. You should 
 consider the size of your sample data and available Java memory when
 using the full-resolution option. 
+<p>
+<Strong>Adding Constraints</strong><br>
+Once a model is loaded, you may load constraints from a Shapefile or
+text file by accessing the Model&#8594;Load Constraints from File menu
+item. The viewer assumes that the constraints are in the same coordinate system
+and cover the same area as the source model. If the data does not
+conform to this requirement, the results are undefined.
+At this time, logic for thinning the constraints is not available.
+Therefore, constraints may not be included in the wireframe rendering
+if the data is viewed with a large reduction factor. This feature
+will be improved in future versions of the software. 
 

@@ -15,7 +15,7 @@
  * ---------------------------------------------------------------------
  */
 
-/*
+ /*
  * -----------------------------------------------------------------------
  *
  * Revision History:
@@ -69,7 +69,7 @@ class MvTaskLoad implements IModelViewTask {
         = backplaneManager.getProgressMonitor(taskIndex);
       model.load(monitor);
       monitor.reportDone();
-      backplaneManager.postModelLoadCompleted(this);
+      backplaneManager.postModelLoadCompleted(this, model, taskIndex);
     } catch (IOException ioex) {
       String message = "Error loading " + model.getName() + " " + ioex.getMessage();
       System.err.println(message);
@@ -79,12 +79,18 @@ class MvTaskLoad implements IModelViewTask {
     }
   }
 
-  int getTaskIndex() {
+  @Override
+  public int getTaskIndex() {
     return taskIndex;
   }
 
   IModel getModel() {
     return model;
+  }
+
+  @Override
+  public boolean isRenderingTask() {
+    return false;
   }
 
 }

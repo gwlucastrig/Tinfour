@@ -15,7 +15,7 @@
  * ---------------------------------------------------------------------
  */
 
-/*
+ /*
  * -----------------------------------------------------------------------
  *
  * Revision History:
@@ -56,6 +56,7 @@ import javax.swing.JLabel;
 import javax.swing.JMenu;
 import javax.swing.JMenuBar;
 import javax.swing.JMenuItem;
+import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JSeparator;
@@ -63,6 +64,7 @@ import javax.swing.JSplitPane;
 import javax.swing.filechooser.FileFilter;
 import javax.swing.text.DefaultCaret;
 import tinfour.test.utils.TestPalette;
+import tinfour.test.viewer.backplane.IModel;
 import tinfour.test.viewer.backplane.UnitSquareModel;
 import tinfour.test.viewer.backplane.ViewOptions;
 
@@ -80,6 +82,8 @@ class DataViewerUI {
   private BufferedImage appIconImage;
   private ViewOptions viewOptions;
   private JFileChooser fileChooser;
+  private JFileChooser constraintChooser;
+  private File currentDirectory;
   private JDialog helpDialog;
 
   static String getFileExtension(File file) {
@@ -155,7 +159,6 @@ class DataViewerUI {
     dc.setUpdatePolicy(DefaultCaret.NEVER_UPDATE);
     JScrollPane reportScrollPane = new JScrollPane(reportPane);
     reportScrollPane.setPreferredSize(new Dimension(250, 250));
-
 
     JEditorPane queryPane = new JEditorPane();
     queryPane.setEditable(false);
@@ -246,6 +249,7 @@ class DataViewerUI {
   JMenu makeFileMenu() {
     final JMenu fileMenu = new JMenu("File");
     JMenuItem newItem = new JMenuItem("New");
+    newItem.setToolTipText("Clears data model and view area");
     newItem.addActionListener(new ActionListener() {
 
       @Override
@@ -257,33 +261,7 @@ class DataViewerUI {
 
     });
 
-    JMenuItem openItem = new JMenuItem("Open");
-    openItem.addActionListener(new ActionListener() {
-
-      @Override
-      public void actionPerformed(ActionEvent e) {
-        if (fileChooser == null) {
-          fileChooser = new JFileChooser();
-          LasFileFilter lasFileFilter = new LasFileFilter();
-          fileChooser.addChoosableFileFilter(lasFileFilter);
-          TextFileFilter textFileFilter = new TextFileFilter();
-          fileChooser.addChoosableFileFilter(textFileFilter);
-          fileChooser.setFileFilter(lasFileFilter);
-        }
-
-        int returnVal = fileChooser.showOpenDialog(fileMenu);
-
-        if (returnVal == JFileChooser.APPROVE_OPTION) {
-          File file = fileChooser.getSelectedFile();
-          if (file != null) {
-            dvPanel.loadModel(file);
-          }
-        } else {
-          System.err.println("Open command cancelled by user.");
-        }
-      }
-
-    });
+    JMenuItem openItem = this.makeLoadModelFromFile(fileMenu);
     JMenuItem exitItem = new JMenuItem("Exit");
     exitItem.setToolTipText("Exit application");
     exitItem.addActionListener(new ActionListener() {
@@ -301,10 +279,47 @@ class DataViewerUI {
     return fileMenu;
   }
 
+  JMenuItem makeLoadModelFromFile(final JMenu fileMenu) {
+    JMenuItem openItem = new JMenuItem("Load Model from File...");
+    openItem.setToolTipText("Raise a dialog to select a new model (data product)");
+    openItem.addActionListener(new ActionListener() {
+
+      @Override
+      public void actionPerformed(ActionEvent e) {
+        if (fileChooser == null) {
+          fileChooser = new JFileChooser();
+          LasFileFilter lasFileFilter = new LasFileFilter();
+          fileChooser.addChoosableFileFilter(lasFileFilter);
+          TextFileFilter textFileFilter = new TextFileFilter();
+          fileChooser.addChoosableFileFilter(textFileFilter);
+          fileChooser.setFileFilter(lasFileFilter);
+          fileChooser.setDialogTitle("Select a data source for the model");
+        }
+
+        if (currentDirectory != null) {
+          fileChooser.setCurrentDirectory(currentDirectory);
+        }
+        int returnVal = fileChooser.showOpenDialog(fileMenu);
+        currentDirectory = fileChooser.getCurrentDirectory();
+        if (returnVal == JFileChooser.APPROVE_OPTION) {
+          File file = fileChooser.getSelectedFile();
+          if (file != null) {
+            dvPanel.loadModel(file);
+          }
+        } else {
+          System.err.println("Open command cancelled by user.");
+        }
+      }
+
+    });
+
+    return openItem;
+  }
+
   JMenu makeViewMenu() {
     // --- set up View menu -----------------------------
     JMenu viewMenu = new JMenu("View");
-    JMenuItem optionsMenu = new JMenuItem("Styling and Presentation");
+    JMenuItem optionsMenu = new JMenuItem("Styling and Presentation...");
     optionsMenu.setToolTipText("Raise the view-options menu");
     optionsMenu.addActionListener(new ActionListener() {
 
@@ -364,18 +379,19 @@ class DataViewerUI {
 
     });
 
-
     JMenuItem zoomToSource = new JMenuItem("Zoom to source");
-     zoomToSource.setToolTipText("Zoom to show entire coverage area of model");
+    zoomToSource.setToolTipText("Zoom to show entire coverage area of model");
     zoomToSource.addActionListener(new ActionListener() {
       @Override
       public void actionPerformed(ActionEvent e) {
         dvPanel.zoomToSource();
       }
+
     });
 
-    JMenuItem zoomToFeature = new JMenuItem("Zoom to feature/position");
-    zoomToFeature.setToolTipText("Raise a dialog for selecting feature or coordinates for zoom");
+    JMenuItem zoomToFeature = new JMenuItem("Zoom to feature/position...");
+    zoomToFeature.setToolTipText(
+      "Raise a dialog for selecting feature or coordinates for zoom");
     zoomToFeature.addActionListener(new ActionListener() {
       @Override
       public void actionPerformed(ActionEvent ae) {
@@ -401,7 +417,7 @@ class DataViewerUI {
         } else {
           // if the dialog is not visible, the values it contains
           // may be out-of-date.  transfer values from panel.
-          if(!zoomToFeatureDialog.isVisible()){
+          if (!zoomToFeatureDialog.isVisible()) {
             zoomToFeaturePanel.transferValuesFromPanel();
           }
           zoomToFeatureDialog.setLocationRelativeTo(frame);
@@ -423,7 +439,7 @@ class DataViewerUI {
   }
 
   JMenu makeModelMenu() {
-    JMenu modelMenu = new JMenu("Model");
+    final JMenu modelMenu = new JMenu("Model");
     JMenuItem testModel = new JMenuItem("Load test model");
     testModel.setToolTipText("Loads simple model with one-by-one coordinate set");
     testModel.addActionListener(new ActionListener() {
@@ -434,6 +450,66 @@ class DataViewerUI {
       }
 
     });
+
+    JMenuItem openItem = this.makeLoadModelFromFile(modelMenu);
+    JMenuItem constraintsItem = new JMenuItem("Load Constraints from File...");
+    constraintsItem.setToolTipText("Raise a dialog to add constraints from file");
+    constraintsItem.addActionListener(new ActionListener() {
+
+      @Override
+      public void actionPerformed(ActionEvent e) {
+
+        if (constraintChooser == null) {
+          constraintChooser = new JFileChooser();
+          if (fileChooser != null) {
+            File curDir = fileChooser.getCurrentDirectory();
+            if (curDir != null) {
+              constraintChooser.setCurrentDirectory(curDir);
+            }
+          }
+          if (currentDirectory != null) {
+            constraintChooser.setCurrentDirectory(currentDirectory);
+          }
+          ShapeFileFilter shapeFileFilter = new ShapeFileFilter();
+          constraintChooser.addChoosableFileFilter(shapeFileFilter);
+          TextFileFilter textFileFilter = new TextFileFilter();
+          constraintChooser.addChoosableFileFilter(textFileFilter);
+          constraintChooser.setFileFilter(shapeFileFilter);
+          constraintChooser.setDialogTitle("Select source for model constraints");
+        }
+
+        int returnVal = constraintChooser.showOpenDialog(modelMenu);
+        currentDirectory = constraintChooser.getCurrentDirectory();
+        if (returnVal == JFileChooser.APPROVE_OPTION) {
+          IModel model = dvPanel.getModel();
+          if (model == null) {
+            // TO DO: This rule could go away:
+            //   1. The application could use the constraints as a source
+            //   of vertices for a new model
+            //   2. Also, the application may have a model but it just hasn't
+            //   been loaded yet.
+            JOptionPane.showMessageDialog(
+              dvPanel,
+              "Cannot add constraints when no model is loaded",
+              "Error adding constraints",
+              JOptionPane.ERROR_MESSAGE);
+            return;
+          }
+          File file = constraintChooser.getSelectedFile();
+          if (file != null) {
+            System.err.println("load constraints from " + file.getPath());
+            dvPanel.loadConstraintsAndAddToModel(file);
+          }
+        } else {
+          System.err.println("Open command cancelled by user.");
+        }
+      }
+
+    });
+
+    modelMenu.add(openItem);
+    modelMenu.add(constraintsItem);
+    modelMenu.add(new JSeparator(JSeparator.HORIZONTAL));
     modelMenu.add(testModel);
     return modelMenu;
   }
@@ -521,6 +597,24 @@ class DataViewerUI {
       }
       String ext = getFileExtension(f);
       return ("LAS".equalsIgnoreCase(ext));
+    }
+
+  }
+
+  private class ShapeFileFilter extends FileFilter {
+
+    @Override
+    public String getDescription() {
+      return "Shape Files (Polyline and Polygon format only)";
+    }
+
+    @Override
+    public boolean accept(File f) {
+      if (f.isDirectory()) {
+        return true;
+      }
+      String ext = getFileExtension(f);
+      return ("shp".equalsIgnoreCase(ext));
     }
 
   }

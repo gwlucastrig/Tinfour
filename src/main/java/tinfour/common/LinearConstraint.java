@@ -22,16 +22,13 @@
  * Date     Name         Description
  * ------   ---------    -------------------------------------------------
  * 10/2016  G. Lucas     Created
+ * 01/2016  G. Lucas     Fixed bounds bug reported by Martin Janda
  *
  * Notes:
  *
  * -----------------------------------------------------------------------
  */
 package tinfour.common;
-
-import java.awt.geom.Rectangle2D;
-import java.util.ArrayList;
-import java.util.List;
 
 /**
  * An implementation of the IConstraint interface intended to store
@@ -41,51 +38,11 @@ import java.util.List;
  * in the chain must be non-zero-length.
  * Do not use this class for closed polygons.
  */
-public class LinearConstraint implements IConstraint {
-
-  private final List<Vertex> list = new ArrayList<>();
-  private final Rectangle2D bounds = new Rectangle2D.Double();
-  private double x = Double.NaN;
-  private double y = Double.NaN;
-  private Object applicationData;
-  private int constraintIndex;
-
-  @Override
-  public List<Vertex> getVertices() {
-    return list;
-  }
-
-  @Override
-  public void add(Vertex v) {
-    if (v.getX() == x && v.getY() == y) {
-      return;  // ignore duplicate points
-    }
-    v.setConstraintMember(true);
-    x = v.getX();
-    y = v.getY();
-    list.add(v);
-    bounds.add(v.getX(), v.getY());
-  }
-
-  @Override
-  public Rectangle2D getBounds() {
-    return bounds;
-
-  }
+public class LinearConstraint extends PolyLineConstraintAdapter implements IConstraint {
 
   @Override
   public void complete() {
     // at this time, do nothing
-  }
-
-  @Override
-  public void setApplicationData(Object applicationData) {
-    this.applicationData = applicationData;
-  }
-
-  @Override
-  public Object getApplicationData() {
-    return applicationData;
   }
 
   @Override
@@ -95,9 +52,9 @@ public class LinearConstraint implements IConstraint {
 
   @Override
   public void setDefinesDataArea(boolean definesDataArea) {
-    if(definesDataArea){
-    throw new IllegalArgumentException(
-      "A non-polygon constraint cannot define a data area.");
+    if (definesDataArea) {
+      throw new IllegalArgumentException(
+        "A non-polygon constraint cannot define a data area.");
     }
   }
 
@@ -105,21 +62,12 @@ public class LinearConstraint implements IConstraint {
    * Indicates whether the constraint defines a data area.
    * Because linear constraints cannot define an area, this method
    * always returns false.
+   *
    * @return always false for linear constraints.
    */
   @Override
   public boolean definesDataArea() {
-     return false;
-  }
-
-  @Override
-  public void setConstraintIndex(int index) {
-     constraintIndex = index;
-  }
-
-  @Override
-  public int getConstraintIndex() {
-    return constraintIndex;
+    return false;
   }
 
 }

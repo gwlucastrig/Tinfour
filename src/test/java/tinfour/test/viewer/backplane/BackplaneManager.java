@@ -15,7 +15,7 @@
  * ---------------------------------------------------------------------
  */
 
-/*
+ /*
  * -----------------------------------------------------------------------
  *
  * Revision History:
@@ -30,11 +30,8 @@
 package tinfour.test.viewer.backplane;
 
 import java.awt.geom.AffineTransform;
-import java.awt.geom.NoninvertibleTransformException;
 import java.io.File;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import javax.swing.SwingUtilities;
 import tinfour.common.IMonitorWithCancellation;
 import tinfour.test.viewer.DataViewingPanel;
@@ -42,8 +39,14 @@ import tinfour.test.viewer.StatusPanel;
 
 public class BackplaneManager {
 
-  private static final Logger LOGGER
-    = Logger.getLogger(BackplaneManager.class.getName());
+  /*
+   * The renderPool and loaderQueue are named to reflect their functions.
+   * The loaderQueue has only one thread, and is used to load models one
+   * at a time, so it's named "queue". The render operation is permitted
+   * to use multiple threads running concurrently, so is named "pool"
+   */
+  final BackplaneExecutor renderPool;
+  final BackplaneExecutor loaderQueue;
 
   final DataViewingPanel viewingPanel;
   final StatusPanel statusPanel;
@@ -54,6 +57,37 @@ public class BackplaneManager {
   public BackplaneManager(DataViewingPanel viewingPanel, StatusPanel statusPanel) {
     this.viewingPanel = viewingPanel;
     this.statusPanel = statusPanel;
+    renderPool = new BackplaneExecutor(0); // size determined by CPU
+    loaderQueue = new BackplaneExecutor(1);
+  }
+
+  public IModel constructModel(File file) {
+    String name = file.getName();
+    int taskIndex = taskIndexSource.incrementAndGet();
+
+    if (!file.exists() || !file.canRead()) {
+      // not likely, but test just in case
+      postStatusMessage(taskIndex,
+        "File "
+        + name
+        + " does not exist or cannot be read");
+      return null;
+    }
+
+    String ext = extractFileExtension(file);
+    ViewOptions view = getViewOptions();
+    if ("LAZ".equalsIgnoreCase(ext)) {
+      postStatusMessage(taskIndex, "Tinfour does not yet support LAZ files");
+      return null;
+    } else if ("LAS".equalsIgnoreCase(ext)) {
+      LidarPointSelection selections = view.getLidarPointSelection();
+      return new ModelFromLas(file, selections);
+    } else if ("TXT".equalsIgnoreCase(ext)) {
+      return new ModelFromText(file, ' ');
+    } else if ("CSV".equalsIgnoreCase(ext)) {
+      return new ModelFromText(file, ',');
+    }
+    return null;
   }
 
   public void postStatusMessage(int index, final String message) {
@@ -68,9 +102,7 @@ public class BackplaneManager {
    */
   public void postImageUpdate(final IModelViewTask task, final RenderProduct product) {
     final int taskIndex = product.composite.getTaskIndex();
-    if (taskIndex < taskIndexSource.intValue()) {
-      return; // there are more recent tasks at work
-    }
+
     if (task.isCancelled()) {
       return;
     }
@@ -86,15 +118,24 @@ public class BackplaneManager {
     });
   }
 
+  void cancelAllTasks() {
+    loaderQueue.cancelAllTasks();
+    renderPool.cancelAllTasks();
+  }
 
+  void cancelRenderingTasks() {
+    loaderQueue.cancelRenderingTasks();
+    renderPool.cancelRenderingTasks();
+  }
 
   /**
    * Cancel all running tasks and clear all current status posts.
    */
   public void clear() {
-    BackplaneExecutor.getInstance().cancelAllTasks();
+    cancelAllTasks();
     final int taskIndex = taskIndexSource.incrementAndGet();
     statusPanel.clear(taskIndex);
+
   }
 
   /**
@@ -104,9 +145,11 @@ public class BackplaneManager {
    * @param model a valid model
    */
   public void loadModel(final IModel model) {
-    BackplaneExecutor.getInstance().cancelAllTasks();
+    if (model == null) {
+      throw new IllegalArgumentException("Null model not allowed");
+    }
+    cancelAllTasks();
     final int taskIndex = taskIndexSource.incrementAndGet();
-
     String name = model.getName();
     if (model.isLoaded()) {
       centerModelInPanelAndRunRender(model, getViewOptions(), taskIndex);
@@ -114,7 +157,7 @@ public class BackplaneManager {
       postStatusMessage(taskIndex, "Loading " + name);
       MvTaskLoad task
         = new MvTaskLoad(this, model, taskIndex);
-      BackplaneExecutor.getInstance().runTask(task);
+      loaderQueue.queueTask(task);
     }
   }
 
@@ -123,10 +166,11 @@ public class BackplaneManager {
    * the loading task will queue rendering tasks.
    *
    * @param file a valid reference to a readable file in a supported format.
+   * @return if the model was successfully initialized, a valid instance;
+   * otherwise a null.
    */
-  public void loadModel(File file) {
-
-    BackplaneExecutor.getInstance().cancelAllTasks();
+  public IModel loadModel(File file) {
+    cancelAllTasks();
     int taskIndex = taskIndexSource.incrementAndGet();
 
     String name = file.getName();
@@ -137,7 +181,7 @@ public class BackplaneManager {
         "File "
         + name
         + " does not exist or cannot be read");
-      return;
+      return null;
     }
 
     String ext = extractFileExtension(file);
@@ -146,7 +190,7 @@ public class BackplaneManager {
 
     if ("LAZ".equalsIgnoreCase(ext)) {
       postStatusMessage(taskIndex, "Tinfour does not yet support LAZ files");
-      return;
+      return null;
     } else if ("LAS".equalsIgnoreCase(ext)) {
       LidarPointSelection selections = view.getLidarPointSelection();
       model = new ModelFromLas(file, selections);
@@ -156,30 +200,78 @@ public class BackplaneManager {
       model = new ModelFromText(file, ',');
     } else {
       postStatusMessage(taskIndex, "Unrecognized file extension " + ext);
-      return;
+      return null;
     }
+
     postStatusMessage(taskIndex, "Loading " + name);
     MvTaskLoad task = new MvTaskLoad(this, model, taskIndex);
-    BackplaneExecutor.getInstance().runTask(task);
+    loaderQueue.queueTask(task);
+    return model;
+  }
+
+  public MvComposite queueConstraintLoadingTask(
+    IModel model, File file, CompositeImageScale ccs) {
+    cancelRenderingTasks();
+    int width = ccs.getWidth();
+    int height = ccs.getHeight();
+    AffineTransform m2c = ccs.getModelToCompositeTransform();
+    AffineTransform c2m = ccs.getCompositeToModelTransform();
+    int taskIndex = this.taskIndexSource.incrementAndGet();
+    ViewOptions vOpt = getViewOptions();
+    MvComposite mvComposite
+      = new MvComposite(model, vOpt, width, height, m2c, c2m, taskIndex);
+
+    String name = file.getName();
+
+    if (!file.exists() || !file.canRead()) {
+      // not likely, but test just in case
+      postStatusMessage(taskIndex,
+        "File "
+        + name
+        + " does not exist or cannot be read");
+      return null;
+    }
+
+    MvTaskLoadConstraints task
+      = new MvTaskLoadConstraints(this, file, mvComposite, taskIndex);
+    loaderQueue.queueTask(task);
+    return mvComposite;
+  }
+
+  public MvComposite queueReloadTask(
+    IModel model,
+    ViewOptions vOpt,
+    CompositeImageScale ccs) {
+    cancelRenderingTasks();
+    int width = ccs.getWidth();
+    int height = ccs.getHeight();
+    AffineTransform m2c = ccs.getModelToCompositeTransform();
+    AffineTransform c2m = ccs.getCompositeToModelTransform();
+    int taskIndex = this.taskIndexSource.incrementAndGet();
+    MvComposite mvComposite
+      = new MvComposite(model, vOpt, width, height, m2c, c2m, taskIndex);
+
+    MvTaskReload task
+      = new MvTaskReload(this, mvComposite, taskIndex);
+    loaderQueue.queueTask(task);
+    return mvComposite;
   }
 
   /**
    * Posted by a loading task to indicate that the load is completed
    * and that follow on rendering may be initiated.
    *
-   * @param task a valid instance with a completed load operation.
+   * @param model The model that was loaded from the data source
+   * @param taskIndex the task associated with loading the model.
    */
-  void postModelLoadCompleted(final MvTaskLoad task) {
-    final int taskIndex = task.getTaskIndex();
-    if (taskIndex < taskIndexSource.intValue()) {
-      return; // there are more recent tasks at work
+  void postModelLoadCompleted(final IModelViewTask task, final IModel model, final int taskIndex) {
+    if (task.isCancelled()) {
+      return;
     }
-    IModel model = task.getModel();
-    ViewOptions view = viewOptions;
-    centerModelInPanelAndRunRender(model, view, taskIndex);
+
+    ViewOptions vOpt = getViewOptions();
+    centerModelInPanelAndRunRender(model, vOpt, taskIndex);
   }
-
-
 
   /**
    * Prepares a composite from a specified model and view options,
@@ -202,80 +294,27 @@ public class BackplaneManager {
 
       @Override
       public void run() {
-        int width = viewingPanel.getWidth();
-        int height = viewingPanel.getHeight();
-        double mx0 = model.getMinX();
-        double my0 = model.getMinY();
-        double mx1 = model.getMaxX();
-        double my1 = model.getMaxY();
-
-        double uPerPixel; // unit of measure from model per pixel
-        // the model to composite transform is not yet established.
-        // compute a transform that will ensure that the model is
-        // presented as large as it possibly can, fitting it into
-        // the available space in the composite image.
-        double cAspect = (double) width / (double) height; // aspect of composite
-        double mAspect = (mx1 - mx0) / (my1 - my0); // aspect of model
-        double aspect = cAspect / mAspect;
-
-        double xOffset = 0;
-        double yOffset = 0;
-        if (aspect >= 1) {
-          // the proportions of the panel is wider than the proportions of
-          // the image.  The vertical extent is the limiting factor
-          // for the size of the image
-          uPerPixel = height / (my1 - my0);
-          double w = uPerPixel * (mx1 - mx0);
-          xOffset = (width - w) / 2;
-        } else {
-          // the horizontal extent is the limiting factor
-          // for the size of the image
-          uPerPixel = width / (mx1 - mx0);
-          double h = uPerPixel * (my1 - my0);
-          yOffset = (height - h) / 2;
-        }
-
-        //   s   0   xOffset
-        //   0   s   yOffset
-        //   0   0   1
-        AffineTransform m2p
-          = new AffineTransform(
-            uPerPixel, 0, 0, -uPerPixel,
-            xOffset - uPerPixel * mx0,
-            yOffset + uPerPixel * my1);
-
-        int pad = view.getPadding();
-        AffineTransform m2c
-          = new AffineTransform(
-            uPerPixel, 0, 0, -uPerPixel,
-            xOffset + pad - uPerPixel * mx0,
-            yOffset + pad + uPerPixel * my1);
-
-        // verify that transform is invertible... it should always be so.
-        AffineTransform  c2m;
-        try {
-          c2m = m2c.createInverse();
-        } catch (NoninvertibleTransformException ex) {
-          LOGGER.log(Level.SEVERE, "Unexpected transform failure", ex);
-          return;
-        }
+        CompositeImageScale imgScale
+          = viewingPanel.getImageScaleToCenterModelInPanel(model);
 
         MvComposite mvComposite
           = new MvComposite(model, view,
-            width + 2 * pad, height + 2 * pad,
-            m2c, c2m, taskIndex);
+            imgScale.getWidth(),
+            imgScale.getHeight(),
+            imgScale.getModelToCompositeTransform(),
+            imgScale.getCompositeToModelTransform(),
+            taskIndex
+          );
 
         viewingPanel.postMvComposite(mvComposite);
         MvTaskBuildTinAndRender renderTask
           = new MvTaskBuildTinAndRender(self, mvComposite, taskIndex);
-        BackplaneExecutor.getInstance().runTask(renderTask);
+        renderPool.queueTask(renderTask);
 
       }
 
     });
   }
-
-
 
   /**
    * Queues a render task; typically invoked from the UI when the user changes
@@ -286,27 +325,23 @@ public class BackplaneManager {
    *
    * @param model a fully loaded model
    * @param view a valid instance
-   * @param width width of the composite
-   * @param height height of the composite
-   * @param m2c model to composite transform
-   * @param c2m composite to model transform
-   * @return a valid instance.
+   * @param ccs specifications for model position and scale for imaging
+   * @return a valid instance
    */
-  public MvComposite queueHeavyweightRenderTask(IModel model, ViewOptions view, int width, int height, AffineTransform m2c, AffineTransform c2m) {
-    BackplaneExecutor.getInstance().cancelAllTasks();
+  public MvComposite queueHeavyweightRenderTask(IModel model,
+    ViewOptions view,
+    CompositeImageScale ccs) {
+    cancelRenderingTasks();
+    int width = ccs.getWidth();
+    int height = ccs.getHeight();
+    AffineTransform m2c = ccs.getModelToCompositeTransform();
+    AffineTransform c2m = ccs.getCompositeToModelTransform();
     int taskIndex = this.taskIndexSource.incrementAndGet();
     MvComposite mvComposite
       = new MvComposite(model, view, width, height, m2c, c2m, taskIndex);
 
-    if (model.isLoaded()) {
-      MvTaskBuildTinAndRender renderTask
-        = new MvTaskBuildTinAndRender(this, mvComposite, taskIndex);
-      BackplaneExecutor.getInstance().runTask(renderTask);
-    } else {
-      // the reload task will eventually launch a build tin and render task
-      MvTaskReload reloadTask = new MvTaskReload(this, mvComposite, taskIndex);
-      BackplaneExecutor.getInstance().runTask(reloadTask);
-    }
+    MvTaskQueueRender renderTask = new MvTaskQueueRender(this, mvComposite, taskIndex);
+    loaderQueue.queueTask(renderTask);
 
     return mvComposite;
   }
@@ -316,27 +351,21 @@ public class BackplaneManager {
    * user makes changes to the view options that do not require reconstructing
    * the TINs associated with the image.
    *
-   * @param mvComposite an existing, model-view composite that contains
+   * @param oldComposite an existing, model-view composite that contains
    * elements that can be transferred intact for reuse in a new composite
    * (TINs, grids, etc.).
-   * @param view a set of view options
-   * @param width the width of the new composite
-   * @param height the height of the new composite
-   * @param m2c the model to composite transform
-   * @param c2m the composite to model transform
+   * @param view view-related options for rendering
    * @return a valid model-view composite instance.
    */
   public MvComposite queueLightweightRenderTask(
-    MvComposite mvComposite,
-    ViewOptions view,
-    int width, int height, AffineTransform m2c, AffineTransform c2m) {
-    BackplaneExecutor.getInstance().cancelAllTasks();
+    MvComposite oldComposite,
+    ViewOptions view) {
+    cancelRenderingTasks();
     int taskIndex = this.taskIndexSource.incrementAndGet();
-    MvComposite newComposite = new MvComposite(mvComposite, view, taskIndex);
+    MvComposite newComposite = new MvComposite(oldComposite, view, true, taskIndex);
 
-    MvTaskRender renderTask = new MvTaskRender(this, newComposite, taskIndex);
-    BackplaneExecutor.getInstance().runTask(renderTask);
-
+    MvTaskQueueRender renderTask = new MvTaskQueueRender(this, newComposite, taskIndex);
+    loaderQueue.queueTask(renderTask);
     return newComposite;
 
   }
@@ -370,10 +399,10 @@ public class BackplaneManager {
    *
    * @return a valid instance
    */
-   ViewOptions getViewOptions() {
-     synchronized(this){
-    return viewOptions;
-     }
+  ViewOptions getViewOptions() {
+    synchronized (this) {
+      return viewOptions;
+    }
   }
 
   /**
@@ -387,6 +416,31 @@ public class BackplaneManager {
    */
   IMonitorWithCancellation getProgressMonitor(int taskIndex) {
     return statusPanel.getProgressMonitor(taskIndex);
+  }
+
+  void postModelRefreshCompleted(IModelViewTask task, MvComposite pmvComposite) {
+    if (task.isCancelled()) {
+      return;
+    }
+
+    MvComposite mvComposite = pmvComposite;
+    IModel model = mvComposite.getModel();
+    if (!model.isLoaded()) {
+      System.err.println("load failed");
+      return; // somehow the load failed
+    }
+
+    int taskIndex = task.getTaskIndex();
+
+    ViewOptions vOpt = getViewOptions();
+    if (vOpt != mvComposite.getView()) {
+      // The view option changed while the data was being  loaded
+      mvComposite = new MvComposite(mvComposite, vOpt, false, taskIndex);
+    }
+    MvTaskBuildTinAndRender renderTask
+      = new MvTaskBuildTinAndRender(this, mvComposite, taskIndex);
+    renderPool.queueTask(renderTask);
+
   }
 
 }

@@ -15,7 +15,7 @@
  * ---------------------------------------------------------------------
  */
 
-/*
+ /*
  * -----------------------------------------------------------------------
  *
  * Revision History:
@@ -104,7 +104,8 @@ package tinfour.common;
 /**
  * A representation of an edge with forward and reverse links on one
  * side and counterpart links attached to its dual (other side).
- * <p>This concept is based on the structure popularized by
+ * <p>
+ * This concept is based on the structure popularized by
  * <cite>Guibas, L. and Stolfi, J. (1985) "Primitives for the
  * manipulation of subdivisions and the computation of Voronoi diagrams"
  * ACM Transactions on Graphics, 4(2), 1985, p. 75-123.</cite>
@@ -112,40 +113,40 @@ package tinfour.common;
 public class QuadEdge implements IQuadEdge {
 
   /**
-   * The maximum value of a constraint index based in space
-   * allocated for its storage. This is a value of (2^20-1).
+   * The maximum value of a constraint index based on the three bytes
+   * allocated for its storage. This is a value of 16777215, or 2^24-1.
    * In practice this value is larger than the available
    * memory on many contemporary computers would allow.
-  */
-  public static final int CONSTRAINT_INDEX_MAX = 1048575;
+   */
+  public static final int CONSTRAINT_INDEX_MAX = ((1 << 24) - 1); // 16777215
 
   /**
    * A mask that can be anded with the QuadEdgePartner's
    * index field to extract the constraint index,
-   * equivalent to the 20 low-order bits.
+   * equivalent to the 24 low-order bits.
    */
-  public static final int CONSTRAINT_INDEX_MASK = 0x000fffff;
+  public static final int CONSTRAINT_INDEX_MASK = 0x00ffffff;
 
   /**
    * A bit indicating that an edge is constrained. This bit just happens
    * to be the sign bit, a feature that is exploited by the isConstrained()
    * method.
    */
-  public static final int CONSTRAINT_FLAG = (1<<31);
+  public static final int CONSTRAINT_FLAG = (1 << 31);
 
   /**
    * A bit indicating that an edge is part of a constrained area.
    */
-  public static final int CONSTRAINT_AREA_FLAG = (1<<30);
+  public static final int CONSTRAINT_AREA_FLAG = (1 << 30);
 
   /**
    * A bit indicating that the constrained area is to the base side
-   * of the edge.  This bit is only meaningful when CONSTRAINT_AREA_FLAG is set.
+   * of the edge. This bit is only meaningful when CONSTRAINT_AREA_FLAG is set.
    * If CONSTRAINT_AREA_FLAG is set, then this bit tells which side the
    * constraint area lies on: if the bit is set, it's on the base side
    * and if the bit is clear, it's on the dual side.
    */
-  public static final int CONSTRAINT_AREA_BASE_FLAG = (1<<29);
+  public static final int CONSTRAINT_AREA_BASE_FLAG = (1 << 29);
 
   /**
    * An arbitrary index value. For IncrementalTin, the index
@@ -180,6 +181,7 @@ public class QuadEdge implements IQuadEdge {
 
   /**
    * Construct the edge setting its dual with the specfied reference.
+   *
    * @param partner a valid element.
    */
   QuadEdge(final QuadEdge partner) {
@@ -188,6 +190,7 @@ public class QuadEdge implements IQuadEdge {
 
   /**
    * Construct the edge and its dual assigning the pair the specified index.
+   *
    * @param index an arbitrary integer value.
    */
   public QuadEdge(final int index) {
@@ -197,6 +200,7 @@ public class QuadEdge implements IQuadEdge {
 
   /**
    * Sets the vertices for this edge (and its dual).
+   *
    * @param a the initial vertex, must be a valid reference.
    * @param b the second vertex, may be a valid reference or a
    * null for a ghost edge.
@@ -208,6 +212,7 @@ public class QuadEdge implements IQuadEdge {
 
   /**
    * Gets the initial vertex for this edge.
+   *
    * @return a valid reference.
    */
   @Override
@@ -217,6 +222,7 @@ public class QuadEdge implements IQuadEdge {
 
   /**
    * Sets the initial vertex for this edge.
+   *
    * @param a a valid reference.
    */
   public final void setA(final Vertex a) {
@@ -225,6 +231,7 @@ public class QuadEdge implements IQuadEdge {
 
   /**
    * Gets the second vertex for this edge.
+   *
    * @return a valid reference or a null for a ghost edge.
    */
   @Override
@@ -235,6 +242,7 @@ public class QuadEdge implements IQuadEdge {
   /**
    * Sets the second (B) vertex for this edge (also the A reference of
    * the dual edge).
+   *
    * @param b a valid reference or a null for a ghost edge.
    */
   public final void setB(final Vertex b) {
@@ -243,6 +251,7 @@ public class QuadEdge implements IQuadEdge {
 
   /**
    * Gets the forward reference of the edge.
+   *
    * @return a valid reference.
    */
   @Override
@@ -252,6 +261,7 @@ public class QuadEdge implements IQuadEdge {
 
   /**
    * Gets the reverse reference of the edge.
+   *
    * @return a valid reference.
    */
   @Override
@@ -261,6 +271,7 @@ public class QuadEdge implements IQuadEdge {
 
   /**
    * Gets the forward reference of the dual.
+   *
    * @return a valid reference
    */
   @Override
@@ -270,6 +281,7 @@ public class QuadEdge implements IQuadEdge {
 
   /**
    * Gets the reverse link of the dual.
+   *
    * @return a valid reference
    */
   @Override
@@ -279,14 +291,16 @@ public class QuadEdge implements IQuadEdge {
 
   /**
    * Gets the dual of the reverse link.
+   *
    * @return a valid reference
    */
-  public final QuadEdge getDualFromReverse(){
+  public final QuadEdge getDualFromReverse() {
     return r.dual;
   }
 
   /**
    * Sets the forward reference for this edge.
+   *
    * @param e a valid reference
    */
   public final void setForward(final QuadEdge e) {
@@ -297,6 +311,7 @@ public class QuadEdge implements IQuadEdge {
 
   /**
    * Sets the reverse reference for this edge.
+   *
    * @param e a valid reference
    */
   public final void setReverse(final QuadEdge e) {
@@ -307,6 +322,7 @@ public class QuadEdge implements IQuadEdge {
 
   /**
    * Sets the forward link to the dual of this edge.
+   *
    * @param e a valid reference
    */
   public final void setDualForward(final QuadEdge e) {
@@ -317,6 +333,7 @@ public class QuadEdge implements IQuadEdge {
 
   /**
    * Sets the reverse link of the dual to this edge.
+   *
    * @param e a valid reference
    */
   public final void setDualReverse(final QuadEdge e) {
@@ -327,6 +344,7 @@ public class QuadEdge implements IQuadEdge {
 
   /**
    * Gets the dual edge to this instance.
+   *
    * @return a valid edge.
    */
   @Override
@@ -336,6 +354,7 @@ public class QuadEdge implements IQuadEdge {
 
   /**
    * Gets the index value for this edge.
+   *
    * @return an integer value
    */
   @Override
@@ -346,15 +365,16 @@ public class QuadEdge implements IQuadEdge {
   /**
    * Sets the index value for this edge. In the IncrementalTin application,
    * this index is used for managing the EdgePool.
+   *
    * @param index an integer value
    */
   public void setIndex(final int index) {
     this.index = index;
   }
 
-
   /**
    * Gets the reference to the side-zero edge of the pair.
+   *
    * @return a link to the side-zero edge of the pair.
    */
   @Override
@@ -375,7 +395,6 @@ public class QuadEdge implements IQuadEdge {
     return dual.getConstraintIndex();
   }
 
-
   @Override
   public void setConstraintIndex(int constraintIndex) {
     dual.setConstraintIndex(constraintIndex);
@@ -392,7 +411,7 @@ public class QuadEdge implements IQuadEdge {
   }
 
   @Override
-  public void setConstrained(int constraintIndex){
+  public void setConstrained(int constraintIndex) {
     dual.setConstrained(constraintIndex);
   }
 
@@ -416,6 +435,7 @@ public class QuadEdge implements IQuadEdge {
   /**
    * Gets a name string for the edge by prepending the index value
    * with a + or - string depending on its side (+ for side zero, - for side 1).
+   *
    * @return a valid string.
    */
   String getName() {
@@ -441,14 +461,14 @@ public class QuadEdge implements IQuadEdge {
       (a == null ? "gv" : a.getLabel()),
       (b == null ? "gv" : b.getLabel()),
       (f == null ? "null" : f.getName()),
-      (this.isConstrained()?"    constrained":"")
+      (this.isConstrained() ? "    constrained" : "")
     );
     return s;
   }
 
-
   /**
    * Gets the length of the edge.
+   *
    * @return a positive floating point value
    */
   @Override
@@ -477,6 +497,7 @@ public class QuadEdge implements IQuadEdge {
   /**
    * An implementation of the equals method which check for a matching
    * reference.
+   *
    * @param o a valid reference or a null
    * @return true if the specified reference matches this.
    */
@@ -510,14 +531,14 @@ public class QuadEdge implements IQuadEdge {
     dual.index |= CONSTRAINT_AREA_FLAG | CONSTRAINT_AREA_BASE_FLAG;
   }
 
-
   @Override
-  public boolean isConstraintAreaOnThisSide(){
-      return (dual.index&CONSTRAINT_AREA_BASE_FLAG)!=0;
+  public boolean isConstraintAreaOnThisSide() {
+    return (dual.index & CONSTRAINT_AREA_BASE_FLAG) != 0;
   }
 
   @Override
-  public Iterable<IQuadEdge>pinwheel(){
+  public Iterable<IQuadEdge> pinwheel() {
     return new QuadEdgePinwheel(this);
   }
+
 }

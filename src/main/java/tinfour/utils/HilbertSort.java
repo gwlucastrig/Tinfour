@@ -15,7 +15,7 @@
  */
 
 
-/*
+ /*
  * -----------------------------------------------------------------------
  *
  * Revision History:
@@ -55,7 +55,6 @@ import tinfour.common.Vertex;
 public class HilbertSort {
 
   double xMin, xMax, yMin, yMax;
-
 
   private int xy2Hilbert(final int px, final int py, final int n) {
     int i, xi, yi;
@@ -131,40 +130,39 @@ public class HilbertSort {
       nHilbert = 4;
     }
 
-	//    This sort temporarily modifies the index element of the vertices
-	// to facilitate sorting, then sets them back to their original
-	// state when its finished.
-	//    Unfortunately, I could not think of any good way to perform the
-	// sort without modifying the vertices to be sorted.  Two obvious
-	// approaches can be rejected right away and the third has a drawback.
-	//    1.  Compute the Hilbert ranking on the fly within the
-	//        comparator.  Won't work because the computing the ranking is
-	//        too expensive to be performed everytime the comparator is invoked
-	//    2.  Create a class that holds a vertex and a ranking and use
-	//        that as the object to be sorted. Won't work because of the
-	//        high cost of constructing a large number of temporary
-	//        objects.
-	//    3.  Add a field to the vertex class to store its Hilbert ranking.
-	//        This would work, but would increase the size of vertex instances
-	//        by 4 to 8 bytes per (depending on memory layout).
-	// Instead, we use the approach:
-	//    4.  Record original indices in temporary storage. Replace the
-	//        vertex indices with their Hilbert rankings. Sort. Restore
-	//        the original vertices from the temporary storage.
-	// This approach has the unfortunate consequence of making the vertex
-	// index a mutable field, which is a less than ideal design practice...
-	// but necessary in this case.
+    //    This sort temporarily modifies the index element of the vertices
+    // to facilitate sorting, then sets them back to their original
+    // state when its finished.
+    //    Unfortunately, I could not think of any good way to perform the
+    // sort without modifying the vertices to be sorted.  Two obvious
+    // approaches can be rejected right away and the third has a drawback.
+    //    1.  Compute the Hilbert ranking on the fly within the
+    //        comparator.  Won't work because the computing the ranking is
+    //        too expensive to be performed everytime the comparator is invoked
+    //    2.  Create a class that holds a vertex and a ranking and use
+    //        that as the object to be sorted. Won't work because of the
+    //        high cost of constructing a large number of temporary
+    //        objects.
+    //    3.  Add a field to the vertex class to store its Hilbert ranking.
+    //        This would work, but would increase the size of vertex instances
+    //        by 4 to 8 bytes per (depending on memory layout).
+    // Instead, we use the approach:
+    //    4.  Record original indices in temporary storage. Replace the
+    //        vertex indices with their Hilbert rankings. Sort. Restore
+    //        the original vertices from the temporary storage.
+    // This approach has the unfortunate consequence of making the vertex
+    // index a mutable field, which is a less than ideal design practice...
+    // but necessary in this case.
+    int[] savedIndices = new int[vertexList.size()];
+    Vertex[] savedVertices = new Vertex[vertexList.size()];
+    int kVertex = 0;
+    for (Vertex vh : vertexList) {
+      savedVertices[kVertex] = vh;
+      savedIndices[kVertex] = vh.getIndex();
+      kVertex++;
+    }
 
-    int []savedIndices = new int[vertexList.size()];
-	Vertex []savedVertices = new Vertex[vertexList.size()];
-	int kVertex = 0;
-	for(Vertex vh: vertexList){
-	   savedVertices[kVertex] = vh;
-	   savedIndices[kVertex] = vh.getIndex();
-	   kVertex++;
-	}
-
-	// scale coordinates to 2^n - 1
+    // scale coordinates to 2^n - 1
     double hScale = (double) (1 << nHilbert) - 1.0;
     for (Vertex vh : vertexList) {
       int ix = (int) (hScale * (vh.x - xMin) / xDelta);

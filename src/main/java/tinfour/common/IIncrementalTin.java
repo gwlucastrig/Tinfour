@@ -15,7 +15,7 @@
  * ---------------------------------------------------------------------
  */
 
-/*
+ /*
  * -----------------------------------------------------------------------
  *
  * Revision History:
@@ -27,7 +27,6 @@
  *
  * -----------------------------------------------------------------------
  */
-
 package tinfour.common;
 
 import java.awt.geom.Rectangle2D;
@@ -58,7 +57,6 @@ public interface IIncrementalTin {
    * @return A valid instance of the TriangleCount class.
    */
   public TriangleCount countTriangles();
-
 
   /**
    * Nullifies all internal data and references, preparing the
@@ -97,7 +95,6 @@ public interface IIncrementalTin {
    */
   List<IQuadEdge> getEdges();
 
-
   /**
    * Gets an iterator for stepping through the list of current edges.
    * <p>
@@ -110,10 +107,10 @@ public interface IIncrementalTin {
    * does not offer any protection against concurrent modification.
    * Therefore applications using this iterator must never modify the
    * TIN during iteration.
+   *
    * @return a valid iterator.
    */
-  public Iterator<IQuadEdge>getEdgeIterator();
-
+  public Iterator<IQuadEdge> getEdgeIterator();
 
   /**
    * Gets the maximum index of the currently allocated edges. This
@@ -127,10 +124,10 @@ public interface IIncrementalTin {
    * The while there can be small gaps in the indexing sequence, this
    * method provides a way of obtaining the absolute maximum value of
    * currently allocated edges.
-   * @return
+   *
+   * @return a positive value or zero if the TIN is not bootstrapped.
    */
-    public int getMaximumEdgeAllocationIndex();
-
+  public int getMaximumEdgeAllocationIndex();
 
   /**
    * Gets the nominal point spacing used to determine numerical thresholds
@@ -162,23 +159,22 @@ public interface IIncrementalTin {
    */
   List<IQuadEdge> getPerimeter();
 
-
-
   /**
    * Gets a new instance of the INeighborEdgeLocator interface.
    * Instances observe the contract of the IProcessUsingTin interface
    * in that they access the TIN on a readonly basis and may be used
    * in parallel threads provided that the TIN is not modified.
+   *
    * @return an edge locator tied to this TIN.
    */
   INeighborEdgeLocator getNeighborEdgeLocator();
 
-
-    /**
+  /**
    * Gets a new instance of a neighborhood points collector.
    * Instances observe the contract of the IProcessUsingTin interface
    * in that they access the TIN on a readonly basis and may be used
    * in parallel threads provided that the TIN is not modified.
+   *
    * @return an points collector tied to this TIN.
    */
   public INeighborhoodPointsCollector getNeighborhoodPointsCollector();
@@ -186,6 +182,7 @@ public interface IIncrementalTin {
   /**
    * Gets an implementation of the integrity check interface suitable for
    * the referenced TIN implementation.
+   *
    * @return a valid integrity check implementation.
    */
   public IIntegrityCheck getIntegrityCheck();
@@ -259,6 +256,7 @@ public interface IIncrementalTin {
    * class are not used by the TIN and may be modified by application
    * code as required. However, the geometry related fields must not be
    * modified once a vertex is added to a TIN.
+   *
    * @return a valid list of vertices, potentially empty if the TIN has
    * not been initialized.
    */
@@ -296,11 +294,11 @@ public interface IIncrementalTin {
    */
   boolean isBootstrapped();
 
-
   /**
    * Determines whether the point is inside the convex polygon boundary
-   * of the TIN.  If the TIN is not bootstrapped, this method will
+   * of the TIN. If the TIN is not bootstrapped, this method will
    * return a value of false.
+   *
    * @param x The x coordinate of interest
    * @param y THe y coordinate of interest
    * @return true if the coordinates identify a point inside the
@@ -308,12 +306,12 @@ public interface IIncrementalTin {
    */
   boolean isPointInsideTin(double x, double y);
 
-    /**
+  /**
    * Provides a diagnostic print out of the edges comprising the TIN.
    *
    * @param ps A valid print stream.
    */
-  public void printEdges(final PrintStream ps) ;
+  public void printEdges(final PrintStream ps);
 
   /**
    * Removes the specified vertex from the TIN. If the vertex is part of
@@ -334,7 +332,6 @@ public interface IIncrementalTin {
   public void setResolutionRuleForMergedVertices(
     final VertexMergerGroup.ResolutionRule resolutionRule);
 
-
   /**
    * Adds constraints to the TIN.
    * <p>
@@ -351,7 +348,7 @@ public interface IIncrementalTin {
    * at the endpoints of the segments that define them (i.e. segments
    * in constraints must never cross each other). Due to the high cost of
    * processing required to check that this restriction is observed,
-   * it is not  directly enforced by the Tinfour implementations.
+   * it is not directly enforced by the Tinfour implementations.
    * <p>
    * <strong>Restoring Conformity</strong>
    * <p>
@@ -361,7 +358,8 @@ public interface IIncrementalTin {
    * by inserting synthetic points into the the constraint edges.
    * The cost of this process is additional processing time and
    * an increase in the number of points in the TIN.
-   * <p>When points are synthesized, it is necessary to interpolate
+   * <p>
+   * When points are synthesized, it is necessary to interpolate
    * a value for the z-coordinate. At this time, the specific interpolation
    * process is undefined. The current Tinfour implementations
    * use linear interpolation between constraint points. While no
@@ -371,24 +369,25 @@ public interface IIncrementalTin {
    * @param constraints a valid, potentially empty list.
    * @param restoreConformity restores conformity
    */
-   public void addConstraints(
-     List<IConstraint> constraints, boolean restoreConformity);
+  public void addConstraints(
+    List<IConstraint> constraints, boolean restoreConformity);
 
+  /**
+   * Gets a shallow copy of the list of constraints currently
+   * stored in the TIN.
+   *
+   * @return a valid, potentially empty list of constraint instances.
+   */
+  public List<IConstraint> getConstraints();
 
-   /**
-    * Gets a shallow copy of the list of constraints currently
-    * stored in the TIN.
-    * @return a valid, potentially empty list of constraint instances.
-    */
-   public List<IConstraint>getConstraints();
-
-   /**
-    * Gets the number of synthetic vertices added to the TIN.
-    * Vertices can be synthesized as part of the Delaunay restoration
-    * process when adding constraints. Future implementations of additional
-    * functions (such as Delaunay refinement) may also add synthetic points.
-    * @return a positive integer, potentially zero.
-    */
-   public int getSyntheticVertexCount();
+  /**
+   * Gets the number of synthetic vertices added to the TIN.
+   * Vertices can be synthesized as part of the Delaunay restoration
+   * process when adding constraints. Future implementations of additional
+   * functions (such as Delaunay refinement) may also add synthetic points.
+   *
+   * @return a positive integer, potentially zero.
+   */
+  public int getSyntheticVertexCount();
 
 }

@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-/*
+ /*
  * -----------------------------------------------------------------------
  *
  * Revision History:
@@ -206,11 +206,11 @@ class SemiVirtualNeighborhoodPointsCollector implements IProcessUsingTin, INeigh
     // in the adjacent triangle is closer to (x,y) than the vertex in the
     //triangle we have chosen.
     if (v0.getDistanceSq(x, y) < vertexTolerance2) {
-      return pinwheel(eEdge,  searchDepth, targetMinVertexCount);
+      return pinwheel(eEdge, searchDepth, targetMinVertexCount);
     } else if (v1.getDistanceSq(x, y) < vertexTolerance2) {
-      return pinwheel(eEdge.getDual(),  searchDepth, targetMinVertexCount);
+      return pinwheel(eEdge.getDual(), searchDepth, targetMinVertexCount);
     } else if (v2.getDistanceSq(x, y) < vertexTolerance2) {
-      return pinwheel(eEdge.getReverse(),  searchDepth, targetMinVertexCount);
+      return pinwheel(eEdge.getReverse(), searchDepth, targetMinVertexCount);
     }
 
     // check for ambiguous case where (x,y) lies on the edge of

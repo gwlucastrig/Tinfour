@@ -15,7 +15,7 @@
  * ---------------------------------------------------------------------
  */
 
-/*
+ /*
  * -----------------------------------------------------------------------
  *
  * Revision History:
@@ -25,14 +25,6 @@
  *
  * Notes:
  *
- *  This class is designed using the singleton pattern and on-demand
- *  initialization as proposed by Bill Pugh.  See
- *  https://en.wikipedia.org/wiki/Singleton_pattern#Initialization-on-demand_holder_idiom
- *
- *  Note that, in practice, there is only a single instance of this class
- *  provided that only one class loader is used.  Since this example
- *  application does not use custom class loaders, the expected behavior
- *  of this class is to follow the singleton pattern.
  * -----------------------------------------------------------------------
  */
 package tinfour.test.viewer.backplane;
@@ -48,49 +40,39 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
- * Provides a singleton class which serves as multi-threaded utility
- * for performing time-consuming processes including file access,
- * rendering, and analysis.
+ * Wraps a Java ThreadPoolExecutor instance with added support for task
+ * cancellation.
  */
 final class BackplaneExecutor {
-
-  @SuppressWarnings("PMD")
-  private static class BackplaneExecutorHolder {
-
-    private static final BackplaneExecutor INSTANCE = new BackplaneExecutor();
-  }
-
-  /**
-   * Get the single instance of the BackplaneExecutor associated with
-   * the application
-   *
-   * @return a valid instance.
-   */
-  public static BackplaneExecutor getInstance() {
-    return BackplaneExecutorHolder.INSTANCE;
-  }
 
   private final int nThreadsInPool;
   private final ThreadPoolExecutor executor;
   private final List<IModelViewTask> taskList;
 
   /**
-   * A private constructor to deter application code from making
-   * instantiations of this class.
+   * Standard constructor
+   *
+   * @param coreSize the number of threads for the executor
    */
-  private BackplaneExecutor() {
+  BackplaneExecutor(int coreSize) {
     // If at all possible, the number of threads we claim should
     // be less than the number of processors.  That way, even during
     // the heaviest model/view processing, there will still be one
     // unencumbered processor available to the Event Dispatching Thread
     // and our user interface will remain responsive.
-    int nAvailableProcessors = Runtime.getRuntime().availableProcessors();
-    if (nAvailableProcessors > 6) {
-      nThreadsInPool = 4; // no sense getting greedy
-    } else if (nAvailableProcessors > 2) {
-      nThreadsInPool = nAvailableProcessors - 2;
+    if (coreSize == 0) {
+      // automatically determine coresize
+
+      int nAvailableProcessors = Runtime.getRuntime().availableProcessors();
+      if (nAvailableProcessors > 6) {
+        nThreadsInPool = 4; // no sense getting greedy
+      } else if (nAvailableProcessors > 2) {
+        nThreadsInPool = nAvailableProcessors - 2;
+      } else {
+        nThreadsInPool = 1;
+      }
     } else {
-      nThreadsInPool = 1;
+      nThreadsInPool = coreSize;
     }
 
     // The custom thread factory is used for no better reason than
@@ -99,8 +81,8 @@ final class BackplaneExecutor {
     BackplaneThreadFactory factory = new BackplaneThreadFactory("Backplane");
     executor = new MvThreadPoolExecutor(nThreadsInPool, nThreadsInPool,
       1000, TimeUnit.SECONDS, new LinkedBlockingQueue<Runnable>() {
-        private static final long serialVersionUID = 1;
-      },
+      private static final long serialVersionUID = 1;
+    },
       factory);
 
     taskList = new ArrayList<IModelViewTask>();
@@ -112,7 +94,7 @@ final class BackplaneExecutor {
    *
    * @param r a valid runnable
    */
-  void runTask(Runnable r) {
+  void queueTask(Runnable r) {
     if (r instanceof IModelViewTask) {
       synchronized (taskList) {
         taskList.add((IModelViewTask) r);
@@ -132,7 +114,30 @@ final class BackplaneExecutor {
     synchronized (taskList) {
       for (IModelViewTask t : taskList) {
         t.cancel();
+        System.out.println("Cancelling task " + t.getTaskIndex() + ", " + t.getClass().getName());
         cancelledList.add(t);
+      }
+      taskList.clear();
+    }
+    for (IModelViewTask t : cancelledList) {
+      executor.remove(t);
+    }
+  }
+
+  /**
+   * Mark all tasks as cancelled and remove any pending tasks from the
+   * queue. Any tasks currently running will continue to do so until they
+   * check their own cancellation flags and exit their run menthods.
+   */
+  void cancelRenderingTasks() {
+    List<IModelViewTask> cancelledList = new ArrayList<>();
+    synchronized (taskList) {
+      for (IModelViewTask t : taskList) {
+        if (t.isRenderingTask()) {
+          t.cancel();
+          System.out.println("Cancelling task " + t.getTaskIndex() + ", " + t.getClass().getName());
+          cancelledList.add(t);
+        }
       }
       taskList.clear();
     }

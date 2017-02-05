@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-/*
+ /*
  * -----------------------------------------------------------------------
  *
  * Revision History:
@@ -238,7 +238,7 @@ public class SemiVirtualStochasticLawsonsWalk {
       // randomness. Thus the code below determines the branch based on
       // the low-order bit value.
       long edgeSelectionForNextTest = randomNext();
-      if ((edgeSelectionForNextTest&1) ==0) {
+      if ((edgeSelectionForNextTest & 1) == 0) {
         nSLWTests++;
         vX1 = x - v1.x;
         vY1 = y - v1.y;
@@ -540,4 +540,5 @@ public class SemiVirtualStochasticLawsonsWalk {
     seed ^= (seed << 4);
     return seed;
   }
+
 }

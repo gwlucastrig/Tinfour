@@ -15,7 +15,7 @@
  * ---------------------------------------------------------------------
  */
 
-/*
+ /*
  * -----------------------------------------------------------------------
  *
  * Revision History:
@@ -46,7 +46,9 @@ import java.io.File;
 import java.io.IOException;
 import java.util.Formatter;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicInteger;
 import javax.imageio.ImageIO;
+import tinfour.common.IConstraint;
 import tinfour.common.IIncrementalTin;
 import tinfour.common.INeighborEdgeLocator;
 import tinfour.common.IQuadEdge;
@@ -74,6 +76,9 @@ public class MvComposite {
    */
   static final double tinMemoryUseFraction = 0.1;
 
+  static private AtomicInteger serialIndexSource = new AtomicInteger();
+  final private int serialIndex;
+
   final private int taskIndex;
 
   private final IModel model;
@@ -93,10 +98,13 @@ public class MvComposite {
 
   AffineTransform c2m;
 
-  IIncrementalTin wireframeTin;
-  IIncrementalTin rasterTin;
+  private IIncrementalTin wireframeTin;
+  private IIncrementalTin rasterTin;
   IIncrementalTin interpolatingTin;
-  double interpolatingTinReductionFactor = Double.POSITIVE_INFINITY;
+  double reductionForInterpolatingTin = Double.POSITIVE_INFINITY;
+  private int reductionForWireframe;
+  private int reductionForRaster;
+
   GwrTinInterpolator interpolator;
   INeighborEdgeLocator edgeLocator;
 
@@ -116,11 +124,9 @@ public class MvComposite {
   private long timeForRenderWireframe0;
   private long timeForRenderWireframe1;
   private int nVerticesInWireframe;
-  private int reductionForWireframe;
 
   private long timeForBuildRaster0;
   private long timeForBuildRaster1;
-  private int reductionForRaster;
 
   boolean zGridComplete;
   boolean zGridIncludesHillshade;
@@ -139,6 +145,7 @@ public class MvComposite {
     width = 0;
     height = 0;
     m2c = null;
+    serialIndex = serialIndexSource.incrementAndGet();
   }
 
   /**
@@ -177,6 +184,7 @@ public class MvComposite {
     this.c2m = c2m;
     this.model = model;
     this.view = view;
+    serialIndex = serialIndexSource.incrementAndGet();
 
     // Get the coordinates of the corners of the
     // composite mapped to the model coordinate system.
@@ -195,7 +203,7 @@ public class MvComposite {
 
     if (model.isLoaded()) {
       interpolatingTin = model.getReferenceTin();
-      interpolatingTinReductionFactor = model.getReferenceReductionFactor();
+      reductionForInterpolatingTin = model.getReferenceReductionFactor();
       interpolator = new GwrTinInterpolator(interpolatingTin);
       edgeLocator = interpolatingTin.getNeighborEdgeLocator();
       applyRangeOfVisibleSamples(model.getVertexList());
@@ -213,23 +221,42 @@ public class MvComposite {
    *
    * @param mvComposite the older composite
    * @param view a valid set of view parameters
+   * @param preserveTins preserve TIN elements from previous composite
    * @param taskIndex the index for the task associated with the composite
    */
-  public MvComposite(MvComposite mvComposite, ViewOptions view, int taskIndex) {
+  public MvComposite(
+    MvComposite mvComposite,
+    ViewOptions view,
+    boolean preserveTins,
+    int taskIndex)
+  {
     this.taskIndex = taskIndex;
     this.width = mvComposite.width;
     this.height = mvComposite.height;
     this.m2c = mvComposite.m2c;
     this.c2m = mvComposite.c2m;
     this.model = mvComposite.model;
-    this.wireframeTin = mvComposite.wireframeTin;
-    this.rasterTin = mvComposite.rasterTin;
+    if (preserveTins) {
+      synchronized (mvComposite) {
+        this.reductionForWireframe = mvComposite.reductionForWireframe;
+        this.reductionForRaster = mvComposite.reductionForRaster;
+        this.reductionForInterpolatingTin = mvComposite.reductionForInterpolatingTin;
+        this.wireframeTin = mvComposite.wireframeTin;
+        this.rasterTin = mvComposite.rasterTin;
+        this.interpolatingTin = mvComposite.interpolatingTin;
+        this.interpolator = mvComposite.interpolator;
+        this.timeForBuildRaster0 = mvComposite.timeForBuildRaster0;
+        this.timeForBuildRaster1 = mvComposite.timeForBuildRaster1;
+        this.edgeLocator = mvComposite.edgeLocator;
+      }
+    }
     this.view = view;
     this.modelAndRenderingReport = mvComposite.modelAndRenderingReport;
+    serialIndex = serialIndexSource.incrementAndGet();
 
     synchronized (mvComposite) {
       interpolatingTin = mvComposite.interpolatingTin;
-      interpolatingTinReductionFactor = mvComposite.interpolatingTinReductionFactor;
+      reductionForInterpolatingTin = mvComposite.reductionForInterpolatingTin;
       interpolator = new GwrTinInterpolator(interpolatingTin);
       edgeLocator = interpolatingTin.getNeighborEdgeLocator();
       zVisMin = mvComposite.zVisMin;
@@ -326,31 +353,38 @@ public class MvComposite {
    * the TIN must not be modified after it is added to this composite.
    *
    * @param tin a valid TIN.
+   * @param reduction the reduction factor applied when building the TIN
    */
-  public void setWireframeTin(IIncrementalTin tin) {
-    this.wireframeTin = tin;
+  public void setWireframeTin(IIncrementalTin tin, int reduction) {
+    synchronized (this) {
+      wireframeTin = tin;
+      reductionForWireframe = reduction;
+    }
   }
 
   /**
    * Sets the TIN for raster rendering.
    *
    * @param rasterTin a valid TIN
+   * @param reduction the reduction factor applied when building the TIN
    */
-  void setRasterTin(IIncrementalTin rasterTin) {
-    this.rasterTin = rasterTin;
+  void setRasterTin(IIncrementalTin rasterTin, int reduction) {
+    synchronized (this) {
+      this.rasterTin = rasterTin;
+      this.reductionForRaster = reduction;
+    }
   }
-
-
 
   /**
    * Given a vertex list, determine which vertices are within the
    * visible bounds and establish min and max values accordingly.
-   * If  extrema have already been established, the specified list will be
+   * If extrema have already been established, the specified list will be
    * applied incrementally to the existing bounds.
+   *
    * @param vList a valid list of vertices.
    */
   final void applyRangeOfVisibleSamples(List<Vertex> vList) {
-    if(vList==null){
+    if (vList == null) {
       return;
     }
     double zMin = Double.POSITIVE_INFINITY;
@@ -368,7 +402,6 @@ public class MvComposite {
         }
       }
     }
-
 
     synchronized (this) {
       if (zMin < zVisMin) {
@@ -402,9 +435,9 @@ public class MvComposite {
    */
   void submitCandidateTinForInterpolation(IIncrementalTin tin, double reductionFactor) {
     synchronized (this) {
-      if (reductionFactor < this.interpolatingTinReductionFactor) {
+      if (reductionFactor < this.reductionForInterpolatingTin) {
         interpolatingTin = tin;
-        interpolatingTinReductionFactor = reductionFactor;
+        reductionForInterpolatingTin = reductionFactor;
         interpolator = new GwrTinInterpolator(interpolatingTin);
         edgeLocator = interpolatingTin.getNeighborEdgeLocator();
       }
@@ -557,6 +590,10 @@ public class MvComposite {
     // because their indices are negative, they cannot be used in the
     // bitmap logic.
     int maxVertexIndex = 0;
+
+    if (wireframeTin == null) {
+      System.out.println("Diagnostic");
+    }
 
     List<IQuadEdge> edgeList = wireframeTin.getEdges();
     for (IQuadEdge e : edgeList) {
@@ -957,6 +994,7 @@ public class MvComposite {
    * hillshade operations.
    * @param task the task associated with the rendering.
    */
+  @SuppressWarnings("PMD.SwitchDensity")
   void buildGrid(int row0, int nRows, boolean hillshade, IModelViewTask task) {
     // ensure grids are ready for writing results
 
@@ -1340,7 +1378,7 @@ public class MvComposite {
    * require a reloading of the model.
    */
   public boolean isModelReloadRequired(ViewOptions v) {
-    if(model instanceof ModelFromLas){
+    if (model instanceof ModelFromLas) {
       return view.getLidarPointSelection() != v.getLidarPointSelection();
     }
     return false;
@@ -1367,13 +1405,13 @@ public class MvComposite {
     Formatter fmt = new Formatter(sb);
     String units;
     LinearUnits linearUnits = model.getLinearUnits();
-    if(linearUnits==null){
+    if (linearUnits == null) {
       // the model is improperly implemented, but we'll survive
       linearUnits = LinearUnits.UNKNOWN;
     }
-    units =linearUnits.toString();
-    units = units.substring(0,1).toUpperCase()+
-            units.substring(1, units.length()).toLowerCase();
+    units = linearUnits.toString();
+    units = units.substring(0, 1).toUpperCase()
+      + units.substring(1, units.length()).toLowerCase();
     fmt.format("<html><strong>Model</strong><br><pre><small>");
     fmt.format("  Name: %s\n", model.getName());
     fmt.format("  Type: %s\n", model.getDescription());
@@ -1381,6 +1419,27 @@ public class MvComposite {
     fmt.format("  Load time(ms):    %8d\n", model.getTimeToLoadInMillis());
     fmt.format("  Sort time(ms):    %8d\n", model.getTimeToSortInMillis());
     fmt.format("  Linear Units:     %s\n", units);
+    if (model.hasConstraints()) {
+      List<IConstraint> conList = model.getConstraints();
+      int nPoly = 0;
+      int nLine = 0;
+      for (IConstraint con : conList) {
+        if (con.isPolygon()) {
+          nPoly++;
+        } else {
+          nLine++;
+        }
+      }
+      String conType = "";
+      if (nLine > 0) {
+        conType = nPoly > 0 ? "Mixed" : "Linear";
+      } else if (nPoly > 0) {
+        conType = "Polygon";
+      }
+      fmt.format("  Constraints:      %8d %s\n", conList.size(), conType);
+    } else {
+      fmt.format("  Constraints:      None\n");
+    }
     fmt.format("  Bounds\n");
     fmt.format("    Min X:          %s\n", model.getFormattedX(model.getMinX()));
     fmt.format("    Max X:          %s\n", model.getFormattedX(model.getMaxX()));
@@ -1389,8 +1448,8 @@ public class MvComposite {
     fmt.format("    Min Z:          %11.2f\n", model.getMinZ());
     fmt.format("    Max Z:          %11.2f\n", model.getMaxZ());
     fmt.format("  Area:             %11.2f\n", model.getArea());
-    fmt.format("  Est. Avg. Spacing:%11.2f\n",
-      model.getNominalPointSpacing());
+    fmt.format("  Est. Avg. Spacing:%11.2f\n", model.getNominalPointSpacing());
+
     fmt.format("</small></pre><strong>Rendering</strong><br><pre><small>");
     fmt.format("  Wireframe\n");
     if (timeForRenderWireframe1 > 0) {
@@ -1423,16 +1482,16 @@ public class MvComposite {
     modelAndRenderingReport = sb.toString();
   }
 
-  void setReductionForWireframe(int reduction) {
-    reductionForWireframe = reduction;
-  }
-
-  void setReductionForRaster(int reduction) {
-    reductionForRaster = reduction;
-  }
-
   IIncrementalTin getWireframeTin() {
-    return wireframeTin;
+    synchronized (this) {
+      return wireframeTin;
+    }
+  }
+
+  IIncrementalTin getRasterTin() {
+    synchronized (this) {
+      return rasterTin;
+    }
   }
 
   int getReductionForWireframe() {
@@ -1586,11 +1645,18 @@ public class MvComposite {
 
   }
 
-
-
   private class P3 {
-      double x;
-      double y;
-      double z;
+
+    double x;
+    double y;
+    double z;
   }
+
+  @Override
+  public String toString() {
+    String conType = model.hasConstraints() ? " CDT" : "";
+    String loaded = model.isLoaded() ? "Loaded" : "Unloaded";
+    return String.format("MvComposite %d %s%s", this.serialIndex, loaded, conType);
+  }
+
 }

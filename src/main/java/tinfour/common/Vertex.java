@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-/*
+ /*
  * -----------------------------------------------------------------------
  *
  * Revision History:
@@ -183,16 +183,15 @@ public class Vertex implements ISamplePoint {
   /**
    * Gets a string intended for labeling the vertex in images or
    * reports. The default label is the index of the vertex preceeded
-   * by the letter S if the vertex is synthetic.  Note that the
+   * by the letter S if the vertex is synthetic. Note that the
    * index of a vertex is not necessarily unique but left to the
    * requirements of the application that constructs it.
+   *
    * @return a valid, non-empty string.
    */
-  public String getLabel(){
+  public String getLabel() {
     return (isSynthetic() ? "S" : "") + Integer.toString(index);
   }
-
-
 
   @Override
   public String toString() {
@@ -325,19 +324,19 @@ public class Vertex implements ISamplePoint {
     this.index = index;
   }
 
-
   /**
    * Indicates whether a vertex is synthetic (was created through
    * a Tinfour procedure rather than supplied by an application).
+   *
    * @return true if vertex is synthetic; otherwise, false
    */
-  public boolean isSynthetic(){
-    return (status&BIT_SYNTHETIC)!=0;
+  public boolean isSynthetic() {
+    return (status & BIT_SYNTHETIC) != 0;
   }
-
 
   /**
    * Sets or clears the is-synthetic status of a vertex.
+   *
    * @param synthetic true if vertex is synthetic; otherwise, false
    */
   public void setSynthetic(boolean synthetic) {
@@ -348,10 +347,11 @@ public class Vertex implements ISamplePoint {
     }
   }
 
-
   /**
    * Sets or clears the is-constraint-member status of a vertex.
-   * @param constraintMember true if vertex is a constraint member; otherwise, false
+   *
+   * @param constraintMember true if vertex is a constraint member; otherwise,
+   * false
    */
   public void setConstraintMember(boolean constraintMember) {
     if (constraintMember) {
@@ -362,33 +362,32 @@ public class Vertex implements ISamplePoint {
   }
 
   /**
-   * Sets the status value of the vertex.  This method is intended to
+   * Sets the status value of the vertex. This method is intended to
    * provide an efficient way of setting multiple status flags at once.
-   * @param status a valid status value.  Because the status is defined as
+   *
+   * @param status a valid status value. Because the status is defined as
    * a single byte, higher-order bytes will be ignored.
    */
-  public void setStatus(int status){
-    this.status=(byte)status;
+  public void setStatus(int status) {
+    this.status = (byte) status;
   }
-
 
   /**
    * Gets the current value of the status flags for this vertex.
+   *
    * @return a positive integer in the range 0 to 255.
    */
-  public int getStatus(){
-    return ((int)status)&0xff;
+  public int getStatus() {
+    return ((int) status) & 0xff;
   }
-
 
   /**
    * Indicates whether a vertex is a constraint member..
+   *
    * @return true if vertex is a constraint member; otherwise, false
    */
-  public boolean isConstraintMember(){
-    return (status&BIT_CONSTRAINT)!=0;
+  public boolean isConstraintMember() {
+    return (status & BIT_CONSTRAINT) != 0;
   }
-
-
 
 }

@@ -74,7 +74,6 @@ public class TriangleCount {
       int maxMapIndex = maxIndex * N_SIDES + 1;
       BitSet bitset = new BitSet(maxMapIndex);
 
-      TriangleCount tCount = new TriangleCount();
       Iterator<IQuadEdge> iEdge = tin.getEdgeIterator();
       while (iEdge.hasNext()) {
         IQuadEdge e = iEdge.next();
@@ -121,6 +120,7 @@ public class TriangleCount {
    * triangles
    * @param e the edge to inspect
    */
+  @SuppressWarnings("PMD.AvoidDeeplyNestedIfStmts")
   private void countTriangleEdge(BitSet bitset, IQuadEdge e) {
     if (!getMarkBit(bitset, e)) {
       setMarkBit(bitset, e);
@@ -146,7 +146,7 @@ public class TriangleCount {
    * @param vB the second vertex, given in counterclockwise order
    * @param vC the third vertex, given in counterclockwise order
    */
-  public void tabulateTriangle(Vertex vA, Vertex vB, Vertex vC) {
+  public final void tabulateTriangle(Vertex vA, Vertex vB, Vertex vC) {
     // compute the area and tabulate using the Kahan Summation Algorithm
 
     count++;

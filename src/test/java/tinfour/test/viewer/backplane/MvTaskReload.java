@@ -15,7 +15,7 @@
  * ---------------------------------------------------------------------
  */
 
-/*
+ /*
  * -----------------------------------------------------------------------
  *
  * Revision History:
@@ -33,8 +33,6 @@ import java.io.IOException;
 import tinfour.common.IMonitorWithCancellation;
 
 class MvTaskReload implements IModelViewTask {
-
-
 
   private final BackplaneManager backplaneManager;
   private final MvComposite mvComposite;
@@ -66,7 +64,7 @@ class MvTaskReload implements IModelViewTask {
       return; // done
     }
     IModel model = mvComposite.getModel();
-    if(model.isLoaded()){
+    if (model.isLoaded()) {
       System.err.println("Internal error, reloading a loaded model");
       return;
     }
@@ -87,10 +85,7 @@ class MvTaskReload implements IModelViewTask {
       mvComposite.submitCandidateTinForInterpolation(
         model.getReferenceTin(), model.getReferenceReductionFactor());
 
-      MvTaskBuildTinAndRender renderTask =
-        new MvTaskBuildTinAndRender(backplaneManager, mvComposite, taskIndex);
-      BackplaneExecutor.getInstance().runTask(renderTask);
-      //backplaneManager.postModelLoadCompleted(this);
+      backplaneManager.postModelRefreshCompleted(this, mvComposite);
     } catch (IOException ioex) {
       monitor.reportDone(); // to dismiss progress bar
       String message = "Error loading " + model.getName() + " " + ioex.getMessage();
@@ -101,9 +96,14 @@ class MvTaskReload implements IModelViewTask {
     }
   }
 
-  int getTaskIndex() {
+  @Override
+  public int getTaskIndex() {
     return taskIndex;
   }
 
+  @Override
+  public boolean isRenderingTask() {
+    return false;
+  }
 
 }

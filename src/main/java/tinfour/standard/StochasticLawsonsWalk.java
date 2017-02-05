@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-/*
+ /*
  * -----------------------------------------------------------------------
  *
  * Revision History:
@@ -238,7 +238,7 @@ public class StochasticLawsonsWalk {
       // randomness. Thus the code below determines the branch based on
       // the low-order bit value.
       long edgeSelectionForNextTest = randomNext();
-      if ((edgeSelectionForNextTest&1) == 0) {
+      if ((edgeSelectionForNextTest & 1) == 0) {
         nSLWTests++;
         vX1 = x - v1.x;
         vY1 = y - v1.y;
@@ -408,7 +408,7 @@ public class StochasticLawsonsWalk {
       // effectively a "retrograde" movement.
       while (true) {
         nSLWSteps++;
-        nEdge=edge.getReverse().getReverseFromDual();
+        nEdge = edge.getReverse().getReverseFromDual();
 
         v0 = nEdge.getA();
         v1 = nEdge.getB();
