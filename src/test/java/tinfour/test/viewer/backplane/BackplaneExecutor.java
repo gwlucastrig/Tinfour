@@ -114,7 +114,6 @@ final class BackplaneExecutor {
     synchronized (taskList) {
       for (IModelViewTask t : taskList) {
         t.cancel();
-        System.out.println("Cancelling task " + t.getTaskIndex() + ", " + t.getClass().getName());
         cancelledList.add(t);
       }
       taskList.clear();
@@ -135,7 +134,6 @@ final class BackplaneExecutor {
       for (IModelViewTask t : taskList) {
         if (t.isRenderingTask()) {
           t.cancel();
-          System.out.println("Cancelling task " + t.getTaskIndex() + ", " + t.getClass().getName());
           cancelledList.add(t);
         }
       }
