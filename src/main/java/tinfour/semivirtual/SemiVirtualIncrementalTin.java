@@ -1751,7 +1751,8 @@ public class SemiVirtualIncrementalTin implements IIncrementalTin {
   }
 
   private void processConstraint(IConstraint constraint) {
-    List<Vertex> cvList = constraint.getVertices();
+    List<Vertex> cvList = new ArrayList<>();
+    cvList.addAll(constraint.getVertices());
     int nSegments = cvList.size() - 1;
 
     double vTolerence = thresholds.getVertexTolerance();
@@ -2058,6 +2059,8 @@ public class SemiVirtualIncrementalTin implements IIncrementalTin {
       fillCavity(n);
       fillCavity(d);
     }
+
+    searchEdge = e0;
 
   }
 

@@ -15,7 +15,7 @@
  * ---------------------------------------------------------------------
  */
 
-/*
+ /*
  * -----------------------------------------------------------------------
  *
  * Revision History:
@@ -54,5 +54,17 @@ interface IModelViewTask extends Runnable {
    * @return true if task is cancelled, otherwise false.
    */
   public boolean isCancelled();
+
+  /**
+   * Gets the sequentially assigned index for a task
+   * @return a positive integer
+   */
+  public int getTaskIndex();
+
+  /**
+   * Indicates whether the task performs a rendering operation.
+   * @return true if the task performs a rendering operation; otherwise false.
+   */
+  public boolean isRenderingTask();
 
 }

@@ -21,31 +21,39 @@
  * Revision History:
  * Date     Name         Description
  * ------   ---------    -------------------------------------------------
- * 04/2016  G. Lucas     Created
+ * 01/2017  G. Lucas     Created
  *
  * Notes:
- *
+ *   Soon to be completely revamped
  * -----------------------------------------------------------------------
  */
 package tinfour.test.viewer.backplane;
 
+import java.io.File;
 import java.io.IOException;
+import java.util.List;
+import tinfour.common.IConstraint;
 import tinfour.common.IMonitorWithCancellation;
+import tinfour.test.utils.cdt.ConstraintLoader;
 
-class MvTaskLoad implements IModelViewTask {
+class MvTaskLoadConstraints implements IModelViewTask {
 
   private final BackplaneManager backplaneManager;
-  private final IModel model;
+  private final MvComposite mvComposite;
+  private final File constraintsFile;
   private final int taskIndex;
   private boolean isCancelled;
 
-  MvTaskLoad(
+  MvTaskLoadConstraints(
     BackplaneManager backplaneManager,
-    IModel model,
+    File file,
+    MvComposite mvComposite,
     int taskIndex) {
-    this.model = model;
+    this.mvComposite = mvComposite;
+    this.constraintsFile = file;
     this.taskIndex = taskIndex;
     this.backplaneManager = backplaneManager;
+
   }
 
   @Override
@@ -63,13 +71,16 @@ class MvTaskLoad implements IModelViewTask {
     if (isCancelled) {
       return; // done
     }
-
+    IModel model = mvComposite.getModel();
     try {
       IMonitorWithCancellation monitor
         = backplaneManager.getProgressMonitor(taskIndex);
-      model.load(monitor);
+      monitor.postMessage("Loading constraints from " + constraintsFile.getName());
+      ConstraintLoader loader = new ConstraintLoader();
+      List<IConstraint> constraints = loader.readConstraintsFile(constraintsFile);
+      model.addConstraints(constraintsFile, constraints);
       monitor.reportDone();
-      backplaneManager.postModelLoadCompleted(this, model, taskIndex);
+      backplaneManager.postModelRefreshCompleted(this, mvComposite);
     } catch (IOException ioex) {
       String message = "Error loading " + model.getName() + " " + ioex.getMessage();
       System.err.println(message);
@@ -84,13 +95,9 @@ class MvTaskLoad implements IModelViewTask {
     return taskIndex;
   }
 
-  IModel getModel() {
-    return model;
-  }
-
-  @Override
-  public boolean isRenderingTask() {
-    return false;
+    @Override
+  public boolean isRenderingTask(){
+    return  false;
   }
 
 }

@@ -29,21 +29,25 @@
  */
 package tinfour.test.viewer.backplane;
 
-import java.io.IOException;
-import tinfour.common.IMonitorWithCancellation;
-
-class MvTaskLoad implements IModelViewTask {
+/**
+ * A task added to the loaderQueue in order to launch
+ * rendering operations. The purpose of this task is to handle cases
+ * where multiple user-initiated rendering-related operations may be
+ * queued while the application is busy loading model data.
+ * It ensures that rendering is delayed until the loading is complete.
+ */
+class MvTaskQueueRender implements IModelViewTask {
 
   private final BackplaneManager backplaneManager;
-  private final IModel model;
+  private final MvComposite composite;
   private final int taskIndex;
   private boolean isCancelled;
 
-  MvTaskLoad(
+  MvTaskQueueRender(
     BackplaneManager backplaneManager,
-    IModel model,
+    MvComposite composite,
     int taskIndex) {
-    this.model = model;
+    this.composite = composite;
     this.taskIndex = taskIndex;
     this.backplaneManager = backplaneManager;
   }
@@ -64,19 +68,13 @@ class MvTaskLoad implements IModelViewTask {
       return; // done
     }
 
-    try {
-      IMonitorWithCancellation monitor
-        = backplaneManager.getProgressMonitor(taskIndex);
-      model.load(monitor);
-      monitor.reportDone();
-      backplaneManager.postModelLoadCompleted(this, model, taskIndex);
-    } catch (IOException ioex) {
-      String message = "Error loading " + model.getName() + " " + ioex.getMessage();
-      System.err.println(message);
-      backplaneManager.postStatusMessage(taskIndex, message);
-    } catch (Exception ex) {
-      ex.printStackTrace(System.out);
-    }
+    MvTaskBuildTinAndRender renderTask
+      = new MvTaskBuildTinAndRender(
+        backplaneManager,
+        composite,
+        taskIndex);
+    backplaneManager.renderPool.queueTask(renderTask);
+
   }
 
   @Override
@@ -84,13 +82,9 @@ class MvTaskLoad implements IModelViewTask {
     return taskIndex;
   }
 
-  IModel getModel() {
-    return model;
-  }
-
   @Override
   public boolean isRenderingTask() {
-    return false;
+    return true;
   }
 
 }

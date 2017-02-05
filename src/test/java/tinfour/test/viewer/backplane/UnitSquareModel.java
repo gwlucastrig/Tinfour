@@ -38,6 +38,7 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Random;
+import tinfour.common.IConstraint;
 import tinfour.common.IIncrementalTin;
 import tinfour.common.IMonitorWithCancellation;
 import tinfour.common.IQuadEdge;
@@ -54,6 +55,7 @@ public class UnitSquareModel implements IModel {
   List<Vertex> vList;
   IIncrementalTin referenceTin;
   List<Vertex> perimeterList;
+  final int serialIndex;
 
   /**
    * Create an instance of the model with the specified number of points.
@@ -61,6 +63,7 @@ public class UnitSquareModel implements IModel {
    * @param count an integer greater than 3.
    */
   public UnitSquareModel(int count) {
+    serialIndex = ModelSerialSource.getSerialIndex();
     // In this model, the vertex list is ALWAYS sorted by index
     // If that ever changes, getVertexListSortedByIndex must also change.
     vList = new ArrayList<>();
@@ -250,6 +253,41 @@ public class UnitSquareModel implements IModel {
   @Override
   public void geo2xy(double latitude, double longitude, double[] xy) {
     // a do nothing implementation
+  }
+
+  @Override
+  public boolean hasConstraints() {
+    return false;
+  }
+
+  @Override
+  public List<IConstraint> getConstraints() {
+    return new ArrayList<>();
+  }
+
+  @Override
+  public boolean hasVertexSource() {
+    return true;
+  }
+
+  @Override
+  public boolean areVerticesLoaded() {
+    return true;
+  }
+
+  @Override
+  public boolean hasConstraintsSource() {
+    return false;
+  }
+
+  @Override
+  public boolean areConstraintsLoaded() {
+    return false;
+  }
+
+  @Override
+  public void addConstraints(File constraintsFile, List<IConstraint> constraints) {
+    // not supported in this case.
   }
 
 }

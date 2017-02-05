@@ -15,7 +15,7 @@
  * ---------------------------------------------------------------------
  */
 
-/*
+ /*
  * -----------------------------------------------------------------------
  *
  * Revision History:
@@ -88,7 +88,9 @@ class MvTaskBuildRasterBlock implements IModelViewTask {
     }
 
     composite.buildGrid(row0, nRow, hillshade, this);
-
+    if(isCancelled){
+      return;
+    }
     int test = blockCounter.decrementAndGet();
     int percentDone = (int) (100.0 * (nBlocks - test) / (double) nBlocks + 0.5);
     monitor.reportProgress(percentDone);
@@ -105,4 +107,14 @@ class MvTaskBuildRasterBlock implements IModelViewTask {
     }
   }
 
+  @Override
+  public int getTaskIndex() {
+    return taskIndex;
+  }
+
+
+  @Override
+  public boolean isRenderingTask(){
+    return  true;
+  }
 }

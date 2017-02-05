@@ -30,6 +30,10 @@
  */
 package tinfour.common;
 
+import java.awt.geom.Rectangle2D;
+import java.util.ArrayList;
+import java.util.List;
+
 /**
  * An implementation of the IConstraint interface intended to store
  * constraints comprised of a chain of connected line segments.
@@ -38,36 +42,76 @@ package tinfour.common;
  * in the chain must be non-zero-length.
  * Do not use this class for closed polygons.
  */
-public class LinearConstraint extends PolyLineConstraintAdapter implements IConstraint {
+public abstract class PolyLineConstraintAdapter implements IConstraint {
+
+  protected final List<Vertex> list = new ArrayList<>();
+  private final Rectangle2D bounds = new Rectangle2D.Double();
+  private double x = Double.NaN;
+  private double y = Double.NaN;
+  private double dSum;
+  private Object applicationData;
+  private int constraintIndex;
 
   @Override
-  public void complete() {
-    // at this time, do nothing
+  public List<Vertex> getVertices() {
+    return list;
   }
 
   @Override
-  public boolean isPolygon() {
-    return false;
-  }
-
-  @Override
-  public void setDefinesDataArea(boolean definesDataArea) {
-    if (definesDataArea) {
-      throw new IllegalArgumentException(
-        "A non-polygon constraint cannot define a data area.");
+  public void add(Vertex v) {
+    double vx = v.getX();
+    double vy = v.getY();
+    if (list.isEmpty()) {
+      bounds.setRect(vx, vy, 0, 0);
+    } else if (vx == x && vy == y) {
+      return;  // quietly ignore duplicate points
+    } else {
+      bounds.add(vx, vy);
+      dSum += v.getDistance(x, y);
     }
+
+    x = vx;
+    y = vy;
+    v.setConstraintMember(true);
+    list.add(v);
   }
 
-  /**
-   * Indicates whether the constraint defines a data area.
-   * Because linear constraints cannot define an area, this method
-   * always returns false.
-   *
-   * @return always false for linear constraints.
-   */
   @Override
-  public boolean definesDataArea() {
-    return false;
+  public Rectangle2D getBounds() {
+    return bounds;
+
+  }
+
+  @Override
+  public void setApplicationData(Object applicationData) {
+    this.applicationData = applicationData;
+  }
+
+  @Override
+  public Object getApplicationData() {
+    return applicationData;
+  }
+
+  @Override
+  public void setConstraintIndex(int index) {
+    constraintIndex = index;
+  }
+
+  @Override
+  public int getConstraintIndex() {
+    return constraintIndex;
+  }
+
+  public double getLength() {
+    return dSum;
+  }
+
+  @Override
+  public double getNominalPointSpacing() {
+    if (list.size() > 1) {
+      return dSum / (list.size() - 1);
+    }
+    return Double.NaN;
   }
 
 }

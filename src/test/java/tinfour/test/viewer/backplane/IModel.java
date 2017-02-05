@@ -16,6 +16,7 @@ package tinfour.test.viewer.backplane;
 import java.io.File;
 import java.io.IOException;
 import java.util.List;
+import tinfour.common.IConstraint;
 import tinfour.common.IIncrementalTin;
 import tinfour.common.IMonitorWithCancellation;
 import tinfour.common.Vertex;
@@ -76,9 +77,9 @@ public interface IModel {
    */
   double getMinZ();
 
-
   /**
    * Gets the estimated nominal point spacing for the model
+   *
    * @return a positive value in the units associated with the horizontal
    * coordinate system.
    */
@@ -87,9 +88,11 @@ public interface IModel {
   /**
    * Gets the overall area of the model, in the units squared associated
    * with the horizontal coordinate system.
+   *
    * @return a positive real value
    */
   double getArea();
+
   /**
    * Load the metadata and data associated with the file for this model
    * and compile a list of vertices for access by the application.
@@ -175,8 +178,6 @@ public interface IModel {
    */
   public boolean isLoaded();
 
-
-
   /**
    * Gets the "reference" TIN that was created when the data was
    * first loaded. It is expected that application code will
@@ -225,11 +226,12 @@ public interface IModel {
    * data. It is assumed that the vertical and horizontal coordinate
    * systems will be in the same unit system, though assumption
    * could change in a future implementation.
+   *
    * @return a valid enumeration instance
    */
   public LinearUnits getLinearUnits();
 
-    /**
+  /**
    * Indicates whether the coordinates used by this instance are
    * geographic in nature.
    *
@@ -237,35 +239,97 @@ public interface IModel {
    */
   public boolean isCoordinateSystemGeographic();
 
-
   /**
    * Get the vertex with the specified vertex index.
+   *
    * @param index an arbitrary integer.
    * @return if matched, a valid vertex; otherwise, a null;
    */
   public Vertex getVertexForIndex(int index);
 
-
   /**
    * If defined, converts a pair of scaled Cartesian coordinates
    * to a latitude and longitude. If undefined, no operation is performed.
+   *
    * @param x a valid scaled Cartesian coordinate
    * @param y a valid scaled Cartesian coordinate
    * @param geo an array of dimension two to store the results
    * (where geo[0]=latitude, geo[1]=longitude)
-
+   *
    */
-  public void xy2geo(double x, double y, double []geo);
+  public void xy2geo(double x, double y, double[] geo);
 
-
-
-    /**
+  /**
    * If defined, converts a pair of geographic (latitude,longitude)
    * coordinates to a pair of scaled Cartesian coordinates.
    * If undefined, no operation is performed.
+   *
    * @param latitude the latitude
    * @param longitude the longitude
    * @param xy a array of dimension two to store the results.
    */
-  public void geo2xy(double latitude, double longitude, double []xy);
+  public void geo2xy(double latitude, double longitude, double[] xy);
+
+  /**
+   * Indicates whether the model has constraints and is thus a
+   * Constrained Delaunay Triangulation (CDT).
+   *
+   * @return true if the model has constraints.
+   */
+  public boolean hasConstraints();
+
+  /**
+   * Adds constraints to the model
+   *
+   * @param constraintsFile if the constraints were derived from a file, a
+   * valid reference; otherwise, a null
+   * @param constraints a valid list of constraints.
+   */
+  public void addConstraints(File constraintsFile, List<IConstraint> constraints);
+
+  /**
+   * Gets the current list of constraints for the model/
+   *
+   * @return a valid, potentially empty list.
+   */
+  public List<IConstraint> getConstraints();
+
+  /**
+   * Indicates that the model has a definition for a vertex source.
+   * At this time, all implementations define this value as true,
+   * though that is subject to change in the future.
+   * A model that has a vertex source might not yet have a valid list
+   * of vertices if the data from the source has not yet been loaded
+   *
+   * @return true if the model has a source of vertices; otherwise false.
+   */
+  public boolean hasVertexSource();
+
+  /**
+   * Indicates if the vertex source for the model has been loaded
+   *
+   * @return true if the vertices for the model have been loaded;
+   * otherwise, false.
+   */
+  public boolean areVerticesLoaded();
+
+  /**
+   * Indicates that the model has a definition for a constraint source.
+   * At this time, all implementations define this value as true,
+   * though that is subject to change in the future.
+   * A model that has a constraint source might not yet have a valid list
+   * of constraints if the data from the source has not yet been loaded
+   *
+   * @return true if the model has a source of vertices; otherwise false.
+   */
+  public boolean hasConstraintsSource();
+
+  /**
+   * Indicates if the constraint source for the model has been loaded
+   *
+   * @return true if the vertices for the model have been loaded;
+   * otherwise, false.
+   */
+  public boolean areConstraintsLoaded();
+
 }

@@ -40,7 +40,9 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.Formatter;
 import java.util.List;
+import tinfour.common.IConstraint;
 import tinfour.common.IIncrementalTin;
 import tinfour.common.IMonitorWithCancellation;
 import tinfour.common.IQuadEdge;
@@ -56,6 +58,7 @@ import tinfour.utils.LinearUnits;
 public class ModelAdapter implements IModel {
 
   private static final int MAX_VERTICES_IN_TIN = 100000;
+  protected final int serialIndex;
   final File file;
 
   List<Vertex> vertexList;
@@ -70,14 +73,23 @@ public class ModelAdapter implements IModel {
   double nominalPointSpacing;
   double area;
 
+  double geoScaleX;
+  double geoScaleY;
+  double geoOffsetX;
+  double geoOffsetY;
+  boolean geographicCoordinates;
+
   long timeToLoad;
   long timeToSort;
 
-  boolean loaded;
+  boolean areVerticesLoaded;
+  boolean areConstraintsLoaded;
+
   IIncrementalTin referenceTin;
   double referenceReductionFactor;
 
   List<Vertex> perimeterList;
+  List<IConstraint> constraintList;
 
   /**
    * Construct a model tied to the specified file.
@@ -88,6 +100,8 @@ public class ModelAdapter implements IModel {
   public ModelAdapter(File file) {
     this.file = file;
     vertexList = new ArrayList<>();
+    constraintList = new ArrayList<>();
+    serialIndex = ModelSerialSource.getSerialIndex();
   }
 
   /**
@@ -101,11 +115,10 @@ public class ModelAdapter implements IModel {
   @Override
   public void load(IMonitorWithCancellation monitor) throws IOException {
 
-    if (loaded) {
+    if (this.isLoaded()) {
       throw new IllegalStateException(
-        "Internal error, nultiple calls to load model");
+        "Internal error, multiple calls to load model");
     }
-
   }
 
   /**
@@ -119,8 +132,9 @@ public class ModelAdapter implements IModel {
     if (monitor.isCanceled()) {
       return;
     }
-    vertexListSortedByIndex = new ArrayList<>(list.size());
-    vertexListSortedByIndex.addAll(list);
+    List<Vertex> sortedByIndexList = new ArrayList<>(list.size());
+    sortedByIndexList.addAll(list);
+
     monitor.postMessage("Preparing model for rendering");
     long time0 = System.currentTimeMillis();
     if (list.size() > 16) {
@@ -128,25 +142,51 @@ public class ModelAdapter implements IModel {
       hilbertSort.sort(list);
     }
     long time1 = System.currentTimeMillis();
-    timeToSort = time1 - time0;
+    synchronized (this) {
+      timeToSort = time1 - time0;
+      vertexListSortedByIndex = sortedByIndexList;
+      vertexList = list;
+      // The nominal point spacing is based on an idealized distribution
+      // in which points are arranged in a grid of equilateral triangles
+      // (the densest possible regular tesselation of points on a plane)
+      int nVertices = list.size();
+      double mx0 = getMinX();
+      double my0 = getMinY();
+      double mx1 = getMaxX();
+      double my1 = getMaxY();
+      area = (mx1 - mx0) * (my1 - my0);
+      nominalPointSpacing = Math.sqrt(area / nVertices / 0.866);
 
-    // The nominal point spacing is based on an idealized distribution
-    // in which points are arranged in a grid of equilateral triangles
-    // (the densest possible regular tesselation of points on a plane)
+      prepareReferenceTin(list, null, monitor);
+      areVerticesLoaded = true;
+
+    }
+    monitor.postMessage("");
+  }
+
+  /**
+   * Prepare the reference TIN and perimeter elements, computing
+   * support variables such as nominal point spacing.
+   *
+   * @param list the master list of vertices
+   * @param constraints the list of constraints, null or empty if none
+   * @param monitor an optional monitor, or null if none.
+   */
+  void prepareReferenceTin(
+    List<Vertex> list,
+    List<IConstraint> constraints,
+    IMonitorWithCancellation monitor) {
     int nVertices = list.size();
-    double mx0 = getMinX();
-    double my0 = getMinY();
-    double mx1 = getMaxX();
-    double my1 = getMaxY();
-    area = (mx1 - mx0) * (my1 - my0);
-    nominalPointSpacing = Math.sqrt(area / nVertices / 0.866);
-
-    IIncrementalTin tin = new SemiVirtualIncrementalTin(nominalPointSpacing);
+    referenceTin = new SemiVirtualIncrementalTin(nominalPointSpacing);
 
     if (nVertices <= MAX_VERTICES_IN_TIN) {
-      tin.add(list, monitor);
+      referenceTin.add(list, monitor);
       referenceReductionFactor = 1.0;
     } else {
+      // we're going to step through the list skipping a bunch of
+      // vertices.  because the list is Hilbert sorted, the vertices that
+      // do get selected should still  give  a pretty good coverage
+      // of the overall area of the TIN.
       ArrayList<Vertex> thinList = new ArrayList<>(MAX_VERTICES_IN_TIN + 500);
       double s = (double) nVertices / (double) MAX_VERTICES_IN_TIN;
       referenceReductionFactor = s;
@@ -161,21 +201,31 @@ public class ModelAdapter implements IModel {
       if (priorIndex != nVertices - 1) {
         thinList.add(list.get(nVertices - 1));
       }
-      tin.add(thinList, monitor);
+      referenceTin.add(thinList, monitor);
 
       // ensure that the perimeter is fully formed by adding
       // any points that are not inside the tin.  In testing,
       // the number of points to be added has been less than
       // a couple hundred even for data sets containing millions
-      // of samples.
+      // of samples. So this should execute fairly quickly,
+      // especially since the list has been Hilbert sorted and has a
+      // high degree of spatial autocorrelation.
       for (Vertex v : list) {
-        if (!tin.isPointInsideTin(v.getX(), v.getY())) {
-          tin.add(v);
+        if (!referenceTin.isPointInsideTin(v.getX(), v.getY())) {
+          referenceTin.add(v);
         }
       }
     }
 
-    List<IQuadEdge> pList = tin.getPerimeter();
+    // TO DO: this next step is potentially quite time consuming.
+    // If the constraints contain a lot of vertices, it could lead to
+    // adding more points to the reference tin that were contributed by
+    // the above steps.   So this operation may require some rethinking.
+    if (constraints != null) {
+      referenceTin.addConstraints(constraints, true);
+    }
+
+    List<IQuadEdge> pList = referenceTin.getPerimeter();
     perimeterList = new ArrayList<>();
     for (IQuadEdge e : pList) {
       Vertex a = e.getA();
@@ -205,10 +255,6 @@ public class ModelAdapter implements IModel {
     area = s / 2;
     nominalPointSpacing = Math.sqrt(area / nVertices / 0.866);
 
-    referenceTin = tin;
-    vertexList = list;
-    loaded = true;
-    monitor.postMessage("");
   }
 
   /**
@@ -308,22 +354,85 @@ public class ModelAdapter implements IModel {
 
   @Override
   public String getFormattedCoordinates(double x, double y) {
+    if (geographicCoordinates) {
+      StringBuilder sb = new StringBuilder();
+      Formatter fmt = new Formatter(sb);
+      fmtGeo(fmt, y / geoScaleY + geoOffsetY, true);
+      sb.append(" / ");
+      fmtGeo(fmt, x / geoScaleX + geoOffsetX, false);
+      return sb.toString();
+    }
     return String.format("%4.2f,%4.2f", x, y);
   }
 
   @Override
   public String getFormattedX(double x) {
+    if (geographicCoordinates) {
+      StringBuilder sb = new StringBuilder();
+      Formatter fmt = new Formatter(sb);
+      fmtGeo(fmt, x / geoScaleX + geoOffsetX, false);
+      return sb.toString();
+    }
     return String.format("%11.2f", x);
   }
 
   @Override
   public String getFormattedY(double y) {
+    if (geographicCoordinates) {
+      StringBuilder sb = new StringBuilder();
+      sb.append(' '); // to provide vertical alignment with longitudes
+      Formatter fmt = new Formatter(sb);
+      fmtGeo(fmt, y / geoScaleY + geoOffsetY, true);
+      return sb.toString();
+    }
     return String.format("%11.2f", y);
+  }
+
+  void fmtGeo(Formatter fmt, double coord, boolean latFlag) {
+    double c = coord;
+    if (c < -180) {
+      c += 360;
+    } else if (c >= 180) {
+      c -= 360;
+    }
+    int x = (int) (Math.abs(c) * 360000 + 0.5);
+    int deg = x / 360000;
+    int min = (x - deg * 360000) / 6000;
+    int sec = x % 6000;
+    char q;
+    if (latFlag) {
+      if (c < 0) {
+        q = 'S';
+      } else {
+        q = 'N';
+      }
+      fmt.format("%02d\u00b0 %02d' %05.2f\" %c", deg, min, sec / 100.0, q);
+    } else {
+      if (c < 0) {
+        q = 'W';
+      } else {
+        q = 'E';
+      }
+      fmt.format("%03d\u00b0 %02d' %05.2f\" %c", deg, min, sec / 100.0, q);
+    }
+  }
+
+  /**
+   * Indicates whether the coordinates used by this instance are
+   * geographic in nature.
+   *
+   * @return true if coordinates are geographic; otherwise, false.
+   */
+  @Override
+  public boolean isCoordinateSystemGeographic() {
+    return this.geographicCoordinates;
   }
 
   @Override
   public boolean isLoaded() {
-    return loaded;
+    synchronized (this) {
+      return areVerticesLoaded;
+    }
   }
 
   @Override
@@ -365,11 +474,6 @@ public class ModelAdapter implements IModel {
   }
 
   @Override
-  public boolean isCoordinateSystemGeographic() {
-    return false;
-  }
-
-  @Override
   public Vertex getVertexForIndex(int index) {
     Vertex key = new Vertex(0, 0, 0, index);
 
@@ -395,6 +499,77 @@ public class ModelAdapter implements IModel {
   @Override
   public void geo2xy(double latitude, double longitude, double[] xy) {
     // do nothing implementation
+  }
+
+  void copyModelParameters(ModelAdapter model) {
+
+    this.vertexList = model.vertexList;
+    this.vertexListSortedByIndex = model.vertexListSortedByIndex;
+
+    this.xMin = model.xMin;
+    this.yMin = model.yMin;
+    this.zMin = model.zMin;
+    this.xMax = model.xMax;
+    this.yMax = model.yMax;
+    this.zMax = model.zMax;
+    this.nominalPointSpacing = model.nominalPointSpacing;
+    this.area = model.area;
+
+    this.geoScaleX = model.geoScaleX;
+    this.geoScaleY = model.geoScaleY;
+    this.geoOffsetX = model.geoOffsetX;
+    this.geoOffsetY = model.geoOffsetY;
+    this.geographicCoordinates = model.geographicCoordinates;
+
+    this.timeToLoad = model.timeToLoad;
+    this.timeToSort = model.timeToSort;
+
+    this.areVerticesLoaded = model.areVerticesLoaded;
+    this.referenceTin = model.referenceTin;
+    this.referenceReductionFactor = model.referenceReductionFactor;
+
+    this.perimeterList = model.perimeterList;
+
+  }
+
+  @Override
+  public void addConstraints(File constraintsFile, List<IConstraint> constraints) {
+    if (constraints == null || constraints.isEmpty()) {
+      return;
+    }
+    constraintList = new ArrayList<>(constraints.size());
+    constraintList.addAll(constraints);
+    prepareReferenceTin(vertexList, constraints, null);
+  }
+
+  @Override
+  public boolean hasConstraints() {
+    return constraintList != null && !constraintList.isEmpty();
+  }
+
+  @Override
+  public List<IConstraint> getConstraints() {
+    return constraintList;
+  }
+
+  @Override
+  public boolean hasVertexSource() {
+    throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+  }
+
+  @Override
+  public boolean areVerticesLoaded() {
+    throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+  }
+
+  @Override
+  public boolean hasConstraintsSource() {
+    return hasConstraints(); // probably to be deprecated
+  }
+
+  @Override
+  public boolean areConstraintsLoaded() {
+    return hasConstraints();  // probably to be deprecated.
   }
 
 }

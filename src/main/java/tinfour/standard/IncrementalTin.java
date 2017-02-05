@@ -1835,7 +1835,8 @@ public class IncrementalTin implements IIncrementalTin {
   }
 
   private void processConstraint(IConstraint constraint) {
-    List<Vertex> cvList = constraint.getVertices();
+    List<Vertex> cvList = new ArrayList<>();
+    cvList.addAll(constraint.getVertices());
     int nSegments = cvList.size() - 1;
 
     double vTolerence = thresholds.getVertexTolerance();
@@ -2143,6 +2144,7 @@ public class IncrementalTin implements IIncrementalTin {
       fillCavity(d);
     }
 
+    searchEdge = e0;
   }
 
   private void removeEdge(QuadEdge e) {

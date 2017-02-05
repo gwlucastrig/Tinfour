@@ -27,12 +27,12 @@
  *
  * -----------------------------------------------------------------------
  */
-package tinfour.test.utils.cdt;
+package tinfour.test.shapefile;
 
 /**
  * An enumeration defining Shapefile
  */
-enum ShapefileType {
+public enum ShapefileType {
   NullShape(0),
   Point(1),
   PolyLine(3),
@@ -56,32 +56,36 @@ enum ShapefileType {
 
   /**
    * Resolves the numeric code from a Shapefile to an enumeration instances
+   *
    * @param code a valid integer code
    * @return if successful, a valid instance; otherwise, a null.
    */
-  static ShapefileType getShapefileType(int code){
-     for(ShapefileType v: ShapefileType.values()){
-       if(v.shapeTypeCode==code){
-         return v;
-       }
-     }
+  public static ShapefileType getShapefileType(int code) {
+    for (ShapefileType v : ShapefileType.values()) {
+      if (v.shapeTypeCode == code) {
+        return v;
+      }
+    }
 
     return null;
   }
 
   /**
    * Gets the integer code value for this Shapefile type.
+   *
    * @return a positive integer
    */
-  int getTypeCode(){
+  public int getTypeCode() {
     return shapeTypeCode;
   }
 
   /**
    * Indicates if the specified Shapefile type defines a polygon geometry.
-   * @return
+   *
+   * @return true if the type is a polygon; otherwise false
    */
-  boolean isPolygon(){
-    return this==PolygonZ || this==Polygon || this==PolygonM;
+  public boolean isPolygon() {
+    return this == PolygonZ || this == Polygon || this == PolygonM;
   }
+
 }

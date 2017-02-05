@@ -37,6 +37,9 @@ import tinfour.common.IConstraint;
 import tinfour.common.LinearConstraint;
 import tinfour.common.PolygonConstraint;
 import tinfour.common.Vertex;
+import tinfour.test.shapefile.ShapefileReader;
+import tinfour.test.shapefile.ShapefileRecord;
+import tinfour.test.shapefile.ShapefileType;
 import tinfour.test.utils.DelimitedReader;
 
 /**
@@ -238,9 +241,8 @@ public class ConstraintLoader {
         }
         IConstraint con;
 
-        if (vList.size() > 3 &&
-          (vList.get(0)).getDistance(vList.get(vList.size() - 1)) < 1.0e-32)
-        {
+        if (vList.size() > 3
+          && (vList.get(0)).getDistance(vList.get(vList.size() - 1)) < 1.0e-32) {
           con = new PolygonConstraint();
         } else {
           con = new LinearConstraint();

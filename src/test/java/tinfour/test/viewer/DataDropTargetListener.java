@@ -15,7 +15,7 @@
  * ---------------------------------------------------------------------
  */
 
-/*
+ /*
  * -----------------------------------------------------------------------
  *
  * Revision History:
@@ -53,19 +53,19 @@ class DataDropTargetListener implements DropTargetListener {
 
   @Override
   public void dragEnter(DropTargetDragEvent dtde) {
-    if (!isDragAcceptable(dtde)) {
-      dtde.rejectDrag();
-    } else {
+    if (isDragAcceptable(dtde)) {
       dtde.acceptDrag(DnDConstants.ACTION_COPY);
+    } else {
+      dtde.rejectDrag();
     }
   }
 
   @Override
   public void dragOver(DropTargetDragEvent dtde) {
-    if (!isDragAcceptable(dtde)) {
-      dtde.rejectDrag();
-    } else {
+    if (isDragAcceptable(dtde)) {
       dtde.acceptDrag(DnDConstants.ACTION_COPY);
+    } else {
+      dtde.rejectDrag();
     }
   }
 
@@ -111,6 +111,7 @@ class DataDropTargetListener implements DropTargetListener {
    * @param dtde a valid drag target event received from Java/Swing
    * @return true if the target is a file; false if it is anything else.
    */
+  @SuppressWarnings("PMD.AvoidDeeplyNestedIfStmts")
   private boolean isDragAcceptable(DropTargetDragEvent dtde) {
     Transferable trans = dtde.getTransferable();
     if (trans.isDataFlavorSupported(DataFlavor.javaFileListFlavor)) {

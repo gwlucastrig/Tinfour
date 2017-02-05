@@ -27,7 +27,7 @@
  *
  * -----------------------------------------------------------------------
  */
-package tinfour.test.utils.cdt;
+package tinfour.test.shapefile;
 
 import java.io.File;
 import java.io.IOException;
@@ -41,7 +41,7 @@ import tinfour.las.BufferedRandomAccessForLidar;
  * not currently supported. Only a few Shapefile
  * types are supported.
  */
-class ShapefileReader {
+public class ShapefileReader {
 
   private final BufferedRandomAccessForLidar raf;
   final int fileLength; // 16-bit words
@@ -58,7 +58,7 @@ class ShapefileReader {
   private int nPointsTotal;
   private int nPartsTotal;
 
-  ShapefileReader(File file) throws IOException {
+  public ShapefileReader(File file) throws IOException {
     raf = new BufferedRandomAccessForLidar(file);
 
     int fileCode = raf.readIntBigEndian();
@@ -100,7 +100,7 @@ class ShapefileReader {
    *
    * @throws IOException in the event of an unexpected I/O exception
    */
-  void close() throws IOException {
+  public void close() throws IOException {
     raf.close();
   }
 
@@ -110,7 +110,7 @@ class ShapefileReader {
    *
    * @return the minimum value for the x coordinates in the file
    */
-  double getMinX() {
+  public double getMinX() {
     return minX;
   }
 
@@ -120,7 +120,7 @@ class ShapefileReader {
    *
    * @return the maximum value for the x coordinates in the file
    */
-  double getMaxX() {
+  public double getMaxX() {
     return maxX;
   }
 
@@ -130,7 +130,7 @@ class ShapefileReader {
    *
    * @return the minimum value for the y coordinates in the file
    */
-  double getMinY() {
+  public double getMinY() {
     return minY;
   }
 
@@ -140,7 +140,7 @@ class ShapefileReader {
    *
    * @return the maximum value for the y coordinates in the file.
    */
-  double getMaxY() {
+  public double getMaxY() {
     return maxY;
   }
 
@@ -150,7 +150,7 @@ class ShapefileReader {
    *
    * @return the minimum value for the z coordinates in the file.
    */
-  double getMinZ() {
+  public double getMinZ() {
     return minZ;
   }
 
@@ -160,7 +160,7 @@ class ShapefileReader {
    *
    * @return the maximum value for the z coordinates in the file.
    */
-  double getMaxZ() {
+  public double getMaxZ() {
     return maxZ;
   }
 
@@ -173,10 +173,11 @@ class ShapefileReader {
    * @param pRecord a reusable instance to store data, or a null
    * if the method is to allocate a new instance.
    * @return if successful, a valid instance of ShapefileRecord
-   * @throws IOException
+   * @throws IOException in the event of a file format error or unepected
+   * I/O condition
    */
   @SuppressWarnings("PMD.SwitchDensity")
-  ShapefileRecord readNextRecord(ShapefileRecord pRecord) throws IOException {
+  public ShapefileRecord readNextRecord(ShapefileRecord pRecord) throws IOException {
     ShapefileRecord record = pRecord;
     if (record == null) {
       record = new ShapefileRecord();
@@ -197,10 +198,10 @@ class ShapefileReader {
     switch (shapefileType) {
       case PolyLineZ:
       case PolygonZ: {
-        double x0 = raf.readDouble();
-        double y0 = raf.readDouble();
-        double x1 = raf.readDouble();
-        double y1 = raf.readDouble();
+        record.x0 = raf.readDouble();
+        record.y0 = raf.readDouble();
+        record.x1 = raf.readDouble();
+        record.y1 = raf.readDouble();
         int nParts = raf.readInt();
         int nPoints = raf.readInt();
         record.setSizes(nPoints, nParts);
@@ -219,14 +220,14 @@ class ShapefileReader {
           xyz[k++] = raf.readDouble();
           k++;
         }
-        double z0 = raf.readDouble();
-        double z1 = raf.readDouble();
-        record.setBounds(x0, x1, y0, y1, z0, z1);
-        if (z0 < minZ) {
-          minZ = z0;
+        record.z0 = raf.readDouble();
+        record.z1 = raf.readDouble();
+
+        if (record.z0 < minZ) {
+          minZ = record.z0;
         }
-        if (z1 > maxZ) {
-          maxZ = z1;
+        if (record.z1 > maxZ) {
+          maxZ = record.z1;
         }
         for (int iPart = 0; iPart < nParts; iPart++) {
           int n = partStart[iPart + 1] - partStart[iPart];
@@ -239,27 +240,25 @@ class ShapefileReader {
 
       case PolyLine:
       case Polygon: {
-        double x0 = raf.readDouble();
-        double y0 = raf.readDouble();
-        double x1 = raf.readDouble();
-        double y1 = raf.readDouble();
+        record.x0 = raf.readDouble();
+        record.y0 = raf.readDouble();
+        record.x1 = raf.readDouble();
+        record.y1 = raf.readDouble();
         int nParts = raf.readInt();
         int nPoints = raf.readInt();
         record.setSizes(nPoints, nParts);
-        int[] partStart = record.partStart;
-        double[] xyz = record.xyz;
         nPointsTotal += nPoints;
         nPartsTotal += nParts;
         for (int iPart = 0; iPart < nParts; iPart++) {
-          partStart[iPart] = raf.readInt();
+          record.partStart[iPart] = raf.readInt();
         }
-        partStart[nParts] = nPoints;
+        record.partStart[nParts] = nPoints;
 
         int k = 0;
         for (int i = 0; i < nPoints; i++) {
-          xyz[k++] = raf.readDouble();
-          xyz[k++] = raf.readDouble();
-          xyz[k++] = 0; // undefined
+          record.xyz[k++] = raf.readDouble();
+          record.xyz[k++] = raf.readDouble();
+          record.xyz[k++] = 0; // undefined
         }
       }
       break;
@@ -277,7 +276,7 @@ class ShapefileReader {
    *
    * @return true if more records remain; otherwise false.
    */
-  boolean hasNext() {
+  public boolean hasNext() {
     long pos = raf.getFilePosition();
     return (fileLengthInBytes - pos) > 8;
   }
@@ -288,7 +287,7 @@ class ShapefileReader {
    *
    * @return a positive integer.
    */
-  int getTotalPointCount() {
+  public int getTotalPointCount() {
     return nPointsTotal;
   }
 
@@ -298,7 +297,7 @@ class ShapefileReader {
    *
    * @return a positive integer.
    */
-  int getTotalPartCount() {
+  public int getTotalPartCount() {
     return nPartsTotal;
   }
 
@@ -307,7 +306,7 @@ class ShapefileReader {
    *
    * @return a valid enumeration instance.
    */
-  ShapefileType getShapefileType() {
+  public ShapefileType getShapefileType() {
     return shapefileType;
   }
 
