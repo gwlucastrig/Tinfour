@@ -14,6 +14,11 @@ at http://tsusiatsoftware.net/jts/main.html and released under
 the GNU Lesser General Public License available at 
 http://www.gnu.org/licenses/lgpl-3.0.en.html.  
 
+This product includes software developed by the laszip4j project
+at https://github.com/mreutegg/laszip4j and released under
+the GNU Lesser General Public License available at 
+http://www.gnu.org/licenses/lgpl-3.0.en.html.  
+
 This product includes icons from the FatCow web page at 
 http://www.fatcow.com/free-icons and distributed under the Create Commons
 Attribution 3.0 License.

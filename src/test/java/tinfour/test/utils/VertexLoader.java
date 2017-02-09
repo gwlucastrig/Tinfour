@@ -77,6 +77,13 @@ public class VertexLoader {
     maximumNumberOfVertices = maxN;
   }
 
+  private boolean isLazFile(File file){
+    String name = file.getName();
+    int n = name.length();
+    return n>4
+      && ".LAZ".equalsIgnoreCase(name.substring(n-4, n));
+  }
+
   /**
    * Set the loader to pre-sort the vertices to improve their spatial locality
    * before processing. Default is to not sort vertices.
@@ -330,7 +337,7 @@ public class VertexLoader {
       };
     }
 
-    ArrayList<Vertex> list = new ArrayList<>();
+    List<Vertex> list = new ArrayList<>();
     long time0 = System.nanoTime();
     long nVertices = reader.getNumberOfPointRecords();
     this.numberOfVerticesInSource = nVertices;
@@ -345,28 +352,43 @@ public class VertexLoader {
       }
     }
 
-    LasPoint p = new LasPoint();
-    for (long iRecord = 0; iRecord < nVertices; iRecord++) {
-      if (pProgressThreshold == iProgressThreshold) {
-        pProgressThreshold = 0;
-        progressMonitor.reportProgress((int) (0.1 + (100.0 * (iRecord + 1)) / nVertices));
-      }
-      pProgressThreshold++;
-      reader.readRecord(iRecord, p);
-      if (filter.accept(p)) {
-        double x = (p.x - geoOffsetX) * geoScaleX;
-        double y = (p.y - geoOffsetY) * geoScaleY;
-        double z = p.z;
-        Vertex v = new VertexWithClassification( // NOPMD
-          x, y, z, (int) iRecord, p.classification);
-        //Vertex v = new Vertex(x, y, z, (int) iRecord);
-        list.add(v);
-        if (list.size() >= this.maximumNumberOfVertices) {
-          break;
+    File file = reader.getFile();
+    if (isLazFile(file)) {
+      VertexLoaderLaz loadLaz = new VertexLoaderLaz(
+        geoOffsetX,
+        geoScaleX,
+        geoOffsetY,
+        geoScaleY,
+        maximumNumberOfVertices);
+      list = loadLaz.loadVertices(
+        file,
+        nVertices ,
+        filter,
+        iProgressThreshold,
+        progressMonitor);
+    } else {
+      LasPoint p = new LasPoint();
+      for (long iRecord = 0; iRecord < nVertices; iRecord++) {
+        if (pProgressThreshold == iProgressThreshold) {
+          pProgressThreshold = 0;
+          progressMonitor.reportProgress((int) (0.1 + (100.0 * (iRecord + 1)) / nVertices));
+        }
+        pProgressThreshold++;
+        reader.readRecord(iRecord, p);
+        if (filter.accept(p)) {
+          double x = (p.x - geoOffsetX) * geoScaleX;
+          double y = (p.y - geoOffsetY) * geoScaleY;
+          double z = p.z;
+          Vertex v = new VertexWithClassification( // NOPMD
+            x, y, z, (int) iRecord, p.classification);
+          //Vertex v = new Vertex(x, y, z, (int) iRecord);
+          list.add(v);
+          if (list.size() >= this.maximumNumberOfVertices) {
+            break;
+          }
         }
       }
     }
-
     long time1 = System.nanoTime();
     timeForLoad = (time1 - time0) / 1000000.0;
     postProcessList(list);

@@ -132,6 +132,8 @@ class DataDropTargetListener implements DropTargetListener {
                 String ext = name.substring(i, name.length());
                 if (".LAS".equalsIgnoreCase(ext)) {
                   return true;
+                } else if (".LAZ".equalsIgnoreCase(ext)) {
+                  return true;
                 } else if (".TXT".equalsIgnoreCase(ext)) {
                   return true;
                 } else if (".CSV".equalsIgnoreCase(ext)) {

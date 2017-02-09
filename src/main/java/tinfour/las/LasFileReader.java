@@ -120,12 +120,24 @@ public class LasFileReader {
   private boolean isClosed;
 
   private final List<LasVariableLengthRecord>vlrList;
+  private final File path;
 
   public LasFileReader(File path) throws IOException {
+    this.path = path;
     braf = new BufferedRandomAccessForLidar(path);
     vlrList = new ArrayList<>();
     readHeader(); //NOPMD
   }
+
+
+  /**
+   * Get the source file for the reader.
+   * @return a valid file instance.
+   */
+  public File getFile(){
+    return this.path;
+  }
+
 
   /**
    * Reads the header information from the beginning of a
