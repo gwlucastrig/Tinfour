@@ -55,7 +55,7 @@
 			<attribute name="Specification-Title" value="Tinfour Bundled with Tests and Viewer Demo" />
 			<attribute name="Specification-Version" value="1.0" />
 			<attribute name="Main-Class" value="tinfour.test.viewer.TinfourViewerMain" />
-			<attribute name="Class-Path" value="Tinfour-1.0.jar ../lib/commons-math3-3.6.1.jar" />
+			<attribute name="Class-Path" value="Tinfour-1.0.jar ../lib/commons-math3-3.6.1.jar ../lib/laszip4j.jar" />
 		</manifest>
 	</jar>	
   </target>

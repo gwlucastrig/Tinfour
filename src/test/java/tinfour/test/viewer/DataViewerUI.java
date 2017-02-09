@@ -587,7 +587,7 @@ class DataViewerUI {
 
     @Override
     public String getDescription() {
-      return "Lidar Files (LAS format only)";
+      return "Lidar Files (LAS and LAZ format)";
     }
 
     @Override
@@ -596,7 +596,7 @@ class DataViewerUI {
         return true;
       }
       String ext = getFileExtension(f);
-      return ("LAS".equalsIgnoreCase(ext));
+      return "LAS".equalsIgnoreCase(ext) || "LAZ".equalsIgnoreCase(ext);
     }
 
   }

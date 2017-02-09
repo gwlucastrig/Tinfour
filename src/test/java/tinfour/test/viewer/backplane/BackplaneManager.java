@@ -76,10 +76,7 @@ public class BackplaneManager {
 
     String ext = extractFileExtension(file);
     ViewOptions view = getViewOptions();
-    if ("LAZ".equalsIgnoreCase(ext)) {
-      postStatusMessage(taskIndex, "Tinfour does not yet support LAZ files");
-      return null;
-    } else if ("LAS".equalsIgnoreCase(ext)) {
+    if ("LAS".equalsIgnoreCase(ext) || "LAZ".equalsIgnoreCase(ext)) {
       LidarPointSelection selections = view.getLidarPointSelection();
       return new ModelFromLas(file, selections);
     } else if ("TXT".equalsIgnoreCase(ext)) {
@@ -188,10 +185,7 @@ public class BackplaneManager {
     IModel model;
     ViewOptions view = getViewOptions();
 
-    if ("LAZ".equalsIgnoreCase(ext)) {
-      postStatusMessage(taskIndex, "Tinfour does not yet support LAZ files");
-      return null;
-    } else if ("LAS".equalsIgnoreCase(ext)) {
+    if ("LAZ".equalsIgnoreCase(ext) || "LAS".equalsIgnoreCase(ext)) {
       LidarPointSelection selections = view.getLidarPointSelection();
       model = new ModelFromLas(file, selections);
     } else if ("TXT".equalsIgnoreCase(ext)) {

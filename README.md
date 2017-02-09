@@ -83,17 +83,30 @@ that I decided to include one of my own.
 
 
 ### Why are there external project dependencies? ###
-The only external dependency in the Tinfour package is the
-[Apache Commons Math Library](https://commons.apache.org/proper/commons-math/).
-For your convenience, a copy of the Commons math package is included
-with the Tinfour download.
+The Tinfour package has two external dependencies. The first is on the 
+laszip4j package, which allows the test and demonstration applications
+to read Lidar products in the highly specialized LAZ data compression
+format.  This dependency is not part of the core functions, but
+is necessary for access to these data products.
+
+The second dependency is the [Apache Commons Math Library](https://commons.apache.org/proper/commons-math/).
 This dependency is required by the linear algebra and statistics functions
-needed by the Geographically Weighted Regression classes. If you have
+needed by the Geographically Weighted Regression classes which
+are part of the core functionality. If you have
 an alternate linear algebra library in your own software, it would be
 possible to refactor the Tinfour code to perform the core regression
 functions using the alternative. You would, however, have to remove
 those functions that specifically require statistics elements
 (such as the T-Distribution) or provide your own alternative
+
+For your convenience, a copy of both the laszip4j and the Commons math
+packages are included with the Tinfour download.
+
+### What version of Java is required for Tinfour? ###
+All the Tinfour code compiles under Java 7.  However, the lazzip4j
+libraries requires Java 8.  Therefore, if you wish to use
+the Tinfour Viewer or otherwise access LAZ files, you will
+require a Java 8 JVM.
 
 ### Configuring Tinfour in an IDE ###
 Configuring Tinfour in an IDE is pretty simple:
@@ -104,53 +117,31 @@ Configuring Tinfour in an IDE is pretty simple:
    set up a source reference to (installed path)/Tinfour/src/test/java
    so your IDE picks up the packages tinfour.test.*
  * Set up a jar reference to (installed path)/Tinfour/lib/commons-math-3.3.6.1.jar
+ * Set up a jar reference to (installed path)/Tinfour/lib/laszip4j.jar
  * Configure the IDE to run TinfourViewerMain.  If you are working with very
    large datasets, you may include the Java runtime option -Xmx1500m or larger
-   to increase the heap size.
+   to increase the heap size.  However, in recent versions of Java the specification
+   of this option is not as critical as it once was.
  
 ### Current Work ###
-The current focus of Tinfour development is the introduction of the
-Constrained Delaunay Triangulation (CDT) to the software. The CDT
-is a technique for representing
-discontinuities in a Triangulated Irregular Network. For example, geographic
-applications often need a way to represent "breaklines" -- features including
+The current focus of Tinfour development is polishing aspects
+of the Constrained Delaunay Triangulation (CDT) implementation. The CDT
+is a technique for representing discontinuities in a Triangulated Irregular Network.
+For example, geographic applications often need a way to represent "breaklines" -- features including
 rivers, roads, coastlines and escarpments -- which mark a sudden change in
 the local slope or terrain. Conventional Delaunay Triangulations
 have a limited ability to treat boundaries where the surface undergoes a
 nearly instantaneous change.  By introducing linear and polygon features to
 the construction of a TIN, the Constrained Delaunay Triangulation provides
-an effective way of representing such features.
-
-As of 17 December 2016, I have completed the preliminary 
-implementation of this feature and have posted the code to github.
-I am currently implementing Rognant's algorithm for restoring
-Delaunay conformity after the constraints are added. 
-Beyond that, my plan is to integrate CDT's into the Tinfour Viewer.
-I expect to be complete with all work by the end of January 2017.
-For an illustrated explanation of why CDT's are important,
-see the Tinfour wiki page titled
+an effective way of representing such features. For an illustrated discussion
+of why CDT's are important, see the Tinfour wiki page titled
 [About the Constrained Delaunay Triangulation](https://github.com/gwlucastrig/Tinfour/wiki/About-the-Constrained-Delaunay-Triangulation "About the Constrained Delaunay Triangulation")
 
+For more detail about the Tinfour project development plans, see the
+[Tinfour Project Status and Roadmap](https://github.com/gwlucastrig/Tinfour/wiki/Tinfour-Project-Roadmap) page.
  
  
-### The Wish List ###
-If you are interested in seeing new capabilities added to Tinfour,
-I have a couple of ideas and would like to hear about yours.
-
-I recently discovered a github project that is developing a
-Java API for reading Lidar files written in the compressed LAZ format
-(see [LAS Zip for Java](https://github.com/mreutegg/laszip4j) ).
-I would very much like to extend the Lidar file reader to be able
-to process LAZfiles since that form is used by the majority
-of the websites distributing Lidar data today. Doing so would 
-make file access far more convenient. I'd also like to have the
-extend the support for metadata obtained from LAS files, particularly
-those elements using Well-Known Text (WKT) format and GeoTIFF tags.
-
-I'd like to see an extension of Tinfour to build Voronoi Diagrams 
-and perhaps conduct rendering and analysis using that graphical structure
-which is closely related to the Delaunay Triangulation.
-
+### Conclusion ###
 Finally, the whole point of working on a project like Tinfour is to see 
 it used to do something useful. To that end, I welcome ideas, requests, and
 recommendations for analysis tools and applications that would

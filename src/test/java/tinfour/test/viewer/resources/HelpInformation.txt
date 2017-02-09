@@ -13,10 +13,7 @@ with comma delimiters). The fields in each line should be given as
 x, y, and z coordinates. Additional columns are ignored. Vertex ID is 
 assigned by line number.
 <p>
-The viewer can read Lidar LAS files. At this time Tinfour does not provide
-utilities for extracting data from compressed LAZ files, so if you have
-LAZ-formatted data, you will need to extract the LAS file using the LASzip
-or related utility.
+The viewer can read Lidar directly from both LAS and LAZ files.  
 <p>
 Once data is rendered, you may use a click-and-drag gesture to pan the
 image or a mouse wheel to zoom in and out.  Information and coordinates
