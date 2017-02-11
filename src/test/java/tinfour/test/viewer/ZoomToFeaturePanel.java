@@ -596,6 +596,7 @@ class ZoomToFeaturePanel extends javax.swing.JPanel implements IModelChangeListe
     }
 
     coordinatesTextField.setText(s);
+    coordinatesTextField.setEnabled(true);
 
     double scale = Math.sqrt(Math.abs(p2m.getDeterminant()));
     double pWidth = dvPanel.getWidth();
