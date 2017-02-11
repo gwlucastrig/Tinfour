@@ -355,6 +355,7 @@ public class VertexLoader {
     File file = reader.getFile();
     if (isLazFile(file)) {
       VertexLoaderLaz loadLaz = new VertexLoaderLaz(
+        reader.getScaleAndOffset(),
         geoOffsetX,
         geoScaleX,
         geoOffsetY,
