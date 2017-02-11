@@ -595,10 +595,11 @@ public class DataViewingPanel extends JPanel {
       IModel model = mvComposite.getModel();
       CompositeImageScale ccs
         = getImageScaleToCenterModelInPanel(model);
-      mvComposite = backplaneManager.queueHeavyweightRenderTask(
+       MvComposite newComposite = backplaneManager.queueHeavyweightRenderTask(
         model,
         viewOptions,
         ccs);
+      setMvComposite(newComposite);
     }
   }
 
