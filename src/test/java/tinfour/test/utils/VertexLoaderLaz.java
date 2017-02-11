@@ -39,9 +39,10 @@ import tinfour.common.IMonitorWithCancellation;
 import tinfour.common.Vertex;
 import tinfour.las.ILasRecordFilter;
 import tinfour.las.LasPoint;
+import tinfour.las.LasScaleAndOffset;
 
 public class VertexLoaderLaz {
-
+  LasScaleAndOffset lasScaleAndOffset;
   double geoOffsetX;
   double geoScaleX;
   double geoOffsetY;
@@ -49,11 +50,13 @@ public class VertexLoaderLaz {
   long  maximumNumberOfVertices;
 
   VertexLoaderLaz(
+    LasScaleAndOffset lasScaleAndOffset,
     double geoOffsetX,
     double geoScaleX,
     double geoOffsetY,
     double geoScaleY,
     long  maximumNumberOfVertices) {
+    this.lasScaleAndOffset = lasScaleAndOffset;
     this.geoOffsetX = geoOffsetX;
     this.geoScaleX = geoScaleX;
     this.geoOffsetY = geoOffsetY;
@@ -72,6 +75,7 @@ public class VertexLoaderLaz {
     int pProgressThreshold = 0;
     LASReader reader = new LASReader(file);
 
+    LasScaleAndOffset so = lasScaleAndOffset;
     LasPoint t4Point = new LasPoint();
     int iRecord = 0;
     for (LASPoint p : reader.getPoints()) {
@@ -87,9 +91,13 @@ public class VertexLoaderLaz {
       // to support the use of a Tinfour filter, the LASPoint is
       // transcribed to a Tinfour LasPoint.  This is confusing and non-optimal
       // but will have to do for now.
-      t4Point.x = p.getX();
-      t4Point.y = p.getY();
-      t4Point.z = p.getZ();
+      if(p.isWithheld()){
+        continue;
+      }
+      t4Point.x = p.getX() * so.xScaleFactor + so.xOffset;
+      t4Point.y = p.getY() * so.yScaleFactor + so.yOffset;
+      t4Point.z = p.getZ() * so.zScaleFactor + so.zOffset;
+
       t4Point.classification = p.getClassification();
       t4Point.returnNumber = p.getReturnNumber();
       t4Point.numberOfReturns = p.getNumberOfReturns();

@@ -15,7 +15,7 @@
  * ---------------------------------------------------------------------
  */
 
-/*
+ /*
  * -----------------------------------------------------------------------
  *
  * Revision History:
@@ -46,7 +46,8 @@ import tinfour.utils.LinearUnits;
  * to a distinct lidar measurement. The header metadata is
  * read by the constructor. The records must be read one-at-a-time
  * through calls to the readRecord method.
- * <p>This code is based on information that
+ * <p>
+ * This code is based on information that
  * is given in LAS Specification Version 1.4-R13, 15 July 2013.
  */
 @SuppressWarnings("PMD.UnusedPrivateField")
@@ -60,17 +61,17 @@ public class LasFileReader {
    * a coordinate reference system.
    */
   public enum CoordinateReferenceSystemOption {
-    /** The LAS file uses GeoTIFF tags to identify CRS */
+    /**
+     * The LAS file uses GeoTIFF tags to identify CRS
+     */
     GeoTIFF,
-    /** The LAS file used Well-Known-Text to identify CRS */
+    /**
+     * The LAS file used Well-Known-Text to identify CRS
+     */
     WKT
   };
 
-
-
-
-
-    // For this block of variables, I have elected to avoid
+  // For this block of variables, I have elected to avoid
   // Javdoc.  The variable names are self-explanatory and
   // the code is easier to read without the clutter of documentation.
   // For definitions, see the LAS Specification.
@@ -119,7 +120,7 @@ public class LasFileReader {
   private final BufferedRandomAccessForLidar braf;
   private boolean isClosed;
 
-  private final List<LasVariableLengthRecord>vlrList;
+  private final List<LasVariableLengthRecord> vlrList;
   private final File path;
 
   public LasFileReader(File path) throws IOException {
@@ -129,15 +130,14 @@ public class LasFileReader {
     readHeader(); //NOPMD
   }
 
-
   /**
    * Get the source file for the reader.
+   *
    * @return a valid file instance.
    */
-  public File getFile(){
+  public File getFile() {
     return this.path;
   }
-
 
   /**
    * Reads the header information from the beginning of a
@@ -193,7 +193,7 @@ public class LasFileReader {
     maxZ = braf.readDouble();
     minZ = braf.readDouble();
 
-        // the following fields were not provided
+    // the following fields were not provided
     // in LAS format 1.2 and earlier (1.3 and earlier?).
     // Use the file size  to avoid reading them if they are not there.
     long pos = braf.getFilePosition();
@@ -215,25 +215,25 @@ public class LasFileReader {
       }
     }
 
-    if((globalEncoding&BIT4)==0){
+    if ((globalEncoding & BIT4) == 0) {
       crsOption = CoordinateReferenceSystemOption.GeoTIFF;
-    }else{
+    } else {
       crsOption = CoordinateReferenceSystemOption.WKT;
     }
 
-    if((globalEncoding&BIT1)==0){
+    if ((globalEncoding & BIT1) == 0) {
       lasGpsTimeType = LasGpsTimeType.WeekTime;
-    }else{
+    } else {
       lasGpsTimeType = LasGpsTimeType.SatelliteTime;
     }
 
-    for(int i=0; i<this.numberVariableLengthRecords; i++){
-       LasVariableLengthRecord vlrHeader = readVlrHeader();
-       braf.skipBytes(vlrHeader.recordLength);
-       vlrList.add(vlrHeader);
+    for (int i = 0; i < this.numberVariableLengthRecords; i++) {
+      LasVariableLengthRecord vlrHeader = readVlrHeader();
+      braf.skipBytes(vlrHeader.recordLength);
+      vlrList.add(vlrHeader);
     }
 
-    if(crsOption==CoordinateReferenceSystemOption.GeoTIFF){
+    if (crsOption == CoordinateReferenceSystemOption.GeoTIFF) {
       loadGeoTiffSpecification();  //NOPMD
 
     }
@@ -247,9 +247,8 @@ public class LasFileReader {
     String description = braf.readAscii(32);
     long offset = braf.getFilePosition();
     return new LasVariableLengthRecord(
-         offset, userID, recordID, recordLength, description);
+      offset, userID, recordID, recordLength, description);
   }
-
 
   /**
    * Read a record from the LAS file. The LasPoint object is used
@@ -294,11 +293,10 @@ public class LasFileReader {
     p.scanDirectionFlag = (mask >> 5) & 0x01;
     p.edgeOfFlightLine = (mask & 0x80) != 0;
 
-
     // for record types 0 to 5, the classification
     // is packed in with some other bit-values, see Table 8
     mask = braf.readUnsignedByte();
-    p.classification = mask &0x1f; // bits 0:4, values 0 to 32
+    p.classification = mask & 0x1f; // bits 0:4, values 0 to 32
     p.synthetic = (mask & 0x20) != 0;
     p.keypoint = (mask & 0x40) != 0;
     p.withheld = (mask & 0x80) != 0;
@@ -308,7 +306,6 @@ public class LasFileReader {
     //   user data        1 byte
     //   point source ID  2 bytes
     braf.skipBytes(4); // scan angle rank
-
 
     if (pointDataRecordFormat == 1 || pointDataRecordFormat == 3) {
       p.gpsTime = braf.readDouble();
@@ -433,30 +430,33 @@ public class LasFileReader {
    * Gets the option that was used for storing the coordinate reference
    * system in the LAS file. This information will indicate the appropriate
    * interpretation of the associated variable-length record instance.
+   *
    * @return a valid enumeration instance.
    */
-  public CoordinateReferenceSystemOption getCoordinateReferenceSystemOption(){
+  public CoordinateReferenceSystemOption getCoordinateReferenceSystemOption() {
     return this.crsOption;
   }
 
   /**
    * Gets a new instance of a list containing all variable length records.
+   *
    * @return a valid list.
    */
-  public List<LasVariableLengthRecord> getVariableLengthRecordList(){
-    List<LasVariableLengthRecord>list = new ArrayList<>();
+  public List<LasVariableLengthRecord> getVariableLengthRecordList() {
+    List<LasVariableLengthRecord> list = new ArrayList<>();
     list.addAll(vlrList);
     return list;
   }
 
   /**
    * Gets the variable-length record with the specified recordId
+   *
    * @param recordId a valid record ID in agreement with the LAS specification
    * @return if found, a valid instance; otherwise, a null
    */
-  public LasVariableLengthRecord getVariableLengthRecordByRecordId(int recordId){
-    for(LasVariableLengthRecord vlr: vlrList){
-      if(vlr.getRecordId()==recordId){
+  public LasVariableLengthRecord getVariableLengthRecordByRecordId(int recordId) {
+    for (LasVariableLengthRecord vlr : vlrList) {
+      if (vlr.getRecordId() == recordId) {
         return vlr;
       }
     }
@@ -487,12 +487,11 @@ public class LasFileReader {
     // while GeoTiff specification is implemented,
     // support for WKT is not.  So the class may or may not
     // know the geographic model type
-    if( isGeographicModelTypeKnown){
-       return usesGeographicModel;
+    if (isGeographicModelTypeKnown) {
+      return usesGeographicModel;
     }
 
     // apply some rules of thumb
-
     if (inLonRange(minX) && inLonRange(maxX)) {
       if (maxX - minX > 10) {
         // a lidar sample would not contain a 10-degree range
@@ -507,16 +506,17 @@ public class LasFileReader {
 
   /**
    * Gets the representation of time that is assigned to
-   * the sample point GPS time values.  This option
+   * the sample point GPS time values. This option
    * is arbitrarily assigned by the agency that collected and distributed
    * the LAS file. It is necessary to use this value in order to interpret
    * the GPS time of the samples.
-   * @return an enumeration giving the time recording format used for the LAS file
+   *
+   * @return an enumeration giving the time recording format used for the LAS
+   * file
    */
-  public LasGpsTimeType getLasGpsTimeType(){
-    return  lasGpsTimeType;
+  public LasGpsTimeType getLasGpsTimeType() {
+    return lasGpsTimeType;
   }
-
 
   private void loadGeoTiffSpecification() throws IOException {
     // get the projection keys
@@ -541,24 +541,24 @@ public class LasFileReader {
     }
 
     vlr = getVariableLengthRecordByRecordId(34736);
-    double []doubleData = null;
+    double[] doubleData = null;
     if (vlr != null) {
-       braf.seek(vlr.getFilePosition());
-      int nD = vlr.recordLength/8;
+      braf.seek(vlr.getFilePosition());
+      int nD = vlr.recordLength / 8;
       doubleData = new double[nD];
-      for(int i=0; i<nD; i++){
-          doubleData[i]= braf.readDouble();
+      for (int i = 0; i < nD; i++) {
+        doubleData[i] = braf.readDouble();
       }
     }
 
     vlr = getVariableLengthRecordByRecordId(34737);
-    char []asciiData = null;
-    if(vlr !=null){
-         braf.seek(vlr.getFilePosition());
-       asciiData = new char[vlr.recordLength];
-       for(int i=0; i<vlr.recordLength; i++){
-           asciiData[i] = (char)braf.readUnsignedByte();
-       }
+    char[] asciiData = null;
+    if (vlr != null) {
+      braf.seek(vlr.getFilePosition());
+      asciiData = new char[vlr.recordLength];
+      for (int i = 0; i < vlr.recordLength; i++) {
+        asciiData[i] = (char) braf.readUnsignedByte();
+      }
     }
 
     gtData = new GeoTiffData(keyList, doubleData, asciiData);
@@ -604,29 +604,47 @@ public class LasFileReader {
     //}
   }
 
-
   /**
    * Gets a copy of the GeoTiffData associated with the LAS file, if any.
    * For those LAS files which use Well-Known Text (WKT) specifications,
    * the return value from this method will be null.
+   *
    * @return if available, a valid instance; otherwise a null.
    */
-  public GeoTiffData getGeoTiffData(){
-      return gtData;
+  public GeoTiffData getGeoTiffData() {
+    return gtData;
   }
 
-
   /**
-   * Get the linear units specified by the LAS file.  This method
+   * Get the linear units specified by the LAS file. This method
    * assumes that the vertical and horizontal data are in the same
    * system (unless Geographic coordinates are used). In the future
    * this assumption may be revised, requiring a change to the API.
+   *
    * @return a valid instance of the enumeration.
    */
-  public LinearUnits getLinearUnits(){
+  public LinearUnits getLinearUnits() {
     return lasLinearUnits;
   }
 
+  /**
+   * Gets the horizontal and vertical scale and offset factors
+   * that were read from the LAS file header. Normally, these factors
+   * are applied to coordinates when they are read using the readRecord()
+   * method and are not needed by applications. But for those applications
+   * that have other requirements, this API exposes the header data elements.
+   *
+   * @return a valid instance.
+   */
+  public LasScaleAndOffset getScaleAndOffset() {
+    return new LasScaleAndOffset(xScaleFactor,
+      yScaleFactor,
+      zScaleFactor,
+      xOffset,
+      yOffset,
+      zOffset
+    );
+  }
 //   A sample main for debugging and diagnostics.
 //    public static void main(String[] args) throws IOException
 //    {

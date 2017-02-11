@@ -52,7 +52,7 @@ public class LasRecordFilterByClass implements ILasRecordFilter {
        // on the theory that withheld records are relatively uncommon
         // test on classification first
        if(record.classification == classification){
-           return record.withheld^=true;
+           return record.withheld^true;
        }
        return false;
     }

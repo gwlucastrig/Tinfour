@@ -1,5 +1,5 @@
 /* --------------------------------------------------------------------
- * Copyright 2015 Gary W. Lucas.
+ * Copyright 2016 Gary W. Lucas.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,42 +15,65 @@
  * ---------------------------------------------------------------------
  */
 
-/*
+ /*
  * -----------------------------------------------------------------------
  *
  * Revision History:
  * Date     Name         Description
  * ------   ---------    -------------------------------------------------
- * 06/2016  G. Lucas     Created
+ * 02/2017  G. Lucas     Created
  *
  * Notes:
  *
  * -----------------------------------------------------------------------
  */
-
 package tinfour.las;
 
 /**
- * An example implementation of a vertex filter, accepts all
- * records give first-return data and which
- * are not marked as "withheld".
+ * A container class to provide the scale and offset
+ * factors obtained from the LAS file header.
  */
-public class LasRecordFilterByFirstReturn implements ILasRecordFilter {
+public class LasScaleAndOffset {
 
-    /**
-     * Constructs a filter that accepts only records with the
-     * return number set to 1.
-     */
-    public LasRecordFilterByFirstReturn( ){
-      // empty constructor
-    }
-    @Override
-    public boolean accept(LasPoint record) {
-       // on the theory that withheld records are relatively uncommon
-        // test on the return number first
-       if(record.returnNumber == 1){
-           return record.withheld^true;
-       }
-       return false;
-    }
+  /**
+   * The x coordinate scale factor
+   */
+  public final double xScaleFactor;
+  /**
+   * The y coordinate scale factor
+   */
+  public final double yScaleFactor;
+  /**
+   * The z coordinate scale factor
+   */
+  public final double zScaleFactor;
+  /**
+   * The x coordinate offset
+   */
+  public final double xOffset;
+  /**
+   * The y coordinate offset
+   */
+  public final double yOffset;
+  /**
+   * The z coordinate offset
+   */
+  public final double zOffset;
+
+  LasScaleAndOffset(
+    double xScaleFactor,
+    double yScaleFactor,
+    double zScaleFactor,
+    double xOffset,
+    double yOffset,
+    double zOffset
+  ) {
+    this.xScaleFactor = xScaleFactor;
+    this.yScaleFactor = yScaleFactor;
+    this.zScaleFactor = zScaleFactor;
+    this.xOffset = xOffset;
+    this.yOffset = yOffset;
+    this.zOffset = zOffset;
+  }
+
 }
