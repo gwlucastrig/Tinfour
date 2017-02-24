@@ -256,7 +256,7 @@ public class Vertex implements ISamplePoint {
 
   /**
    * Get the x coordinate associated with the vertex. The x coordinate is
-   * inmmutable and established when the vertex is constructed. it is
+   * immutable and established when the vertex is constructed. it is
    * populated whether the vertex contains a null data value (Z value or I
    * value).
    *

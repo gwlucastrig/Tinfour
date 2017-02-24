@@ -44,7 +44,15 @@ import java.util.List;
  * being bounded by a counter-clockwise polygon. Thus a clockwise polygon
  * would define a "hole" in the area. It is worth noting that this convention
  * is just the opposite of that taken by ESRI's Shapefile format, though
- * it is consistent with conventions used in general computational geometry,
+ * it is consistent with conventions used in general computational geometry.
+ * <p>
+ * <strong>Organizing the list of vertices that defines the polygon</strong>
+ * Some implementations of polygon geometries include an extra "closure"
+ * vertex so that the last vertex in the list of vertices that defines the
+ * polygon is also the first. Although that approach has some advantages,
+ * this class does not use it. Each vertex in the polygon geometry is assumed
+ * to be unique. Thus, if the polygon represents a triangle, the
+ * getVertices and Vertex iterator methods will return exactly three vertices.
  */
 public class PolygonConstraint extends PolyLineConstraintAdapter implements IConstraint {
 
@@ -58,19 +66,38 @@ public class PolygonConstraint extends PolyLineConstraintAdapter implements ICon
 
   @Override
   public void complete() {
-    if (list.size() < 3) {
-      throw new IllegalStateException("Polygon contains fewer than 3 points");
-    }
-    Vertex a = list.get(0);
-    Vertex b = list.get(list.size() - 1);
-    if (a.getX() != b.getX() || a.getY() != b.getY()) {
-      list.add(a);
+    if (isComplete) {
+      return;
     }
 
-    a = b;
-    int n = list.size() - 1;
-    for (int i = 0; i < n; i++) {
-      b = list.get(i);
+    isComplete = true;
+
+    if (list.size() > 1) {
+      // The calling application may have included a "closure" vertex
+      // adding the same vertex to both the start and end of the polygon.
+      // That approach is not in keeping with the requirement that all
+      // vertices in the list be unique.  The following logic provides
+      // a bit of forgiveness to the applicaiton by removing the extra vertex.
+      Vertex a = list.get(0);
+      Vertex b = list.get(list.size() - 1);
+      if (a.getX() == b.getX() && a.getY() == b.getY()) {
+        list.remove(list.size() - 1);
+      } else {
+        // since no closure was supplied, we need to complete the
+        // length calculation to include the lsat segment.
+        length += list.get(0).getDistance(list.get(list.size() - 1));
+      }
+    }
+
+    if (list.size() < 3) {
+      return;
+    }
+
+    squareArea = 0;
+    length = 0;
+    Vertex a = list.get(list.size() - 1);
+    for (Vertex b : list) {
+      length += a.getDistance(b);
       squareArea += a.getX() * b.getY() - a.getY() * b.getX();
       a = b;
     }
@@ -104,6 +131,44 @@ public class PolygonConstraint extends PolyLineConstraintAdapter implements ICon
    */
   public double getArea() {
     return squareArea;
+  }
+
+  @Override
+  public double getNominalPointSpacing() {
+    if (list.size() < 2) {
+      return Double.NaN;
+    }
+    if (isComplete) {
+      return length / list.size();
+    }
+    return length / (list.size() - 1);
+  }
+
+  @Override
+  public PolygonConstraint refactor(Iterable<Vertex> geometry) {
+    PolygonConstraint c = new PolygonConstraint();
+    c.applicationData = applicationData;
+    c.constraintIndex = constraintIndex;
+    c.dataAreaDefinition = dataAreaDefinition;
+    for (Vertex v : geometry) {
+      c.add(v);
+    }
+    c.complete();
+    return c;
+  }
+
+  @Override
+  public boolean isValid() {
+    if (list.size() < 3) {
+      return false;
+    } else if (list.size() == 3) {
+      Vertex v0 = list.get(0);
+      Vertex v1 = list.get(2);
+      if (v0.getX() == v1.getX() && v0.getY() == v1.getY()) {
+        return false;
+      }
+    }
+    return true;
   }
 
 }

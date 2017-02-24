@@ -39,8 +39,10 @@ import tinfour.common.IConstraint;
 import tinfour.common.IIncrementalTin;
 import tinfour.common.IMonitorWithCancellation;
 import tinfour.common.INeighborEdgeLocator;
+import tinfour.common.IPolyline;
 import tinfour.common.NeighborEdgeVertex;
 import tinfour.common.Vertex;
+import tinfour.utils.PolylineThinner;
 import tinfour.utils.TinInstantiationUtility;
 
 /**
@@ -320,11 +322,11 @@ class MvTaskBuildTinAndRender implements IModelViewTask {
       //   So solve for n where area = 2 * n * s^2 * sqrt(3)/4;
       double areaInPixels = (area / uPerPixel / uPerPixel);
       double s = pixelSpacing;
+      double uSpacing = pixelSpacing / uPerPixel;
       double k = areaInPixels / (s * s * 0.866);
       // only thin the vertex list if k is sufficiently smaller than
       // the number of vertices we wish to plot.
       if (k < nVertices * 0.9) {
-
         double kSkip = nVertices / k;
         int iSkip = (int) kSkip;
         if (factorOfTwoSteps) {
@@ -342,19 +344,9 @@ class MvTaskBuildTinAndRender implements IModelViewTask {
 
         vList = thinList;
         reduction = iSkip;
-        // TO DO: To be useful, the following logic also needs to thin down the
-        //        constraint vertices themselves, removing all the
-        //        intervening vertices and leaving just a few per constraint.
-        //        This will probably require something like the Douglass-Peucker
-        //        algorithm.
         if (constraintList != null) {
-          if (reduction > 64) {
-            // TO DO: special logic right now...  until we get a good way to
-            // thin out the constraints, we do not cut them in when the
-            // reduction factor is too large.
-            constraintList = new ArrayList<>();
-          }
-          List<IConstraint> thinConList = new ArrayList<>(constraintList.size());
+          double areaThreshold = 0.4* uSpacing*uSpacing;
+          List<IPolyline> thinConList = new ArrayList<>(constraintList.size());
           for (IConstraint con : constraintList) {
             Rectangle2D r2dCon = con.getBounds();
             double w = r2dCon.getWidth() / uPerPixel;
@@ -364,7 +356,23 @@ class MvTaskBuildTinAndRender implements IModelViewTask {
               thinConList.add(con);
             }
           }
-          constraintList = thinConList;
+          PolylineThinner pThinner = new PolylineThinner();
+          constraintList = new ArrayList<>(thinConList.size());
+          for (int iP = 0; iP < thinConList.size(); iP++) {
+            IPolyline p = thinConList.get(iP);
+            IPolyline test = pThinner.thinPoints(p, thinConList,  areaThreshold);
+            if (test == null) {
+              // the thinner did not alter the geometry of the constraint
+              constraintList.add((IConstraint) p);
+            } else {
+              p = test;
+              if (p.isValid()) {
+                thinConList.set(iP, p);
+                constraintList.add((IConstraint) p);
+              }
+            }
+          }
+
         }
       }
     }
