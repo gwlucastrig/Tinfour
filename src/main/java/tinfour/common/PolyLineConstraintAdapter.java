@@ -32,6 +32,7 @@ package tinfour.common;
 
 import java.awt.geom.Rectangle2D;
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 
 /**
@@ -42,15 +43,16 @@ import java.util.List;
  * in the chain must be non-zero-length.
  * Do not use this class for closed polygons.
  */
-public abstract class PolyLineConstraintAdapter implements IConstraint {
+public abstract class PolyLineConstraintAdapter implements IConstraint, Iterable<Vertex> {
 
   protected final List<Vertex> list = new ArrayList<>();
   private final Rectangle2D bounds = new Rectangle2D.Double();
   private double x = Double.NaN;
   private double y = Double.NaN;
-  private double dSum;
-  private Object applicationData;
-  private int constraintIndex;
+  protected Object applicationData;
+  protected int constraintIndex;
+  protected boolean isComplete;
+  protected double length;
 
   @Override
   public List<Vertex> getVertices() {
@@ -59,6 +61,8 @@ public abstract class PolyLineConstraintAdapter implements IConstraint {
 
   @Override
   public void add(Vertex v) {
+    isComplete = false;
+
     double vx = v.getX();
     double vy = v.getY();
     if (list.isEmpty()) {
@@ -66,8 +70,8 @@ public abstract class PolyLineConstraintAdapter implements IConstraint {
     } else if (vx == x && vy == y) {
       return;  // quietly ignore duplicate points
     } else {
+      length += v.getDistance(x, y);
       bounds.add(vx, vy);
-      dSum += v.getDistance(x, y);
     }
 
     x = vx;
@@ -102,16 +106,14 @@ public abstract class PolyLineConstraintAdapter implements IConstraint {
     return constraintIndex;
   }
 
+  @Override
   public double getLength() {
-    return dSum;
+    return length;
   }
 
   @Override
-  public double getNominalPointSpacing() {
-    if (list.size() > 1) {
-      return dSum / (list.size() - 1);
-    }
-    return Double.NaN;
+  public Iterator<Vertex> iterator() {
+    return list.iterator();
   }
 
 }

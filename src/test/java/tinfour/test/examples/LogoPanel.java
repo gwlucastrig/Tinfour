@@ -176,6 +176,7 @@ public class LogoPanel extends JPanel {
                     path2d.lineTo(p0.getX(), p0.getY());
                 }
             }
+            path2d.closePath();
         }
         g2d.setStroke(new BasicStroke(2.0f));
         g2d.setColor(Color.black);

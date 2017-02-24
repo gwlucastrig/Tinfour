@@ -48,8 +48,9 @@ text file by accessing the Model&#8594;Load Constraints from File menu
 item. The viewer assumes that the constraints are in the same coordinate system
 and cover the same area as the source model. If the data does not
 conform to this requirement, the results are undefined.
-At this time, logic for thinning the constraints is not available.
-Therefore, constraints may not be included in the wireframe rendering
-if the data is viewed with a large reduction factor. This feature
-will be improved in future versions of the software. 
+<p>
+When presenting the data with a large reduction factor,
+the collection of points in the constraints may be reduced using
+a geometry simplification (point reduction) technique
+called Visvalingham's algorithm.
 

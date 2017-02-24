@@ -29,76 +29,12 @@
  */
 package tinfour.common;
 
-import java.awt.geom.Rectangle2D;
-import java.util.List;
-
 /**
  * Defines the interface for constraints that can be added to
  * instances of the Incremental TIN classes.
  */
-public interface IConstraint {
+public interface IConstraint extends IPolyline {
 
-  /**
-   * Gets the vertices for this constraint. The vertices define a
-   * non-self-intersecting chain of line segments (that is, no line segments
-   * intersect except at their endpoints). The vertices are assumed to be
-   * unique and far enough apart that they are stable in numeric operations.
-   *
-   * @return a valid list of two or more unique vertices.
-   * <p>
-   * <strong>Mutability:</strong> When a constraint added to the
-   * TIN classes, there are conditions under which vertices may be added
-   * or removed from the list. In cases where a constraint segment intersects
-   * an existing vertex, the vertex will be inserted into the constraint
-   * geometry. In cases where a constraint vertex is identical to an
-   * existing vertex, it will be replaced with the merged-vertex group
-   * into which the vertex was added.
-   */
-  List<Vertex> getVertices();
-
-  /**
-   * Adds a vertex to the linear constraint
-   *
-   * @param v a valid instance
-   */
-  public void add(Vertex v);
-
-  /**
-   * Gets the bounds of the constraint.
-   * <p>
-   * <strong>Caution:</strong> Implementations of this method expose
-   * the Rectangle2D object used by the constraint instance.
-   * Although this approach supports efficiency
-   * for the potentially intense processing conducted by the TIN classes,
-   * it does not provide a safe implementation for careless developers.
-   * Therefore, applications should manipulate the rectangle instance
-   * returned by this routine at any time.
-   *
-   * @return a valid, potentially empty rectangle instance.
-   */
-  public Rectangle2D getBounds();
-
-  /**
-   * Called to indicate that the constraint is complete and that
-   * no further vertices will be added to it. Some implementing classes
-   * may perform lightweight sanity checking on the constraint instance.
-   * For instance, a polygon implementation may ensure that the polygon defines
-   * a closed loop by appending the first vertex in the constraint to the
-   * end of its vertex list.
-   * <p>
-   * Multiple calls to complete are benign and will be ignored.
-   * If vertices are added after complete is called, the behavior is undefined.
-   */
-  public void complete();
-
-  /**
-   * Indicates whether the instance represents a polygon.
-   * Some implementations may define a constant value for this method,
-   * others may determine it dynamically.
-   *
-   * @return true if the instance is a polygon; otherwise, false.
-   */
-  public boolean isPolygon();
 
   /**
    * Sets the status of a polygon constraint to indicate whether it
@@ -156,24 +92,5 @@ public interface IConstraint {
    * area.
    */
   public int getConstraintIndex();
-
-  /**
-   * Gets the total length of the constraint. The length is the accumulated
-   * sum of the lengths of the line segments that comprise the constraint.
-   * In the case of a closed polygon constraint, the length is the
-   * perimeter of the polygon.
-   *
-   * @return if the constraint geometry is defined, a positive
-   * floating point value, otherwise a zero.
-   */
-  public double getLength();
-
-  /**
-   * Get the average distance between points for the constraint.
-   *
-   * @return if the constraint contains more than one point, a floating
-   * point value greater than zero; otherwise a NaN.
-   */
-  public double getNominalPointSpacing();
 
 }

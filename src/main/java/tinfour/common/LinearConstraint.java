@@ -42,7 +42,7 @@ public class LinearConstraint extends PolyLineConstraintAdapter implements ICons
 
   @Override
   public void complete() {
-    // at this time, do nothing
+    isComplete = true;
   }
 
   @Override
@@ -68,6 +68,33 @@ public class LinearConstraint extends PolyLineConstraintAdapter implements ICons
   @Override
   public boolean definesDataArea() {
     return false;
+  }
+
+
+  @Override
+  public double getNominalPointSpacing() {
+    if(list.size()<2){
+      return Double.NaN;
+    }
+    return length/(list.size()-1);
+  }
+
+  @Override
+  public LinearConstraint refactor(Iterable<Vertex> geometry) {
+    LinearConstraint c = new LinearConstraint();
+    c.applicationData = applicationData;
+    c.constraintIndex = constraintIndex;
+    for (Vertex v : geometry) {
+      c.add(v);
+    }
+    c.complete();
+    return c;
+  }
+
+
+  @Override
+  public boolean isValid(){
+    return list.size()>=2;
   }
 
 }

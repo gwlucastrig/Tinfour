@@ -1674,31 +1674,10 @@ public class SemiVirtualIncrementalTin implements IIncrementalTin {
     // Step 1 -- add all the vertices from the constraints to the TIN.
     for (IConstraint c : constraints) {
       c.complete();
-      List<Vertex> rawList = c.getVertices();
-      List<Vertex> vList = new ArrayList<>(rawList); // NOPMD -- safe copy
-
-      double xPrior = Double.POSITIVE_INFINITY;
-      double yPrior = Double.POSITIVE_INFINITY;
-      for (int i = 0; i < vList.size(); i++) {
-        Vertex v = vList.get(i);
-        double x = v.getX();
-        double y = v.getY();
-        if (x == xPrior && y == yPrior) {
-          // this should have been filtered out by logic that
-          // ensured that the constraint was well-formed. But we
-          // perform a test just in case
-          vList.remove(i);
-        }
-        xPrior = x;
-        yPrior = y;
-      }
-
-      if (vList.size() < 2) {
-        throw new IllegalArgumentException(
-          "Constaint contains fewer than 2 points");
+      for (Vertex v : c) {
+        this.add(v);
       }
       constraintList.add(c);
-      this.add(vList, null);
     }
 
     // Step 2 -- Construct new edges for constraint and mark any existing
@@ -1753,6 +1732,10 @@ public class SemiVirtualIncrementalTin implements IIncrementalTin {
   private void processConstraint(IConstraint constraint) {
     List<Vertex> cvList = new ArrayList<>();
     cvList.addAll(constraint.getVertices());
+    if (constraint.isPolygon()) {
+      // close the loop
+      cvList.add(cvList.get(0));
+    }
     int nSegments = cvList.size() - 1;
 
     double vTolerence = thresholds.getVertexTolerance();
