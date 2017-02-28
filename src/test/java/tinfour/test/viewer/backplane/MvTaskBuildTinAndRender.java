@@ -116,14 +116,24 @@ class MvTaskBuildTinAndRender implements IModelViewTask {
 
     IIncrementalTin wireframeTin = composite.getWireframeTin();
     int reductionForWireframeTin = composite.getReductionForWireframe();
+    List<IConstraint>constraintsForRender = composite.getConstraintsForRender();
 
+    // in the logic below, there are blocks where we obtain a "result"
+    // giving the vertex selection and constraints for rendering (if constraints
+    // are loaded).  When we obtain a result, the constraints are already
+    // ready for plotting, but the TIN has not yet been built.  So we can
+    // register the constraints immediately, but must delay registering the
+    // wireframe TIN until it is built.
+    SelectionResult result = null;
     if (view.isWireframeSelected()) {
       if (wireframeTin == null) {
-        SelectionResult result = selectVerticesForProcessing(
+         result = selectVerticesForProcessing(
           true,
           view.getWireframeSampleSpacing(),
           MAX_VERTICES_FOR_TIN,
           true);
+          constraintsForRender = result.constraintList;
+          composite.setConstraintsForRender(constraintsForRender);
         List<Vertex> vList = result.list;
 
         if (isCancelled) {
@@ -166,6 +176,36 @@ class MvTaskBuildTinAndRender implements IModelViewTask {
         bImage);
       backplaneManager.postImageUpdate(this, product);
     }
+
+        if (isCancelled) {
+      return;
+    }
+
+    if (view.isConstraintRenderingSelected()) {
+      // List<IConstraint>constraint
+      backplaneManager.postStatusMessage(taskIndex, "Rendering constraint image");
+      if (constraintsForRender == null) {
+        if (result == null) {
+          result = selectVerticesForProcessing(
+            true,
+            view.getWireframeSampleSpacing(),
+            MAX_VERTICES_FOR_TIN,
+            true);
+        }
+          constraintsForRender = result.constraintList;
+          composite.setConstraintsForRender(constraintsForRender);
+      }
+      if (constraintsForRender != null) {
+        BufferedImage bImage = composite.renderConstraints();
+        RenderProduct product = new RenderProduct(
+          RenderProductType.Constraints,
+          composite,
+          bImage);
+        backplaneManager.postImageUpdate(this, product);
+        backplaneManager.postStatusMessage(taskIndex, "");
+      }
+    }
+
 
     if (isCancelled) {
       return;
