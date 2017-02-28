@@ -83,6 +83,7 @@ import tinfour.test.viewer.backplane.ModelFromLas;
 import tinfour.test.viewer.backplane.MvComposite;
 import tinfour.test.viewer.backplane.MvQueryResult;
 import tinfour.test.viewer.backplane.RenderProduct;
+import tinfour.test.viewer.backplane.RenderProductType;
 import tinfour.test.viewer.backplane.ViewOptions;
 import tinfour.test.viewer.backplane.ViewOptions.RasterInterpolationMethod;
 
@@ -130,7 +131,7 @@ public class DataViewingPanel extends JPanel {
   private AffineTransform c2p; // composite to panel
   private AffineTransform p2c; // panel to composite
   private AffineTransform p2m;  // panel to model
-  private RenderProduct[] renderProducts = new RenderProduct[2];
+  private RenderProduct[] renderProducts = new RenderProduct[3];
   private MvQueryResult mvQueryResult;
   private boolean showScale;
   private boolean showLegend;
@@ -156,6 +157,7 @@ public class DataViewingPanel extends JPanel {
     legendImage = null;
     renderProducts[0] = null;
     renderProducts[1] = null;
+    renderProducts[2] = null;
     reportPane.setText(null);
     queryPane.setText(null);
     repaint();
@@ -167,11 +169,15 @@ public class DataViewingPanel extends JPanel {
     backplaneManager.setViewOptions(view);
 
     if (!view.isWireframeSelected()) {
-      renderProducts[0] = null;
+      renderProducts[RenderProductType.Wireframe.getStackingOrder()] = null;
+    }
+
+    if (!view.isConstraintRenderingSelected()) {
+      renderProducts[RenderProductType.Constraints.getStackingOrder()] = null;
     }
 
     if (!view.isGridBasedRenderingSelected()) {
-      renderProducts[1] = null;
+      renderProducts[RenderProductType.Raster.getStackingOrder()] = null;
     }
 
     assembleComposite();  // removes any layers that were turned off.
@@ -549,6 +555,7 @@ public class DataViewingPanel extends JPanel {
     mvQueryResult = null;
     renderProducts[0] = null;
     renderProducts[1] = null;
+    renderProducts[2] = null;
     compositeImage = null;
     legendImage = null;
     resizeAnchorX = Double.NaN;
@@ -595,7 +602,7 @@ public class DataViewingPanel extends JPanel {
       IModel model = mvComposite.getModel();
       CompositeImageScale ccs
         = getImageScaleToCenterModelInPanel(model);
-       MvComposite newComposite = backplaneManager.queueHeavyweightRenderTask(
+      MvComposite newComposite = backplaneManager.queueHeavyweightRenderTask(
         model,
         viewOptions,
         ccs);
@@ -628,7 +635,7 @@ public class DataViewingPanel extends JPanel {
     String reportText = mvComposite.getModelAndRenderingReport();
     reportPane.setText(reportText);
 
-    int index = product.layerType.ordinal();
+    int index = product.layerType.getStackingOrder();
     renderProducts[index] = product;
 
     assembleComposite();
@@ -824,19 +831,26 @@ public class DataViewingPanel extends JPanel {
     IModel model = mvComposite.getModel();
     ViewOptions oldView = mvComposite.getView();
     this.viewOptions = view;
-    boolean redrawRequired = false;
+    boolean heavyweightRedrawRequired = false;
 
+    //TO DO: This is not quite right.  Rendering improved since it was first
+    //       coded...  Now the TIN-building for the wireframe
+    //       often doesn't take long and can be treated as a light-weight
+    //       process.  So perhaps only cases where heavyweight is required
+    //       is when the wireframe switches to a dense sampling or when the
+    //       raster drawing is required.
     if (view.isWireframeSelected()
       && oldView.getWireframeSampleThinning() != view.getWireframeSampleThinning()) {
-      redrawRequired = true;
+      heavyweightRedrawRequired = true;
     }
 
     if (view.isWireframeSelected() && !oldView.isWireframeSelected()) {
-      redrawRequired = true;
+      heavyweightRedrawRequired = true;
     }
+
     if (view.isRasterSelected()) {
       if (!oldView.isRasterSelected()) {
-        redrawRequired = true;
+        heavyweightRedrawRequired = true;
       }
       if (view.isHillshadeSelected()) {
         // if the previous view was GWR, it would have build the hillshade
@@ -846,18 +860,18 @@ public class DataViewingPanel extends JPanel {
           || oldView.getRasterInterpolationMethod()
           == RasterInterpolationMethod.GeographicallyWeightedRegression;
         if (!hillshadeBuilt) {
-          redrawRequired = true;
+          heavyweightRedrawRequired = true;
         }
       }
       if (view.isFullResolutionGridSelected() != oldView.isFullResolutionGridSelected()) {
-        redrawRequired = true;
+        heavyweightRedrawRequired = true;
       }
       if (view.getRasterInterpolationMethod() != oldView.getRasterInterpolationMethod()) {
-        redrawRequired = true;
+        heavyweightRedrawRequired = true;
       }
     }
 
-    if (redrawRequired) {
+    if (heavyweightRedrawRequired) {
       // perform a heavy-weight render, building up new TINs as necessary
       MvComposite newComposite = backplaneManager.queueHeavyweightRenderTask(
         model, view, ccs);
@@ -919,6 +933,7 @@ public class DataViewingPanel extends JPanel {
 
     renderProducts[0] = null;
     renderProducts[1] = null;
+    renderProducts[2] = null;
     mvComposite = null;
     mvQueryResult = null;
     compositeImage = null;

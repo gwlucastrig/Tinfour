@@ -15,7 +15,7 @@
  * ---------------------------------------------------------------------
  */
 
-/*
+ /*
  * -----------------------------------------------------------------------
  *
  * Revision History:
@@ -54,6 +54,9 @@ public class ViewOptions {
   private String fieldForLabel;
   private boolean usePaletteForWireframe;
 
+  private boolean isConstraintRenderingSelected;
+  private Color constraintColor = Color.red;
+
   private boolean isRasterSelected;
   private boolean isHillshadeSelected;
   private double hillshadeAzimuth;
@@ -75,7 +78,6 @@ public class ViewOptions {
     ExtraFine;
   }
 
-
   public enum RasterInterpolationMethod {
     NaturalNeighbor,
     GeographicallyWeightedRegression,
@@ -84,6 +86,7 @@ public class ViewOptions {
 
   /**
    * Create a new instance copying the state data from the supplied reference
+   *
    * @param v a valid instance
    */
   public ViewOptions(ViewOptions v) {
@@ -103,6 +106,9 @@ public class ViewOptions {
     isLabelRenderingSelected = v.isLabelRenderingSelected;
     fieldForLabel = v.fieldForLabel;
     usePaletteForWireframe = v.usePaletteForWireframe;
+
+    isConstraintRenderingSelected = v.isConstraintRenderingSelected;
+    constraintColor = v.constraintColor;
 
     // raster and hillshade options
     isRasterSelected = v.isRasterSelected;
@@ -436,6 +442,7 @@ public class ViewOptions {
 
   /**
    * Gets the option for selecting lidar sample points
+   *
    * @return the option for selecting lidar sample points
    */
   public LidarPointSelection getLidarPointSelection() {
@@ -467,27 +474,30 @@ public class ViewOptions {
 
   /**
    * Sets the sample thinning setting for wireframe rendering.
+   *
    * @param sampleThinning a valid enumeration state
    */
-public void setWireframeSampleThinning(SampleThinning sampleThinning){
-  wireframeSampleThinning = sampleThinning;
-}
+  public void setWireframeSampleThinning(SampleThinning sampleThinning) {
+    wireframeSampleThinning = sampleThinning;
+  }
 
-/**
- * Gets the sample thinning setting for wireframe rendering
- * @return a valid enumerations state;
- */
-public SampleThinning getWireframeSampleThinning(){
-  return wireframeSampleThinning;
-}
+  /**
+   * Gets the sample thinning setting for wireframe rendering
+   *
+   * @return a valid enumerations state;
+   */
+  public SampleThinning getWireframeSampleThinning() {
+    return wireframeSampleThinning;
+  }
 
-/**
- * Gets the pixel distance between samples for the selected
- * thinning factor.
- * @return a positive number in pixels (user coordinates)
- */
-public int getWireframeSampleSpacing(){
-  switch (wireframeSampleThinning) {
+  /**
+   * Gets the pixel distance between samples for the selected
+   * thinning factor.
+   *
+   * @return a positive number in pixels (user coordinates)
+   */
+  public int getWireframeSampleSpacing() {
+    switch (wireframeSampleThinning) {
       case Medium:
         return 50;
       case Fine:
@@ -497,24 +507,59 @@ public int getWireframeSampleSpacing(){
       default:
         return 50;
     }
-}
+  }
 
-/**
- * Gets the method to be used for interpolating data when building a
- * raster grid.
- * @return a valid instance.
- */
-public RasterInterpolationMethod getRasterInterpolationMethod(){
-  return this.rasterInterpolationMethod;
-}
+  /**
+   * Gets the method to be used for interpolating data when building a
+   * raster grid.
+   *
+   * @return a valid instance.
+   */
+  public RasterInterpolationMethod getRasterInterpolationMethod() {
+    return this.rasterInterpolationMethod;
+  }
 
-/**
- * Sets the method to be used for interpolating data when building a
- * raster grid;
- * @param method a valid instance.
- */
-public void setRasterInterpolationMethod(RasterInterpolationMethod method){
-   rasterInterpolationMethod = method;
-}
+  /**
+   * Sets the method to be used for interpolating data when building a
+   * raster grid;
+   *
+   * @param method a valid instance.
+   */
+  public void setRasterInterpolationMethod(RasterInterpolationMethod method) {
+    rasterInterpolationMethod = method;
+  }
+
+  /**
+   * @return the isConstraintRenderingSelected
+   */
+  public boolean isConstraintRenderingSelected() {
+    return isConstraintRenderingSelected;
+  }
+
+  /**
+   * @param isConstraintRenderingSelected the isConstraintRenderingSelected to
+   * set
+   */
+  public void setConstraintRenderingSelected(boolean isConstraintRenderingSelected) {
+    this.isConstraintRenderingSelected = isConstraintRenderingSelected;
+  }
+
+  /**
+   * Gets the constraint color for rendering
+   *
+   * @return a valid color instance
+   */
+  public Color getConstraintColor() {
+    return constraintColor;
+  }
+
+  /**
+   * Set the constraint color for rendering
+   *
+   * @param constraintColor a valid color instance
+   */
+  public void setConstraintColor(Color constraintColor) {
+    this.constraintColor = constraintColor;
+  }
 
 }

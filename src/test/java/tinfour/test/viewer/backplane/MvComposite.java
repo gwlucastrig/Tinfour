@@ -29,6 +29,7 @@
  */
 package tinfour.test.viewer.backplane;
 
+import java.awt.BasicStroke;
 import java.awt.Color;
 import java.awt.Font;
 import java.awt.GradientPaint;
@@ -39,6 +40,7 @@ import java.awt.font.TextLayout;
 import java.awt.geom.AffineTransform;
 import java.awt.geom.Ellipse2D;
 import java.awt.geom.Line2D;
+import java.awt.geom.Path2D;
 import java.awt.geom.Point2D;
 import java.awt.geom.Rectangle2D;
 import java.awt.image.BufferedImage;
@@ -101,6 +103,8 @@ public class MvComposite {
   double reductionForInterpolatingTin = Double.POSITIVE_INFINITY;
   private int reductionForWireframe;
   private int reductionForRaster;
+
+  private List<IConstraint> constraintsForRender;
 
   GwrTinInterpolator interpolator;
   INeighborEdgeLocator edgeLocator;
@@ -225,8 +229,7 @@ public class MvComposite {
     MvComposite mvComposite,
     ViewOptions view,
     boolean preserveTins,
-    int taskIndex)
-  {
+    int taskIndex) {
     this.taskIndex = taskIndex;
     this.width = mvComposite.width;
     this.height = mvComposite.height;
@@ -245,6 +248,7 @@ public class MvComposite {
         this.timeForBuildRaster0 = mvComposite.timeForBuildRaster0;
         this.timeForBuildRaster1 = mvComposite.timeForBuildRaster1;
         this.edgeLocator = mvComposite.edgeLocator;
+        this.constraintsForRender = mvComposite.constraintsForRender;
       }
     }
     this.view = view;
@@ -723,7 +727,7 @@ public class MvComposite {
               if (labeling) {
                 String s;
                 if (indexLabeling) {
-                  s = Integer.toString(a.getIndex());
+                  s = a.getLabel();
                 } else {
                   s = String.format("%5.3f", a.getZ());
                 }
@@ -779,6 +783,50 @@ public class MvComposite {
     timeForRenderWireframe1 = System.currentTimeMillis();
     nVerticesInWireframe = nVerticesIncluded;
     updateReport();
+    return bImage;
+  }
+
+  BufferedImage renderConstraints() {
+
+    if (!view.isConstraintRenderingSelected()) {
+      return null;
+    }
+
+    BufferedImage bImage
+      = new BufferedImage(width, height, BufferedImage.TYPE_4BYTE_ABGR);
+    Graphics2D g2d = bImage.createGraphics();
+    g2d.setRenderingHint(
+      RenderingHints.KEY_ANTIALIASING,
+      RenderingHints.VALUE_ANTIALIAS_ON);
+    g2d.setRenderingHint(
+      RenderingHints.KEY_TEXT_ANTIALIASING,
+      RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
+    g2d.setColor(view.getForeground());
+    double c[] = new double[8];
+
+    g2d.setColor(view.getConstraintColor());
+    g2d.setStroke(new BasicStroke(2.0f));
+    for (IConstraint con : constraintsForRender) {
+      if (con.isValid()) {
+        boolean moveFlag = true;
+        Path2D path = new Path2D.Double();
+        for (Vertex v : con) {
+          c[0] = v.getX();
+          c[1] = v.getY();
+          m2c.transform(c, 0, c, 2, 1);
+          if (moveFlag) {
+            moveFlag = false;
+            path.moveTo(c[2], c[3]);
+          } else {
+            path.lineTo(c[2], c[3]);
+          }
+        }
+        if (con.isPolygon()) {
+          path.closePath();
+        }
+        g2d.draw(path);
+      }
+    }
     return bImage;
   }
 
@@ -1494,7 +1542,7 @@ public class MvComposite {
   public boolean isReady() {
     return model.isLoaded() && interpolatingTin != null;
   }
- 
+
   /**
    * Render a legend for the current model and view. The width and height
    * are the dimensions of the color bar, but the actual legend will extend
@@ -1634,6 +1682,24 @@ public class MvComposite {
     String conType = model.hasConstraints() ? " CDT" : "";
     String loaded = model.isLoaded() ? "Loaded" : "Unloaded";
     return String.format("MvComposite %d %s%s", this.serialIndex, loaded, conType);
+  }
+
+  /**
+   * Sets the constraints for rendering. These are often not the constraints
+   * from the model but a reduced-resolution version.
+   *
+   * @param constraintsForRender a potentially empty list of constraints
+   */
+  public void setConstraintsForRender(List<IConstraint> constraintsForRender) {
+    synchronized (this) {
+      this.constraintsForRender = constraintsForRender;
+    }
+  }
+
+  public List<IConstraint> getConstraintsForRender() {
+    synchronized (this) {
+      return constraintsForRender;
+    }
   }
 
 }

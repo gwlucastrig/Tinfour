@@ -15,7 +15,7 @@
  * ---------------------------------------------------------------------
  */
 
-/*
+ /*
  * -----------------------------------------------------------------------
  *
  * Revision History:
@@ -37,9 +37,24 @@ public enum RenderProductType {
   /**
    * Vector based rendering showing structure of TIN
    */
-  Wireframe,
+  Wireframe(1),
+  /**
+   * Vector based rendering showing constraints
+   */
+  Constraints(0),
   /**
    * Color-coded raster derived from TIN
    */
-  Raster
+  Raster(2);
+
+  private final int stackingOrder;
+
+  RenderProductType(int stackingOrder) {
+    this.stackingOrder = stackingOrder;
+  }
+
+  public int getStackingOrder() {
+    return stackingOrder;
+  }
+
 }
