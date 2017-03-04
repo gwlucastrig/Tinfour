@@ -52,7 +52,7 @@ public interface IIncrementalTin {
 
   /**
    * Performs a survey of the TIN to gather statistics about
-   * the triangle formed during its construction.
+   * the triangles formed during its construction.
    *
    * @return A valid instance of the TriangleCount class.
    */
@@ -99,7 +99,7 @@ public interface IIncrementalTin {
    * Gets an iterator for stepping through the list of current edges.
    * <p>
    * <strong>Warning:</strong> For efficiency purposes, the edges
-   * return by this routine are the same objects as those currently being used
+   * returned by this routine are the same objects as those currently being used
    * in the instance. Any modification of the edge objects will damage
    * the TIN. Therefore, applications must not modify the edges returned by this
    * method.
@@ -261,28 +261,6 @@ public interface IIncrementalTin {
    * not been initialized.
    */
   public List<Vertex> getVertices();
-
-  /**
-   * Tests the vertices of the triangle that includes the reference edge
-   * to see if any of them are an exact match for the specified
-   * coordinates. Typically, this method is employed after a search
-   * has obtained a neighboring edge for the coordinates.
-   * If one of the vertices is an exact match, within tolerance, for the
-   * specified coordinates, this method will return the edge that
-   * starts with the vertex.
-   *
-   * @param x the x coordinate of interest
-   * @param y the y coordinate of interest
-   * @param baseEdge an edge from the triangle containing (x,y)
-   * @param vertexTolerance2 the square of a tolerance specification
-   * for accepting a vertex as a match for the coordinates
-   * @return true if a match is found; otherwise, false
-   */
-  QuadEdge checkTriangleVerticesForMatch(
-    QuadEdge baseEdge,
-    double x,
-    double y,
-    double vertexTolerance2);
 
   /**
    * Indicates whether the instance contains sufficient information

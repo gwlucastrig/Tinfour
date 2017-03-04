@@ -45,12 +45,12 @@
 package tinfour.semivirtual;
 
 import tinfour.common.IQuadEdge;
-import static tinfour.common.QuadEdge.CONSTRAINT_AREA_BASE_FLAG;
-import static tinfour.common.QuadEdge.CONSTRAINT_AREA_FLAG;
-import static tinfour.common.QuadEdge.CONSTRAINT_FLAG;
-import static tinfour.common.QuadEdge.CONSTRAINT_INDEX_MASK;
-import static tinfour.common.QuadEdge.CONSTRAINT_INDEX_MAX;
 import tinfour.common.Vertex;
+import static tinfour.edge.QuadEdgeConstants.CONSTRAINT_AREA_BASE_FLAG;
+import static tinfour.edge.QuadEdgeConstants.CONSTRAINT_AREA_FLAG;
+import static tinfour.edge.QuadEdgeConstants.CONSTRAINT_FLAG;
+import static tinfour.edge.QuadEdgeConstants.CONSTRAINT_INDEX_MASK;
+import static tinfour.edge.QuadEdgeConstants.CONSTRAINT_INDEX_MAX;
 import static tinfour.semivirtual.SemiVirtualEdgePage.INDEX_MASK;
 import static tinfour.semivirtual.SemiVirtualEdgePage.INDICES_PER_PAGE;
 

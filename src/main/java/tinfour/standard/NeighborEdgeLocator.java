@@ -32,7 +32,7 @@ package tinfour.standard;
 import tinfour.common.INeighborEdgeLocator;
 import tinfour.common.IQuadEdge;
 import tinfour.common.NeighborEdgeVertex;
-import tinfour.common.QuadEdge;
+import tinfour.edge.QuadEdge;
 import tinfour.common.Vertex;
 
 /**
