@@ -99,7 +99,12 @@
  * due to Java type casting resulted in a 20 percent degradation in performance.
  * -----------------------------------------------------------------------
  */
-package tinfour.common;
+package tinfour.edge;
+
+import tinfour.common.IQuadEdge;
+import tinfour.common.Vertex;
+import static tinfour.edge.QuadEdgeConstants.CONSTRAINT_AREA_BASE_FLAG;
+import static tinfour.edge.QuadEdgeConstants.CONSTRAINT_AREA_FLAG;
 
 /**
  * A representation of an edge with forward and reverse links on one
@@ -112,41 +117,6 @@ package tinfour.common;
  */
 public class QuadEdge implements IQuadEdge {
 
-  /**
-   * The maximum value of a constraint index based on the three bytes
-   * allocated for its storage. This is a value of 16777215, or 2^24-1.
-   * In practice this value is larger than the available
-   * memory on many contemporary computers would allow.
-   */
-  public static final int CONSTRAINT_INDEX_MAX = ((1 << 24) - 1); // 16777215
-
-  /**
-   * A mask that can be anded with the QuadEdgePartner's
-   * index field to extract the constraint index,
-   * equivalent to the 24 low-order bits.
-   */
-  public static final int CONSTRAINT_INDEX_MASK = 0x00ffffff;
-
-  /**
-   * A bit indicating that an edge is constrained. This bit just happens
-   * to be the sign bit, a feature that is exploited by the isConstrained()
-   * method.
-   */
-  public static final int CONSTRAINT_FLAG = (1 << 31);
-
-  /**
-   * A bit indicating that an edge is part of a constrained area.
-   */
-  public static final int CONSTRAINT_AREA_FLAG = (1 << 30);
-
-  /**
-   * A bit indicating that the constrained area is to the base side
-   * of the edge. This bit is only meaningful when CONSTRAINT_AREA_FLAG is set.
-   * If CONSTRAINT_AREA_FLAG is set, then this bit tells which side the
-   * constraint area lies on: if the bit is set, it's on the base side
-   * and if the bit is clear, it's on the dual side.
-   */
-  public static final int CONSTRAINT_AREA_BASE_FLAG = (1 << 29);
 
   /**
    * An arbitrary index value. For IncrementalTin, the index
@@ -363,12 +333,14 @@ public class QuadEdge implements IQuadEdge {
   }
 
   /**
-   * Sets the index value for this edge. In the IncrementalTin application,
-   * this index is used for managing the EdgePool.
+   * Sets the index value for this edge. Because this index value is
+   * used by edge-pool implementations and for other data management activities,
+   * the scope of this method is limited to protected. The actual definition
+   * of this element is left to the application that uses it.
    *
    * @param index an integer value
    */
-  public void setIndex(final int index) {
+  protected void setIndex(final int index) {
     this.index = index;
   }
 

@@ -30,9 +30,10 @@
  * -----------------------------------------------------------------------
  */
 
-package tinfour.common;
+package tinfour.edge;
 
 import java.util.Iterator;
+import tinfour.common.IQuadEdge;
 
 /**
  * Provides an implementation of the pinwheel operation

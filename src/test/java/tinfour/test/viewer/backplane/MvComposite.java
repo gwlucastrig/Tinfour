@@ -809,7 +809,7 @@ public class MvComposite {
     for (IConstraint con : constraintsForRender) {
       if (con.isValid()) {
         boolean moveFlag = true;
-        Path2D path = new Path2D.Double();
+        Path2D path = new Path2D.Double();  //NOPMD
         for (Vertex v : con) {
           c[0] = v.getX();
           c[1] = v.getY();

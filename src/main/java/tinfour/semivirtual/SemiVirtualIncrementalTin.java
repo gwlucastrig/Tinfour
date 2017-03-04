@@ -48,11 +48,11 @@ import tinfour.common.IMonitorWithCancellation;
 import tinfour.common.INeighborEdgeLocator;
 import tinfour.common.INeighborhoodPointsCollector;
 import tinfour.common.IQuadEdge;
-import tinfour.common.QuadEdge;
 import tinfour.common.Thresholds;
 import tinfour.common.TriangleCount;
 import tinfour.common.Vertex;
 import tinfour.common.VertexMergerGroup;
+import tinfour.edge.QuadEdgeConstants;
 
 /**
  * Provides a memory-conserving variation on the IncrementalTin class
@@ -1623,10 +1623,6 @@ public class SemiVirtualIncrementalTin implements IIncrementalTin {
     return new SemiVirtualIntegrityCheck(this);
   }
 
-  @Override
-  public QuadEdge checkTriangleVerticesForMatch(QuadEdge baseEdge, double x, double y, double vertexTolerance2) {
-    throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
-  }
 
   @Override
   public boolean isPointInsideTin(double x, double y) {
@@ -1665,10 +1661,10 @@ public class SemiVirtualIncrementalTin implements IIncrementalTin {
     }
 
     // the max number of constraints is (2^20)-1
-    if (constraints.size() > QuadEdge.CONSTRAINT_INDEX_MAX) {
+    if (constraints.size() > QuadEdgeConstants.CONSTRAINT_INDEX_MAX) {
       throw new IllegalArgumentException(
         "The maximum number of constraints is "
-        + QuadEdge.CONSTRAINT_INDEX_MAX);
+        + QuadEdgeConstants.CONSTRAINT_INDEX_MAX);
     }
 
     // Step 1 -- add all the vertices from the constraints to the TIN.

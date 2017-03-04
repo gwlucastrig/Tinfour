@@ -30,7 +30,7 @@
 package tinfour.standard;
 
 import tinfour.common.GeometricOperations;
-import tinfour.common.QuadEdge;
+import tinfour.edge.QuadEdge;
 import tinfour.common.Vertex;
 
 /**

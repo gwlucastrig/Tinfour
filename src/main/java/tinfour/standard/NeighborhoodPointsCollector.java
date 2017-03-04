@@ -42,7 +42,7 @@ import java.util.List;
 import tinfour.common.GeometricOperations;
 import tinfour.common.INeighborhoodPointsCollector;
 import tinfour.common.IProcessUsingTin;
-import tinfour.common.QuadEdge;
+import tinfour.edge.QuadEdge;
 import tinfour.common.Thresholds;
 import tinfour.common.Vertex;
 

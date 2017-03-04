@@ -22,6 +22,7 @@
  * Date     Name         Description
  * ------   ---------    -------------------------------------------------
  * 06/2015  G. Lucas     Adapted from ProtoTIN implementation of TriangleManager
+ * 03/2017  G. Lucas     Moved to public scope
  *
  * Notes:
  *  The memory in this container is organized into pages, each page
@@ -54,7 +55,7 @@
  * freed, it can modify the appropriate page.
  *--------------------------------------------------------------------------
  */
-package tinfour.standard;
+package tinfour.edge;
 
 import java.io.PrintStream;
 import java.util.ArrayList;
@@ -62,7 +63,6 @@ import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
 import tinfour.common.IQuadEdge;
-import tinfour.common.QuadEdge;
 import tinfour.common.Vertex;
 
 /**
@@ -76,7 +76,7 @@ import tinfour.common.Vertex;
  * <p>Note that this class is <strong>not thread safe</strong>.
  */
 @SuppressWarnings("PMD.AvoidArrayLoops")
-class EdgePool implements Iterable<IQuadEdge> {
+public class EdgePool implements Iterable<IQuadEdge> {
 
   /**
    * The number of edges in an edge-pool page.
@@ -105,7 +105,7 @@ class EdgePool implements Iterable<IQuadEdge> {
    * of initial edges.
    *
    */
-  EdgePool() {
+  public EdgePool() {
     this.pageSize = EDGE_POOL_PAGE_SIZE;
     pages = new Page[1];
     pages[0] = new Page(0);
@@ -139,7 +139,7 @@ class EdgePool implements Iterable<IQuadEdge> {
    *
    * @param n the number of edge (not vertices) to be allocated.
    */
-  void preAllocateEdges(int n) {
+  public void preAllocateEdges(int n) {
     if (nFree >= n) {
       return;
     }
@@ -174,7 +174,7 @@ class EdgePool implements Iterable<IQuadEdge> {
     }
   }
 
-  QuadEdge allocateEdge(Vertex a, Vertex b) {
+  public QuadEdge allocateEdge(Vertex a, Vertex b) {
     Page page = nextAvailablePage;
     QuadEdge e = page.allocateEdge();
     if (page.isFullyAllocated()) {
@@ -221,7 +221,7 @@ class EdgePool implements Iterable<IQuadEdge> {
    *
    * @param e a valid QuadEdge
    */
-  void deallocateEdge(QuadEdge e) {
+  public void deallocateEdge(QuadEdge e) {
     int iPage = e.getIndex() / pageSize;
     Page page = pages[iPage];
     if (page.isFullyAllocated()) {
@@ -300,7 +300,7 @@ class EdgePool implements Iterable<IQuadEdge> {
    * Puts all references used in the collection out-of-scope as a way of
    * simplifying and expediting garbage collection.
    */
-  void dispose() {
+  public void dispose() {
     nextAvailablePage = null;
     for (int i = 0; i < pages.length; i++) {
       Page page = pages[i];
@@ -320,7 +320,7 @@ class EdgePool implements Iterable<IQuadEdge> {
    * Deallocates all Edges, returning them to the free
    * list. Does not delete any existing objects.
    */
-  void clear() {
+  public void clear() {
     for (Page p : pages) {
       for (QuadEdge t : p.edges) {
         t.clear();

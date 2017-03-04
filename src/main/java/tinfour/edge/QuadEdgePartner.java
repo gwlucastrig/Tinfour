@@ -34,7 +34,15 @@
  *
  * -----------------------------------------------------------------------
  */
-package tinfour.common;
+package tinfour.edge;
+
+import tinfour.common.Vertex;
+import static tinfour.edge.QuadEdgeConstants.CONSTRAINT_AREA_BASE_FLAG;
+import static tinfour.edge.QuadEdgeConstants.CONSTRAINT_AREA_FLAG;
+import static tinfour.edge.QuadEdgeConstants.CONSTRAINT_FLAG;
+import static tinfour.edge.QuadEdgeConstants.CONSTRAINT_INDEX_MASK;
+import static tinfour.edge.QuadEdgeConstants.CONSTRAINT_INDEX_MAX;
+
 
 /**
  * Used to define the dual (and side 1) of a pair of edge objects.
@@ -120,10 +128,10 @@ class QuadEdgePartner extends QuadEdge {
    */
   @Override
   public void setConstraintIndex(int constraintIndex) {
-    if (constraintIndex < 0 || constraintIndex > QuadEdge.CONSTRAINT_INDEX_MAX) {
+    if (constraintIndex < 0 || constraintIndex >  CONSTRAINT_INDEX_MAX) {
       throw new IllegalArgumentException(
         "Constraint index " + constraintIndex
-        + " is out of range [0.." + QuadEdge.CONSTRAINT_INDEX_MAX + "]");
+        + " is out of range [0.." +  CONSTRAINT_INDEX_MAX + "]");
     }
     // this one sets the constraint index, but does not affect
     // whether the edge is constrained or not.  An edge that is
@@ -144,10 +152,10 @@ class QuadEdgePartner extends QuadEdge {
    * a particular edge is associated with, in the range 0 to 1048575.
    */
   public void setConstrained(int constraintIndex) {
-    if (constraintIndex < 0 || constraintIndex > QuadEdge.CONSTRAINT_INDEX_MAX) {
+    if (constraintIndex < 0 || constraintIndex >  CONSTRAINT_INDEX_MAX) {
       throw new IllegalArgumentException(
         "Constraint index " + constraintIndex
-        + " is out of range [0.." + QuadEdge.CONSTRAINT_INDEX_MAX + "]");
+        + " is out of range [0.." +  CONSTRAINT_INDEX_MAX + "]");
     }
     index = CONSTRAINT_FLAG | ((index & ~CONSTRAINT_INDEX_MASK) | constraintIndex);
   }
