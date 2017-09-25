@@ -93,4 +93,15 @@ public interface IConstraint extends IPolyline {
    */
   public int getConstraintIndex();
 
+
+  /**
+   * Gets a new constraint that has the attributes of this contraint
+   * and the specified geometry.  This method is primarily used in cases
+   * where a geometry is very similar (or identical) to the input but either
+   * simplified or with replacement vertices.
+   * @param geometry a valid set of vertices.
+   * @return a new constraint.
+   */
+  public IConstraint getConstraintWithNewGeometry(Iterable<Vertex> geometry);
+
 }

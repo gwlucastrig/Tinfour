@@ -80,7 +80,7 @@ public class LinearConstraint extends PolyLineConstraintAdapter implements ICons
   }
 
   @Override
-  public LinearConstraint refactor(Iterable<Vertex> geometry) {
+  public LinearConstraint getConstraintWithNewGeometry(Iterable<Vertex> geometry) {
     LinearConstraint c = new LinearConstraint();
     c.applicationData = applicationData;
     c.constraintIndex = constraintIndex;
@@ -91,6 +91,10 @@ public class LinearConstraint extends PolyLineConstraintAdapter implements ICons
     return c;
   }
 
+  @Override
+  public LinearConstraint refactor(Iterable<Vertex> geometry) {
+    return this.getConstraintWithNewGeometry(geometry);
+  }
 
   @Override
   public boolean isValid(){
