@@ -78,6 +78,7 @@ public class VertexMergerGroup extends Vertex {
       firstVertex.z,
       firstVertex.getIndex());
     zRule = z;
+    status = firstVertex.status;
     list.add(firstVertex);
   }
 
@@ -92,6 +93,9 @@ public class VertexMergerGroup extends Vertex {
     if (v.isConstraintMember()) {
       setConstraintMember(true);
     }
+    if(!v.isSynthetic()){
+       setSynthetic(false);
+    }
     if (v instanceof VertexMergerGroup) {
       // put the content of the added group into
       // the existing group.  it's the only way to
@@ -100,22 +104,22 @@ public class VertexMergerGroup extends Vertex {
       // of the groups is rather small and so performs the
       // linear search for the contains() method.
       VertexMergerGroup g = (VertexMergerGroup) v;
-      boolean status = false;
+      boolean added = false;
       for (Vertex a : g.list) {
         if (!list.contains(a)) {
           list.add(a);
-          status = true;
+          added = true;
         }
       }
       applyRule();
-      return status;
+      return added;
     }
     if (list.contains(v)) {
       return false;
     }
-    boolean status = list.add(v);
+    boolean added = list.add(v);
     applyRule();
-    return status;
+    return added;
   }
 
   /**
@@ -127,11 +131,11 @@ public class VertexMergerGroup extends Vertex {
    * otherwise, false.
    */
   public boolean removeVertex(Vertex v) {
-    boolean status = list.remove(v);
-    if(status){
+    boolean removed = list.remove(v);
+    if(removed){
        applyRule();
     }
-    return status;
+    return removed;
   }
 
   private void applyRule() {
