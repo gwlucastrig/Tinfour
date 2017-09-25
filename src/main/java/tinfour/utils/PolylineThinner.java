@@ -185,6 +185,10 @@ public class PolylineThinner {
       return v;
     }
 
+    @Override
+    public void remove(){
+      throw new UnsupportedOperationException("Remove operation not supported");
+    }
   }
 
   private class NodeIterable implements Iterable<Vertex> {

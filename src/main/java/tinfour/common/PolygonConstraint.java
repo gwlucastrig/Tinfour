@@ -145,7 +145,7 @@ public class PolygonConstraint extends PolyLineConstraintAdapter implements ICon
   }
 
   @Override
-  public PolygonConstraint refactor(Iterable<Vertex> geometry) {
+  public PolygonConstraint getConstraintWithNewGeometry(Iterable<Vertex> geometry) {
     PolygonConstraint c = new PolygonConstraint();
     c.applicationData = applicationData;
     c.constraintIndex = constraintIndex;
@@ -155,6 +155,11 @@ public class PolygonConstraint extends PolyLineConstraintAdapter implements ICon
     }
     c.complete();
     return c;
+  }
+  
+  @Override
+  public PolygonConstraint refactor(Iterable<Vertex> geometry) {
+    return this.getConstraintWithNewGeometry(geometry);
   }
 
   @Override

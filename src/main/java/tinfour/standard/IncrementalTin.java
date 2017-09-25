@@ -1758,12 +1758,39 @@ public class IncrementalTin implements IIncrementalTin {
     }
 
     // Step 1 -- add all the vertices from the constraints to the TIN.
+    boolean redundantVertex = false;
     for (IConstraint c : constraints) {
       c.complete();
+      IConstraint reference = c;
       for (Vertex v : c) {
-        this.add(v);
+        boolean status = add(v);
+        if (!status) {
+          redundantVertex = true;
+        }
       }
-      constraintList.add(c);
+      if (redundantVertex) {
+        Vertex prior = null;
+        ArrayList<Vertex> replacementList = new ArrayList<Vertex>(); //NOPMD
+        for (Vertex v : c) {
+          Vertex m = this.getMatchingVertex(v);
+          if (m == v) { //NOPMD
+            replacementList.add(v);
+            prior = v;
+          } else {
+            // m should never be null, but should be a vertex merger group
+            if (!(m instanceof VertexMergerGroup)) {
+              System.out.println("diagnostic");
+            }
+            if (m == prior) { //NOPMD
+              continue;
+            }
+            replacementList.add(m);
+            prior = m;
+          }
+        }
+        reference = c.getConstraintWithNewGeometry(replacementList);
+      }
+      constraintList.add(reference);
     }
 
     // Step 2 -- Construct new edges for constraint and mark any existing
@@ -2471,6 +2498,47 @@ public class IncrementalTin implements IIncrementalTin {
   @Override
   public int getSyntheticVertexCount() {
     return nSyntheticVertices;
+  }
+
+  /**
+   * Checks to see if the vertex is already a member of the TIN. If it is,
+   * returns a reference to the member.  The member may be the vertex itself
+   * or the vertex merger group to which it belongs.
+   * @param v a valid vertex.
+   * @return if matched, the matching member; otherwise, a null.
+   */
+  private Vertex getMatchingVertex(Vertex v) {
+    if (v == null) {
+      return null;
+    }
+    final double x = v.x;
+    final double y = v.y;
+
+    if (searchEdge == null) {
+      searchEdge = edgePool.getStartingEdge();
+    }
+    searchEdge = walker.findAnEdgeFromEnclosingTriangle(searchEdge, x, y);
+
+    // the following is a debugging aid when trying to deal with vertex
+    // insertion versus TIN extension.
+    // boolean isVertexInside = (searchEdge.getForward().getB() != null);
+    QuadEdge matchEdge
+      = checkTriangleVerticesForMatch(searchEdge, x, y, vertexTolerance2);
+    if (matchEdge != null) {
+      Vertex a = matchEdge.getA();
+      if (a == v) {
+        // this vertex was already inserted.
+        return v;
+      }
+      VertexMergerGroup group;
+      if (a instanceof VertexMergerGroup) {
+        group = (VertexMergerGroup) a;
+        if (group.contains(v)) {
+          return group;
+        }
+      }
+    }
+    return null;
   }
 
 }

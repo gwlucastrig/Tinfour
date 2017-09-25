@@ -33,7 +33,7 @@ package tinfour.edge;
 /**
  * Defines constants for use in QuadEdge related operations.
  */
-public class QuadEdgeConstants {
+public final class QuadEdgeConstants {
 
   private QuadEdgeConstants(){
     // a private constructor to deter applications from
