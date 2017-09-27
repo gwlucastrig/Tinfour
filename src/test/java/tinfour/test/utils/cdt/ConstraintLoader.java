@@ -255,6 +255,21 @@ public class ConstraintLoader {
         return conList;
       }
 
+      // the above logic reads in a line in order to find the special
+      // case where there was just one constraint given by triplets of
+      // data values.  If we reached here, the first line contained other
+      // than 3 points.  From here on, we assume that we are looking for
+      // data in the form
+      //   (one line)          n
+      //   (n lines)           x, y, z
+      //   (one line)          n2
+      //   (n2-lines)          x, y, z
+      //      etc.
+      // The content of the first line is in sList.  In the code below, we
+      // always start the head of the loop with the the point count being
+      // stored in sList.  We extract the count, n.  Then read n more lines,
+      // extracting the coordinate triplets. Then read one more line after
+      // that and return to the top of the loop.
       int nPoints;
       while (true) {
         if (sList.isEmpty()) {
@@ -264,7 +279,6 @@ public class ConstraintLoader {
           String s = sList.get(0);
           try {
             nPoints = Integer.parseInt(s);
-            sList = reader.readStrings();
           } catch (NumberFormatException nex) {
             throw new IOException(
               "Invalid entry for point count,\"" + s + "\" on line "
@@ -280,7 +294,7 @@ public class ConstraintLoader {
           processLine(reader, vertexID++, sList, vList);
         }
         IConstraint con;
-        if (nPoints > 3 && (vList.get(0)).getDistance(vList.get(1)) < 1.0e-32) {
+        if (nPoints > 3 && (vList.get(0)).getDistance(vList.get(1)) < 1.0e-23) {
           con = new PolygonConstraint(); //NOPMD
         } else {
           con = new LinearConstraint(); //NOPMD
