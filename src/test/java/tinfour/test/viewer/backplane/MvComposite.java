@@ -1082,8 +1082,8 @@ public class MvComposite {
           //     zGrid[index+1] = @z/@x
           //     zGrid[index+2] = @z/@y
           // and
-          //     @z/@x = -xN/zN
-          //     @z/@y = -yN/zN
+          //     @z/@x = xN/zN
+          //     @z/@y = yN/zN
 
           P3 pa = new P3();
           P3 pb = new P3();
@@ -1160,8 +1160,8 @@ public class MvComposite {
                   xN += yA * zC - zA * yC;
                   yN += zA * xC - xA * zC;
                   zN += xA * yC - yA * xC;
-                  zGrid[index + 1] = (float) (-xN / zN);
-                  zGrid[index + 2] = (float) (-yN / zN);
+                  zGrid[index + 1] = (float) (xN / zN);
+                  zGrid[index + 2] = (float) (yN / zN);
                 }
               }
               index += 3;
@@ -1248,8 +1248,8 @@ public class MvComposite {
               } else {
                 zGrid[index] = (float) z;
                 double[] beta = gwr.getCoefficients();
-                zGrid[index + 1] = (float) beta[1]; // derivative Zx
-                zGrid[index + 2] = (float) beta[2]; // derivative Zy
+                zGrid[index + 1] = -(float) beta[1]; // derivative Zx
+                zGrid[index + 2] = -(float) beta[2]; // derivative Zy
               }
             }
             index += 3;
@@ -1356,8 +1356,8 @@ public class MvComposite {
         if (Float.isNaN(zGrid[index])) {
           argb[i] = 0xffffffff;
         } else {
-          final double fx = -zGrid[index + 1];
-          final double fy = -zGrid[index + 2];
+          final double fx = zGrid[index + 1];
+          final double fy = zGrid[index + 2];
           final double s = Math.sqrt(fx * fx + fy * fy + 1);
           final double nx = fx / s;
           final double ny = fy / s;
