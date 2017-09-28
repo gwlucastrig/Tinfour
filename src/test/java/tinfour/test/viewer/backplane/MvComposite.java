@@ -1038,7 +1038,23 @@ public class MvComposite {
   @SuppressWarnings("PMD.SwitchDensity")
   void buildGrid(int row0, int nRows, boolean hillshade, IModelViewTask task) {
     // ensure grids are ready for writing results
-
+    // The zGrid array is dimensioned to width*height*3.  Each triplet
+    // in the grid defines the following values:
+    //   z      z value of surface (always populated)
+    //  @z/@x   partial derivative of z with respect to x (populated for hillshade)
+    //  @z/@y   partial derivative of z with respect to y (populated for hillshade)
+    //
+    //  For the hillshading logic, we require the surface normal, not the
+    //  partial derivatives.  But we use the derivatives because they allow
+    //  us to store two values rather than three.  To convert from surface
+    //  derivatives to normal, we use the following cross product:
+    //    N = (1, 0, @z/@x)   X   (0, 1, @z/@y).
+    //  The result will not be a unit vector, so we have to normalize it
+    //  before applying it to the hillshade computation.
+    //    let
+    //      zX = @z/@x = zGrid[index+1]
+    //      zY = @z/@y = zGrid[index+2]
+    //    N = (-zX, -xY,  1) / sqrt(1 + zX*zX + zY*zY)
     getArrayForZ();
 
     zGridIncludesHillshade = hillshade;
@@ -1076,14 +1092,14 @@ public class MvComposite {
           // We then take the vector sum N = N1+N2.  The normal is needed for
           // hillshading. Although we could store the entire 3-element normal
           // in the zGrid array, we wish to save some space by just storing
-          // the partial derivatives. So,  the zGrid stores
-          // the values and the partial derivatives of the surface f as
+          // two values.  So we store the partial derivatives of the surface
+          // with respect to the x and y axes.
           //     zGrid[index]   = z
           //     zGrid[index+1] = @z/@x
           //     zGrid[index+2] = @z/@y
           // and
-          //     @z/@x = xN/zN
-          //     @z/@y = yN/zN
+          //     @z/@x = -xN/zN
+          //     @z/@y = -yN/zN
 
           P3 pa = new P3();
           P3 pb = new P3();
@@ -1160,8 +1176,8 @@ public class MvComposite {
                   xN += yA * zC - zA * yC;
                   yN += zA * xC - xA * zC;
                   zN += xA * yC - yA * xC;
-                  zGrid[index + 1] = (float) (xN / zN);
-                  zGrid[index + 2] = (float) (yN / zN);
+                  zGrid[index + 1] = (float) (-xN / zN);
+                  zGrid[index + 2] = (float) (-yN / zN);
                 }
               }
               index += 3;
@@ -1192,16 +1208,10 @@ public class MvComposite {
               double x = (iCol + 0.5) * dx + x0;
               if (minX <= x && x <= maxX) {
                 double z = nni.interpolate(x, y, null);
-
                 if (Double.isNaN(z)) {
                   zGrid[index] = Float.NaN;
                 } else {
                   zGrid[index] = (float) z;
-                  if (hillshade) {
-                    double[] norm = nni.getSurfaceNormal();
-                    zGrid[index + 1] = (float) (norm[0] / norm[2]);
-                    zGrid[index + 2] = (float) (norm[1] / norm[2]);
-                  }
                 }
               }
               index += 3;
@@ -1248,8 +1258,8 @@ public class MvComposite {
               } else {
                 zGrid[index] = (float) z;
                 double[] beta = gwr.getCoefficients();
-                zGrid[index + 1] = -(float) beta[1]; // derivative Zx
-                zGrid[index + 2] = -(float) beta[2]; // derivative Zy
+                zGrid[index + 1] = (float) beta[1]; // derivative Zx
+                zGrid[index + 2] = (float) beta[2]; // derivative Zy
               }
             }
             index += 3;
@@ -1290,8 +1300,9 @@ public class MvComposite {
                 zGrid[index] = (float) z;
                 if (hillshade) {
                   double[] norm = tri.getSurfaceNormal();
-                  zGrid[index + 1] = (float) (norm[0] / norm[2]);
-                  zGrid[index + 2] = (float) (norm[1] / norm[2]);
+                  // use the surface normal to compute the partial derivatives
+                  zGrid[index + 1] = -(float) (norm[0] / norm[2]);
+                  zGrid[index + 2] = -(float) (norm[1] / norm[2]);
                 }
               }
             }
@@ -1356,8 +1367,8 @@ public class MvComposite {
         if (Float.isNaN(zGrid[index])) {
           argb[i] = 0xffffffff;
         } else {
-          final double fx = zGrid[index + 1];
-          final double fy = zGrid[index + 2];
+          final double fx = -zGrid[index + 1];
+          final double fy = -zGrid[index + 2];
           final double s = Math.sqrt(fx * fx + fy * fy + 1);
           final double nx = fx / s;
           final double ny = fy / s;
