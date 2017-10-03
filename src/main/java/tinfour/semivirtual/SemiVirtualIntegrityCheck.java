@@ -58,7 +58,8 @@ class SemiVirtualIntegrityCheck implements IIntegrityCheck {
   private double sumDelaunayViolations;
   private double maxDelaunayViolation;
   private int nDelaunayViolationsConstrained;
-
+  private double sumDelaunayViolationsConstrained;
+  private double maxDelaunayViolationConstrained;
   /**
    * Constructs an instance to be associated with a specified TIN.
    *
@@ -341,7 +342,13 @@ class SemiVirtualIntegrityCheck implements IIntegrityCheck {
 
     if (h > 0) {
       if (e.isConstrained()) {
+        // because the edge will not necessarily have had conformity
+        // restored, we do not automatically treat the test as a failure here
         this.nDelaunayViolationsConstrained++;
+        this.sumDelaunayViolationsConstrained += h;
+        if (h > this.maxDelaunayViolationConstrained) {
+          this.maxDelaunayViolationConstrained = h;
+        }
       } else {
         this.nDelaunayViolations++;
         this.sumDelaunayViolations += h;
@@ -401,8 +408,11 @@ class SemiVirtualIntegrityCheck implements IIntegrityCheck {
       fmt.format("      Max Violation: %8.4e\n", maxDelaunayViolation);
     }
     if (nDelaunayViolationsConstrained > 0) {
-      fmt.format("   Suppressed %d violations due to constraints\n",
+      fmt.format("   Counted %d violations at constrained edges\n",
         nDelaunayViolationsConstrained);
+      fmt.format("      Avg Violation: %8.4e\n",
+        sumDelaunayViolationsConstrained / nDelaunayViolationsConstrained);
+      fmt.format("      Max Violation: %8.4e\n", maxDelaunayViolationConstrained);
     }
 
     fmt.flush();
@@ -506,4 +516,16 @@ class SemiVirtualIntegrityCheck implements IIntegrityCheck {
     return nDelaunayViolationsConstrained;
   }
 
+  @Override
+  public double getConstrainedViolationMaximum() {
+    return this.maxDelaunayViolationConstrained;
+  }
+
+  @Override
+  public double getContrainedViolationAverage() {
+    if (nDelaunayViolationsConstrained == 0) {
+      return 0;
+    }
+    return sumDelaunayViolationsConstrained / nDelaunayViolationsConstrained;
+  }
 }
