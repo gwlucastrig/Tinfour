@@ -2082,8 +2082,14 @@ public class SemiVirtualIncrementalTin implements IIncrementalTin {
     if (a == null || b == null || c == null || d == null) {
       return;
     }
+
+    // If the edge passes the inCircle test, treat it as Delaunay.
+    // Here the test uses a small threshold value because this the numeric
+    // calculation is limited by floating-point precision issues.  We have
+    // seen cases where no number of recursive subdivisions is sufficient
+    // to produce a calculated result of a zero or less.
     double h = geoOp.inCircle(a, b, c, d);
-    if (h <= 0) {
+    if (h <= thresholds.getDelaunayThreshold()) {
       return;
     }
 

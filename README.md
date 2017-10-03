@@ -103,7 +103,7 @@ For your convenience, a copy of both the laszip4j and the Commons math
 packages are included with the Tinfour download.
 
 ### What version of Java is required for Tinfour? ###
-All the Tinfour code compiles under Java 7.  However, the lazzip4j
+All the Tinfour code compiles under Java 7.  However, the laszip4j
 libraries requires Java 8.  Therefore, if you wish to use
 the Tinfour Viewer or otherwise access LAZ files, you will
 require a Java 8 JVM.

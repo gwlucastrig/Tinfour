@@ -78,4 +78,19 @@ public interface IIntegrityCheck {
    */
    public int getConstrainedViolationCount();
 
+  /**
+   * Get the maximum calculated in-circle score for constrained
+   * edges that violate the Delaunay criterion
+   *
+   * @return a positive number, or zero if no violations occurred.
+   */
+  public double getConstrainedViolationMaximum();
+
+  /**
+   * Get the average calculated in-circle score for constrained
+   * edges that violate the Delaunay criterion
+   *
+   * @return a positive number, or zero if no violations occurred.
+   */
+  public double getContrainedViolationAverage();
 }

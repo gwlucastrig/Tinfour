@@ -38,6 +38,7 @@ import java.util.SimpleTimeZone;
 import tinfour.common.IConstraint;
 import tinfour.common.IIncrementalTin;
 import tinfour.common.IIntegrityCheck;
+import tinfour.common.Thresholds;
 import tinfour.common.Vertex;
 
 /**
@@ -123,6 +124,7 @@ public class RandomConstraintTestSeries {
     RandomConstraintTestOptions.ConstraintType constraintType
       = options.getConstraintType();
     IIncrementalTin tin = options.makeNewInstanceOfTestTin();
+    Thresholds thresholds = new Thresholds(1.0);
     for (int i = 0; i < testCount; i++) {
       if ((i % 100) == 0) {
         ps.println("Testing vertex set " + i);
@@ -155,10 +157,14 @@ public class RandomConstraintTestSeries {
           // also check to see that there were no constraint-edge violations.
           if (restoreConformity && iCheck.getConstrainedViolationCount() > 0) {
             int n = iCheck.getConstrainedViolationCount();
-            System.out.println("TIN failed to restore conformity for vertex seed "
-              + vertexSeed + ", constraint seed" + constraintSeed
-              + " constrained violation count " + n);
-            System.exit(-1);
+            double hMax = iCheck.getConstrainedViolationMaximum();
+            double hLimit = thresholds.getDelaunayThreshold();
+            if (hMax > hLimit) {
+              System.out.println("TIN failed to restore conformity for vertex seed "
+                + vertexSeed + ", constraint seed" + constraintSeed
+                + " constrained violation count " + n);
+              System.exit(-1);
+            }
           }
         } else {
           System.out.println("TIN failed inspection for vertex seed "
