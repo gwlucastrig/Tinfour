@@ -49,8 +49,8 @@ public interface IPolyline extends Iterable<Vertex> {
    * Although this approach supports efficiency
    * for the potentially intense processing conducted by the Tinfour classes,
    * it does not provide a safe implementation for careless developers.
-   * Therefore, applications should manipulate the rectangle instance
-   * returned by this routine at any time.
+   * Therefore, applications should <strong>not</strong> manipulate or modify
+   * the rectangle instance returned by this routine at any time.
    *
    * @return a valid, potentially empty rectangle instance.
    */

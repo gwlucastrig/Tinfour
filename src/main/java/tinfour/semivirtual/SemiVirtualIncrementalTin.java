@@ -1689,9 +1689,6 @@ public class SemiVirtualIncrementalTin implements IIncrementalTin {
             prior = v;
           } else {
             // m should never be null, but should be a vertex merger group
-            if (!(m instanceof VertexMergerGroup)) {
-              System.out.println("diagnostic");
-            }
             if (m == prior) { // NOPMD
               continue;
             }
