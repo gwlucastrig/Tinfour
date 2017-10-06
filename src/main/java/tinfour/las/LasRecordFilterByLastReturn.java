@@ -1,5 +1,5 @@
 /* --------------------------------------------------------------------
- * Copyright 2016 Gary W. Lucas.
+ * Copyright 2015 Gary W. Lucas.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,38 +15,42 @@
  * ---------------------------------------------------------------------
  */
 
- /*
+/*
  * -----------------------------------------------------------------------
  *
  * Revision History:
  * Date     Name         Description
  * ------   ---------    -------------------------------------------------
- * 09/2016  G. Lucas     Created
+ * 06/2016  G. Lucas     Created
  *
  * Notes:
  *
  * -----------------------------------------------------------------------
  */
-package tinfour.test.viewer.backplane;
+
+package tinfour.las;
 
 /**
- * An enumeration indicating point selections for a Lidar-based model.
+ * An example implementation of a vertex filter, accepts all
+ * records give last-return data and which
+ * are not marked as "withheld".
  */
-public enum LidarPointSelection {
-  /**
-   * Model should load ground-point data only
-   */
-  GroundPoints,
-  /**
-   * Model should load first-return points only
-   */
-  FirstReturn,
-  /**
-   * Model should load last-return points only
-   */
-  LastReturn,
-  /**
-   * Model should load all points
-   */
-  AllPoints
+public class LasRecordFilterByLastReturn implements ILasRecordFilter {
+
+    /**
+     * Constructs a filter that accepts only records with the
+     * return number set to the number of returns.
+     */
+    public LasRecordFilterByLastReturn( ){
+      // empty constructor
+    }
+    @Override
+    public boolean accept(LasPoint record) {
+       // on the theory that withheld records are relatively uncommon
+        // test on the return number last
+       if(record.returnNumber == record.numberOfReturns){
+           return record.withheld^true;
+       }
+       return false;
+    }
 }
