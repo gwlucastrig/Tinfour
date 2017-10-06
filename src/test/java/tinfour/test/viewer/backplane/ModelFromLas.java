@@ -45,6 +45,7 @@ import tinfour.las.LasGpsTimeType;
 import tinfour.las.LasPoint;
 import tinfour.las.LasRecordFilterByClass;
 import tinfour.las.LasRecordFilterByFirstReturn;
+import tinfour.las.LasRecordFilterByLastReturn;
 import tinfour.test.utils.VertexLoader;
 import tinfour.utils.LinearUnits;
 
@@ -130,6 +131,9 @@ public class ModelFromLas extends ModelAdapter implements IModel {
         break;
       case FirstReturn:
         vFilter = new LasRecordFilterByFirstReturn();
+        break;
+      case LastReturn:
+        vFilter = new LasRecordFilterByLastReturn();
         break;
       default:
     }
