@@ -513,4 +513,6 @@ public class QuadEdge implements IQuadEdge {
     return new QuadEdgePinwheel(this);
   }
 
+
+
 }

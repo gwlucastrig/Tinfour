@@ -117,6 +117,7 @@ import java.io.Serializable;
 public strictfp final class DD
   implements Serializable, Comparable, Cloneable
 {
+  private static final long serialVersionUID = 1L;
   /**
    * The value nearest to the constant Pi.
    */

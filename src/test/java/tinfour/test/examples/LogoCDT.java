@@ -83,7 +83,7 @@ final public class LogoCDT {
           +tinClass.getSimpleName();
         List<IConstraint> outlineList = getOutlineConstraints(text);
         IIncrementalTin tin = options.getNewInstanceOfTestTin();
-        tin.addConstraints(outlineList, false);
+        tin.addConstraints(outlineList, true);
         LogoPanel.plot(tin, title);
     }
 
