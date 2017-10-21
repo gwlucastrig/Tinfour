@@ -27,9 +27,9 @@ import javax.swing.colorchooser.ColorSelectionModel;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 
- 
-public class ColorButton extends JButton {
 
+public class ColorButton extends JButton {
+    private static final long serialVersionUID = 1L;
     Color colorChoice = Color.white;
     JColorChooser chooser;
     JDialog dialog;
@@ -105,7 +105,7 @@ public class ColorButton extends JButton {
     public Color getColor(){
         return colorChoice;
     }
-    
+
     @Override
     public void paintComponent(Graphics g) {
         super.paintComponent(g);

@@ -2428,7 +2428,10 @@ public class IncrementalTin implements IIncrementalTin {
       QuadEdge md = dm.getDual();
 
       am.setConstrained(mb.getConstraintIndex());
-
+      if(mb.isConstrainedAreaMember()){
+        am.setConstrainedAreaMemberFlag();
+      }
+      
       ma.setForward(ad);  // should already be set
       ad.setForward(dm);
       dm.setForward(ma);

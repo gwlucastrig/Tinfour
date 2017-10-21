@@ -182,12 +182,23 @@ class QuadEdgePartner extends QuadEdge {
 
   @Override
   public void setConstrainedAreaMemberFlag() {
+    // The base-flag indicates that the base edge is a constrained
+    // area member. An edge/dual pair can only be a member of one
+    // constrained area.  So if we are setting the dual to be
+    // a constrained area member, we must clear the base-flag
     index |= CONSTRAINT_AREA_FLAG;
+    index &= ~CONSTRAINT_AREA_BASE_FLAG;
   }
+
 
   @Override
   public boolean isConstraintAreaOnThisSide() {
+    // An edge/dual pair can only be a member of one
+    // constrained area. So the constraint is on this side (the side
+    // of the dual), only if the base flag is set.
+    // This call is only meaningful if the edge is a member of a
+    // constraint area.
     return  (index & CONSTRAINT_AREA_BASE_FLAG) == 0;
   }
-
+ 
 }

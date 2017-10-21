@@ -179,6 +179,7 @@ import tinfour.test.viewer.backplane.ViewOptions.RasterInterpolationMethod;
         break;
       case LastReturn:
         lidarLastReturnButton.setSelected(true);
+        break;
       case AllPoints:
         lidarAllPointsButton.setSelected(false);
         break;
