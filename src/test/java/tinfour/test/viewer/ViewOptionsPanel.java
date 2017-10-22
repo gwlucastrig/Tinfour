@@ -85,12 +85,10 @@ import tinfour.test.viewer.backplane.ViewOptions.RasterInterpolationMethod;
       indices[i] = i;
     }
 
-    DefaultComboBoxModel dcb = new DefaultComboBoxModel(indices);
+    DefaultComboBoxModel<Integer> dcb = new DefaultComboBoxModel<>(indices);
 
     paletteComboBox.setModel(dcb);
     paletteComboBox.setRenderer(new PaletteRenderer(names, icons));
-
-    //paletteComboBox.setModel(\);
   }
 
   private void setDouble(JTextField field, String fmt, double v) {
@@ -336,14 +334,13 @@ import tinfour.test.viewer.backplane.ViewOptions.RasterInterpolationMethod;
     lidarPointSelectionGroup = new javax.swing.ButtonGroup();
     wireframeColorButtonGroup = new javax.swing.ButtonGroup();
     foregroundBackgroundButtonGroup = new javax.swing.ButtonGroup();
-    jComboBox1 = new javax.swing.JComboBox();
     optionsPanel = new javax.swing.JPanel();
     jLabel1 = new javax.swing.JLabel();
     jLabel2 = new javax.swing.JLabel();
     whiteOnBlackRadioButton = new javax.swing.JRadioButton();
     blackOnWhiteRadioButton = new javax.swing.JRadioButton();
     jLabel4 = new javax.swing.JLabel();
-    paletteComboBox = new javax.swing.JComboBox();
+    paletteComboBox = new javax.swing.JComboBox<>();
     paletteAssignEntireDataSet = new javax.swing.JRadioButton();
     paletteAssignFixedRange = new javax.swing.JRadioButton();
     paletteAssignMinRange = new javax.swing.JTextField();
@@ -353,7 +350,7 @@ import tinfour.test.viewer.backplane.ViewOptions.RasterInterpolationMethod;
     edgesCheckBox = new javax.swing.JCheckBox();
     verticesCheckBox = new javax.swing.JCheckBox();
     labelsCheckBox = new javax.swing.JCheckBox();
-    labelFieldComboBox = new javax.swing.JComboBox();
+    labelFieldComboBox = new javax.swing.JComboBox<>();
     rasterCheckBox = new javax.swing.JCheckBox();
     hillshadeCheckBox = new javax.swing.JCheckBox();
     jLabel6 = new javax.swing.JLabel();
@@ -370,7 +367,7 @@ import tinfour.test.viewer.backplane.ViewOptions.RasterInterpolationMethod;
     wireframeColorUsingPalette = new javax.swing.JRadioButton();
     fullResolutionGridCheckbox = new javax.swing.JCheckBox();
     jLabel3 = new javax.swing.JLabel();
-    wireframeSampleThinningComboBox = new javax.swing.JComboBox();
+    wireframeSampleThinningComboBox = new javax.swing.JComboBox<>();
     lidarFirstReturnButton = new javax.swing.JRadioButton();
     rasterMethodComboBox = new javax.swing.JComboBox<>();
     lidarLastReturnButton = new javax.swing.JRadioButton();
@@ -380,8 +377,6 @@ import tinfour.test.viewer.backplane.ViewOptions.RasterInterpolationMethod;
     applyButton = new javax.swing.JButton();
     cancelButton = new javax.swing.JButton();
     okayButton = new javax.swing.JButton();
-
-    jComboBox1.setModel(new javax.swing.DefaultComboBoxModel(new String[] { "Item 1", "Item 2", "Item 3", "Item 4" }));
 
     optionsPanel.setBorder(javax.swing.BorderFactory.createEtchedBorder());
 
@@ -405,7 +400,6 @@ import tinfour.test.viewer.backplane.ViewOptions.RasterInterpolationMethod;
 
     jLabel4.setText("Palette");
 
-    paletteComboBox.setModel(new javax.swing.DefaultComboBoxModel(new String[] { "Item 1", "Item 2", "Item 3", "Item 4" }));
     paletteComboBox.setToolTipText("Select palette for rendering rasters");
 
     paletteAssignButtonGroup.add(paletteAssignEntireDataSet);
@@ -442,7 +436,7 @@ import tinfour.test.viewer.backplane.ViewOptions.RasterInterpolationMethod;
     labelsCheckBox.setText("Labels");
     labelsCheckBox.setToolTipText("Enable labeling of vertices");
 
-    labelFieldComboBox.setModel(new javax.swing.DefaultComboBoxModel(new String[] { "Z", "ID" }));
+    labelFieldComboBox.setModel(new javax.swing.DefaultComboBoxModel<>(new String[] { "Z", "ID" }));
     labelFieldComboBox.setToolTipText("Select field for labeling");
 
     rasterCheckBox.setText("Raster");
@@ -501,7 +495,7 @@ import tinfour.test.viewer.backplane.ViewOptions.RasterInterpolationMethod;
 
     jLabel3.setText("Sample Thinning");
 
-    wireframeSampleThinningComboBox.setModel(new javax.swing.DefaultComboBoxModel(new String[] { " Medium", "Fine", "Extra Fine" }));
+    wireframeSampleThinningComboBox.setModel(new javax.swing.DefaultComboBoxModel<>(new String[] { " Medium", "Fine", "Extra Fine" }));
 
     lidarPointSelectionGroup.add(lidarFirstReturnButton);
     lidarFirstReturnButton.setText("First Returns Only");
@@ -851,7 +845,6 @@ import tinfour.test.viewer.backplane.ViewOptions.RasterInterpolationMethod;
   private javax.swing.ButtonGroup foregroundBackgroundButtonGroup;
   private javax.swing.JCheckBox fullResolutionGridCheckbox;
   private javax.swing.JCheckBox hillshadeCheckBox;
-  private javax.swing.JComboBox jComboBox1;
   private javax.swing.JLabel jLabel1;
   private javax.swing.JLabel jLabel10;
   private javax.swing.JLabel jLabel2;
@@ -862,7 +855,7 @@ import tinfour.test.viewer.backplane.ViewOptions.RasterInterpolationMethod;
   private javax.swing.JLabel jLabel7;
   private javax.swing.JLabel jLabel8;
   private javax.swing.JLabel jLabel9;
-  private javax.swing.JComboBox labelFieldComboBox;
+  private javax.swing.JComboBox<String> labelFieldComboBox;
   private javax.swing.JCheckBox labelsCheckBox;
   private javax.swing.JRadioButton lidarAllPointsButton;
   private javax.swing.JRadioButton lidarFirstReturnButton;
@@ -876,7 +869,7 @@ import tinfour.test.viewer.backplane.ViewOptions.RasterInterpolationMethod;
   private javax.swing.JRadioButton paletteAssignFixedRange;
   private javax.swing.JTextField paletteAssignMaxRange;
   private javax.swing.JTextField paletteAssignMinRange;
-  private javax.swing.JComboBox paletteComboBox;
+  private javax.swing.JComboBox<Integer> paletteComboBox;
   private javax.swing.JCheckBox rasterCheckBox;
   private javax.swing.JComboBox<String> rasterMethodComboBox;
   private javax.swing.JCheckBox verticesCheckBox;
@@ -885,6 +878,6 @@ import tinfour.test.viewer.backplane.ViewOptions.RasterInterpolationMethod;
   private javax.swing.ButtonGroup wireframeColorButtonGroup;
   private javax.swing.JRadioButton wireframeColorUsingForeground;
   private javax.swing.JRadioButton wireframeColorUsingPalette;
-  private javax.swing.JComboBox wireframeSampleThinningComboBox;
+  private javax.swing.JComboBox<String> wireframeSampleThinningComboBox;
   // End of variables declaration//GEN-END:variables
 }
