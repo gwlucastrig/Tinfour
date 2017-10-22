@@ -115,7 +115,7 @@ import java.io.Serializable;
 
 @SuppressWarnings("PMD")
 public strictfp final class DD
-  implements Serializable, Comparable, Cloneable
+  implements Serializable, Comparable<DD>, Cloneable
 {
   private static final long serialVersionUID = 1L;
   /**
@@ -1027,13 +1027,16 @@ public strictfp final class DD
   /**
    * Compares two DoubleDouble objects numerically.
    *
+   * @param other a valid instance of a DD object
    * @return -1,0 or 1 depending on whether this value is less than, equal to
    * or greater than the value of <tt>o</tt>
    */
-  public int compareTo(Object o)
+  @Override
+  public int compareTo(DD other)
   {
-    DD other = (DD) o;
-
+    if(other == null){
+      return 1; // sort nulls first
+    }
     if (hi < other.hi) return -1;
     if (hi > other.hi) return 1;
     if (lo < other.lo) return -1;
