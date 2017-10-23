@@ -68,7 +68,7 @@ public class TriangleCount {
    * @param tin a valid instance of an incremental tin
    */
   public TriangleCount(IIncrementalTin tin) {
-    geoOp = new GeometricOperations();
+    geoOp = new GeometricOperations(tin.getThresholds());
     if (tin.isBootstrapped()) {
       int maxIndex = tin.getMaximumEdgeAllocationIndex();
       int maxMapIndex = maxIndex * N_SIDES + 1;
