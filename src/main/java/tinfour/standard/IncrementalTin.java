@@ -1290,6 +1290,11 @@ public class IncrementalTin implements IIncrementalTin {
   }
 
   @Override
+  public Thresholds getThresholds() {
+    return thresholds;
+  }
+
+  @Override
   /**
    * Nullifies all internal data and references, preparing the instance for
    * garbage collection. Because of the complex relationships between objects
@@ -2431,7 +2436,7 @@ public class IncrementalTin implements IIncrementalTin {
       if(mb.isConstrainedAreaMember()){
         am.setConstrainedAreaMemberFlag();
       }
-      
+
       ma.setForward(ad);  // should already be set
       ad.setForward(dm);
       dm.setForward(ma);
