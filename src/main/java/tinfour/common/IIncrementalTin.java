@@ -146,6 +146,14 @@ public interface IIncrementalTin {
   double getNominalPointSpacing();
 
   /**
+   * Gets the Thresholds object that is associated with this instance.
+   * Because all elements in Thresholds are declared final (immutable),
+   * it can be shared safely between multiple threads or other classes.
+   * @return a valid instance
+   */
+  public Thresholds getThresholds();
+
+  /**
    * Gets a list of edges currently defining the perimeter of the TIN.
    * The list may be empty if the TIN is not initialized (bootstrapped).
    * <p>

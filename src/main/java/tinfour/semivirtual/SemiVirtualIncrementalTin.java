@@ -1209,6 +1209,11 @@ public class SemiVirtualIncrementalTin implements IIncrementalTin {
   }
 
   @Override
+  public Thresholds getThresholds() {
+    return thresholds;
+  }
+
+  @Override
   /**
    * Nullifies all internal data and references, preparing the
    * instance for garbage collection.
