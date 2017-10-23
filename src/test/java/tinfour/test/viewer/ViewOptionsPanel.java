@@ -793,7 +793,7 @@ import tinfour.test.viewer.backplane.ViewOptions.RasterInterpolationMethod;
     // TODO add your handling code here:
   }//GEN-LAST:event_lidarFirstReturnButtonActionPerformed
 
-  class PaletteRenderer extends JLabel implements ListCellRenderer<Integer> {
+  class PaletteRenderer extends JLabel implements ListCellRenderer {
     private  static final long serialVersionUID=1L;
     String[] names;
     Icon[] icons;
@@ -804,10 +804,10 @@ import tinfour.test.viewer.backplane.ViewOptions.RasterInterpolationMethod;
     }
 
     @Override
-    public Component getListCellRendererComponent(JList<? extends Integer> list, Integer value, int index, boolean isSelected, boolean cellHasFocus) {
+    public Component getListCellRendererComponent(JList list, Object value, int index, boolean isSelected, boolean cellHasFocus) {
       //Get the selected index. (The index param isn't
       //always valid, so just use the value.)
-      int selectedIndex = (value).intValue();
+      int selectedIndex = ((Integer) value).intValue();
 
       if (isSelected) {
         setBackground(list.getSelectionBackground());
