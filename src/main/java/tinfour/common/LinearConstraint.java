@@ -50,13 +50,6 @@ public class LinearConstraint extends PolyLineConstraintAdapter implements ICons
     return false;
   }
 
-  @Override
-  public void setDefinesDataArea(boolean definesDataArea) {
-    if (definesDataArea) {
-      throw new IllegalArgumentException(
-        "A non-polygon constraint cannot define a data area.");
-    }
-  }
 
   /**
    * Indicates whether the constraint defines a data area.
@@ -66,7 +59,7 @@ public class LinearConstraint extends PolyLineConstraintAdapter implements ICons
    * @return always false for linear constraints.
    */
   @Override
-  public boolean definesDataArea() {
+  public boolean definesConstrainedRegion() {
     return false;
   }
 

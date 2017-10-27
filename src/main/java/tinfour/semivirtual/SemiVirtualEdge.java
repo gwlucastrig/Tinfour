@@ -46,13 +46,14 @@ package tinfour.semivirtual;
 
 import tinfour.common.IQuadEdge;
 import tinfour.common.Vertex;
-import static tinfour.edge.QuadEdgeConstants.CONSTRAINT_AREA_BASE_FLAG;
-import static tinfour.edge.QuadEdgeConstants.CONSTRAINT_AREA_FLAG;
-import static tinfour.edge.QuadEdgeConstants.CONSTRAINT_FLAG;
+import static tinfour.edge.QuadEdgeConstants.CONSTRAINT_EDGE_FLAG;
 import static tinfour.edge.QuadEdgeConstants.CONSTRAINT_INDEX_MASK;
 import static tinfour.edge.QuadEdgeConstants.CONSTRAINT_INDEX_MAX;
 import static tinfour.semivirtual.SemiVirtualEdgePage.INDEX_MASK;
 import static tinfour.semivirtual.SemiVirtualEdgePage.INDICES_PER_PAGE;
+import static tinfour.edge.QuadEdgeConstants.CONSTRAINT_REGION_EDGE_FLAG;
+import static tinfour.edge.QuadEdgeConstants.CONSTRAINT_REGION_BASE_FLAG;
+import static tinfour.edge.QuadEdgeConstants.CONSTRAINT_REGION_MEMBER_FLAG;
 
 /**
  * Provides methods and elements implementing the QuadEdge data structure
@@ -536,7 +537,7 @@ public final class SemiVirtualEdge implements IQuadEdge {
 
     int ix = indexOnPage / 2; // both sides of the edge are constrained.
     int c[] = page.readyConstraints();
-    c[ix] = CONSTRAINT_FLAG | (c[ix] & ~CONSTRAINT_INDEX_MASK) | constraintIndex;
+    c[ix] = CONSTRAINT_EDGE_FLAG | (c[ix] & ~CONSTRAINT_INDEX_MASK) | constraintIndex;
 
   }
 
@@ -551,7 +552,7 @@ public final class SemiVirtualEdge implements IQuadEdge {
   }
 
   @Override
-  public boolean isConstrainedAreaEdge() {
+  public boolean isConstrainedRegionEdge() {
     if (page.constraints == null) {
       return false;
     } else {
@@ -559,52 +560,63 @@ public final class SemiVirtualEdge implements IQuadEdge {
       // and have its constrained-area flag set.
       // recall that the CONSTRAINT_FLAG is also the sign bit.
       int test = page.constraints[indexOnPage / 2];
-      return test < 0 & (test & CONSTRAINT_AREA_FLAG) != 0;
+      return (test & CONSTRAINT_REGION_EDGE_FLAG) != 0;
     }
   }
 
   @Override
-  public boolean isConstrainedAreaMember() {
+  public boolean isConstrainedRegionMember() {
     if (page.constraints == null) {
       return false;
     } else {
       // this tests to see if the edge is a constrained-area member
       // and doesn't care whether or not it is a constraint edge.
-      return (page.constraints[indexOnPage / 2] & CONSTRAINT_AREA_FLAG) != 0;
+      return (page.constraints[indexOnPage / 2] & CONSTRAINT_REGION_MEMBER_FLAG) != 0;
     }
   }
 
   @Override
-  public boolean isConstraintAreaOnThisSide() {
+  public boolean isConstrainedRegionOnThisSide() {
     if (page.constraints == null) {
       return false;
     } else {
       int flags = page.constraints[indexOnPage / 2];
-      if ((flags & CONSTRAINT_AREA_FLAG) == 0) {
+      if ((flags & CONSTRAINT_REGION_MEMBER_FLAG) == 0) {
         return false;
       }else{
         int side = indexOnPage & LOW_BIT;
         if (side == 0) {
-          return (flags & CONSTRAINT_AREA_BASE_FLAG) != 0;
+          return (flags & CONSTRAINT_REGION_BASE_FLAG) != 0;
         } else {
-          return (flags & CONSTRAINT_AREA_BASE_FLAG) == 0;
+          return (flags & CONSTRAINT_REGION_BASE_FLAG) == 0;
         }
       }
     }
   }
 
   @Override
-  public void setConstrainedAreaMemberFlag() {
+  public void setConstrainedRegionEdgeFlag() {
     int ix = indexOnPage / 2;
     int side = indexOnPage & LOW_BIT;
-    int constraintAreaFlag;
-    if (side == 0) {
-      constraintAreaFlag = CONSTRAINT_AREA_FLAG | CONSTRAINT_AREA_BASE_FLAG;
-    } else {
-      constraintAreaFlag = CONSTRAINT_AREA_FLAG;
-    }
     int c[] = page.readyConstraints();
-    c[ix] |= constraintAreaFlag;
+    if (side == 0) {
+      c[ix] |= (
+        CONSTRAINT_REGION_EDGE_FLAG
+        | CONSTRAINT_REGION_BASE_FLAG
+        | CONSTRAINT_REGION_MEMBER_FLAG);
+    } else {
+      c[ix] |= (CONSTRAINT_REGION_EDGE_FLAG | CONSTRAINT_REGION_MEMBER_FLAG);
+      c[ix] &= ~CONSTRAINT_REGION_BASE_FLAG;
+    }
+  }
+
+
+
+  @Override
+  public void setConstrainedRegionMemberFlag() {
+    int ix = indexOnPage / 2;
+    int c[] = page.readyConstraints();
+    c[ix] |= CONSTRAINT_REGION_MEMBER_FLAG;
   }
 
   @Override

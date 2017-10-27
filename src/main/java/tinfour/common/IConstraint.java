@@ -22,6 +22,7 @@
  * Date     Name         Description
  * ------   ---------    -------------------------------------------------
  * 10/2016  G. Lucas     Created
+ * 07/2017  G. Lucas     Refactored to better support constrained regions
  *
  * Notes:
  *
@@ -32,26 +33,34 @@ package tinfour.common;
 /**
  * Defines the interface for constraints that can be added to
  * instances of the Incremental TIN classes.
+ * <p><strong>About Constrained Regions</strong><br>
+ * In plane geometry, a simple, non-self-intersecting polygon divides the
+ * plane into two disjoint regions. So a polygon constraint has the feature
+ * that it defines regions.  On the other hand, a finite linear constraint
+ * does not exhibit this feature.
+ * <p>When one or more polygon constraints are added to a TIN,
+ * Tinfour implements a special behavior in which any edges falling
+ * in the interior of the associated regions are marked as being members of a
+ * constrained region.  Here, the word "interior" actually means the
+ * region of the plane lying to the left of an edge.  So for a polygon
+ * given as a simple loop of vertices taken in counterclockwise order,
+ * the left side of each edge is to the inside of the loop and thus the
+ * usage of the word "interior" agrees with the ordinary idea of
+ * interior being the region inside the polygon.  However, if the polygon were
+ * taken in clockwise order, the left side of each edge would be to the
+ * outside of the polygon.
+ *  
  */
 public interface IConstraint extends IPolyline {
 
-
   /**
-   * Sets the status of a polygon constraint to indicate whether it
-   * defines a data area. This method is undefined for non-polygon constraints.
+   * Indicates whether the constraint applies a constrained region behavior
+   * when added to a TIN.
    *
-   * @param definesDataArea true if the constraint defines a data area;
-   * otherwise false.
-   */
-  public void setDefinesDataArea(boolean definesDataArea);
-
-  /**
-   * Indicates whether the constraint is a data area definition.
-   *
-   * @return true if the constraint is a data-area definition; otherwise
+   * @return true if the constraint is a data-region definition; otherwise
    * false.
    */
-  public boolean definesDataArea();
+  public boolean definesConstrainedRegion();
 
   /**
    * Permits an application to add data elements to the constraint for
@@ -89,7 +98,7 @@ public interface IConstraint extends IPolyline {
    *
    * @return the index of the constraint associated with the edge;
    * undefined if the edge is not constrained or a member of a constrained
-   * area.
+   * region.
    */
   public int getConstraintIndex();
 

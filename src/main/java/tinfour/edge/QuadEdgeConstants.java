@@ -42,11 +42,12 @@ public final class QuadEdgeConstants {
 
   /**
    * The maximum value of a constraint index based on the three bytes
-   * allocated for its storage. This is a value of 16777215, or 2^24-1.
+   * allocated for its storage. This would be a value of 16777215, or 2^24-1
+   * but we reserve the 3 values at the top for special use.
    * In practice this value is larger than the available
    * memory on many contemporary computers would allow.
    */
-  public static final int CONSTRAINT_INDEX_MAX = ((1 << 24) - 1); // 16777215
+  public static final int CONSTRAINT_INDEX_MAX = ((1 << 24) - 4); // 16777215
 
   /**
    * A mask that can be anded with the QuadEdgePartner's
@@ -60,19 +61,26 @@ public final class QuadEdgeConstants {
    * to be the sign bit, a feature that is exploited by the isConstrained()
    * method.
    */
-  public static final int CONSTRAINT_FLAG = (1 << 31);
+  public static final int CONSTRAINT_EDGE_FLAG = (1 << 31);
 
   /**
-   * A bit indicating that an edge is part of a constrained area.
+   * A bit indicating that the edge is the edge of a constrained region
    */
-  public static final int CONSTRAINT_AREA_FLAG = (1 << 30);
+  public static final int CONSTRAINT_REGION_EDGE_FLAG = (1 << 30);
+
 
   /**
-   * A bit indicating that the constrained area is to the base side
-   * of the edge. This bit is only meaningful when CONSTRAINT_AREA_FLAG is set.
-   * If CONSTRAINT_AREA_FLAG is set, then this bit tells which side the
-   * constraint area lies on: if the bit is set, it's on the base side
-   * and if the bit is clear, it's on the dual side.
+   * A bit indicating that the constrained region is to the base side
+   * of the edge. This bit is only meaningful when the
+   * CONSTRAINT_AREA_EDGE_FLAG is set.
+   * If the edge-flag bit is set, then this bit tells which side the
+   * constrained region lies on: if this bit is set, the area is on the base side.
+   * If this bit is clear, the area is on the dual side.
    */
-  public static final int CONSTRAINT_AREA_BASE_FLAG = (1 << 29);
+  public static final int CONSTRAINT_REGION_BASE_FLAG = (1 << 29);
+
+    /**
+   * A bit indicating that an edge is part of a constrained region.
+   */
+  public static final int CONSTRAINT_REGION_MEMBER_FLAG = (1 << 28);
 }

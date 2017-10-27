@@ -5,6 +5,8 @@
  * Date     Name         Description
  * ------   ---------    -------------------------------------------------
  * 11/2015  G. Lucas     Created
+ * 12/2016  G. Lucas     Introduced support for constraints
+ * 11/2017  G. Lucas     Refactored for constrained regions
  *
  * Notes:
  * Special considerations for setForward() and setReverse()
@@ -32,6 +34,7 @@ package tinfour.common;
  * modifications to the edge structure of the TIN, this cost can degrade
  * processing rates by as much as 25 percent. Thus this interface avoids
  * specifying any methods that set edge relationships (connections).
+ * <p>See the definition of IConstraint for a discussion of data regions.
  */
 public interface IQuadEdge {
 
@@ -157,31 +160,37 @@ public interface IQuadEdge {
   public void setConstrained(int constraintIndex);
 
   /**
-   * Indicates whether the edge is a member of a constrained area.
-   * @return true if the constraint is a member of an area; otherwise false.
+   * Indicates whether the edge is a member of a constrained region
+   * (is in the interior of a polygon-based constraint).
+   * A constrained region member is not necessarily a constrained edge.
+   * @return true if the edge is a member of an region; otherwise false.
    */
-  public boolean isConstrainedAreaMember();
+  public boolean isConstrainedRegionMember();
 
   /**
    * Indicates whether this side of the edge is the inner boundary of
-   * a constraint area.
+   * a constrained region.
    * @return true if this side of the edge is the inner boundary of
-   * a constraint area; otherwise, false
+   * a constrained region; otherwise, false
    */
-  public boolean isConstraintAreaOnThisSide();
+  public boolean isConstrainedRegionOnThisSide();
   /**
    * Indicates whether an edge is constrained and a member of a
-   * constraint which defines the data area.
-   * @return true if the edge is the boundary of the data area;
+   * constraint which defines the data region.
+   * @return true if the edge is the boundary of the constrained region;
    * otherwise, false.
    */
-  public boolean isConstrainedAreaEdge();
-
+  public boolean isConstrainedRegionEdge();
 
   /**
-   * Sets the constrained area membership flag for the edge to true.
+   * Sets a flag indicating that the edge is an edge of a constrained region.
    */
-  public void setConstrainedAreaMemberFlag( );
+  public void setConstrainedRegionEdgeFlag();
+
+  /**
+   * Sets the constrained region membership flag for the edge to true.
+   */
+  public void setConstrainedRegionMemberFlag( );
 
   /**
    * Gets an instance of an iterable that performs a pinwheel operation.

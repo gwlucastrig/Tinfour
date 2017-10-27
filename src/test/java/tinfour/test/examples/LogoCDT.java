@@ -136,7 +136,6 @@ final public class LogoCDT {
                 // So we need to reverse their order to restore the orientation
                 // to the proper form for Tinfour.
                 PolygonConstraint poly = new PolygonConstraint(); // NOPMD
-                poly.setDefinesDataArea(true);
                 int n = vList.size();
                 for (int i = n - 1; i >= 0; i--) {
                     Vertex v = vList.get(i);

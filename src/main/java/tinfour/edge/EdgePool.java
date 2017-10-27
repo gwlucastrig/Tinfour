@@ -74,6 +74,13 @@ import tinfour.common.Vertex;
  * constructed and put out-of-scope, the resulting garbage collection could
  * degrade performance.
  * <p>Note that this class is <strong>not thread safe</strong>.
+ * <p>For performance reasons, many of the methods in this class make the
+ * assumption that any edges passed into the method are under the management
+ * of the current instance. If this assumption is violated, serious
+ * errors could occur. For example, if an application uses one edge pool
+ * to allocate an edge and then passes it to the deallocEdge method
+ * another edge pool instance, both instances could become seriously
+ * corrupted.
  */
 @SuppressWarnings("PMD.AvoidArrayLoops")
 public class EdgePool implements Iterable<IQuadEdge> {
@@ -222,6 +229,9 @@ public class EdgePool implements Iterable<IQuadEdge> {
    * @param e a valid QuadEdge
    */
   public void deallocateEdge(QuadEdge e) {
+    // Note: Although there is a sanity check method that can
+    //       be used to verify that the input edge belongs to this
+    //       edge pool, it is not used here for performance purposes.
     int iPage = e.getIndex() / pageSize;
     Page page = pages[iPage];
     if (page.isFullyAllocated()) {
@@ -452,6 +462,53 @@ public class EdgePool implements Iterable<IQuadEdge> {
     }
     return 0;
   }
+
+   private void sanityCheck(QuadEdge e) {
+      QuadEdge baseRef = e.getBaseReference();
+      int iPage = e.getIndex() / pageSize;
+      int index = e.getIndex()-iPage*pageSize;
+      if (iPage >= pages.length
+        || index>=pages[iPage].nAllocated
+        || pages[iPage].edges[index]!=baseRef)
+      {
+        throw new IllegalArgumentException(
+          "Attempt to process an edge that is not a member of this collection");
+      }
+    }
+
+  /**
+   * Split the edge e into two by inserting a new vertex m into
+   * the edge. The insertion point does not necessarily have to lie
+   * on the segment.  This method splits the segment into two segments
+   * so that edge e(a,b) becomes edges p(a,m) and and e(m,b),
+   * with forward and reverse links for both segments being adjusted
+   * accordingly. The new segment p(a,m) is returned and the input segment
+   * e is adjusted with new vertices (m,b).
+   * <p>The split edge method preserves constraint flags and other attributes
+   * associated with the edge.
+   * @param e the input segment
+   * @param m the insertion vertex
+   * @return a valid instance of a QuadEdge or QuadEdgePartner (depending
+   * on the class of the input)
+   */
+  public QuadEdge splitEdge(QuadEdge e, Vertex m) {
+    sanityCheck(e);
+    QuadEdge b = e.getBaseReference();
+    QuadEdge r = b.getReverse();
+    QuadEdge n = this.allocateEdge(b.getA(), m);
+    b.setA(m);
+    n.setReverse(r);
+    n.setForward(b);
+    // copy the constraint flags, if any
+    n.dual.index = e.dual.index;
+    if (e instanceof QuadEdgePartner) {
+      return n.dual;
+    } else {
+      return n;
+    }
+
+  }
+
 
   private class Page {
     int pageID;

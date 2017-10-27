@@ -22,7 +22,7 @@
  * Date     Name         Description
  * ------   ---------    -------------------------------------------------
  * 10/2016  G. Lucas     Created
- * 01/2016  G. Lucas     Fixed bounds bug reported by Martin Janda
+ * 01/2017  G. Lucas     Fixed bounds bug reported by Martin Janda
  *
  * Notes:
  *
@@ -56,7 +56,6 @@ import java.util.List;
  */
 public class PolygonConstraint extends PolyLineConstraintAdapter implements IConstraint {
 
-  private boolean dataAreaDefinition;
   private double squareArea;
 
   @Override
@@ -109,14 +108,10 @@ public class PolygonConstraint extends PolyLineConstraintAdapter implements ICon
     return true;
   }
 
-  @Override
-  public void setDefinesDataArea(boolean definesDataArea) {
-    dataAreaDefinition = definesDataArea;
-  }
 
   @Override
-  public boolean definesDataArea() {
-    return dataAreaDefinition;
+  public boolean definesConstrainedRegion() {
+    return true;
   }
 
   /**
@@ -149,14 +144,13 @@ public class PolygonConstraint extends PolyLineConstraintAdapter implements ICon
     PolygonConstraint c = new PolygonConstraint();
     c.applicationData = applicationData;
     c.constraintIndex = constraintIndex;
-    c.dataAreaDefinition = dataAreaDefinition;
     for (Vertex v : geometry) {
       c.add(v);
     }
     c.complete();
     return c;
   }
-  
+
   @Override
   public PolygonConstraint refactor(Iterable<Vertex> geometry) {
     return this.getConstraintWithNewGeometry(geometry);

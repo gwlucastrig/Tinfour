@@ -1797,20 +1797,19 @@ public class IncrementalTin implements IIncrementalTin {
 
     // Step 2 -- Construct new edges for constraint and mark any existing
     //           edges with the constraint index.
+    ArrayList<ArrayList<IQuadEdge>>efcList = new ArrayList<>();
+
     isLocked = true;
-    boolean foundDataAreaDefinition = false;
     int k = 0;
     for (IConstraint c : constraintList) {
-      if (c.definesDataArea()) {
-        foundDataAreaDefinition = true;
-      }
       c.setConstraintIndex(k);
-      processConstraint(c);
+      ArrayList<IQuadEdge>edgesForConstraint = new ArrayList<>(); //NOPMD
+      efcList.add(edgesForConstraint);
+      processConstraint(c, edgesForConstraint);
+      edgesForConstraint.trimToSize();
       k++;
     }
 
-    // TO DO:  Use an iterator instead
-    //         eliminate down-casting
     if (restoreConformity) {
       List<IQuadEdge> eList = edgePool.getEdges();
       for (IQuadEdge e : eList) {
@@ -1820,10 +1819,13 @@ public class IncrementalTin implements IIncrementalTin {
       }
     }
 
-    if (foundDataAreaDefinition) {
-      fillConstraintDataAreas();
+    for (int i = 0; i < constraintList.size(); i++) {
+      IConstraint c = constraintList.get(i);
+      if (c.definesConstrainedRegion()) {
+        ArrayList<IQuadEdge>edgesForConstraint = efcList.get(i);
+        floodFillConstrainedRegion(c, edgesForConstraint);
+      }
     }
-
   }
 
   private boolean isMatchingVertex(Vertex v, Vertex vertexFromTin) {
@@ -1836,14 +1838,23 @@ public class IncrementalTin implements IIncrementalTin {
     return false;
   }
 
-  private void setConstrained(QuadEdge edge, IConstraint constraint) {
+  private void setConstrained(
+    QuadEdge edge,
+    IConstraint constraint,
+    ArrayList<IQuadEdge>edgesForConstraint)
+  {
     edge.setConstrained(constraint.getConstraintIndex());
-    if (constraint.definesDataArea()) {
-      edge.setConstrainedAreaMemberFlag();
+    if (constraint.definesConstrainedRegion()) {
+      edgesForConstraint.add(edge);
+      edge.setConstrainedRegionEdgeFlag();
+      edge.setConstrainedRegionMemberFlag();
     }
   }
 
-  private void processConstraint(IConstraint constraint) {
+  private void processConstraint(
+    IConstraint constraint,
+    ArrayList<IQuadEdge>edgesForConstraint)
+  {
     List<Vertex> cvList = new ArrayList<>();
     cvList.addAll(constraint.getVertices());
     if(constraint.isPolygon()){
@@ -1911,14 +1922,14 @@ public class IncrementalTin implements IIncrementalTin {
             priorNull = true;
           } else {
             if (b == v1) {
-              setConstrained(e, constraint);
+              setConstrained(e, constraint, edgesForConstraint);
               e0 = e.getDual(); // set up e0 for next iteration of iSegment
               continue segmentLoop;
             } else if (b instanceof VertexMergerGroup) {
               VertexMergerGroup g = (VertexMergerGroup) b;
               if (g.contains(v1)) {
                 cvList.set(iSegment + 1, g);
-                setConstrained(e, constraint);
+                setConstrained(e, constraint, edgesForConstraint);
                 e0 = e.getDual(); // set up e0 for next iteration of iSegment
                 continue segmentLoop;
               }
@@ -1995,7 +2006,7 @@ public class IncrementalTin implements IIncrementalTin {
         // next segment, and advance to the next segment in the constraint.
         cvList.add(iSegment + 1, b);
         nSegments++;
-        setConstrained(e0, constraint);
+        setConstrained(e0, constraint, edgesForConstraint);
         e0 = e0.getDual(); // set up e0 for next iteration of iSegment
         continue; // continue segmentLoop;
       }
@@ -2053,7 +2064,7 @@ public class IncrementalTin implements IIncrementalTin {
             cvList.add(iSegment + 1, b);
             nSegments++;
             e0 = e.getReverse(); // will be (b, v0), set up for next iSegment
-            setConstrained(e, constraint);
+            setConstrained(e, constraint, edgesForConstraint);
             continue segmentLoop;
           }
         }
@@ -2145,7 +2156,7 @@ public class IncrementalTin implements IIncrementalTin {
 
       // insert the constraint edge
       QuadEdge n = edgePool.allocateEdge(v0, c);
-      setConstrained(n, constraint);
+      setConstrained(n, constraint, edgesForConstraint);
       QuadEdge d = n.getDual();
       n.setForward(left1);
       n.setReverse(left0);
@@ -2419,23 +2430,20 @@ public class IncrementalTin implements IIncrementalTin {
       Vertex m = new Vertex(mx, my, mz, nSyntheticVertices++);
       m.setStatus(Vertex.BIT_SYNTHETIC | Vertex.BIT_CONSTRAINT);
 
-      // reuse edge ab, change name just to avoid confusion
+      // split ab by inserting midpoint m.  ab will become the second segment
+      // the newly allocated point will become the first.
+      // we assign variables to local references with descriptive names
+      // such as am, mb, etc. just to avoid confusion.
+      QuadEdge am = edgePool.splitEdge(ab, m);
       QuadEdge mb = ab;
       QuadEdge bm = ba;
-      mb.setVertices(m, b);
 
-      // create new edges
-      QuadEdge am = edgePool.allocateEdge(a, m);
       QuadEdge cm = edgePool.allocateEdge(c, m);
       QuadEdge dm = edgePool.allocateEdge(d, m);
       QuadEdge ma = am.getDual();
       QuadEdge mc = cm.getDual();
       QuadEdge md = dm.getDual();
 
-      am.setConstrained(mb.getConstraintIndex());
-      if(mb.isConstrainedAreaMember()){
-        am.setConstrainedAreaMemberFlag();
-      }
 
       ma.setForward(ad);  // should already be set
       ad.setForward(dm);
@@ -2471,31 +2479,45 @@ public class IncrementalTin implements IIncrementalTin {
     restoreConformity(db.getDual());
   }
 
-  private void fillConstraintDataAreas() {
-    for (IQuadEdge e : this.edgePool) {
-      if (e.isConstrainedAreaEdge()) {
-        if (e.isConstraintAreaOnThisSide()) {
-          fillConstraintDataAreaRecursion(e);
+
+  /**
+   * Marks all edges inside a constrained region as being members of
+   * that region (transferring the index value of the constraint to
+   * the member edges). The name of this method is based on the idea
+   * that the operation resembles a flood-fill algorithm from computer graphics.
+   * @param c the constraint giving the region for the flood fill
+   * @param edgeList a list of the edges corresponding to the boundary
+   * of the constrained region
+   */
+  private void floodFillConstrainedRegion(
+    IConstraint c,
+    ArrayList<IQuadEdge> edgeList)
+  {
+    int index = c.getConstraintIndex();
+    for (IQuadEdge e : edgeList) {
+      if (e.isConstrainedRegionEdge()) {
+        if (e.isConstrainedRegionOnThisSide()) {
+          floodFillConstrainedRegionsRecursion(e, index);
         } else {
-          fillConstraintDataAreaRecursion(e.getDual());
+          floodFillConstrainedRegionsRecursion(e.getDual(), index);
         }
       }
     }
   }
 
-  private void fillConstraintDataAreaRecursion(IQuadEdge e) {
-    int index = e.getConstraintIndex();
+
+  private void floodFillConstrainedRegionsRecursion(IQuadEdge e, int index) {
     IQuadEdge f = e.getForward();
-    if (!f.isConstrainedAreaMember()) {
-      f.setConstrainedAreaMemberFlag();
+    if (!f.isConstrainedRegionMember()) {
+      f.setConstrainedRegionMemberFlag();
       f.setConstraintIndex(index);
-      fillConstraintDataAreaRecursion(f.getDual());
+      floodFillConstrainedRegionsRecursion(f.getDual(), index);
     }
     IQuadEdge r = e.getReverse();
-    if (!r.isConstrainedAreaMember()) {
-      r.setConstrainedAreaMemberFlag();
+    if (!r.isConstrainedRegionMember()) {
+      r.setConstrainedRegionMemberFlag();
       r.setConstraintIndex(index);
-      fillConstraintDataAreaRecursion(r.getDual());
+      floodFillConstrainedRegionsRecursion(r.getDual(), index);
     }
   }
 
