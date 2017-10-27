@@ -1709,14 +1709,13 @@ public class SemiVirtualIncrementalTin implements IIncrementalTin {
     // Step 2 -- Construct new edges for constraint and mark any existing
     //           edges with the constraint index.
     isLocked = true;
-    boolean foundDataAreaDefinition = false;
+    IntCollector []icArray = new IntCollector[constraintList.size()];
     int k = 0;
     for (IConstraint c : constraintList) {
-      if (c.definesDataArea()) {
-        foundDataAreaDefinition = true;
-      }
       c.setConstraintIndex(k);
-      processConstraint(c);
+      icArray[k] = new IntCollector(); // NOPMD
+      processConstraint(c, icArray[k]);
+      icArray[k].trimToSize();
       k++;
     }
 
@@ -1732,8 +1731,11 @@ public class SemiVirtualIncrementalTin implements IIncrementalTin {
       }
     }
 
-    if (foundDataAreaDefinition) {
-      fillConstraintDataAreas();
+        for (int i = 0; i < constraintList.size(); i++) {
+      IConstraint c = constraintList.get(i);
+      if (c.definesConstrainedRegion()) {
+        floodFillConstrainedRegions(c, icArray[i]);
+      }
     }
 
   }
@@ -1748,14 +1750,23 @@ public class SemiVirtualIncrementalTin implements IIncrementalTin {
     return false;
   }
 
-  private void setConstrained(SemiVirtualEdge edge, IConstraint constraint) {
+  private void setConstrained(
+    SemiVirtualEdge edge,
+    IConstraint constraint,
+    IntCollector intCollector) {
     edge.setConstrained(constraint.getConstraintIndex());
-    if (constraint.definesDataArea()) {
-      edge.setConstrainedAreaMemberFlag();
+    if (constraint.definesConstrainedRegion()) {
+      intCollector.add(edge.getIndex());
+      edge.setConstrainedRegionEdgeFlag();
+      edge.setConstrainedRegionMemberFlag();
     }
   }
 
-  private void processConstraint(IConstraint constraint) {
+
+  private void processConstraint(
+    IConstraint constraint,
+    IntCollector intCollector)
+  {
     List<Vertex> cvList = new ArrayList<>();
     cvList.addAll(constraint.getVertices());
     if (constraint.isPolygon()) {
@@ -1823,14 +1834,14 @@ public class SemiVirtualIncrementalTin implements IIncrementalTin {
             priorNull = true;
           } else {
             if (b == v1) { // NOPMD
-              setConstrained(e, constraint);
+              setConstrained(e, constraint, intCollector);
               e0 = e.getDual(); // set up e0 for next iteration of iSegment
               continue segmentLoop;
             } else if (b instanceof VertexMergerGroup) {
               VertexMergerGroup g = (VertexMergerGroup) b;
               if (g.contains(v1)) {
                 cvList.set(iSegment + 1, g);
-                setConstrained(e, constraint);
+                setConstrained(e, constraint, intCollector);
                 e0 = e.getDual(); // set up e0 for next iteration of iSegment
                 continue segmentLoop;
               }
@@ -1907,7 +1918,7 @@ public class SemiVirtualIncrementalTin implements IIncrementalTin {
         // next segment, and advance to the next segment in the constraint.
         cvList.add(iSegment + 1, b);
         nSegments++;
-        setConstrained(e0, constraint);
+        setConstrained(e0, constraint, intCollector);
         e0 = e0.getDual(); // set up e0 for next iteration of iSegment
         continue; // continue segmentLoop;
       }
@@ -1965,7 +1976,7 @@ public class SemiVirtualIncrementalTin implements IIncrementalTin {
             cvList.add(iSegment + 1, b);
             nSegments++;
             e0 = e.getReverse(); // will be (b, v0), set up for next iSegment
-            setConstrained(e, constraint);
+            setConstrained(e, constraint, intCollector);
             continue segmentLoop;
           }
         }
@@ -2057,7 +2068,7 @@ public class SemiVirtualIncrementalTin implements IIncrementalTin {
 
       // insert the constraint edge
       SemiVirtualEdge n = edgePool.allocateEdge(v0, c);
-      setConstrained(n, constraint);
+      setConstrained(n, constraint, intCollector);
       SemiVirtualEdge d = n.getDual();
       n.setForward(left1);
       n.setReverse(left0);
@@ -2106,23 +2117,20 @@ public class SemiVirtualIncrementalTin implements IIncrementalTin {
       Vertex m = new Vertex(mx, my, mz, nSyntheticVertices++);
       m.setStatus(Vertex.BIT_SYNTHETIC | Vertex.BIT_CONSTRAINT);
 
-      // reuse edge ab, change name just to avoid confusion
+      // split ab by inserting midpoint m.  ab will become the second segment
+      // the newly allocated point will become the first.
+      // we assign variables to local references with descriptive names
+      // such as am, mb, etc. just to avoid confusion.
+      SemiVirtualEdge am = edgePool.splitEdge(ab, m);
       SemiVirtualEdge mb = ab;
       SemiVirtualEdge bm = ba;
-      mb.setVertices(m, b);
 
       // create new edges
-      SemiVirtualEdge am = edgePool.allocateEdge(a, m);
       SemiVirtualEdge cm = edgePool.allocateEdge(c, m);
       SemiVirtualEdge dm = edgePool.allocateEdge(d, m);
       SemiVirtualEdge ma = am.getDual();
       SemiVirtualEdge mc = cm.getDual();
       SemiVirtualEdge md = dm.getDual();
-
-      am.setConstrained(mb.getConstraintIndex());
-      if(mb.isConstrainedAreaMember()){
-        am.setConstrainedAreaMemberFlag();
-      }
 
       ma.setForward(ad);  // should already be set
       ad.setForward(dm);
@@ -2358,31 +2366,41 @@ public class SemiVirtualIncrementalTin implements IIncrementalTin {
     }
   }
 
-  private void fillConstraintDataAreas() {
-    for (IQuadEdge e : this.edgePool) {
-      if (e.isConstrainedAreaEdge()) {
-        if (e.isConstraintAreaOnThisSide()) {
-          fillConstraintDataAreaRecursion(e);
+  /**
+   * Marks all edges inside a constrained region as being members of
+   * that region (transferring the index value of the constraint to
+   * the member edges). The name of this method is based on the idea
+   * that the operation resembles a flood-fill algorithm from computer graphics.
+   * @param c a constraint defining a region to be flood filled
+   * @param intCollector a collection of the integer index values for
+   * the edges that correspond to the boundary of the constrained region
+   */
+  private void floodFillConstrainedRegions(IConstraint c, IntCollector intCollector) {
+    int constraintIndex = c.getConstraintIndex();
+    for (int i = 0; i < intCollector.n; i++) {
+      IQuadEdge e = this.edgePool.getEdgeForIndex(intCollector.buffer[i]);
+      if (e.isConstrainedRegionEdge()) {
+        if (e.isConstrainedRegionOnThisSide()) {
+          floodFillConstrainedRegionsRecursion(e, constraintIndex);
         } else {
-          fillConstraintDataAreaRecursion(e.getDual());
+          floodFillConstrainedRegionsRecursion(e.getDual(), constraintIndex);
         }
       }
     }
   }
 
-  private void fillConstraintDataAreaRecursion(IQuadEdge e) {
-    int index = e.getConstraintIndex();
+  private void floodFillConstrainedRegionsRecursion(IQuadEdge e, int constraintIndex) {
     IQuadEdge f = e.getForward();
-    if (!f.isConstrainedAreaMember()) {
-      f.setConstrainedAreaMemberFlag();
-      f.setConstraintIndex(index);
-      fillConstraintDataAreaRecursion(f.getDual());
+    if (!f.isConstrainedRegionMember()) {
+      f.setConstrainedRegionMemberFlag();
+      f.setConstraintIndex(constraintIndex);
+      floodFillConstrainedRegionsRecursion(f.getDual(), constraintIndex);
     }
     IQuadEdge r = e.getReverse();
-    if (!r.isConstrainedAreaMember()) {
-      r.setConstrainedAreaMemberFlag();
-      r.setConstraintIndex(index);
-      fillConstraintDataAreaRecursion(r.getDual());
+    if (!r.isConstrainedRegionMember()) {
+      r.setConstrainedRegionMemberFlag();
+      r.setConstraintIndex(constraintIndex);
+      floodFillConstrainedRegionsRecursion(r.getDual(), constraintIndex);
     }
   }
 

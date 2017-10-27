@@ -139,10 +139,10 @@ public class LogoPanel extends JPanel {
                     continue; // ghost edge
                 }
                 if (iPass == 1) {
-                    if (!e.isConstrainedAreaMember()) {
+                    if (!e.isConstrainedRegionMember()) {
                         continue;
                     }
-                    if (e.isConstrainedAreaEdge()) {
+                    if (e.isConstrainedRegionEdge()) {
                         g2d.setColor(Color.black);
                     } else {
                         g2d.setColor(Color.lightGray);

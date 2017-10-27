@@ -37,11 +37,12 @@
 package tinfour.edge;
 
 import tinfour.common.Vertex;
-import static tinfour.edge.QuadEdgeConstants.CONSTRAINT_AREA_BASE_FLAG;
-import static tinfour.edge.QuadEdgeConstants.CONSTRAINT_AREA_FLAG;
-import static tinfour.edge.QuadEdgeConstants.CONSTRAINT_FLAG;
+import static tinfour.edge.QuadEdgeConstants.CONSTRAINT_EDGE_FLAG;
 import static tinfour.edge.QuadEdgeConstants.CONSTRAINT_INDEX_MASK;
 import static tinfour.edge.QuadEdgeConstants.CONSTRAINT_INDEX_MAX;
+import static tinfour.edge.QuadEdgeConstants.CONSTRAINT_REGION_BASE_FLAG;
+import static tinfour.edge.QuadEdgeConstants.CONSTRAINT_REGION_EDGE_FLAG;
+import static tinfour.edge.QuadEdgeConstants.CONSTRAINT_REGION_MEMBER_FLAG;
 
 
 /**
@@ -140,7 +141,7 @@ class QuadEdgePartner extends QuadEdge {
     index = ((index & ~CONSTRAINT_INDEX_MASK) | constraintIndex);
   }
 
-  @Override
+
 
   /**
    * Sets an edge as constrained and sets its constraint index. Note that
@@ -151,13 +152,14 @@ class QuadEdgePartner extends QuadEdge {
    * @param constraintIndex positive number indicating which constraint
    * a particular edge is associated with, in the range 0 to 1048575.
    */
+  @Override
   public void setConstrained(int constraintIndex) {
     if (constraintIndex < 0 || constraintIndex >  CONSTRAINT_INDEX_MAX) {
       throw new IllegalArgumentException(
         "Constraint index " + constraintIndex
         + " is out of range [0.." +  CONSTRAINT_INDEX_MAX + "]");
     }
-    index = CONSTRAINT_FLAG | ((index & ~CONSTRAINT_INDEX_MASK) | constraintIndex);
+    index = CONSTRAINT_EDGE_FLAG | ((index & ~CONSTRAINT_INDEX_MASK) | constraintIndex);
   }
 
   /**
@@ -171,34 +173,36 @@ class QuadEdgePartner extends QuadEdge {
   }
 
   @Override
-  public boolean isConstrainedAreaEdge() {
-    return index < 0 && (index & CONSTRAINT_AREA_FLAG) != 0;
+  public boolean isConstrainedRegionEdge() {
+    return (index & CONSTRAINT_REGION_EDGE_FLAG) !=0;
   }
 
   @Override
-  public boolean isConstrainedAreaMember() {
-    return (index & CONSTRAINT_AREA_FLAG) != 0;
+  public boolean isConstrainedRegionMember() {
+    return (index & CONSTRAINT_REGION_MEMBER_FLAG) != 0;
   }
 
-  @Override
-  public void setConstrainedAreaMemberFlag() {
-    // The base-flag indicates that the base edge is a constrained
-    // area member. An edge/dual pair can only be a member of one
-    // constrained area.  So if we are setting the dual to be
-    // a constrained area member, we must clear the base-flag
-    index |= CONSTRAINT_AREA_FLAG;
-    index &= ~CONSTRAINT_AREA_BASE_FLAG;
+    @Override
+  public void setConstrainedRegionEdgeFlag() {
+    index |= (CONSTRAINT_REGION_EDGE_FLAG | CONSTRAINT_REGION_MEMBER_FLAG);
+    index &= ~CONSTRAINT_REGION_BASE_FLAG;
   }
 
 
   @Override
-  public boolean isConstraintAreaOnThisSide() {
+  public void setConstrainedRegionMemberFlag() {
+    index |= CONSTRAINT_REGION_MEMBER_FLAG;
+  }
+
+
+  @Override
+  public boolean isConstrainedRegionOnThisSide() {
     // An edge/dual pair can only be a member of one
-    // constrained area. So the constraint is on this side (the side
+    // constrained region. So the constraint is on this side (the side
     // of the dual), only if the base flag is set.
-    // This call is only meaningful if the edge is a member of a
-    // constraint area.
-    return  (index & CONSTRAINT_AREA_BASE_FLAG) == 0;
+    // This call is only meaningful if the edge is a perimeter of a
+    // constrained region
+    return  (index & CONSTRAINT_REGION_BASE_FLAG) == 0;
   }
- 
+
 }

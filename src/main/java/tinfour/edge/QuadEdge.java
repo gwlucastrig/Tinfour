@@ -22,6 +22,8 @@
  * Date     Name         Description
  * ------   ---------    -------------------------------------------------
  * 07/2015  G. Lucas     Created
+ * 12/2016  G. Lucas     Introduced support for constrained Delaunay
+ * 11/2017  G. Lucas     Refactored to support constrained regions
  *
  * Notes:
  * The layout of this class is intended to accomplish the following:
@@ -101,10 +103,12 @@
  */
 package tinfour.edge;
 
+import java.util.Formatter;
 import tinfour.common.IQuadEdge;
 import tinfour.common.Vertex;
-import static tinfour.edge.QuadEdgeConstants.CONSTRAINT_AREA_BASE_FLAG;
-import static tinfour.edge.QuadEdgeConstants.CONSTRAINT_AREA_FLAG;
+import static tinfour.edge.QuadEdgeConstants.CONSTRAINT_REGION_BASE_FLAG;
+import static tinfour.edge.QuadEdgeConstants.CONSTRAINT_REGION_EDGE_FLAG;
+import static tinfour.edge.QuadEdgeConstants.CONSTRAINT_REGION_MEMBER_FLAG;
 
 /**
  * A representation of an edge with forward and reverse links on one
@@ -150,7 +154,7 @@ public class QuadEdge implements IQuadEdge {
   }
 
   /**
-   * Construct the edge setting its dual with the specfied reference.
+   * Construct the edge setting its dual with the specified reference.
    *
    * @param partner a valid element.
    */
@@ -427,15 +431,35 @@ public class QuadEdge implements IQuadEdge {
     if (a == null && b == null) {
       return String.format("%9d/%d  -- Undefined", getIndex(), getSide());
     }
-    String s = String.format("%9s  %9s <-- (%9s,%9s) --> %9s%s",
-      getName(),
-      (r == null ? "null" : r.getName()),
-      (a == null ? "gv" : a.getLabel()),
-      (b == null ? "gv" : b.getLabel()),
-      (f == null ? "null" : f.getName()),
-      (this.isConstrained() ? "    constrained" : "")
-    );
-    return s;
+
+    StringBuilder sb = new StringBuilder();
+    try (Formatter fmt = new Formatter(sb)) {
+      fmt.format("%9s  %9s <-- (%9s,%9s) --> %9s",
+        getName(),
+        (r == null ? "null" : r.getName()),
+        (a == null ? "gv" : a.getLabel()),
+        (b == null ? "gv" : b.getLabel()),
+        (f == null ? "null" : f.getName())
+      );
+
+      fmt.flush();
+    }
+    
+    if (this.isConstrained()) {
+      sb.append("    constrained ");
+      if (this.isConstrainedRegionEdge()) {
+        sb.append("area edge ");
+        if (this.isConstrainedRegionOnThisSide()) {
+          sb.append("side ");
+        }
+      }
+      sb.append(Integer.toString(getConstraintIndex()));
+    } else if (isConstrainedRegionMember()) {
+      sb.append("    constrained region member ");
+      sb.append(Integer.toString(getConstraintIndex()));
+    }
+
+    return sb.toString();
   }
 
   /**
@@ -489,30 +513,36 @@ public class QuadEdge implements IQuadEdge {
   }
 
   @Override
-  public boolean isConstrainedAreaMember() {
-    return dual.isConstrainedAreaMember();
+  public boolean isConstrainedRegionMember() {
+    return dual.isConstrainedRegionMember();
   }
 
   @Override
-  public boolean isConstrainedAreaEdge() {
-    return dual.isConstrainedAreaEdge();
+  public boolean isConstrainedRegionEdge() {
+    return dual.isConstrainedRegionEdge();
   }
 
   @Override
-  public void setConstrainedAreaMemberFlag() {
-    dual.index |= CONSTRAINT_AREA_FLAG | CONSTRAINT_AREA_BASE_FLAG;
+  public void setConstrainedRegionEdgeFlag() {
+    dual.index |= (
+      CONSTRAINT_REGION_EDGE_FLAG
+      | CONSTRAINT_REGION_BASE_FLAG
+      | CONSTRAINT_REGION_MEMBER_FLAG);
   }
 
   @Override
-  public boolean isConstraintAreaOnThisSide() {
-    return (dual.index & CONSTRAINT_AREA_BASE_FLAG) != 0;
+  public void setConstrainedRegionMemberFlag() {
+    dual.index |= CONSTRAINT_REGION_MEMBER_FLAG;
+  }
+
+  @Override
+  public boolean isConstrainedRegionOnThisSide() {
+    return (dual.index & CONSTRAINT_REGION_BASE_FLAG) != 0;
   }
 
   @Override
   public Iterable<IQuadEdge> pinwheel() {
     return new QuadEdgePinwheel(this);
   }
-
-
 
 }
