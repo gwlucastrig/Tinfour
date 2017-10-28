@@ -49,11 +49,10 @@ import tinfour.common.Vertex;
 import static tinfour.edge.QuadEdgeConstants.CONSTRAINT_EDGE_FLAG;
 import static tinfour.edge.QuadEdgeConstants.CONSTRAINT_INDEX_MASK;
 import static tinfour.edge.QuadEdgeConstants.CONSTRAINT_INDEX_MAX;
+import static tinfour.edge.QuadEdgeConstants.CONSTRAINT_REGION_EDGE_FLAG;
+import static tinfour.edge.QuadEdgeConstants.CONSTRAINT_REGION_MEMBER_FLAG;
 import static tinfour.semivirtual.SemiVirtualEdgePage.INDEX_MASK;
 import static tinfour.semivirtual.SemiVirtualEdgePage.INDICES_PER_PAGE;
-import static tinfour.edge.QuadEdgeConstants.CONSTRAINT_REGION_EDGE_FLAG;
-import static tinfour.edge.QuadEdgeConstants.CONSTRAINT_REGION_BASE_FLAG;
-import static tinfour.edge.QuadEdgeConstants.CONSTRAINT_REGION_MEMBER_FLAG;
 
 /**
  * Provides methods and elements implementing the QuadEdge data structure
@@ -503,11 +502,7 @@ public final class SemiVirtualEdge implements IQuadEdge {
       return 0;
     }
     int test = page.constraints[indexOnPage / 2];
-    // the CONSTRAINT_FLAG is also the sign bit.
-    if (test < 0) {
-      return test & CONSTRAINT_INDEX_MASK;
-    }
-    return 0;
+    return test & CONSTRAINT_INDEX_MASK;
   }
 
   @Override
@@ -537,7 +532,7 @@ public final class SemiVirtualEdge implements IQuadEdge {
 
     int ix = indexOnPage / 2; // both sides of the edge are constrained.
     int c[] = page.readyConstraints();
-    c[ix] = CONSTRAINT_EDGE_FLAG | (c[ix] & ~CONSTRAINT_INDEX_MASK) | constraintIndex;
+    c[ix] = (CONSTRAINT_EDGE_FLAG | (c[ix] & ~CONSTRAINT_INDEX_MASK) | constraintIndex);
 
   }
 
@@ -575,39 +570,12 @@ public final class SemiVirtualEdge implements IQuadEdge {
     }
   }
 
-  @Override
-  public boolean isConstrainedRegionOnThisSide() {
-    if (page.constraints == null) {
-      return false;
-    } else {
-      int flags = page.constraints[indexOnPage / 2];
-      if ((flags & CONSTRAINT_REGION_MEMBER_FLAG) == 0) {
-        return false;
-      }else{
-        int side = indexOnPage & LOW_BIT;
-        if (side == 0) {
-          return (flags & CONSTRAINT_REGION_BASE_FLAG) != 0;
-        } else {
-          return (flags & CONSTRAINT_REGION_BASE_FLAG) == 0;
-        }
-      }
-    }
-  }
 
   @Override
   public void setConstrainedRegionEdgeFlag() {
     int ix = indexOnPage / 2;
-    int side = indexOnPage & LOW_BIT;
     int c[] = page.readyConstraints();
-    if (side == 0) {
-      c[ix] |= (
-        CONSTRAINT_REGION_EDGE_FLAG
-        | CONSTRAINT_REGION_BASE_FLAG
-        | CONSTRAINT_REGION_MEMBER_FLAG);
-    } else {
-      c[ix] |= (CONSTRAINT_REGION_EDGE_FLAG | CONSTRAINT_REGION_MEMBER_FLAG);
-      c[ix] &= ~CONSTRAINT_REGION_BASE_FLAG;
-    }
+    c[ix] |= (CONSTRAINT_REGION_EDGE_FLAG | CONSTRAINT_REGION_MEMBER_FLAG);
   }
 
 

@@ -462,19 +462,7 @@ public class EdgePool implements Iterable<IQuadEdge> {
     }
     return 0;
   }
-
-   private void sanityCheck(QuadEdge e) {
-      QuadEdge baseRef = e.getBaseReference();
-      int iPage = e.getIndex() / pageSize;
-      int index = e.getIndex()-iPage*pageSize;
-      if (iPage >= pages.length
-        || index>=pages[iPage].nAllocated
-        || pages[iPage].edges[index]!=baseRef)
-      {
-        throw new IllegalArgumentException(
-          "Attempt to process an edge that is not a member of this collection");
-      }
-    }
+ 
 
   /**
    * Split the edge e into two by inserting a new vertex m into
@@ -492,20 +480,33 @@ public class EdgePool implements Iterable<IQuadEdge> {
    * on the class of the input)
    */
   public QuadEdge splitEdge(QuadEdge e, Vertex m) {
-    sanityCheck(e);
     QuadEdge b = e.getBaseReference();
-    QuadEdge r = b.getReverse();
-    QuadEdge n = this.allocateEdge(b.getA(), m);
-    b.setA(m);
-    n.setReverse(r);
-    n.setForward(b);
+    QuadEdge d = e.getDual();
+
+    QuadEdge eR = e.getReverse();
+    QuadEdge dF = d.getForward();
+
+    Vertex a = e.getA();
+
+    e.setA(m);
+    QuadEdge p = this.allocateEdge(a, m);
+    QuadEdge q = p.getDual();
+
+    p.setForward(e);
+    p.setReverse(eR);
+    q.setForward(dF);
+    q.setReverse(d);
+
+
     // copy the constraint flags, if any
-    n.dual.index = e.dual.index;
-    if (e instanceof QuadEdgePartner) {
-      return n.dual;
-    } else {
-      return n;
-    }
+
+    p.dual.index = b.dual.index;
+//    if (e instanceof QuadEdgePartner) {
+//      return n.dual;
+//    } else {
+//      return n;
+//    }
+return p;
 
   }
 

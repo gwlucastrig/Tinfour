@@ -1654,7 +1654,7 @@ public class SemiVirtualIncrementalTin implements IIncrementalTin {
           "Unable to add constraints after a call to dispose()");
       } else if (!constraintList.isEmpty()) {  //NOPMD
         throw new IllegalStateException(
-          "Constrains have already been added to TIN and"
+          "Constraints have already been added to TIN and"
           + " no further additions are supported");
       } else {
         throw new IllegalStateException(
@@ -2380,11 +2380,7 @@ public class SemiVirtualIncrementalTin implements IIncrementalTin {
     for (int i = 0; i < intCollector.n; i++) {
       IQuadEdge e = this.edgePool.getEdgeForIndex(intCollector.buffer[i]);
       if (e.isConstrainedRegionEdge()) {
-        if (e.isConstrainedRegionOnThisSide()) {
-          floodFillConstrainedRegionsRecursion(e, constraintIndex);
-        } else {
-          floodFillConstrainedRegionsRecursion(e.getDual(), constraintIndex);
-        }
+        floodFillConstrainedRegionsRecursion(e, constraintIndex);
       }
     }
   }

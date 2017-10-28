@@ -40,7 +40,6 @@ import tinfour.common.Vertex;
 import static tinfour.edge.QuadEdgeConstants.CONSTRAINT_EDGE_FLAG;
 import static tinfour.edge.QuadEdgeConstants.CONSTRAINT_INDEX_MASK;
 import static tinfour.edge.QuadEdgeConstants.CONSTRAINT_INDEX_MAX;
-import static tinfour.edge.QuadEdgeConstants.CONSTRAINT_REGION_BASE_FLAG;
 import static tinfour.edge.QuadEdgeConstants.CONSTRAINT_REGION_EDGE_FLAG;
 import static tinfour.edge.QuadEdgeConstants.CONSTRAINT_REGION_MEMBER_FLAG;
 
@@ -185,7 +184,6 @@ class QuadEdgePartner extends QuadEdge {
     @Override
   public void setConstrainedRegionEdgeFlag() {
     index |= (CONSTRAINT_REGION_EDGE_FLAG | CONSTRAINT_REGION_MEMBER_FLAG);
-    index &= ~CONSTRAINT_REGION_BASE_FLAG;
   }
 
 
@@ -193,16 +191,5 @@ class QuadEdgePartner extends QuadEdge {
   public void setConstrainedRegionMemberFlag() {
     index |= CONSTRAINT_REGION_MEMBER_FLAG;
   }
-
-
-  @Override
-  public boolean isConstrainedRegionOnThisSide() {
-    // An edge/dual pair can only be a member of one
-    // constrained region. So the constraint is on this side (the side
-    // of the dual), only if the base flag is set.
-    // This call is only meaningful if the edge is a perimeter of a
-    // constrained region
-    return  (index & CONSTRAINT_REGION_BASE_FLAG) == 0;
-  }
-
+ 
 }

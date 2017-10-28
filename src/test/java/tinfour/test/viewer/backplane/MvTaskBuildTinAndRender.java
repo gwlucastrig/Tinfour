@@ -249,7 +249,7 @@ class MvTaskBuildTinAndRender implements IModelViewTask {
         = new TinInstantiationUtility(
           MvComposite.tinMemoryUseFraction,
           n);
-      rasterTin = tinOven.constructInstance(nominalPointSpacing);
+      rasterTin =  tinOven.constructInstance(nominalPointSpacing);
 
       boolean isBootstrapped = rasterTin.add(vList, monitor);
       if (!isBootstrapped) {

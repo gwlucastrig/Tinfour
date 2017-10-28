@@ -105,9 +105,9 @@ public class ConstraintLoader {
       reader = new ShapefileReader(file);
       ShapefileType shapefileType = reader.getShapefileType();
 
-      if (shapefileType != ShapefileType.PolyLineZ) {
-        throw new IOException("Not yet implemented Shapefile type " + shapefileType);
-      }
+//      if (shapefileType != ShapefileType.PolyLineZ) {
+//        throw new IOException("Not yet implemented Shapefile type " + shapefileType);
+//      }
 
       int vertexID = 0;
       ShapefileRecord record = null;
@@ -116,31 +116,48 @@ public class ConstraintLoader {
         switch (shapefileType) {
           case PolyLineZ:
           case PolygonZ:
+          case Polygon:
             nPointsTotal += record.nPoints;
             int k = 0;
             for (int iPart = 0; iPart < record.nParts; iPart++) {
+              // in the case of polygons, Tinfour takes the vertices in the
+              // opposite order of the Shapefile standard
               IConstraint con;
               if (shapefileType.isPolygon()) {
                 con = new PolygonConstraint(); //NOPMD
+                int n = record.partStart[iPart + 1] - record.partStart[iPart];
+                for (int i = n - 1; i >= 0; i--) {
+                  k = (record.partStart[iPart] + i)*3;
+                  double x = record.xyz[k];
+                  double y = record.xyz[k + 1];
+                  double z = record.xyz[k + 2];
+                  if (isSourceInGeographicCoordinates) {
+                    x = (x - geoOffsetX) * geoScaleX;
+                    y = (y - geoOffsetY) * geoScaleY;
+                  }
+                  Vertex v = new Vertex(x, y, z, vertexID++); //NOPMD
+                  con.add(v);
+                }
               } else {
                 con = new LinearConstraint(); //NOPMD
+                int n = record.partStart[iPart + 1] - record.partStart[iPart];
+                for (int i = 0; i < n; i++) {
+                  double x = record.xyz[k++];
+                  double y = record.xyz[k++];
+                  double z = record.xyz[k++];
+                  if (isSourceInGeographicCoordinates) {
+                    x = (x - geoOffsetX) * geoScaleX;
+                    y = (y - geoOffsetY) * geoScaleY;
+                  }
+                  Vertex v = new Vertex(x, y, z, vertexID++); //NOPMD
+                  con.add(v);
+                }
               }
               con.setApplicationData(record.recordNumber);
-              int n = record.partStart[iPart + 1] - record.partStart[iPart];
-              for (int i = 0; i < n; i++) {
-                double x = record.xyz[k++];
-                double y = record.xyz[k++];
-                double z = record.xyz[k++];
-                if (isSourceInGeographicCoordinates) {
-                  x = (x - geoOffsetX) * geoScaleX;
-                  y = (y - geoOffsetY) * geoScaleY;
-                }
-                Vertex v = new Vertex(x, y, z, vertexID++); //NOPMD
-                con.add(v);
-              }
               conList.add(con);
             }
             break;
+
           default:
         }
       }
