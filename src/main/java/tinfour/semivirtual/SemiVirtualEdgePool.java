@@ -15,7 +15,7 @@
  */
 
 
-/*
+ /*
  * -----------------------------------------------------------------------
  *
  * Revision History:
@@ -63,7 +63,6 @@ import java.util.Iterator;
 import java.util.List;
 import tinfour.common.IQuadEdge;
 import tinfour.common.Vertex;
-import tinfour.edge.QuadEdgeConstants;
 import static tinfour.semivirtual.SemiVirtualEdgePage.INDEX_MASK;
 import static tinfour.semivirtual.SemiVirtualEdgePage.INDICES_PER_PAGE;
 import static tinfour.semivirtual.SemiVirtualEdgePage.MASK_LOW_BIT_CLEAR;
@@ -468,55 +467,57 @@ class SemiVirtualEdgePool implements Iterable<IQuadEdge> {
     };
   }
 
-
-
   /**
    * Split the edge e into two by inserting a new vertex m into
    * the edge. The insertion point does not necessarily have to lie
-   * on the segment.  This method splits the segment into two segments
+   * on the segment. This method splits the segment into two segments
    * so that edge e(a,b) becomes edges p(a,m) and and e(m,b),
    * with forward and reverse links for both segments being adjusted
    * accordingly. The new segment p(a,m) is returned and the input segment
    * e is adjusted with new vertices (m,b).
-   * <p>The split edge method preserves constraint flags and other attributes
+   * <p>
+   * The split edge method preserves constraint flags and other attributes
    * associated with the edge.
+   *
    * @param e the input segment
    * @param m the insertion vertex
    * @return a valid instance of a QuadEdge or QuadEdgePartner (depending
    * on the class of the input)
    */
   public SemiVirtualEdge splitEdge(SemiVirtualEdge e, Vertex m) {
-    SemiVirtualEdge r = e.getReverse();
-    SemiVirtualEdge n = this.allocateEdge(e.getA(), m);
-    e.setA(m);
-    n.setReverse(r);
-    n.setForward(e);
-    SemiVirtualEdgePage ePage = e.page;
-    SemiVirtualEdgePage nPage = n.page;
-    if (ePage.constraints == null) {
-      return n; // we're done
-    }
+    //TO DO: The code where we set up links is just the same stuff
+    //       as the conventional edge pool.  We may be able to improve
+    //       performance by just setting the links directly rather than
+    //       creating SemiVirtualEdge instances. However, Java is pretty
+    //       amazing at optimizing these days, and there is a good
+    //       chance that the saving will be small compared to the effort
+    //       of writing the code.
+    SemiVirtualEdge d = e.getDual();
+    SemiVirtualEdge eR = e.getReverse();
+    SemiVirtualEdge dF = d.getForward();
 
-    
-    nPage.readyConstraints();
+    Vertex a = e.getA();
+
+    e.setA(m);
+    SemiVirtualEdge p = this.allocateEdge(a, m);
+    SemiVirtualEdge q = p.getDual();
+
+    p.setForward(e);
+    p.setReverse(eR);
+    q.setForward(dF);
+    q.setReverse(d);
+
+    SemiVirtualEdgePage ePage = e.page;
+    SemiVirtualEdgePage pPage = p.page;
+    if (ePage.constraints == null) {
+      return p; // we're done
+    }
+    pPage.readyConstraints();
     // recall that constraints flags are shared between edge pairs
     // so we divide index by two
     int constraintFlags = ePage.constraints[e.indexOnPage / 2];
-
-    // if the edge is a constraint, and there it is a the edge of
-    // a constrained domain (area), we need to make sure that the
-    // base flag is consistent with the edge index
-    if ((constraintFlags & QuadEdgeConstants.CONSTRAINT_EDGE_FLAG) != 0
-      && (constraintFlags & QuadEdgeConstants.CONSTRAINT_REGION_MEMBER_FLAG) != 0) {
-      int nSide = n.indexOnPage & 0x01;
-      int eSide = e.indexOnPage & 0x01;
-      if (nSide != eSide) {
-        // we need to toggle the edge-on-side flag
-        constraintFlags ^= QuadEdgeConstants.CONSTRAINT_REGION_BASE_FLAG;
-      }
-    }
-    nPage.constraints[n.indexOnPage / 2] = constraintFlags;
-    return n;
-
+    pPage.constraints[p.indexOnPage / 2] = constraintFlags;
+    return p;
   }
+
 }

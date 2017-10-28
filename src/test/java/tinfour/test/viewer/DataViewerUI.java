@@ -467,6 +467,16 @@ class DataViewerUI {
               constraintChooser.setCurrentDirectory(curDir);
             }
           }
+            if (currentDirectory == null) {
+                IModel m = dvPanel.getModel();
+                File f = m.getFile();
+                if (f != null) {
+                    File p = f.getParentFile();
+                    if (p != null) {
+                        currentDirectory = p;
+                    }
+                }
+            }
           if (currentDirectory != null) {
             constraintChooser.setCurrentDirectory(currentDirectory);
           }

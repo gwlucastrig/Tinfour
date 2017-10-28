@@ -167,13 +167,7 @@ public interface IQuadEdge {
    */
   public boolean isConstrainedRegionMember();
 
-  /**
-   * Indicates whether this side of the edge is the inner boundary of
-   * a constrained region.
-   * @return true if this side of the edge is the inner boundary of
-   * a constrained region; otherwise, false
-   */
-  public boolean isConstrainedRegionOnThisSide();
+ 
   /**
    * Indicates whether an edge is constrained and a member of a
    * constraint which defines the data region.

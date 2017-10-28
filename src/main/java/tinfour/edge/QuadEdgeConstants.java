@@ -15,7 +15,7 @@
  * ---------------------------------------------------------------------
  */
 
-/*
+ /*
  * -----------------------------------------------------------------------
  *
  * Revision History:
@@ -27,7 +27,6 @@
  *
  * -----------------------------------------------------------------------
  */
-
 package tinfour.edge;
 
 /**
@@ -35,7 +34,7 @@ package tinfour.edge;
  */
 public final class QuadEdgeConstants {
 
-  private QuadEdgeConstants(){
+  private QuadEdgeConstants() {
     // a private constructor to deter applications from
     // constructing instances of this class.
   }
@@ -68,19 +67,8 @@ public final class QuadEdgeConstants {
    */
   public static final int CONSTRAINT_REGION_EDGE_FLAG = (1 << 30);
 
-
   /**
-   * A bit indicating that the constrained region is to the base side
-   * of the edge. This bit is only meaningful when the
-   * CONSTRAINT_AREA_EDGE_FLAG is set.
-   * If the edge-flag bit is set, then this bit tells which side the
-   * constrained region lies on: if this bit is set, the area is on the base side.
-   * If this bit is clear, the area is on the dual side.
-   */
-  public static final int CONSTRAINT_REGION_BASE_FLAG = (1 << 29);
-
-    /**
    * A bit indicating that an edge is part of a constrained region.
    */
-  public static final int CONSTRAINT_REGION_MEMBER_FLAG = (1 << 28);
+  public static final int CONSTRAINT_REGION_MEMBER_FLAG = (1 << 29);
 }

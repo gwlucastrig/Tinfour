@@ -1737,14 +1737,15 @@ public class IncrementalTin implements IIncrementalTin {
   @Override
   public void addConstraints(
     List<IConstraint> constraints,
-    boolean restoreConformity) {
+    boolean restoreConformity)
+  {
     if (isLocked) {
       if (isDisposed) {
         throw new IllegalStateException(
           "Unable to add constraints after a call to dispose()");
       } else if (!constraintList.isEmpty()) {  //NOPMD
         throw new IllegalStateException(
-          "Constrains have already been added to TIN and"
+          "Constraints have already been added to TIN and"
           + " no further additions are supported");
       } else {
         throw new IllegalStateException(
@@ -2434,10 +2435,12 @@ public class IncrementalTin implements IIncrementalTin {
       // the newly allocated point will become the first.
       // we assign variables to local references with descriptive names
       // such as am, mb, etc. just to avoid confusion.
-      QuadEdge am = edgePool.splitEdge(ab, m);
       QuadEdge mb = ab;
       QuadEdge bm = ba;
+      QuadEdge am = edgePool.splitEdge(ab, m);
 
+      // create new edges
+      //QuadEdge am = edgePool.allocateEdge(a, m);
       QuadEdge cm = edgePool.allocateEdge(c, m);
       QuadEdge dm = edgePool.allocateEdge(d, m);
       QuadEdge ma = am.getDual();
@@ -2496,11 +2499,7 @@ public class IncrementalTin implements IIncrementalTin {
     int index = c.getConstraintIndex();
     for (IQuadEdge e : edgeList) {
       if (e.isConstrainedRegionEdge()) {
-        if (e.isConstrainedRegionOnThisSide()) {
-          floodFillConstrainedRegionsRecursion(e, index);
-        } else {
-          floodFillConstrainedRegionsRecursion(e.getDual(), index);
-        }
+        floodFillConstrainedRegionsRecursion(e, index);
       }
     }
   }

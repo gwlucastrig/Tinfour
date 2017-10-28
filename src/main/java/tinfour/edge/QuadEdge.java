@@ -106,7 +106,6 @@ package tinfour.edge;
 import java.util.Formatter;
 import tinfour.common.IQuadEdge;
 import tinfour.common.Vertex;
-import static tinfour.edge.QuadEdgeConstants.CONSTRAINT_REGION_BASE_FLAG;
 import static tinfour.edge.QuadEdgeConstants.CONSTRAINT_REGION_EDGE_FLAG;
 import static tinfour.edge.QuadEdgeConstants.CONSTRAINT_REGION_MEMBER_FLAG;
 
@@ -120,7 +119,6 @@ import static tinfour.edge.QuadEdgeConstants.CONSTRAINT_REGION_MEMBER_FLAG;
  * ACM Transactions on Graphics, 4(2), 1985, p. 75-123.</cite>
  */
 public class QuadEdge implements IQuadEdge {
-
 
   /**
    * An arbitrary index value. For IncrementalTin, the index
@@ -444,14 +442,11 @@ public class QuadEdge implements IQuadEdge {
 
       fmt.flush();
     }
-    
+
     if (this.isConstrained()) {
       sb.append("    constrained ");
       if (this.isConstrainedRegionEdge()) {
         sb.append("area edge ");
-        if (this.isConstrainedRegionOnThisSide()) {
-          sb.append("side ");
-        }
       }
       sb.append(Integer.toString(getConstraintIndex()));
     } else if (isConstrainedRegionMember()) {
@@ -524,20 +519,12 @@ public class QuadEdge implements IQuadEdge {
 
   @Override
   public void setConstrainedRegionEdgeFlag() {
-    dual.index |= (
-      CONSTRAINT_REGION_EDGE_FLAG
-      | CONSTRAINT_REGION_BASE_FLAG
-      | CONSTRAINT_REGION_MEMBER_FLAG);
+    dual.index |= (CONSTRAINT_REGION_EDGE_FLAG | CONSTRAINT_REGION_MEMBER_FLAG);
   }
 
   @Override
   public void setConstrainedRegionMemberFlag() {
     dual.index |= CONSTRAINT_REGION_MEMBER_FLAG;
-  }
-
-  @Override
-  public boolean isConstrainedRegionOnThisSide() {
-    return (dual.index & CONSTRAINT_REGION_BASE_FLAG) != 0;
   }
 
   @Override
