@@ -310,6 +310,12 @@ public class SemiVirtualIncrementalTin implements IIncrementalTin {
   private int nSyntheticVertices;
 
   /**
+   * Tracks the maximum depth of recursion when restoring Delaunay
+   * conformance after the addition of constraints.
+   */
+  private int maxDepthOfRecursionInRestore;
+
+  /**
    * The rule used for disambiguating z values in a vertex merger group.
    */
   private VertexMergerGroup.ResolutionRule vertexMergeRule
@@ -1150,6 +1156,8 @@ public class SemiVirtualIncrementalTin implements IIncrementalTin {
 
     ps.format("\n");
     edgePool.printDiagnostics(ps);
+    ps.format("Max recursion during restore: %8d\n", maxDepthOfRecursionInRestore);
+    ps.format("Number of synthetic vertices: %8d\n", nSyntheticVertices);
   }
 
   /**
@@ -1726,7 +1734,7 @@ public class SemiVirtualIncrementalTin implements IIncrementalTin {
       for (IQuadEdge e : eList) {
         if (e.isConstrained()) {
           SemiVirtualEdge sEdge = (SemiVirtualEdge) e;
-          restoreConformity(sEdge);
+          restoreConformity(sEdge, 1);
         }
       }
     }
@@ -2084,7 +2092,11 @@ public class SemiVirtualIncrementalTin implements IIncrementalTin {
 
   }
 
-  private void restoreConformity(SemiVirtualEdge ab) {
+  private void restoreConformity(SemiVirtualEdge ab, int depthOfRecursion) {
+    if (depthOfRecursion > maxDepthOfRecursionInRestore) {
+      maxDepthOfRecursionInRestore = depthOfRecursion;
+    }
+
     SemiVirtualEdge ba = ab.getDual();
     SemiVirtualEdge bc = ab.getForward();
     SemiVirtualEdge ad = ba.getForward();
@@ -2147,8 +2159,8 @@ public class SemiVirtualIncrementalTin implements IIncrementalTin {
       md.setForward(db);
       db.setForward(bm);
       bm.setForward(md);
-      restoreConformity(am);
-      restoreConformity(mb);
+      restoreConformity(am, depthOfRecursion+1);
+      restoreConformity(mb, depthOfRecursion+1);
     } else {
       // the edge is not constrained, so perform a flip to restore Delaunay
       ab.setVertices(d, c);
@@ -2160,10 +2172,10 @@ public class SemiVirtualIncrementalTin implements IIncrementalTin {
       db.setForward(bc);
     }
 
-    restoreConformity(bc.getDual());
-    restoreConformity(ca.getDual());
-    restoreConformity(ad.getDual());
-    restoreConformity(db.getDual());
+    restoreConformity(bc.getDual(), depthOfRecursion+1);
+    restoreConformity(ca.getDual(), depthOfRecursion+1);
+    restoreConformity(ad.getDual(), depthOfRecursion+1);
+    restoreConformity(db.getDual(), depthOfRecursion+1);
   }
 
   private void removeEdge(SemiVirtualEdge e) {
@@ -2386,16 +2398,26 @@ public class SemiVirtualIncrementalTin implements IIncrementalTin {
   }
 
   private void floodFillConstrainedRegionsRecursion(IQuadEdge e, int constraintIndex) {
+    // There is special logic here for the case where an alternate constraint
+    // occurs inside the floor-fill area. For example, a linear constraint
+    // might occur inside a polygon (a road might pass through a town).
+    // The logic needs to preserve the constraint index of thecontained
+    // edge from the alternate constraint. In that case, the flood fill
+    // passes over the embedded edge, but does not modify it.
     IQuadEdge f = e.getForward();
     if (!f.isConstrainedRegionMember()) {
-      f.setConstrainedRegionMemberFlag();
-      f.setConstraintIndex(constraintIndex);
+      if (!f.isConstrained()) {
+        f.setConstrainedRegionMemberFlag();
+        f.setConstraintIndex(constraintIndex);
+      }
       floodFillConstrainedRegionsRecursion(f.getDual(), constraintIndex);
     }
     IQuadEdge r = e.getReverse();
     if (!r.isConstrainedRegionMember()) {
-      r.setConstrainedRegionMemberFlag();
-      r.setConstraintIndex(constraintIndex);
+      if (!r.isConstrained()) {
+        r.setConstrainedRegionMemberFlag();
+        r.setConstraintIndex(constraintIndex);
+      }
       floodFillConstrainedRegionsRecursion(r.getDual(), constraintIndex);
     }
   }
