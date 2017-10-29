@@ -407,6 +407,13 @@ public class IncrementalTin implements IIncrementalTin {
    * Delaunay conformity after adding constraints
    */
   private int nSyntheticVertices;
+
+
+  /**
+   * Tracks the maximum depth of recursion when restoring Delaunay
+   * conformance after the addition of constraints.
+   */
+  private int maxDepthOfRecursionInRestore;
   /**
    * The rule used for disambiguating z values in a vertex merger group.
    */
@@ -1238,6 +1245,8 @@ public class IncrementalTin implements IIncrementalTin {
 
     ps.format("\nEdge resource diagnostics\n");
     edgePool.printDiagnostics(ps);
+    ps.format("Max recursion during restore: %8d\n", maxDepthOfRecursionInRestore);
+    ps.format("Number of synthetic vertices: %8d\n", nSyntheticVertices);
   }
 
   /**
@@ -1344,6 +1353,7 @@ public class IncrementalTin implements IIncrementalTin {
     walker.reset();
     constraintList.clear();
     nSyntheticVertices = 0;
+    maxDepthOfRecursionInRestore = 0;
   }
 
   /**
@@ -1815,7 +1825,7 @@ public class IncrementalTin implements IIncrementalTin {
       List<IQuadEdge> eList = edgePool.getEdges();
       for (IQuadEdge e : eList) {
         if (e.isConstrained()) {
-          restoreConformity((QuadEdge) e);
+          restoreConformity((QuadEdge) e, 1);
         }
       }
     }
@@ -2397,7 +2407,10 @@ public class IncrementalTin implements IIncrementalTin {
     return false;
   }
 
-  private void restoreConformity(QuadEdge ab) {
+  private void restoreConformity(QuadEdge ab, int depthOfRecursion) {
+    if(depthOfRecursion>maxDepthOfRecursionInRestore){
+       maxDepthOfRecursionInRestore = depthOfRecursion;
+    }
 
     QuadEdge ba = ab.getDual();
     QuadEdge bc = ab.getForward();
@@ -2463,8 +2476,8 @@ public class IncrementalTin implements IIncrementalTin {
       md.setForward(db);
       db.setForward(bm);
       bm.setForward(md);
-      restoreConformity(am);
-      restoreConformity(mb);
+      restoreConformity(am, depthOfRecursion+1);
+      restoreConformity(mb, depthOfRecursion+1);
     } else {
       // the edge is not constrained, so perform a flip to restore Delaunay
       ab.setVertices(d, c);
@@ -2476,10 +2489,10 @@ public class IncrementalTin implements IIncrementalTin {
       db.setForward(bc);
     }
 
-    restoreConformity(bc.getDual());
-    restoreConformity(ca.getDual());
-    restoreConformity(ad.getDual());
-    restoreConformity(db.getDual());
+    restoreConformity(bc.getDual(), depthOfRecursion+1);
+    restoreConformity(ca.getDual(), depthOfRecursion+1);
+    restoreConformity(ad.getDual(), depthOfRecursion+1);
+    restoreConformity(db.getDual(), depthOfRecursion+1);
   }
 
 
@@ -2506,16 +2519,26 @@ public class IncrementalTin implements IIncrementalTin {
 
 
   private void floodFillConstrainedRegionsRecursion(IQuadEdge e, int index) {
+    // There is special logic here for the case where an alternate constraint
+    // occurs inside the floor-fill area. For example, a linear constraint
+    // might occur inside a polygon (a road might pass through a town).
+    // The logic needs to preserve the constraint index of thecontained
+    // edge from the alternate constraint. In that case, the flood fill
+    // passes over the embedded edge, but does not modify it.
     IQuadEdge f = e.getForward();
     if (!f.isConstrainedRegionMember()) {
-      f.setConstrainedRegionMemberFlag();
-      f.setConstraintIndex(index);
+      if (!f.isConstrained()) {
+        f.setConstrainedRegionMemberFlag();
+        f.setConstraintIndex(index);
+      }
       floodFillConstrainedRegionsRecursion(f.getDual(), index);
     }
     IQuadEdge r = e.getReverse();
     if (!r.isConstrainedRegionMember()) {
-      r.setConstrainedRegionMemberFlag();
-      r.setConstraintIndex(index);
+      if (!r.isConstrained()) {
+        r.setConstrainedRegionMemberFlag();
+        r.setConstraintIndex(index);
+      }
       floodFillConstrainedRegionsRecursion(r.getDual(), index);
     }
   }
