@@ -171,16 +171,7 @@ public class TestOptions {
           "Test class not found: " + tinClassName, ex);
       }
     }
-
-    if(inputFile!=null){
-      String inputExt = getFileExtension(inputFile);
-      if("LAZ".equalsIgnoreCase(inputExt)){
-        throw new UnsupportedOperationException(
-          "LAZ files are not yet supported."
-            +" Recommend using LASzip to extract LAS from "
-            + inputFile.getName());
-      }
-    }
+ 
 
     if(delimiter!=null && delimiter.length()!=1){
       throw new IllegalArgumentException(

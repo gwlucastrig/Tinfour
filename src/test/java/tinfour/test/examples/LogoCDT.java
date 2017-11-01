@@ -139,7 +139,6 @@ final public class LogoCDT {
                 int n = vList.size();
                 for (int i = n - 1; i >= 0; i--) {
                     Vertex v = vList.get(i);
-                    v.setIndex(pList.size() * 1000 + (n - i)); // NOPMD
                     poly.add(v);
                 }
                 poly.complete();

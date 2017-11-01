@@ -1739,10 +1739,12 @@ public class SemiVirtualIncrementalTin implements IIncrementalTin {
       }
     }
 
-        for (int i = 0; i < constraintList.size(); i++) {
+    int maxIndex = getMaximumEdgeAllocationIndex();
+    BitSet visited = new BitSet(maxIndex + 1);
+    for (int i = 0; i < constraintList.size(); i++) {
       IConstraint c = constraintList.get(i);
       if (c.definesConstrainedRegion()) {
-        floodFillConstrainedRegions(c, icArray[i]);
+        floodFillConstrainedRegions(c, icArray[i], visited );
       }
     }
 
@@ -2387,38 +2389,56 @@ public class SemiVirtualIncrementalTin implements IIncrementalTin {
    * @param intCollector a collection of the integer index values for
    * the edges that correspond to the boundary of the constrained region
    */
-  private void floodFillConstrainedRegions(IConstraint c, IntCollector intCollector) {
+  private void floodFillConstrainedRegions(
+    IConstraint c,
+    IntCollector intCollector,
+    BitSet visited) {
     int constraintIndex = c.getConstraintIndex();
     for (int i = 0; i < intCollector.n; i++) {
       IQuadEdge e = this.edgePool.getEdgeForIndex(intCollector.buffer[i]);
       if (e.isConstrainedRegionEdge()) {
-        floodFillConstrainedRegionsRecursion(e, constraintIndex);
+        floodFillConstrainedRegionsRecursion(e, constraintIndex, visited);
       }
     }
   }
 
-  private void floodFillConstrainedRegionsRecursion(IQuadEdge e, int constraintIndex) {
+  private void floodFillConstrainedRegionsRecursion(
+    IQuadEdge e,
+    int constraintIndex,
+    BitSet visited) {
     // There is special logic here for the case where an alternate constraint
     // occurs inside the floor-fill area. For example, a linear constraint
     // might occur inside a polygon (a road might pass through a town).
     // The logic needs to preserve the constraint index of thecontained
     // edge from the alternate constraint. In that case, the flood fill
     // passes over the embedded edge, but does not modify it.
+    //
+    // SemiVirtualEdge.getIndex() returns an even or odd index value depending
+    // on which side of the edge the particular instance represents.
+    // Since this algorithm must mark the visited flags no matter what
+    // direction the traversal crosses it from, it OR's the low order bit.
+    // Thus the same visited flag is always accessed, regardless of
+    // the orientation of the edge.
+    //
     IQuadEdge f = e.getForward();
-    if (!f.isConstrainedRegionMember()) {
+    int fIndex = f.getIndex()|0x01;
+    if (!f.isConstrainedRegionEdge() && !visited.get(fIndex)) {
+      visited.set(fIndex);
       if (!f.isConstrained()) {
         f.setConstrainedRegionMemberFlag();
         f.setConstraintIndex(constraintIndex);
       }
-      floodFillConstrainedRegionsRecursion(f.getDual(), constraintIndex);
+      floodFillConstrainedRegionsRecursion(f.getDual(), constraintIndex, visited);
     }
     IQuadEdge r = e.getReverse();
-    if (!r.isConstrainedRegionMember()) {
+    int rIndex = r.getIndex()|0x01;
+    if (!r.isConstrainedRegionMember() && !visited.get(rIndex)) {
+      visited.set(rIndex);
       if (!r.isConstrained()) {
         r.setConstrainedRegionMemberFlag();
         r.setConstraintIndex(constraintIndex);
       }
-      floodFillConstrainedRegionsRecursion(r.getDual(), constraintIndex);
+      floodFillConstrainedRegionsRecursion(r.getDual(), constraintIndex, visited);
     }
   }
 
