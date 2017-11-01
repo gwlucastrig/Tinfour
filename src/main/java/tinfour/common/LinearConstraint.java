@@ -40,8 +40,36 @@ package tinfour.common;
  */
 public class LinearConstraint extends PolyLineConstraintAdapter implements IConstraint {
 
+  /**
+   * The standard constructor
+   */
+  public LinearConstraint(){
+    // Although an empty constructor usually doesn't need to be specified,
+    // Java requires that this empty constructor be included to
+    // support the call to new LinearConstraint in
+    // getConstraintWithNewGeometry
+  }
+
+  /**
+   * A convience constructor intended for the frequently occurring case
+   * in which an application wishes to define a constraint as a single
+   * line segment.
+   * @param v0 the initial vertex of the edge
+   * @param v1 the final vertex of the edge
+   */
+  public LinearConstraint(Vertex v0, Vertex v1){
+     add(v0);
+     add(v1);
+      complete();
+  }
+
   @Override
-  public void complete() {
+  public final void add(Vertex v) {
+    super.add(v);
+  }
+
+  @Override
+  public final void complete() {
     isComplete = true;
   }
 

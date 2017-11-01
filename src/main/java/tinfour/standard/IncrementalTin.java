@@ -1830,11 +1830,13 @@ public class IncrementalTin implements IIncrementalTin {
       }
     }
 
+    int maxIndex = getMaximumEdgeAllocationIndex();
+    BitSet visited = new BitSet(maxIndex+1);
     for (int i = 0; i < constraintList.size(); i++) {
       IConstraint c = constraintList.get(i);
       if (c.definesConstrainedRegion()) {
         ArrayList<IQuadEdge>edgesForConstraint = efcList.get(i);
-        floodFillConstrainedRegion(c, edgesForConstraint);
+        floodFillConstrainedRegion(c, edgesForConstraint, visited);
       }
     }
   }
@@ -2507,18 +2509,22 @@ public class IncrementalTin implements IIncrementalTin {
    */
   private void floodFillConstrainedRegion(
     IConstraint c,
-    ArrayList<IQuadEdge> edgeList)
+    ArrayList<IQuadEdge> edgeList,
+    BitSet visited)
   {
     int index = c.getConstraintIndex();
     for (IQuadEdge e : edgeList) {
       if (e.isConstrainedRegionEdge()) {
-        floodFillConstrainedRegionsRecursion(e, index);
+        floodFillConstrainedRegionsRecursion(e, index, visited);
       }
     }
   }
 
 
-  private void floodFillConstrainedRegionsRecursion(IQuadEdge e, int index) {
+  private void floodFillConstrainedRegionsRecursion(
+    IQuadEdge e,
+    int index,
+    BitSet visited) {
     // There is special logic here for the case where an alternate constraint
     // occurs inside the floor-fill area. For example, a linear constraint
     // might occur inside a polygon (a road might pass through a town).
@@ -2526,20 +2532,24 @@ public class IncrementalTin implements IIncrementalTin {
     // edge from the alternate constraint. In that case, the flood fill
     // passes over the embedded edge, but does not modify it.
     IQuadEdge f = e.getForward();
-    if (!f.isConstrainedRegionMember()) {
+    int fIndex = f.getIndex();
+    if (!f.isConstrainedRegionEdge() && !visited.get(fIndex)) {
+      visited.set(fIndex);
       if (!f.isConstrained()) {
         f.setConstrainedRegionMemberFlag();
         f.setConstraintIndex(index);
       }
-      floodFillConstrainedRegionsRecursion(f.getDual(), index);
+      floodFillConstrainedRegionsRecursion(f.getDual(), index, visited);
     }
     IQuadEdge r = e.getReverse();
-    if (!r.isConstrainedRegionMember()) {
+    int rIndex = r.getIndex();
+    if (!r.isConstrainedRegionEdge() && !visited.get(rIndex)) {
+      visited.set(rIndex);
       if (!r.isConstrained()) {
         r.setConstrainedRegionMemberFlag();
         r.setConstraintIndex(index);
       }
-      floodFillConstrainedRegionsRecursion(r.getDual(), index);
+      floodFillConstrainedRegionsRecursion(r.getDual(), index, visited);
     }
   }
 

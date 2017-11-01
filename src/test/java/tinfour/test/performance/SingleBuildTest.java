@@ -221,8 +221,10 @@ public class SingleBuildTest implements IDevelopmentTest {
     ps.println("Integrity test passed");
     sane2.printSummary(ps);
     status = sane2.testGetVerticesAgainstInputList(vertexList);
-    if (!status) {
-      ps.println("Integrity check failed " + sane2.getMessage());
+    if(status){
+      ps.println("Input vertex set matches output");
+    }else {
+      ps.println("Input/output vertex set don't match: " + sane2.getMessage());
       return;
     }
     ps.println("Test complete");

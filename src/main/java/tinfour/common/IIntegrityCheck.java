@@ -60,9 +60,9 @@ public interface IIntegrityCheck {
    * to the original list of input vertices and determines whether they
    * are consistent. The getVertices method must return one, and only
    * one, instance of each vertex in the input list.
-   * <p>This method temporarily changes the index of the vertices in
-   * the input set to a sequential order. They are restored when the
-   * routine returns.
+   * <p>This method does not account for cases where constraints have
+   * been added to the TIN. If constraints have been added, it will
+   * return a value of false.
    * <p><strong>Important: </strong>The test assumes that each vertex
    * in the input set is unique.  If a vertex occurs more than once,
    * the test will fail.

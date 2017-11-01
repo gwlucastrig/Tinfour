@@ -58,13 +58,46 @@ public class PolygonConstraint extends PolyLineConstraintAdapter implements ICon
 
   private double squareArea;
 
+  /**
+   * Standard constructor
+   */
+  public PolygonConstraint() {
+    // Although an empty constructor usually doesn't need to be specified,
+    // Java requires that this empty constructor be included to
+    // support the call to new PolygonConstraint in
+    // getConstraintWithNewGeometry
+  }
+
+  /**
+   * A convenience constructor intended for the frequently occurring case
+   * in which an application wishes to define a constraint as a rectangle
+   * or four-vertex polygon
+   *
+   * @param v0 the initial vertex of the polygon
+   * @param v1 the second vertex of the polygon
+   * @param v2 the third vertex of the polygon
+   * @param v3 the final vertex of the polygon
+   */
+  public PolygonConstraint(Vertex v0, Vertex v1, Vertex v2, Vertex v3) {
+    add(v0);
+    add(v1);
+    add(v2);
+    add(v3);
+    complete();
+  }
+
+  @Override
+  public final void add(Vertex v) {
+    super.add(v);
+  }
+
   @Override
   public List<Vertex> getVertices() {
     return list;
   }
 
   @Override
-  public void complete() {
+  public final void complete() {
     if (isComplete) {
       return;
     }

@@ -31,6 +31,8 @@
 package tinfour.semivirtual;
 
 import java.io.PrintStream;
+import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.Formatter;
 import java.util.List;
 import tinfour.common.GeometricOperations;
@@ -418,97 +420,63 @@ class SemiVirtualIntegrityCheck implements IIntegrityCheck {
     fmt.flush();
   }
 
-  /**
-   * Restore the index values of the original input vertices
-   *
-   * @param inputList the input vertices.
-   * @param inputIndex the original input indices.
-   */
-  private void restoreInputIndices(List<Vertex> inputList, int[] inputIndex) {
-    int k = 0;
-    for (Vertex v : inputList) {
-      v.setIndex(inputIndex[k]);
-      k++;
-    }
-  }
 
-  /**
-   * Compares the list of vertices from the getVertices() method
-   * to the original list of input vertices and determines whether they
-   * are consistent. The getVertices method must return one, and only
-   * one, instance of each vertex in the input list.
-   * <p>
-   * This method temporarily changes the index of the vertices in
-   * the input set to a sequential order. They are restored when the
-   * routine returns.
-   * <p>
-   * <strong>Important: </strong>The test assumes that each vertex
-   * in the input set is unique. If a vertex occurs more than once,
-   * the test will fail.
-   *
-   * @param inputList the list of vertices input into the TIN.
-   * @return true if the test passes; otherwise false
-   */
   @Override
   public boolean testGetVerticesAgainstInputList(List<Vertex> inputList) {
-    int k = 0;
-    int[] inputIndex = new int[inputList.size()];
-    for (Vertex v : inputList) {
-      inputIndex[k] = v.getIndex();
-      v.setIndex(k);
-      k++;
+    if (!tin.getConstraints().isEmpty()) {
+      message = "Cannot compare input list after constraints are added";
+      return false;
     }
+    ArrayList<Vertex> inList = new ArrayList<>(inputList.size());
+    inList.addAll(inputList);
 
-    int prior = -1;
-    for (Vertex v : inputList) {
-      if (v.getIndex() != prior + 1) {
-        restoreInputIndices(inputList, inputIndex);
-        message = "The input vertices are not all unique, this test cannot be completed, vertex: " + v;
-        return false;
-      }
-      prior = v.getIndex();
-    }
-
-    int[] count = new int[k];
     List<Vertex> outputList = tin.getVertices();
+    ArrayList<Vertex> outList = new ArrayList<>(inputList.size());
     for (Vertex v : outputList) {
       if (v instanceof VertexMergerGroup) {
         VertexMergerGroup group = (VertexMergerGroup) v;
         Vertex[] s = group.getVertices();
         for (Vertex sv : s) {
-          int index = sv.getIndex();
-          if (index < 0 || index >= k) {
-            restoreInputIndices(inputList, inputIndex);
-            message = "Vertex in merger group not recognized " + sv;
-            return false;
-          }
-          count[index]++;
+          outList.add(sv);
         }
       } else {
-        int index = v.getIndex();
-        if (index < 0 || index >= k) {
-          restoreInputIndices(inputList, inputIndex);
-          message = "Vertex not recognized " + v;
-          return false;
-        }
-        count[index]++;
+        outList.add(v);
       }
     }
-    restoreInputIndices(inputList, inputIndex);
 
-    k = 0;
-    for (Vertex v : inputList) {
-      if (count[k] == 0) {
-        message = "Vertex missing from TIN " + v;
-        return false;
-      } else if (count[k] > 1) {
-        message = "Vertex appears in TIN more than once " + v;
+    Comparator<Vertex> vComp = new Comparator<Vertex>() {
+      @Override
+      public int compare(Vertex t, Vertex t1) {
+        return Integer.compare(t.getIndex(), t1.getIndex());
+      }
+
+    };
+
+    inList.sort(vComp);
+    outList.sort(vComp);
+    int n = inList.size();
+    if (outList.size() < n) {
+      n = outList.size();
+    }
+
+    for (int i = 0; i < n; i++) {
+      Vertex vIn = inList.get(i);
+      Vertex vOut = outList.get(i);
+      if (vIn.getIndex() != vOut.getIndex()) {
+        message = "Vertex mismatch at index "
+          + vIn.getIndex() + ", " + vOut.getIndex();
         return false;
       }
-      k++;
+    }
+
+    if (inList.size() != outList.size()) {
+      message = "Vertex list sizes not equal "
+        + inList.size() + ", " + outList.size();
+      return false;
     }
 
     return true;
+
   }
 
   @Override
