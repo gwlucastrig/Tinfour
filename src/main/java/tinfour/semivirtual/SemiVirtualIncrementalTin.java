@@ -847,7 +847,7 @@ public class SemiVirtualIncrementalTin implements IIncrementalTin {
     if (a == v) {
       return true;
     } else if (b == v) {
-      sEdge.loadForwardFromEdge(sEdge);
+      sEdge.loadDualFromEdge(sEdge);
       return true;
     } else if (c == v) {
       sEdge.loadReverseFromEdge(sEdge);
@@ -857,7 +857,7 @@ public class SemiVirtualIncrementalTin implements IIncrementalTin {
     if (a instanceof VertexMergerGroup && ((VertexMergerGroup) a).contains(v)) {
       return true;
     } else if (b instanceof VertexMergerGroup && ((VertexMergerGroup) b).contains(v)) {
-      sEdge.loadForwardFromEdge(sEdge);
+      sEdge.loadDualFromEdge(sEdge);
       return true;
     } else if (c instanceof VertexMergerGroup && ((VertexMergerGroup) c).contains(v)) {
       sEdge.loadReverseFromEdge(sEdge);
@@ -892,7 +892,7 @@ public class SemiVirtualIncrementalTin implements IIncrementalTin {
     if (sEdge.getA().getDistanceSq(x, y) < distanceTolerance2) {
       return true;
     } else if (sEdge.getB().getDistanceSq(x, y) < distanceTolerance2) {
-      sEdge.loadForwardFromEdge(sEdge);
+      sEdge.loadDualFromEdge(sEdge);
       return true;
     } else {
       Vertex v2 = sEdge.getTriangleApex();

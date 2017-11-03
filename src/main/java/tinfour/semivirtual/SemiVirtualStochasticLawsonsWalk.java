@@ -182,7 +182,7 @@ public class SemiVirtualStochasticLawsonsWalk {
 
     final SemiVirtualEdge nEdge = edge.getForward();
     if (nEdge.getB() == null) {
-      // it's an exterior-side edge, use its dual.
+      // the input edge is on the exterior side, use its dual.
       edge.loadDualFromEdge(edge);
     }
     nSLW++;
