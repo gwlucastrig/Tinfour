@@ -949,7 +949,7 @@ public class IncrementalTin implements IIncrementalTin {
     if (sEdge.getA().getDistanceSq(x, y) < distanceTolerance2) {
       return sEdge;
     } else if (sEdge.getB().getDistanceSq(x, y) < distanceTolerance2) {
-      return sEdge.getForward();
+      return sEdge.getDual();
     } else {
       Vertex v2 = sEdge.getForward().getB();
       if (v2 != null && v2.getDistanceSq(x, y) < distanceTolerance2) {
@@ -981,7 +981,7 @@ public class IncrementalTin implements IIncrementalTin {
     if (a == v) {
       return sEdge;
     } else if (b == v) {
-      return sEdge.getForward();
+      return sEdge.getDual();
     } else if (c == v) {
       return sEdge.getReverse();
     }
@@ -989,7 +989,7 @@ public class IncrementalTin implements IIncrementalTin {
     if (a instanceof VertexMergerGroup && ((VertexMergerGroup) a).contains(v)) {
       return sEdge;
     } else if (b instanceof VertexMergerGroup && ((VertexMergerGroup) b).contains(v)) {
-      return sEdge.getForward();
+      return sEdge.getDual();
     } else if (c instanceof VertexMergerGroup && ((VertexMergerGroup) c).contains(v)) {
       return sEdge.getReverse();
     }
