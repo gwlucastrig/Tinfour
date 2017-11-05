@@ -86,9 +86,13 @@ public class PolygonConstraint extends PolyLineConstraintAdapter implements ICon
     complete();
   }
 
-  @Override
-  public final void add(Vertex v) {
-    super.add(v);
+  /**
+   * Constructs a constraint with the specified vertices.  This approach is
+   * generally faster than adding the vertices one at a time.
+   * @param vList a valid list containing at least 3 distinct points.
+   */
+  public PolygonConstraint(List<Vertex>vList){
+    super(vList);
   }
 
   @Override
@@ -142,6 +146,12 @@ public class PolygonConstraint extends PolyLineConstraintAdapter implements ICon
   }
 
 
+    /**
+     * Indicates whether the constraint applies a constrained region behavior
+     * when added to a TIN.
+     *
+     * @return for this implementation, this method returns a value of true
+     */
   @Override
   public boolean definesConstrainedRegion() {
     return true;

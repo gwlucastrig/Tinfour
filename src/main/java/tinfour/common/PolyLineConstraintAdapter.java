@@ -45,7 +45,7 @@ import java.util.List;
  */
 public abstract class PolyLineConstraintAdapter implements IConstraint, Iterable<Vertex> {
 
-  protected final List<Vertex> list = new ArrayList<>();
+  protected final List<Vertex> list;
   private final Rectangle2D bounds = new Rectangle2D.Double();
   private double x = Double.NaN;
   private double y = Double.NaN;
@@ -54,13 +54,24 @@ public abstract class PolyLineConstraintAdapter implements IConstraint, Iterable
   protected boolean isComplete;
   protected double length;
 
+  PolyLineConstraintAdapter() {
+    list = new ArrayList<>();
+  }
+
+  PolyLineConstraintAdapter(List<Vertex> vList) {
+    list = new ArrayList<>(vList.size() + 1);
+    for (Vertex v : vList) {
+      add(v);
+    }
+  }
+
   @Override
   public List<Vertex> getVertices() {
     return list;
   }
 
   @Override
-  public void add(Vertex v) {
+  public final void add(Vertex v) {
     isComplete = false;
 
     double vx = v.getX();
