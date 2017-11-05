@@ -86,9 +86,23 @@ public class DelimitedReader {
    * @throws IOException in the event of an unsuccessful I/O operation.
    */
   public List<String> readStrings() throws IOException {
+    final List<String>sList = new ArrayList<String>();
+    readStrings(sList);
+    return sList;
+  }
+
+
+   /**
+   * Read a row of strings from the file, storing the results in 
+   * a reusable list.  Each call to this routine clears any content
+   * that may already be in the list before extracting it from the file.
+   * @param sList a list in which the strings will be stored
+   * @throws IOException in the event of an unsuccessful I/O operation.
+   */
+  public void readStrings(final List<String>sList) throws IOException {
     int c;
     final StringBuilder sb= new StringBuilder();
-    final List<String>sList = new ArrayList<>();
+    sList.clear();
     boolean newLine = true;
     while(true){
       c = bins.read();
@@ -129,9 +143,8 @@ public class DelimitedReader {
         sb.append((char)c);
       }
     }
-
-    return sList;
   }
+
 
 
   /**

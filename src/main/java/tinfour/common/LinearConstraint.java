@@ -30,12 +30,15 @@
  */
 package tinfour.common;
 
+import java.util.List;
+
 /**
  * An implementation of the IConstraint interface intended to store
  * constraints comprised of a chain of connected line segments.
  * Constraint chains must be non-self-intersecting (except at segment
  * endpoints). The chain must never "fold back" on itself. All segments
  * in the chain must be non-zero-length.
+ * <p>
  * Do not use this class for closed polygons.
  */
 public class LinearConstraint extends PolyLineConstraintAdapter implements IConstraint {
@@ -63,9 +66,13 @@ public class LinearConstraint extends PolyLineConstraintAdapter implements ICons
       complete();
   }
 
-  @Override
-  public final void add(Vertex v) {
-    super.add(v);
+   /**
+   * Constructs a constraint with the specified vertices.  This approach is
+   * generally faster than adding the vertices one at a time.
+   * @param vList a valid list containing at least 2 distinct points.
+   */
+  public LinearConstraint(List<Vertex>vList){
+    super(vList);
   }
 
   @Override
