@@ -30,6 +30,7 @@
  */
 package tinfour.common;
 
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -108,21 +109,22 @@ public class LinearConstraint extends PolyLineConstraintAdapter implements ICons
   }
 
   @Override
-  public LinearConstraint getConstraintWithNewGeometry(Iterable<Vertex> geometry) {
-    LinearConstraint c = new LinearConstraint();
+  public LinearConstraint getConstraintWithNewGeometry(List<Vertex> geometry) {
+    LinearConstraint c = new LinearConstraint(geometry);
     c.applicationData = applicationData;
     c.constraintIndex = constraintIndex;
-    for (Vertex v : geometry) {
-      c.add(v);
-    }
     c.complete();
     return c;
   }
 
-  @Override
-  public LinearConstraint refactor(Iterable<Vertex> geometry) {
-    return this.getConstraintWithNewGeometry(geometry);
-  }
+    @Override
+    public LinearConstraint refactor(Iterable<Vertex> geometry) {
+        ArrayList<Vertex> gList = new ArrayList<>();
+        for (Vertex v : geometry) {
+            gList.add(v);
+        }
+        return this.getConstraintWithNewGeometry(gList);
+    }
 
   @Override
   public boolean isValid(){

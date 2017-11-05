@@ -30,6 +30,7 @@
  */
 package tinfour.common;
 
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -183,7 +184,7 @@ public class PolygonConstraint extends PolyLineConstraintAdapter implements ICon
   }
 
   @Override
-  public PolygonConstraint getConstraintWithNewGeometry(Iterable<Vertex> geometry) {
+  public PolygonConstraint getConstraintWithNewGeometry(List<Vertex> geometry) {
     PolygonConstraint c = new PolygonConstraint();
     c.applicationData = applicationData;
     c.constraintIndex = constraintIndex;
@@ -196,7 +197,11 @@ public class PolygonConstraint extends PolyLineConstraintAdapter implements ICon
 
   @Override
   public PolygonConstraint refactor(Iterable<Vertex> geometry) {
-    return this.getConstraintWithNewGeometry(geometry);
+      ArrayList<Vertex> gList = new ArrayList<>();
+      for (Vertex v : geometry) {
+          gList.add(v);
+      }
+      return this.getConstraintWithNewGeometry(gList);
   }
 
   @Override

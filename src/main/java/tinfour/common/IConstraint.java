@@ -30,6 +30,8 @@
  */
 package tinfour.common;
 
+import java.util.List;
+
 /**
  * Defines the interface for constraints that can be added to
  * instances of the Incremental TIN classes.
@@ -104,13 +106,13 @@ public interface IConstraint extends IPolyline {
 
 
   /**
-   * Gets a new constraint that has the attributes of this contraint
+   * Gets a new constraint that has the attributes of this constraint
    * and the specified geometry.  This method is primarily used in cases
    * where a geometry is very similar (or identical) to the input but either
    * simplified or with replacement vertices.
    * @param geometry a valid set of vertices.
    * @return a new constraint.
    */
-  public IConstraint getConstraintWithNewGeometry(Iterable<Vertex> geometry);
+  public IConstraint getConstraintWithNewGeometry(List<Vertex> geometry);
 
 }
