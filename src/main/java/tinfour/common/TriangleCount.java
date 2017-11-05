@@ -37,11 +37,7 @@ import java.util.Iterator;
  * Provides descriptive data for a Triangulated Irregular Network (TIN).
  */
 public class TriangleCount {
-
-  /**
-   * Number of sides for an edge (2 of course).
-   */
-  private static final int N_SIDES = 2;  //NOPMD
+ 
 
   private int count;
   private double sumArea;
@@ -71,7 +67,7 @@ public class TriangleCount {
     geoOp = new GeometricOperations(tin.getThresholds());
     if (tin.isBootstrapped()) {
       int maxIndex = tin.getMaximumEdgeAllocationIndex();
-      int maxMapIndex = maxIndex * N_SIDES + 1;
+      int maxMapIndex = maxIndex + 2;
       BitSet bitset = new BitSet(maxMapIndex);
 
       Iterator<IQuadEdge> iEdge = tin.getEdgeIterator();
@@ -96,7 +92,7 @@ public class TriangleCount {
    * @param edge a valid edge
    */
   private void setMarkBit(BitSet bitset, final IQuadEdge edge) {
-    int index = (edge.getIndex() * N_SIDES) | edge.getSide();
+    int index = edge.getIndex() ;
     bitset.set(index);
   }
 
@@ -109,7 +105,7 @@ public class TriangleCount {
    * @return if the edge is marked, a non-zero value; otherwise, a zero.
    */
   private boolean getMarkBit(BitSet bitset, final IQuadEdge edge) {
-    int index = (edge.getIndex() * N_SIDES) | edge.getSide();
+    int index = edge.getIndex();
     return bitset.get(index);
   }
 

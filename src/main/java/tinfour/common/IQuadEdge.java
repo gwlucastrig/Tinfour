@@ -77,19 +77,27 @@ public interface IQuadEdge {
 
 
   /**
-   * Gets the index value for this edge.
-   * @return an integer value
+   * Gets the index value for this edge. In general, the index value is
+   * intended for memory management and edge pools.  Thus, it may not
+   * be set by application code. In some applications
+   * involving edge-traversal operations, it is used to maintain a bitmap
+   * of visited edges.
+   * <p>When an edge is allocated, it is set with an arbitrary index value.
+   * This value will not change while the edge remains allocated by and
+   * edge-pool instance. As soon as the edge is released, it is likely
+   * to have its index value reassigned.
+   * @return a positive integer value 
    */
   int getIndex();
 
     /**
-   * Indicates which side of an edge a particular IQuadEdge instance is
-   * attached to. The side value is a strictly arbitrary index used for
-   * algorithms that need to be able to assign a unique index to
-   * both sides of an edge.
-   *
-   * @return a value of 0 or 1.
-   */
+     * Indicates which side of an edge a particular IQuadEdge instance is
+     * attached to. The side value is a strictly arbitrary index used for
+     * algorithms that need to be able to assign a unique index to both sides of
+     * an edge.
+     *
+     * @return a value of 0 or 1.
+     */
   public int getSide();
 
   /**

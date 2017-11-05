@@ -413,13 +413,7 @@ public class QuadEdge implements IQuadEdge {
    * @return a valid string.
    */
   String getName() {
-    char c;
-    if (getSide() == 0) {
-      c = '+';
-    } else {
-      c = '-';
-    }
-    return Integer.toString(getIndex()) + c;
+    return Integer.toString(getIndex()) ;
   }
 
   @Override
@@ -427,7 +421,7 @@ public class QuadEdge implements IQuadEdge {
     Vertex a = v;
     Vertex b = dual.v;
     if (a == null && b == null) {
-      return String.format("%9d/%d  -- Undefined", getIndex(), getSide());
+      return String.format("%9d  -- Undefined", getIndex());
     }
 
     StringBuilder sb = new StringBuilder();

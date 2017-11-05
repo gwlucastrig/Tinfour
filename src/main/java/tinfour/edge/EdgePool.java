@@ -49,10 +49,15 @@
  * is processed. If this growth assumption is unfounded, then this class
  * would tend to end up with a lot of partially-populated pages
  *
- * Management ID
- *  The idea here is that the managementID element of a QuadEdge allows
+ * The QuadEdge index
+ *  The idea here is that the index element of a QuadEdge allows
  * the class to compute what page it belongs to.  So when a QuadEdge is
- * freed, it can modify the appropriate page.
+ * freed, it can modify the appropriate page.  However, there is a complication
+ * in that we want the base reference for an edge and its dual to have
+ * unique indices (for consistency with the SemiVirtualEdge classes).  So
+ * the index for a distinct edge is multiplied by 2.  Thus, when trying to
+ * relate an edge to a page, the page is identified by dividing the index
+ * by 2.
  *--------------------------------------------------------------------------
  */
 package tinfour.edge;
@@ -94,6 +99,12 @@ public class EdgePool implements Iterable<IQuadEdge> {
    * The number of Edges stored in a page
    */
   private final int pageSize;
+  
+  /**
+   * The number of edge indices for a page, a value equal to pageSize*2;
+   */
+   private final int pageSize2;
+   
 
   Page[] pages;
   /**
@@ -114,6 +125,7 @@ public class EdgePool implements Iterable<IQuadEdge> {
    */
   public EdgePool() {
     this.pageSize = EDGE_POOL_PAGE_SIZE;
+    this.pageSize2 = EDGE_POOL_PAGE_SIZE*2;
     pages = new Page[1];
     pages[0] = new Page(0);
     nextAvailablePage = pages[0];
@@ -232,7 +244,7 @@ public class EdgePool implements Iterable<IQuadEdge> {
     // Note: Although there is a sanity check method that can
     //       be used to verify that the input edge belongs to this
     //       edge pool, it is not used here for performance purposes.
-    int iPage = e.getIndex() / pageSize;
+    int iPage = e.getIndex() / pageSize2;
     Page page = pages[iPage];
     if (page.isFullyAllocated()) {
       // since it will no longer be fully allocated,
@@ -409,7 +421,7 @@ public class EdgePool implements Iterable<IQuadEdge> {
           return;
         }
 
-                // the deallocation operation will potentially move
+         // the deallocation operation will potentially move
         // a QuadEdge into the place of the one to be deleted.
         // so the next QuadEdge flags will have to be adjusted.
         // If the iEdge is less than nAllocated-1, this shift will
@@ -418,8 +430,9 @@ public class EdgePool implements Iterable<IQuadEdge> {
         // But if the iEdge is greater than or equal to nAllocated-1,
         // we're deleting the last QuadEdge on the page and we need
         // to move to the next page to find the next QuadEdge.
+        int refIndex = currentEdge.getIndex()/2;
         int iPage = currentEdge.getIndex() / pageSize;
-        int iEdge = currentEdge.getIndex() % pageSize;
+        int iEdge = refIndex- iPage* pageSize;
         if (hasNext) {
           nextPage = iPage;
           nextEdge = iEdge;
@@ -457,7 +470,7 @@ public class EdgePool implements Iterable<IQuadEdge> {
     for (int iPage = pages.length - 1; iPage >= 0; iPage--) {
       Page p = pages[iPage];
       if (p.nAllocated > 0) {
-        return p.pageID * this.pageSize + p.nAllocated - 1;
+        return p.pageID * pageSize2 + p.nAllocated*2 - 1;
       }
     }
     return 0;
@@ -520,7 +533,7 @@ return p;
 
     Page(int pageID) {
       this.pageID = pageID;
-      pageOffset = pageID * pageSize;
+      pageOffset = pageID * pageSize2;
       edges = new QuadEdge[pageSize];
     }
 
@@ -531,13 +544,13 @@ return p;
      */
     void initializeEdges() {
       for (int i = 0; i < pageSize; i++) {
-        edges[i] = new QuadEdge(pageOffset + i); //NOPMD
+        edges[i] = new QuadEdge(pageOffset + i*2); //NOPMD
       }
     }
 
     QuadEdge allocateEdge() {
       QuadEdge e = edges[nAllocated];
-      e.setIndex(pageID * edges.length + nAllocated);
+      e.setIndex(pageID * pageSize2 + nAllocated*2);
       nAllocated++;
       return e;
     }
@@ -559,8 +572,12 @@ return p;
       // in this following block, we clear all flags that matter.
       // We also set any references to null to prevent
       // object retention and expedite garbage collection.
-      int index = be.getIndex() - pageOffset;
+      //   Note that the variable arrayIndex is NOT the edge index,
+      // but rather the array index for the edge within the array of edge pairs
+      // stored by this class.
+
       QuadEdge e = be.getBaseReference();
+      int arrayIndex = (e.getIndex() - pageOffset)/2;
       e.clear();
 
       // The array of Edges must be kept
@@ -577,12 +594,12 @@ return p;
       // EdgeManager class is the only one that manipulates these
       // values.
 
-      if (index < nAllocated) {
+      if (arrayIndex < nAllocated) {
         QuadEdge swap = edges[nAllocated];
-        edges[index] = swap;
-        swap.setIndex(pageOffset + index);
+        edges[arrayIndex] = swap;
+        swap.setIndex(pageOffset + arrayIndex*2);
         edges[nAllocated] = e;
-        e.setIndex(pageOffset + nAllocated);
+        e.setIndex(pageOffset + nAllocated*2);  // pro forma, for safety
       }
     }
 

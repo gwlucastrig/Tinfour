@@ -404,7 +404,7 @@ class SemiVirtualIntegrityCheck implements IIntegrityCheck {
     if (nDelaunayViolations == 0) {
       fmt.format("   No Delaunay violations detected\n");
     } else {
-      fmt.format("   Detected Delaunay violations within tolerance: %8.4e\n", thresholds.getDelaunayThreshold());
+      fmt.format("   Detected acceptable Delaunay violations within tolerance: %8.4e\n", thresholds.getDelaunayThreshold());
       fmt.format("      N Violations:  %8d\n", nDelaunayViolations);
       fmt.format("      Avg Violation: %8.4e\n", sumDelaunayViolations / nDelaunayViolations);
       fmt.format("      Max Violation: %8.4e\n", maxDelaunayViolation);
