@@ -1832,7 +1832,7 @@ public class IncrementalTin implements IIncrementalTin {
     }
 
     int maxIndex = getMaximumEdgeAllocationIndex();
-    BitSet visited = new BitSet(maxIndex+1);
+    BitSet visited = new BitSet(maxIndex/2+1);
     for (int i = 0; i < constraintList.size(); i++) {
       IConstraint c = constraintList.get(i);
       if (c.definesConstrainedRegion()) {
@@ -2533,7 +2533,7 @@ public class IncrementalTin implements IIncrementalTin {
     // edge from the alternate constraint. In that case, the flood fill
     // passes over the embedded edge, but does not modify it.
     IQuadEdge f = e.getForward();
-    int fIndex = f.getIndex();
+    int fIndex = f.getIndex()/2;
     if (!f.isConstrainedRegionEdge() && !visited.get(fIndex)) {
       visited.set(fIndex);
       if (!f.isConstrained()) {
@@ -2543,7 +2543,7 @@ public class IncrementalTin implements IIncrementalTin {
       floodFillConstrainedRegionsRecursion(f.getDual(), index, visited);
     }
     IQuadEdge r = e.getReverse();
-    int rIndex = r.getIndex();
+    int rIndex = r.getIndex()/2;
     if (!r.isConstrainedRegionEdge() && !visited.get(rIndex)) {
       visited.set(rIndex);
       if (!r.isConstrained()) {

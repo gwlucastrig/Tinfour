@@ -1740,7 +1740,7 @@ public class SemiVirtualIncrementalTin implements IIncrementalTin {
     }
 
     int maxIndex = getMaximumEdgeAllocationIndex();
-    BitSet visited = new BitSet(maxIndex + 1);
+    BitSet visited = new BitSet(maxIndex/2 + 1);
     for (int i = 0; i < constraintList.size(); i++) {
       IConstraint c = constraintList.get(i);
       if (c.definesConstrainedRegion()) {
@@ -2421,7 +2421,7 @@ public class SemiVirtualIncrementalTin implements IIncrementalTin {
     // the orientation of the edge.
     //
     IQuadEdge f = e.getForward();
-    int fIndex = f.getIndex()|0x01;
+    int fIndex = f.getIndex()/2;
     if (!f.isConstrainedRegionEdge() && !visited.get(fIndex)) {
       visited.set(fIndex);
       if (!f.isConstrained()) {
@@ -2431,8 +2431,8 @@ public class SemiVirtualIncrementalTin implements IIncrementalTin {
       floodFillConstrainedRegionsRecursion(f.getDual(), constraintIndex, visited);
     }
     IQuadEdge r = e.getReverse();
-    int rIndex = r.getIndex()|0x01;
-    if (!r.isConstrainedRegionMember() && !visited.get(rIndex)) {
+    int rIndex = r.getIndex()/2;
+    if (!r.isConstrainedRegionEdge() && !visited.get(rIndex)) {
       visited.set(rIndex);
       if (!r.isConstrained()) {
         r.setConstrainedRegionMemberFlag();

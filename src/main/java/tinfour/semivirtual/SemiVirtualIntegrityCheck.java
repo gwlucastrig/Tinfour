@@ -344,12 +344,15 @@ class SemiVirtualIntegrityCheck implements IIntegrityCheck {
 
     if (h > 0) {
       if (e.isConstrained()) {
-        // because the edge will not necessarily have had conformity
-        // restored, we do not automatically treat the test as a failure here
-        this.nDelaunayViolationsConstrained++;
-        this.sumDelaunayViolationsConstrained += h;
-        if (h > this.maxDelaunayViolationConstrained) {
-          this.maxDelaunayViolationConstrained = h;
+        // because the edge is constrained, the rules are different.
+        // In particular, conformity is not necessarily restord.
+        // So we record statistics, but do not treat this condition as a failure.
+        if (h > thresholds.getDelaunayThreshold()) {
+          this.nDelaunayViolationsConstrained++;
+          this.sumDelaunayViolationsConstrained += h;
+          if (h > this.maxDelaunayViolationConstrained) {
+            this.maxDelaunayViolationConstrained = h;
+          }
         }
       } else {
         this.nDelaunayViolations++;
