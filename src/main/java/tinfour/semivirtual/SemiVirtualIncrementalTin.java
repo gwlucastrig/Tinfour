@@ -1772,7 +1772,7 @@ public class SemiVirtualIncrementalTin implements IIncrementalTin {
     edge.setConstrained(constraint.getConstraintIndex());
     if (constraint.definesConstrainedRegion()) {
       intCollector.add(edge.getIndex());
-      edge.setConstrainedRegionEdgeFlag();
+      edge.setConstrainedRegionBorderFlag();
       edge.setConstrainedRegionInteriorFlag();
     }
   }
@@ -2401,7 +2401,7 @@ public class SemiVirtualIncrementalTin implements IIncrementalTin {
     int constraintIndex = c.getConstraintIndex();
     for (int i = 0; i < intCollector.n; i++) {
       IQuadEdge e = this.edgePool.getEdgeForIndex(intCollector.buffer[i]);
-      if (e.isConstrainedRegionEdge()) {
+      if (e.isConstrainedRegionBorder()) {
         floodFillConstrainedRegionsRecursion(e, constraintIndex, visited);
       }
     }
@@ -2427,7 +2427,7 @@ public class SemiVirtualIncrementalTin implements IIncrementalTin {
     //
     IQuadEdge f = e.getForward();
     int fIndex = f.getIndex()/2;
-    if (!f.isConstrainedRegionEdge() && !visited.get(fIndex)) {
+    if (!f.isConstrainedRegionBorder() && !visited.get(fIndex)) {
       visited.set(fIndex);
       if (!f.isConstrained()) {
         f.setConstrainedRegionInteriorFlag();
@@ -2437,7 +2437,7 @@ public class SemiVirtualIncrementalTin implements IIncrementalTin {
     }
     IQuadEdge r = e.getReverse();
     int rIndex = r.getIndex()/2;
-    if (!r.isConstrainedRegionEdge() && !visited.get(rIndex)) {
+    if (!r.isConstrainedRegionBorder() && !visited.get(rIndex)) {
       visited.set(rIndex);
       if (!r.isConstrained()) {
         r.setConstrainedRegionInteriorFlag();

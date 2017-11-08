@@ -170,7 +170,7 @@ public interface IQuadEdge {
 
   /**
    * Indicates whether the edge is a member of a constrained region
-   * (is in the interior of a polygon-based constraint).
+   * (is in the interior or serves as the border of a polygon-based constraint).
    * A constrained region member is not necessarily a constrained edge.
    * @return true if the edge is a member of an region; otherwise false.
    */
@@ -178,24 +178,29 @@ public interface IQuadEdge {
 
     /**
    * Indicates whether the edge is in the interior of a constrained region.
-   * Both sides of the edge lie within the interior of the region.
-   * Its endpoints may or may not lie on the border of the region.
+   * Both sides of the edge lie within the interior of the region.  
+   * All points along the edge will lie within the interior of the region
+   * with the possible exception of the endpoints. The endpoints may 
+   * lie on the border of the region.  An interior edge for a constrained
+   * region is not a constrained edge.  Interior edges are also classified
+   * as "member" edges of a constrained region.
    * @return true if the edge is in the interior of an region; otherwise false.
    */
   public boolean isConstrainedRegionInterior();
  
   /**
-   * Indicates whether an edge is constrained and a member of a
-   * constraint which defines the data region.
-   * @return true if the edge is the boundary of the constrained region;
+   * Indicates whether an edge represents the border of a constrained
+   * region. Border edges will always be constrained.  Border edges are also
+   * classified as "member" edges of a constrained region.
+   * @return true if the edge is the border of the constrained region;
    * otherwise, false.
    */
-  public boolean isConstrainedRegionEdge();
+  public boolean isConstrainedRegionBorder();
 
   /**
    * Sets a flag indicating that the edge is an edge of a constrained region.
    */
-  public void setConstrainedRegionEdgeFlag();
+  public void setConstrainedRegionBorderFlag();
 
   /**
    * Sets the constrained region membership flag for the edge to true.
