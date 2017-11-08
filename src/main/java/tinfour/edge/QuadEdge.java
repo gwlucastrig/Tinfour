@@ -107,7 +107,7 @@ import java.util.Formatter;
 import tinfour.common.IQuadEdge;
 import tinfour.common.Vertex;
 import static tinfour.edge.QuadEdgeConstants.CONSTRAINT_REGION_EDGE_FLAG;
-import static tinfour.edge.QuadEdgeConstants.CONSTRAINT_REGION_MEMBER_FLAG;
+import static tinfour.edge.QuadEdgeConstants.CONSTRAINT_REGION_INTERIOR_FLAG;
 
 /**
  * A representation of an edge with forward and reverse links on one
@@ -505,6 +505,11 @@ public class QuadEdge implements IQuadEdge {
   public boolean isConstrainedRegionMember() {
     return dual.isConstrainedRegionMember();
   }
+  
+  @Override
+  public boolean isConstrainedRegionInterior() {
+    return dual.isConstrainedRegionInterior();
+  }
 
   @Override
   public boolean isConstrainedRegionEdge() {
@@ -513,12 +518,12 @@ public class QuadEdge implements IQuadEdge {
 
   @Override
   public void setConstrainedRegionEdgeFlag() {
-    dual.index |= (CONSTRAINT_REGION_EDGE_FLAG | CONSTRAINT_REGION_MEMBER_FLAG);
+    dual.index |= (CONSTRAINT_REGION_EDGE_FLAG | CONSTRAINT_REGION_INTERIOR_FLAG);
   }
 
   @Override
-  public void setConstrainedRegionMemberFlag() {
-    dual.index |= CONSTRAINT_REGION_MEMBER_FLAG;
+  public void setConstrainedRegionInteriorFlag() {
+    dual.index |= CONSTRAINT_REGION_INTERIOR_FLAG;
   }
 
   @Override

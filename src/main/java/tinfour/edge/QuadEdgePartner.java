@@ -41,7 +41,7 @@ import static tinfour.edge.QuadEdgeConstants.CONSTRAINT_EDGE_FLAG;
 import static tinfour.edge.QuadEdgeConstants.CONSTRAINT_INDEX_MASK;
 import static tinfour.edge.QuadEdgeConstants.CONSTRAINT_INDEX_MAX;
 import static tinfour.edge.QuadEdgeConstants.CONSTRAINT_REGION_EDGE_FLAG;
-import static tinfour.edge.QuadEdgeConstants.CONSTRAINT_REGION_MEMBER_FLAG;
+import static tinfour.edge.QuadEdgeConstants.CONSTRAINT_REGION_INTERIOR_FLAG;
 
 
 /**
@@ -177,19 +177,24 @@ class QuadEdgePartner extends QuadEdge {
   }
 
   @Override
+  public boolean isConstrainedRegionInterior() {
+    return (index & CONSTRAINT_REGION_INTERIOR_FLAG) != 0;
+  }
+  
+    @Override
   public boolean isConstrainedRegionMember() {
-    return (index & CONSTRAINT_REGION_MEMBER_FLAG) != 0;
+    return (index & (CONSTRAINT_REGION_EDGE_FLAG | CONSTRAINT_REGION_INTERIOR_FLAG)) != 0;
   }
 
     @Override
   public void setConstrainedRegionEdgeFlag() {
-    index |= (CONSTRAINT_REGION_EDGE_FLAG | CONSTRAINT_REGION_MEMBER_FLAG);
+    index |= CONSTRAINT_REGION_EDGE_FLAG;
   }
 
 
   @Override
-  public void setConstrainedRegionMemberFlag() {
-    index |= CONSTRAINT_REGION_MEMBER_FLAG;
+  public void setConstrainedRegionInteriorFlag() {
+    index |= CONSTRAINT_REGION_INTERIOR_FLAG;
   }
  
 }
