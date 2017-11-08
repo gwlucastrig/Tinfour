@@ -68,7 +68,7 @@ public final class QuadEdgeConstants {
   public static final int CONSTRAINT_REGION_EDGE_FLAG = (1 << 30);
 
   /**
-   * A bit indicating that an edge is part of a constrained region.
+   * A bit indicating that an edge is in the interior of a constrained region.
    */
-  public static final int CONSTRAINT_REGION_MEMBER_FLAG = (1 << 29);
+  public static final int CONSTRAINT_REGION_INTERIOR_FLAG = (1 << 29);
 }

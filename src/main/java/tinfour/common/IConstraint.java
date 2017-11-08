@@ -51,6 +51,7 @@ import java.util.List;
  * interior being the region inside the polygon.  However, if the polygon were
  * taken in clockwise order, the left side of each edge would be to the
  * outside of the polygon.
+ * 
  *  
  */
 public interface IConstraint extends IPolyline {

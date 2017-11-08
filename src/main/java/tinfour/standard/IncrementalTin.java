@@ -1197,6 +1197,7 @@ public class IncrementalTin implements IIncrementalTin {
 
     int nOrdinary = 0;
     int nGhost = 0;
+    int nConstrained = 0;
     double sumLength = 0;
     Iterator<IQuadEdge> iEdge = edgePool.iterator();
     while (iEdge.hasNext()) {
@@ -1206,6 +1207,9 @@ public class IncrementalTin implements IIncrementalTin {
       } else {
         nOrdinary++;
         sumLength += e.getLength();
+        if (e.isConstrained()) {
+          nConstrained++;
+        }
       }
     }
     double avgPointSpacing = 0;
@@ -1217,9 +1221,10 @@ public class IncrementalTin implements IIncrementalTin {
     ps.format("Coincident Vertex Spacing:    %8f\n", vertexTolerance);
     ps.format("   Sets:                      %8d\n", coincidenceList.size());
     ps.format("   Total Count:               %8d\n", nCoincident);
-    ps.format("Number Edges On Perimeter:    %8d\n", perimeter.size());
     ps.format("Number Ordinary Edges:        %8d\n", nOrdinary);
+    ps.format("Number Edges On Perimeter:    %8d\n", perimeter.size());
     ps.format("Number Ghost Edges:           %8d\n", nGhost);
+    ps.format("Number Constrained Edges:     %8d\n", nConstrained);
     ps.format("Number Edge Replacements:     %8d    (avg: %3.1f)\n",
       nEdgesReplacedDuringBuild,
       (double) nEdgesReplacedDuringBuild / (double) (nVerticesInserted - nCoincident));
@@ -1861,7 +1866,7 @@ public class IncrementalTin implements IIncrementalTin {
     if (constraint.definesConstrainedRegion()) {
       edgesForConstraint.add(edge);
       edge.setConstrainedRegionEdgeFlag();
-      edge.setConstrainedRegionMemberFlag();
+      edge.setConstrainedRegionInteriorFlag();
     }
   }
 
@@ -2517,7 +2522,7 @@ public class IncrementalTin implements IIncrementalTin {
     for (IQuadEdge e : edgeList) {
       if (e.isConstrainedRegionEdge()) {
         floodFillConstrainedRegionsRecursion(e, index, visited);
-      }
+      } 
     }
   }
 
@@ -2537,7 +2542,7 @@ public class IncrementalTin implements IIncrementalTin {
     if (!f.isConstrainedRegionEdge() && !visited.get(fIndex)) {
       visited.set(fIndex);
       if (!f.isConstrained()) {
-        f.setConstrainedRegionMemberFlag();
+        f.setConstrainedRegionInteriorFlag();
         f.setConstraintIndex(index);
       }
       floodFillConstrainedRegionsRecursion(f.getDual(), index, visited);
@@ -2547,7 +2552,7 @@ public class IncrementalTin implements IIncrementalTin {
     if (!r.isConstrainedRegionEdge() && !visited.get(rIndex)) {
       visited.set(rIndex);
       if (!r.isConstrained()) {
-        r.setConstrainedRegionMemberFlag();
+        r.setConstrainedRegionInteriorFlag();
         r.setConstraintIndex(index);
       }
       floodFillConstrainedRegionsRecursion(r.getDual(), index, visited);

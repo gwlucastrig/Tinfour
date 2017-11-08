@@ -34,7 +34,8 @@ package tinfour.common;
  * modifications to the edge structure of the TIN, this cost can degrade
  * processing rates by as much as 25 percent. Thus this interface avoids
  * specifying any methods that set edge relationships (connections).
- * <p>See the definition of IConstraint for a discussion of data regions.
+ * <p>
+ * See the definition of IConstraint for a discussion of constrained regions.
  */
 public interface IQuadEdge {
 
@@ -175,6 +176,13 @@ public interface IQuadEdge {
    */
   public boolean isConstrainedRegionMember();
 
+    /**
+   * Indicates whether the edge is in the interior of a constrained region.
+   * Both sides of the edge lie within the interior of the region.
+   * Its endpoints may or may not lie on the border of the region.
+   * @return true if the edge is in the interior of an region; otherwise false.
+   */
+  public boolean isConstrainedRegionInterior();
  
   /**
    * Indicates whether an edge is constrained and a member of a
@@ -192,7 +200,7 @@ public interface IQuadEdge {
   /**
    * Sets the constrained region membership flag for the edge to true.
    */
-  public void setConstrainedRegionMemberFlag( );
+  public void setConstrainedRegionInteriorFlag( );
 
   /**
    * Gets an instance of an iterable that performs a pinwheel operation.
