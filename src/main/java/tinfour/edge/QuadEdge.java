@@ -439,7 +439,7 @@ public class QuadEdge implements IQuadEdge {
 
     if (this.isConstrained()) {
       sb.append("    constrained ");
-      if (this.isConstrainedRegionEdge()) {
+      if (this.isConstrainedRegionBorder()) {
         sb.append("area edge ");
       }
       sb.append(Integer.toString(getConstraintIndex()));
@@ -512,12 +512,12 @@ public class QuadEdge implements IQuadEdge {
   }
 
   @Override
-  public boolean isConstrainedRegionEdge() {
-    return dual.isConstrainedRegionEdge();
+  public boolean isConstrainedRegionBorder() {
+    return dual.isConstrainedRegionBorder();
   }
 
   @Override
-  public void setConstrainedRegionEdgeFlag() {
+  public void setConstrainedRegionBorderFlag() {
     dual.index |= (CONSTRAINT_REGION_EDGE_FLAG | CONSTRAINT_REGION_INTERIOR_FLAG);
   }
 

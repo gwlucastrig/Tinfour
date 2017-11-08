@@ -547,7 +547,7 @@ public final class SemiVirtualEdge implements IQuadEdge {
   }
 
   @Override
-  public boolean isConstrainedRegionEdge() {
+  public boolean isConstrainedRegionBorder() {
     if (page.constraints == null) {
       return false;
     } else {
@@ -583,7 +583,7 @@ public final class SemiVirtualEdge implements IQuadEdge {
   }
 
   @Override
-  public void setConstrainedRegionEdgeFlag() {
+  public void setConstrainedRegionBorderFlag() {
     int ix = indexOnPage / 2;
     int c[] = page.readyConstraints();
     c[ix] |= (CONSTRAINT_REGION_EDGE_FLAG);

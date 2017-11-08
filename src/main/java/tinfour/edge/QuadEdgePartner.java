@@ -172,7 +172,7 @@ class QuadEdgePartner extends QuadEdge {
   }
 
   @Override
-  public boolean isConstrainedRegionEdge() {
+  public boolean isConstrainedRegionBorder() {
     return (index & CONSTRAINT_REGION_EDGE_FLAG) !=0;
   }
 
@@ -187,7 +187,7 @@ class QuadEdgePartner extends QuadEdge {
   }
 
     @Override
-  public void setConstrainedRegionEdgeFlag() {
+  public void setConstrainedRegionBorderFlag() {
     index |= CONSTRAINT_REGION_EDGE_FLAG;
   }
 

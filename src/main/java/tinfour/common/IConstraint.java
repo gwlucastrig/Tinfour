@@ -36,21 +36,50 @@ import java.util.List;
  * Defines the interface for constraints that can be added to
  * instances of the Incremental TIN classes.
  * <p><strong>About Constrained Regions</strong><br>
- * In plane geometry, a simple, non-self-intersecting polygon divides the
+ * In plane geometry, a simple non-self-intersecting polygon divides the
  * plane into two disjoint regions. So a polygon constraint has the feature
  * that it defines regions.  On the other hand, a finite linear constraint
  * does not exhibit this feature.
  * <p>When one or more polygon constraints are added to a TIN,
- * Tinfour implements a special behavior in which any edges falling
+ * Tinfour implements a special behavior in which any ordinary edges falling
  * in the interior of the associated regions are marked as being members of a
  * constrained region.  Here, the word "interior" actually means the
- * region of the plane lying to the left of an edge.  So for a polygon
+ * region of the plane lying to the left of an polygon edge.  So for a polygon
  * given as a simple loop of vertices taken in counterclockwise order,
  * the left side of each edge is to the inside of the loop and thus the
  * usage of the word "interior" agrees with the ordinary idea of
  * interior being the region inside the polygon.  However, if the polygon were
  * taken in clockwise order, the left side of each edge would be to the
- * outside of the polygon.
+ * outside of the polygon. So the polygon would essentially represent a
+ * "hole" in a constrained region.
+ * <p>
+ * The edges associated with a constrained region fall into 3 categories:
+ * <ul>
+ * <li><strong>Border</strong> Edges on the border of the constrained region.
+ * These edges are constrained and are defined by the polygon constraint.</li>
+ * <li><strong>Interior</strong> Edges that lie within the constrained 
+ * region. The edges are not constrained, but are marked as 
+ * interior members due to the fact that they lie within the polygon region.</li>
+ * <li><strong>Member</strong> Both border and interior edges are classified
+ * as members</li>
+ * </ul>
+ * <p>
+ * An interior edge is populated with the constraint-index of the constraint.
+ * Because interior edges are unambiguously members of a single constrained
+ * region, the index can be used to trace the edge back to its containing
+ * constraint instance. It is possible for two adjacent polygons to share
+ * common border edges. In such cases, the edge preserves the index of only one
+ * of the constraint polygons. Thus the mapping from border edge to constraint
+ * is ambiguous. 
+ * <p>
+ * Tinfour allows non-polygon constraints to be specified with a geometry
+ * that lines in the interior of a constrained region polygon. In such cases,
+ * the edge-marking operation does not mark the constrained edges from
+ * the linear constraints as being members of the polygon.  Instead, the
+ * operation simply passes over them. A real-world example might include a
+ * road (a linear constraint) passing through a forested area (a polygon
+ * constraint).  Edges derived from a linear constraint maintain the 
+ * index of the constraint that specified them.
  * 
  *  
  */
@@ -96,12 +125,16 @@ public interface IConstraint extends IPolyline {
   public void setConstraintIndex(int index);
 
   /**
-   * Gets an index value used for internal bookkeeping by Tinfour code;
-   * not intended for use by application code.
+   * Gets an index value used for internal bookkeeping by Tinfour code.
+   * The index value is assigned to a constraint when it is inserted into
+   * a Tinfour IIncrementalTin implementation. If an application used a 
+   * getConstraints() call to get a list of the constraints stored in
+   * an IIncrementalTin, the constraint index can be used to get the 
+   * constraint from that list.
    *
    * @return the index of the constraint associated with the edge;
-   * undefined if the edge is not constrained or a member of a constrained
-   * region.
+   * undefined if the edge is not constrained or an interior member
+   * of a constrained region.
    */
   public int getConstraintIndex();
 

@@ -1865,7 +1865,7 @@ public class IncrementalTin implements IIncrementalTin {
     edge.setConstrained(constraint.getConstraintIndex());
     if (constraint.definesConstrainedRegion()) {
       edgesForConstraint.add(edge);
-      edge.setConstrainedRegionEdgeFlag();
+      edge.setConstrainedRegionBorderFlag();
       edge.setConstrainedRegionInteriorFlag();
     }
   }
@@ -2520,7 +2520,7 @@ public class IncrementalTin implements IIncrementalTin {
   {
     int index = c.getConstraintIndex();
     for (IQuadEdge e : edgeList) {
-      if (e.isConstrainedRegionEdge()) {
+      if (e.isConstrainedRegionBorder()) {
         floodFillConstrainedRegionsRecursion(e, index, visited);
       } 
     }
@@ -2539,7 +2539,7 @@ public class IncrementalTin implements IIncrementalTin {
     // passes over the embedded edge, but does not modify it.
     IQuadEdge f = e.getForward();
     int fIndex = f.getIndex()/2;
-    if (!f.isConstrainedRegionEdge() && !visited.get(fIndex)) {
+    if (!f.isConstrainedRegionBorder() && !visited.get(fIndex)) {
       visited.set(fIndex);
       if (!f.isConstrained()) {
         f.setConstrainedRegionInteriorFlag();
@@ -2549,7 +2549,7 @@ public class IncrementalTin implements IIncrementalTin {
     }
     IQuadEdge r = e.getReverse();
     int rIndex = r.getIndex()/2;
-    if (!r.isConstrainedRegionEdge() && !visited.get(rIndex)) {
+    if (!r.isConstrainedRegionBorder() && !visited.get(rIndex)) {
       visited.set(rIndex);
       if (!r.isConstrained()) {
         r.setConstrainedRegionInteriorFlag();
