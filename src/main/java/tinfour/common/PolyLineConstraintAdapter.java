@@ -43,7 +43,9 @@ import java.util.List;
  * in the chain must be non-zero-length.
  * Do not use this class for closed polygons.
  */
-public abstract class PolyLineConstraintAdapter implements IConstraint, Iterable<Vertex> {
+public abstract class PolyLineConstraintAdapter 
+        implements IConstraint, Iterable<Vertex>
+{
 
   protected final List<Vertex> list;
   private final Rectangle2D bounds = new Rectangle2D.Double();
@@ -51,6 +53,8 @@ public abstract class PolyLineConstraintAdapter implements IConstraint, Iterable
   private double y = Double.NaN;
   protected Object applicationData;
   protected int constraintIndex;
+  protected IQuadEdge constraintLinkingEdge;
+  protected IIncrementalTin maintainingTin;
   protected boolean isComplete;
   protected double length;
 
@@ -108,8 +112,9 @@ public abstract class PolyLineConstraintAdapter implements IConstraint, Iterable
   }
 
   @Override
-  public void setConstraintIndex(int index) {
+  public void setConstraintIndex(IIncrementalTin tin, int index) {
     constraintIndex = index;
+    maintainingTin = tin;
   }
 
   @Override
@@ -127,4 +132,18 @@ public abstract class PolyLineConstraintAdapter implements IConstraint, Iterable
     return list.iterator();
   }
 
+  @Override
+  public IQuadEdge getConstraintLinkingEdge(){
+      return constraintLinkingEdge;
+  }
+
+  @Override
+  public void setConstraintLinkingEdge(IQuadEdge edge){
+      constraintLinkingEdge = edge;
+  }
+
+  @Override
+  public IIncrementalTin getManagingTin(){
+      return maintainingTin;
+  }
 }
