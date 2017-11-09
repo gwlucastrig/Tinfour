@@ -113,6 +113,8 @@ public class LinearConstraint extends PolyLineConstraintAdapter implements ICons
     LinearConstraint c = new LinearConstraint(geometry);
     c.applicationData = applicationData;
     c.constraintIndex = constraintIndex;
+    c.maintainingTin = maintainingTin;
+    c.constraintLinkingEdge = constraintLinkingEdge;
     c.complete();
     return c;
   }

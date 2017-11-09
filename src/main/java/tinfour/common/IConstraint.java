@@ -114,15 +114,6 @@ public interface IConstraint extends IPolyline {
    */
   public Object getApplicationData();
 
-  /**
-   * Sets an index value used for internal bookkeeping by Tinfour code;
-   * not intended for use by application code. Application code
-   * that sets a constraint index runs the risk of damaging the
-   * internal data relations maintained by Tinfour.
-   *
-   * @param index a positive integer.
-   */
-  public void setConstraintIndex(int index);
 
   /**
    * Gets an index value used for internal bookkeeping by Tinfour code.
@@ -138,6 +129,7 @@ public interface IConstraint extends IPolyline {
    */
   public int getConstraintIndex();
 
+  public IQuadEdge getConstraintLinkingEdge();
 
   /**
    * Gets a new constraint that has the attributes of this constraint
@@ -148,5 +140,37 @@ public interface IConstraint extends IPolyline {
    * @return a new constraint.
    */
   public IConstraint getConstraintWithNewGeometry(List<Vertex> geometry);
+
+  /**
+   * Sets an index value used for internal bookkeeping by Tinfour code;
+   * not intended for use by application code. Application code
+   * that sets a constraint index runs the risk of damaging the
+   * internal data relations maintained by Tinfour.
+   *
+   * @param tin the IIncrementalTin instance to while this constraint has been
+   * added (or null if not applicable).
+   * @param index a positive integer.
+   */
+  public void setConstraintIndex(IIncrementalTin tin, int index);
+
+    /**
+   * Sets a reference to an arbitrarily selected edge that was produced
+   * when the constraint was added to a TIN.  In effect, this reference
+   * links the constraint to the TIN. In the case of constraints
+   * that define a constrained region,
+   * the edge will be the interior side of the edge.
+   * <p>
+   * This method is not intended for use by application code. Application code
+   * that sets a constraint index runs the risk of damaging the
+   * internal data relations maintained by Tinfour.
+   *
+   * @param  linkingEdge a valid edge reference
+   */
+  public void setConstraintLinkingEdge(IQuadEdge linkingEdge);
+
+
+
+  public IIncrementalTin getManagingTin();
+
 
 }

@@ -106,8 +106,8 @@ package tinfour.edge;
 import java.util.Formatter;
 import tinfour.common.IQuadEdge;
 import tinfour.common.Vertex;
-import static tinfour.edge.QuadEdgeConstants.CONSTRAINT_REGION_EDGE_FLAG;
 import static tinfour.edge.QuadEdgeConstants.CONSTRAINT_REGION_INTERIOR_FLAG;
+import static tinfour.edge.QuadEdgeConstants.CONSTRAINT_REGION_BORDER_FLAG;
 
 /**
  * A representation of an edge with forward and reverse links on one
@@ -440,7 +440,7 @@ public class QuadEdge implements IQuadEdge {
     if (this.isConstrained()) {
       sb.append("    constrained ");
       if (this.isConstrainedRegionBorder()) {
-        sb.append("area edge ");
+        sb.append("area border ");
       }
       sb.append(Integer.toString(getConstraintIndex()));
     } else if (isConstrainedRegionMember()) {
@@ -518,7 +518,7 @@ public class QuadEdge implements IQuadEdge {
 
   @Override
   public void setConstrainedRegionBorderFlag() {
-    dual.index |= (CONSTRAINT_REGION_EDGE_FLAG | CONSTRAINT_REGION_INTERIOR_FLAG);
+    dual.index |= (CONSTRAINT_REGION_BORDER_FLAG);
   }
 
   @Override

@@ -470,7 +470,7 @@ public class EdgePool implements Iterable<IQuadEdge> {
     for (int iPage = pages.length - 1; iPage >= 0; iPage--) {
       Page p = pages[iPage];
       if (p.nAllocated > 0) {
-        return p.pageID * pageSize2 + p.nAllocated*2 - 1;
+        return p.pageID * pageSize2 + p.nAllocated*2;
       }
     }
     return 0;
@@ -510,16 +510,14 @@ public class EdgePool implements Iterable<IQuadEdge> {
     q.setForward(dF);
     q.setReverse(d);
 
-
     // copy the constraint flags, if any
-
     p.dual.index = b.dual.index;
-//    if (e instanceof QuadEdgePartner) {
-//      return n.dual;
-//    } else {
-//      return n;
-//    }
-return p;
+    //    if (e instanceof QuadEdgePartner) {
+    //      return n.dual;
+    //    } else {
+    //      return n;
+    //    }
+    return p;
 
   }
 

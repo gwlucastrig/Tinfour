@@ -1819,7 +1819,7 @@ public class IncrementalTin implements IIncrementalTin {
     isLocked = true;
     int k = 0;
     for (IConstraint c : constraintList) {
-      c.setConstraintIndex(k);
+      c.setConstraintIndex(this, k);
       ArrayList<IQuadEdge>edgesForConstraint = new ArrayList<>(); //NOPMD
       efcList.add(edgesForConstraint);
       processConstraint(c, edgesForConstraint);
@@ -1843,6 +1843,7 @@ public class IncrementalTin implements IIncrementalTin {
       if (c.definesConstrainedRegion()) {
         ArrayList<IQuadEdge>edgesForConstraint = efcList.get(i);
         floodFillConstrainedRegion(c, edgesForConstraint, visited);
+        c.setConstraintLinkingEdge(edgesForConstraint.get(0));
       }
     }
   }
@@ -1866,7 +1867,6 @@ public class IncrementalTin implements IIncrementalTin {
     if (constraint.definesConstrainedRegion()) {
       edgesForConstraint.add(edge);
       edge.setConstrainedRegionBorderFlag();
-      edge.setConstrainedRegionInteriorFlag();
     }
   }
 

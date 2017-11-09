@@ -188,6 +188,8 @@ public class PolygonConstraint extends PolyLineConstraintAdapter implements ICon
     PolygonConstraint c = new PolygonConstraint();
     c.applicationData = applicationData;
     c.constraintIndex = constraintIndex;
+    c.maintainingTin = maintainingTin;
+    c.constraintLinkingEdge = constraintLinkingEdge;
     for (Vertex v : geometry) {
       c.add(v);
     }

@@ -49,10 +49,10 @@ import tinfour.common.Vertex;
 import static tinfour.edge.QuadEdgeConstants.CONSTRAINT_EDGE_FLAG;
 import static tinfour.edge.QuadEdgeConstants.CONSTRAINT_INDEX_MASK;
 import static tinfour.edge.QuadEdgeConstants.CONSTRAINT_INDEX_MAX;
-import static tinfour.edge.QuadEdgeConstants.CONSTRAINT_REGION_EDGE_FLAG;
 import static tinfour.semivirtual.SemiVirtualEdgePage.INDEX_MASK;
 import static tinfour.semivirtual.SemiVirtualEdgePage.INDICES_PER_PAGE;
 import static tinfour.edge.QuadEdgeConstants.CONSTRAINT_REGION_INTERIOR_FLAG;
+import static tinfour.edge.QuadEdgeConstants.CONSTRAINT_REGION_BORDER_FLAG;
 
 /**
  * Provides methods and elements implementing the QuadEdge data structure
@@ -555,7 +555,7 @@ public final class SemiVirtualEdge implements IQuadEdge {
       // and have its constrained-area flag set.
       // recall that the CONSTRAINT_FLAG is also the sign bit.
       int test = page.constraints[indexOnPage / 2];
-      return (test & CONSTRAINT_REGION_EDGE_FLAG) != 0;
+      return (test & CONSTRAINT_REGION_BORDER_FLAG) != 0;
     }
   }
 
@@ -578,7 +578,7 @@ public final class SemiVirtualEdge implements IQuadEdge {
       // this tests to see if the edge is a constrained-area member
       // and doesn't care whether or not it is a constraint edge.
       return (page.constraints[indexOnPage / 2] 
-              & (CONSTRAINT_REGION_EDGE_FLAG | CONSTRAINT_REGION_INTERIOR_FLAG)) != 0;
+              & (CONSTRAINT_REGION_BORDER_FLAG | CONSTRAINT_REGION_INTERIOR_FLAG)) != 0;
     }
   }
 
@@ -586,7 +586,7 @@ public final class SemiVirtualEdge implements IQuadEdge {
   public void setConstrainedRegionBorderFlag() {
     int ix = indexOnPage / 2;
     int c[] = page.readyConstraints();
-    c[ix] |= (CONSTRAINT_REGION_EDGE_FLAG);
+    c[ix] |= (CONSTRAINT_REGION_BORDER_FLAG);
   }
 
 

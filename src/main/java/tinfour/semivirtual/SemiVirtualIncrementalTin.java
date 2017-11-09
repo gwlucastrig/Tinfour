@@ -1725,7 +1725,7 @@ public class SemiVirtualIncrementalTin implements IIncrementalTin {
     IntCollector []icArray = new IntCollector[constraintList.size()];
     int k = 0;
     for (IConstraint c : constraintList) {
-      c.setConstraintIndex(k);
+      c.setConstraintIndex(this, k);
       icArray[k] = new IntCollector(); // NOPMD
       processConstraint(c, icArray[k]);
       icArray[k].trimToSize();
@@ -1750,6 +1750,8 @@ public class SemiVirtualIncrementalTin implements IIncrementalTin {
       IConstraint c = constraintList.get(i);
       if (c.definesConstrainedRegion()) {
         floodFillConstrainedRegions(c, icArray[i], visited );
+        IQuadEdge e = this.edgePool.getEdgeForIndex(icArray[i].buffer[0]);
+        c.setConstraintLinkingEdge(e);
       }
     }
 
@@ -1773,7 +1775,7 @@ public class SemiVirtualIncrementalTin implements IIncrementalTin {
     if (constraint.definesConstrainedRegion()) {
       intCollector.add(edge.getIndex());
       edge.setConstrainedRegionBorderFlag();
-      edge.setConstrainedRegionInteriorFlag();
+      //edge.setConstrainedRegionInteriorFlag();
     }
   }
 
