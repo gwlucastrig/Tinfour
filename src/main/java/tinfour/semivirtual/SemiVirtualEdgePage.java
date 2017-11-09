@@ -138,6 +138,9 @@ class SemiVirtualEdgePage {
       }
       freePairs[PAIRS_PER_PAGE - nPairsAllocated] = (short) (index / 2);
     }
+    if(constraints!=null){
+      constraints[index / 2] = 0;
+    }
     nPairsAllocated--;
   }
 
