@@ -35,6 +35,7 @@ package tinfour.semivirtual;
 
 import java.awt.geom.Rectangle2D;
 import java.io.PrintStream;
+import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.BitSet;
 import java.util.Iterator;
@@ -314,6 +315,11 @@ public class SemiVirtualIncrementalTin implements IIncrementalTin {
    * conformance after the addition of constraints.
    */
   private int maxDepthOfRecursionInRestore;
+  
+  /**
+   * Gets the maximum length of the queue in the flood fill operation.
+   */
+  private int maxLengthOfQueueInFloodFill;
 
   /**
    * The rule used for disambiguating z values in a vertex merger group.
@@ -1161,8 +1167,11 @@ public class SemiVirtualIncrementalTin implements IIncrementalTin {
 
     ps.format("\n");
     edgePool.printDiagnostics(ps);
+    ps.format("\n");
+    ps.format("Number of constraints:        %8d\n", constraintList.size());
     ps.format("Max recursion during restore: %8d\n", maxDepthOfRecursionInRestore);
     ps.format("Number of synthetic vertices: %8d\n", nSyntheticVertices);
+    ps.format("Max queue size in flood fill: %8d\n", this.maxLengthOfQueueInFloodFill);
   }
 
   /**
@@ -2404,51 +2413,60 @@ public class SemiVirtualIncrementalTin implements IIncrementalTin {
     for (int i = 0; i < intCollector.n; i++) {
       IQuadEdge e = this.edgePool.getEdgeForIndex(intCollector.buffer[i]);
       if (e.isConstrainedRegionBorder()) {
-        floodFillConstrainedRegionsRecursion(e, constraintIndex, visited);
+        floodFillConstrainedRegionsQueue( constraintIndex, visited, e);
       }
     }
   }
-
-  private void floodFillConstrainedRegionsRecursion(
-    IQuadEdge e,
-    int constraintIndex,
-    BitSet visited) {
-    // There is special logic here for the case where an alternate constraint
+ 
+  
+  private void floodFillConstrainedRegionsQueue(
+          final int constraintIndex,
+          final BitSet visited,
+          final IQuadEdge firstEdge) {
+    // While the following logic could be more elegantly coded
+    // using recursion, the depth of the recursion could get so deep that
+    // it would overflow any reasonably sized stack.  So we use as
+    // explicitly coded stack instead.
+    //    There is special logic here for the case where an alternate constraint
     // occurs inside the floor-fill area. For example, a linear constraint
     // might occur inside a polygon (a road might pass through a town).
     // The logic needs to preserve the constraint index of thecontained
     // edge from the alternate constraint. In that case, the flood fill
     // passes over the embedded edge, but does not modify it.
-    //
-    // SemiVirtualEdge.getIndex() returns an even or odd index value depending
-    // on which side of the edge the particular instance represents.
-    // Since this algorithm must mark the visited flags no matter what
-    // direction the traversal crosses it from, it OR's the low order bit.
-    // Thus the same visited flag is always accessed, regardless of
-    // the orientation of the edge.
-    //
-    IQuadEdge f = e.getForward();
-    int fIndex = f.getIndex()/2;
-    if (!f.isConstrainedRegionBorder() && !visited.get(fIndex)) {
-      visited.set(fIndex);
-      if (!f.isConstrained()) {
-        f.setConstrainedRegionInteriorFlag();
-        f.setConstraintIndex(constraintIndex);
+    ArrayDeque<IQuadEdge> deque = new ArrayDeque<>();
+    deque.push(firstEdge);
+    while (!deque.isEmpty()) {
+      if (deque.size() > maxLengthOfQueueInFloodFill) {
+        maxLengthOfQueueInFloodFill = deque.size();
       }
-      floodFillConstrainedRegionsRecursion(f.getDual(), constraintIndex, visited);
-    }
-    IQuadEdge r = e.getReverse();
-    int rIndex = r.getIndex()/2;
-    if (!r.isConstrainedRegionBorder() && !visited.get(rIndex)) {
-      visited.set(rIndex);
-      if (!r.isConstrained()) {
-        r.setConstrainedRegionInteriorFlag();
-        r.setConstraintIndex(constraintIndex);
+      IQuadEdge e = deque.peek();
+      IQuadEdge f = e.getForward();
+      int fIndex = f.getIndex();
+      if (!f.isConstrainedRegionBorder() && !visited.get(fIndex)) {
+        visited.set(fIndex);
+        if (!f.isConstrained()) {
+          f.setConstrainedRegionInteriorFlag();
+          f.setConstraintIndex(constraintIndex);
+        }
+        deque.push(f.getDual());
+        continue;
       }
-      floodFillConstrainedRegionsRecursion(r.getDual(), constraintIndex, visited);
+      IQuadEdge r = e.getReverse();
+      int rIndex = r.getIndex();
+      if (!r.isConstrainedRegionBorder() && !visited.get(rIndex)) {
+        visited.set(rIndex);
+        if (!r.isConstrained()) {
+          r.setConstrainedRegionInteriorFlag();
+          r.setConstraintIndex(constraintIndex);
+        }
+        deque.push(r.getDual());
+        continue;
+      }
+      deque.pop();
     }
   }
-
+  
+  
   @Override
   public List<IConstraint> getConstraints() {
     List<IConstraint> result = new ArrayList<>();
