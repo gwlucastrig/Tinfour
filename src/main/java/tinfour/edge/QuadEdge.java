@@ -440,11 +440,11 @@ public class QuadEdge implements IQuadEdge {
     if (this.isConstrained()) {
       sb.append("    constrained ");
       if (this.isConstrainedRegionBorder()) {
-        sb.append("area border ");
+        sb.append("region border ");
       }
       sb.append(Integer.toString(getConstraintIndex()));
-    } else if (isConstrainedRegionMember()) {
-      sb.append("    constrained region member ");
+    } else if (isConstrainedRegionInterior()) {
+      sb.append("    constrained region interior ");
       sb.append(Integer.toString(getConstraintIndex()));
     }
 
