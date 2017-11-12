@@ -239,7 +239,8 @@ class LogoPanel extends JPanel {
     }
 
     // Again, for aesthetic reasons, draw the interior edges in a semi-transparent
-    // gray and then draw the boarders in black.  This time, we get the outline
+    // gray and then draw the borders in black.  This time, we handle
+    // the borders in a different manner from above.  We get the outline
     // from the constraint itself and draw it in a continuous path.  The
     // result takes advantage of Java's rendering logic and produces a more
     // pleasing line.
