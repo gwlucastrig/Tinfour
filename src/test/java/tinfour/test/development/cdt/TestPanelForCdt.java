@@ -58,7 +58,7 @@ import tinfour.common.IIncrementalTin;
 import tinfour.common.IQuadEdge;
 import tinfour.common.Vertex;
 
-class TestPanelForCdt extends JPanel {
+public class TestPanelForCdt extends JPanel {
 
   final static long serialVersionUID = 1;
   IIncrementalTin tin;
@@ -246,19 +246,19 @@ class TestPanelForCdt extends JPanel {
     Line2D l2d = new Line2D.Double();
     Ellipse2D e2d = new Ellipse2D.Double();
 
-    g2d.setStroke(new BasicStroke(3.0f));
-    g2d.setColor(Color.RED);
-//        QuadEdge[] edges = tin.getPerimeter();
-//        for (int i = 0; i < edges.length; i++) {
-//            Vertex v0 = edges[i].getV0();
-//            Vertex v1 = edges[i].getV1();
-//            p0.setLocation(v0.getX(), v0.getY());
-//            p1.setLocation(v1.getX(), v1.getY());
-//            af.transform(p0, p0);
-//            af.transform(p1, p1);
-//            l2d.setLine(p0, p1);
-//            g2d.draw(l2d);
-//        }
+    //g2d.setStroke(new BasicStroke(3.0f));
+    //g2d.setColor(Color.RED);
+    //QuadEdge[] edges = tin.getPerimeter();
+    //for (int i = 0; i < edges.length; i++) {
+    //    Vertex v0 = edges[i].getV0();
+    //    Vertex v1 = edges[i].getV1();
+    //    p0.setLocation(v0.getX(), v0.getY());
+    //    p1.setLocation(v1.getX(), v1.getY());
+    //    af.transform(p0, p0);
+    //    af.transform(p1, p1);
+    //    l2d.setLine(p0, p1);
+    //    g2d.draw(l2d);
+    //}
 
     g2d.setStroke(new BasicStroke(1.0f));
     g2d.setColor(this.edgeColor);
@@ -268,6 +268,11 @@ class TestPanelForCdt extends JPanel {
 
       if (e.getB() == null) {
         continue;
+      }
+      if(e.isConstrained()){
+        g2d.setColor(this.edgeColor.darker());
+      }else{
+        g2d.setColor(this.edgeColor);
       }
       p0.setLocation(e.getA().x, e.getA().y);
       p1.setLocation(e.getB().x, e.getB().y);
