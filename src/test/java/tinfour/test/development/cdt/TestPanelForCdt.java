@@ -465,13 +465,20 @@ class TestPanelForCdt extends JPanel {
   }
 
   /**
-   * A convenience routine to open up a window (Java Frame) showing the plot
+   * A convenience routine to open up a Window showing the content of 
+   * a Delaunay triangulation.  In order to avoid an excessive amount of
+   * data processing, developers are cautioned to not use this
+   * class in cases where the number of points in a triangulation is very
+   * large.  
    *
    * @param tin a valid TIN
    * @param header a label for the window
    * @return a valid instance
    */
-  static TestPanelForCdt plot(final IIncrementalTin tin, final String header) {
+  static public TestPanelForCdt plot(
+          final IIncrementalTin tin, 
+          final String header) 
+  {
 
     try {
       // Set System L&F

@@ -213,10 +213,10 @@ public final class TriangleCollector {
       Vertex[] trig = new Vertex[]{e.getA(), f.getA(), r.getA()};
       consumer.accept(trig);
 
-      if (f.isConstrainedRegionInterior()) {
+      if (!f.isConstrainedRegionBorder()) {
         recursiveTraversal(f.getDual(), map, consumer);
       }
-      if (r.isConstrainedRegionInterior()) {
+      if (!r.isConstrainedRegionBorder()) {
         recursiveTraversal(r.getDual(), map, consumer);
       }
     }
