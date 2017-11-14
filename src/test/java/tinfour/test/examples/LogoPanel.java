@@ -191,8 +191,8 @@ class LogoPanel extends JPanel {
     //           associated with the hole will be to its exterior.
     //           These could be plotted if we chose to do so, but they 
     //           would be the same triangles as the ones created by the
-    //           containing polygon.  So we check the polygon area 
-    //           and if it is negative, we skip the polygon.
+    //           containing polygon.  So we check the polygon getArea() method.
+    //           If it returns a negative value, we skip the polygon.
     yOffset += 1.15 * scale * bounds.getHeight();
     af = new AffineTransform(scale, 0, 0, -scale, xOffset, yOffset);
 

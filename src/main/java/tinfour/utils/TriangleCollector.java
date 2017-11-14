@@ -22,6 +22,7 @@
  * Date     Name         Description
  * ------   ---------    -------------------------------------------------
  * 10/2017  M. Janda     Created
+ * 11/2017  G. Lucas     Replaced recursion with deque
  *
  * Notes:
  *   This class was written by Martin Janda.
@@ -30,14 +31,18 @@
  */
 package tinfour.utils;
 
+import java.util.ArrayDeque;
 import tinfour.common.IIncrementalTin;
 import tinfour.common.IQuadEdge;
 import tinfour.common.Vertex;
 
-import java.util.Iterator;
+import java.util.List;
 import java.util.function.Consumer;
 import tinfour.common.IConstraint;
 
+/**
+ * Provides a utility for collecting triangles from a TIN.
+ */
 public final class TriangleCollector {
 
   /**
@@ -72,8 +77,8 @@ public final class TriangleCollector {
   /**
    * Gets the edge mark bit.
    *
-   * @param map an array at least as large as the largest edge index
-   * divided by 32, rounded up.
+   * @param map an array at least as large as the largest edge index divided by
+   * 32, rounded up.
    * @param edge a valid edge
    * @return if the edge is marked, a non-zero value; otherwise, a zero.
    */
@@ -88,8 +93,8 @@ public final class TriangleCollector {
   /**
    * Set the mark bit for an edge to 1.
    *
-   * @param map an array at least as large as the largest edge index
-   * divided by 32, rounded up.
+   * @param map an array at least as large as the largest edge index divided by
+   * 32, rounded up.
    * @param edge a valid edge
    */
   private static void setMarkBit(final int[] map, final IQuadEdge edge) {
@@ -111,50 +116,11 @@ public final class TriangleCollector {
   public static void visitTrianglesConstrained(
           final IIncrementalTin tin,
           final Consumer<Vertex[]> consumer) {
-    int maxMapIndex = tin.getMaximumEdgeAllocationIndex() + 2;
-    int mapSize = (maxMapIndex + INT_BITS - 1) / INT_BITS;
-    int[] map = new int[mapSize];
-    Iterator<IQuadEdge> iterator = tin.getEdgeIterator();
-    while (iterator.hasNext()) {
-      IQuadEdge e = iterator.next();
-      if (e.getA() == null || e.getB() == null) {
-        setMarkBit(map, e);
-        setMarkBit(map, e.getDual());
-        continue;
+    List<IConstraint> constraintList = tin.getConstraints();
+    for (IConstraint constraint : constraintList) {
+      if (constraint.definesConstrainedRegion()) {
+        visitTrianglesForConstrainedRegion(constraint, consumer);
       }
-      if (e.isConstrainedRegionInterior()) {
-        processEdge(consumer, map, e);
-        processEdge(consumer, map, e.getDual());
-      }
-    }
-  }
-
-  private static void processEdge(
-          final Consumer<Vertex[]> consumer,
-          final int[] map,
-          final IQuadEdge e) {
-
-    if (getMarkBit(map, e) == 0) {
-      setMarkBit(map, e);
-      IQuadEdge f = e.getForward();
-
-      if (getMarkBit(map, f) != 0) {
-        return;
-      }
-      setMarkBit(map, f);
-
-      IQuadEdge r = e.getReverse();
-      if (getMarkBit(map, r) != 0) {
-        return;
-      }
-      setMarkBit(map, r);
-      if (r.getB() == null || f.getB() == null) {
-        return;
-      }
-
-      Vertex[] trig = new Vertex[]{e.getA(), f.getA(), r.getA()};
-      consumer.accept(trig);
-
     }
   }
 
@@ -163,8 +129,8 @@ public final class TriangleCollector {
    * its interior. As triangles are identified, this method calls the accept
    * method of a consumer.
    *
-   * @param constraint a valid instance defining a constrained region
-   * that has been added to a TIN.
+   * @param constraint a valid instance defining a constrained region that has
+   * been added to a TIN.
    * @param consumer an application-specific consumer.
    */
   public static void visitTrianglesForConstrainedRegion(
@@ -189,37 +155,38 @@ public final class TriangleCollector {
     int mapSize = (maxMapIndex + INT_BITS - 1) / INT_BITS;
     int[] map = new int[mapSize];
 
-    recursiveTraversal(linkEdge, map, consumer);
-
+    if (getMarkBit(map, linkEdge) == 0) {
+      visitTrianglesUsingStack(linkEdge, map, consumer);
+    }
   }
+ 
+  private static void visitTrianglesUsingStack(
+          final IQuadEdge firstEdge,
+          final int[] map,
+          final Consumer<Vertex[]> consumer) {
+    ArrayDeque<IQuadEdge> deque = new ArrayDeque<>();
+    deque.push(firstEdge);
+    while (!deque.isEmpty()) {
+      IQuadEdge e = deque.pop();
+      if (getMarkBit(map, e) == 0) {
+        IQuadEdge f = e.getForward();
+        IQuadEdge r = e.getReverse();
+        setMarkBit(map, e);
+        setMarkBit(map, f);
+        setMarkBit(map, r);
+        consumer.accept(new Vertex[]{e.getA(), f.getA(), r.getA()}); //NOPMD
 
-  private static void recursiveTraversal(
-          IQuadEdge e,
-          int[] map,
-          Consumer<Vertex[]> consumer) {
-    if (getMarkBit(map, e) == 0) {
-      IQuadEdge f = e.getForward();
-      if (getMarkBit(map, f) != 0) {
-        return;
-      }
-      setMarkBit(map, f);
-
-      IQuadEdge r = e.getReverse();
-      if (getMarkBit(map, r) != 0) {
-        return;
-      }
-      setMarkBit(map, r);
-
-      Vertex[] trig = new Vertex[]{e.getA(), f.getA(), r.getA()};
-      consumer.accept(trig);
-
-      if (!f.isConstrainedRegionBorder()) {
-        recursiveTraversal(f.getDual(), map, consumer);
-      }
-      if (!r.isConstrainedRegionBorder()) {
-        recursiveTraversal(r.getDual(), map, consumer);
+        IQuadEdge df = f.getDual();
+        IQuadEdge dr = r.getDual();
+        if (getMarkBit(map, df) == 0 && !f.isConstrainedRegionBorder()) {
+          deque.push(df);
+        }
+        if (getMarkBit(map, dr) == 0 && !r.isConstrainedRegionBorder()) {
+          deque.push(dr);
+        }
       }
     }
+
   }
 
 }
