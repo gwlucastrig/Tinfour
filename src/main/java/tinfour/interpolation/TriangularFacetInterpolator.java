@@ -196,7 +196,7 @@ public class TriangularFacetInterpolator implements IInterpolatorOverTin {
         }
 
         if (Math.abs(nz) < precisionThreshold) {
-            return (z0 + z1 + z0) / 3.0;
+            return (z0 + z1 + z2) / 3.0;
         }
         // solve for pz
         return z0 - (nx * sx + ny * sy) / nz;
