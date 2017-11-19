@@ -52,8 +52,7 @@ class SemiVirtualNeighborEdgeLocator implements INeighborEdgeLocator {
   SemiVirtualNeighborEdgeLocator(SemiVirtualIncrementalTin tin) {
 
     this.tin = tin;
-    double nominalPointSpacing = tin.getNominalPointSpacing();
-    walker = new SemiVirtualStochasticLawsonsWalk(nominalPointSpacing);
+    walker = new SemiVirtualStochasticLawsonsWalk(tin.getThresholds());
 
   }
 

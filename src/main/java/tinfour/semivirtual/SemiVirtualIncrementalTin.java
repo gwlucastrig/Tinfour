@@ -384,7 +384,7 @@ public class SemiVirtualIncrementalTin implements IIncrementalTin {
     vertexTolerance = thresholds.getVertexTolerance();
     vertexTolerance2 = thresholds.getVertexTolerance2();
 
-    walker = new SemiVirtualStochasticLawsonsWalk(nominalPointSpacing);
+    walker = new SemiVirtualStochasticLawsonsWalk(thresholds);
 
     edgePool = new SemiVirtualEdgePool();
   }

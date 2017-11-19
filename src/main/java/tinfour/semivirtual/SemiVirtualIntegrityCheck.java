@@ -70,7 +70,7 @@ class SemiVirtualIntegrityCheck implements IIntegrityCheck {
    */
   SemiVirtualIntegrityCheck(SemiVirtualIncrementalTin tin) {
     this.tin = tin;
-    thresholds = new Thresholds(tin.getNominalPointSpacing());
+    thresholds = tin.getThresholds();
     geoOp = new GeometricOperations(thresholds);
     edges = tin.getVirtualEdges();
     message = null;

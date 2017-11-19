@@ -124,7 +124,7 @@ public class RandomConstraintTestSeries {
     RandomConstraintTestOptions.ConstraintType constraintType
       = options.getConstraintType();
     IIncrementalTin tin = options.makeNewInstanceOfTestTin();
-    Thresholds thresholds = new Thresholds(1.0);
+    Thresholds thresholds = tin.getThresholds();
     for (int i = 0; i < testCount; i++) {
       if ((i % 100) == 0) {
         ps.println("Testing vertex set " + i);

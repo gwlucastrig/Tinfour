@@ -75,7 +75,7 @@ public class IntegrityCheck implements IIntegrityCheck {
    */
   IntegrityCheck(IIncrementalTin tin) {
     this.tin = tin;
-    thresholds = new Thresholds(tin.getNominalPointSpacing());
+    thresholds = tin.getThresholds();
     geoOp = new GeometricOperations(thresholds);
     edges = tin.getEdges();
     message = null;
