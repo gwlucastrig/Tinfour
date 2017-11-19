@@ -77,8 +77,7 @@ public class TriangularFacetInterpolator implements IInterpolatorOverTin {
      * @param tin a valid instance of an incremental TIN.
      */
     public TriangularFacetInterpolator(IIncrementalTin tin) {
-        double nominalPointSpacing = tin.getNominalPointSpacing();
-        Thresholds thresholds = new Thresholds(nominalPointSpacing);
+        Thresholds thresholds =  tin.getThresholds();
 
         vertexTolerance2 = thresholds.getVertexTolerance2();
         precisionThreshold = thresholds.getPrecisionThreshold();

@@ -52,8 +52,7 @@ class NeighborEdgeLocator implements INeighborEdgeLocator {
   NeighborEdgeLocator(IncrementalTin tin) {
 
     this.tin = tin;
-    double nominalPointSpacing = tin.getNominalPointSpacing();
-    walker = new StochasticLawsonsWalk(nominalPointSpacing);
+    walker = new StochasticLawsonsWalk(tin.getThresholds());
 
   }
 

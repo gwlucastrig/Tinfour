@@ -101,8 +101,7 @@ public class NaturalNeighborInterpolator implements IInterpolatorOverTin {
    * @param tin a valid instance of an incremental TIN.
    */
   public NaturalNeighborInterpolator(IIncrementalTin tin) {
-    double nominalPointSpacing = tin.getNominalPointSpacing();
-    Thresholds thresholds = new Thresholds(nominalPointSpacing);
+    Thresholds thresholds = tin.getThresholds();
     geoOp = new GeometricOperations(thresholds);
 
     vertexTolerance2 = thresholds.getVertexTolerance2();

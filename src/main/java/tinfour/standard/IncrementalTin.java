@@ -484,7 +484,7 @@ public class IncrementalTin implements IIncrementalTin {
     vertexTolerance = thresholds.getVertexTolerance();
     vertexTolerance2 = thresholds.getVertexTolerance2();
 
-    walker = new StochasticLawsonsWalk(nominalPointSpacing);
+    walker = new StochasticLawsonsWalk(thresholds);
 
     edgePool = new EdgePool();
   }
@@ -1625,7 +1625,7 @@ public class IncrementalTin implements IIncrementalTin {
    */
   StochasticLawsonsWalk getCompatibleWalker() {
     StochasticLawsonsWalk cw
-      = new StochasticLawsonsWalk(nominalPointSpacing);
+      = new StochasticLawsonsWalk(thresholds);
     return cw;
   }
 
