@@ -39,13 +39,13 @@ import tinfour.common.IQuadEdge;
  * Provides an implementation of the pinwheel operation
  * via the Iterator and Iterable interfaces.
  */
-class QuadEdgePinwheel implements Iterable<IQuadEdge>, Iterator<IQuadEdge> {
+public class QuadEdgePinwheel implements Iterable<IQuadEdge>, Iterator<IQuadEdge> {
 
-  final QuadEdge e0;
-  QuadEdge n;
+  final IQuadEdge e0;
+  IQuadEdge n;
   boolean hasNext;
 
-  QuadEdgePinwheel(QuadEdge e0){
+  public QuadEdgePinwheel(IQuadEdge e0){
     this.e0 = e0;
     n = e0;
     hasNext = true;
@@ -64,7 +64,7 @@ class QuadEdgePinwheel implements Iterable<IQuadEdge>, Iterator<IQuadEdge> {
 
   @Override
   public IQuadEdge next() {
-     QuadEdge e = n;
+     IQuadEdge e = n;
      n = e.getDualFromReverse();
      hasNext = !n.equals(e0);
      return e;

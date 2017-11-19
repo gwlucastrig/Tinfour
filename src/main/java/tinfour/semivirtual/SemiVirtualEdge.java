@@ -53,6 +53,7 @@ import static tinfour.semivirtual.SemiVirtualEdgePage.INDEX_MASK;
 import static tinfour.semivirtual.SemiVirtualEdgePage.INDICES_PER_PAGE;
 import static tinfour.edge.QuadEdgeConstants.CONSTRAINT_REGION_INTERIOR_FLAG;
 import static tinfour.edge.QuadEdgeConstants.CONSTRAINT_REGION_BORDER_FLAG;
+import tinfour.edge.QuadEdgePinwheel;
 
 /**
  * Provides methods and elements implementing the QuadEdge data structure
@@ -600,7 +601,7 @@ public final class SemiVirtualEdge implements IQuadEdge {
 
   @Override
   public Iterable<IQuadEdge> pinwheel() {
-    return new SemiVirtualPinwheel(this);
+    return new QuadEdgePinwheel(this);
   }
 
 
