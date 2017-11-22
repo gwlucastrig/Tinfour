@@ -228,25 +228,32 @@ public final class TriangleCollector {
       // for null vertices before the consumer.accept is invoked.
       IQuadEdge e = iterator.next();
       IQuadEdge d = e.getDual();
-      boolean makeTriangle = (e.getA() != null && e.getB() != null);
-      if (getMarkBit(map, e) == 0) {
-        IQuadEdge ef = e.getForward();
-        IQuadEdge er = e.getReverse();
-        setMarkBit(map, e);
-        setMarkBit(map, ef);
-        setMarkBit(map, er);
-        if (makeTriangle && ef.getB() != null) {
-          consumer.accept(new Vertex[]{e.getA(), ef.getB(), ef.getB()}); //NOPMD
+   
+      // do not collect a triangle if the current edge is a ghost edge.
+      // we could attempt to mark the interior edges of the
+      // ghost triangle with the hope of saving future processing
+      // but my cursory analysis is that it doesn't look like
+      // the saving would be worth the extra complexitu
+      if (e.getA() != null && e.getB()!= null) {
+        if (getMarkBit(map, e) == 0) {
+          IQuadEdge ef = e.getForward();
+          IQuadEdge er = e.getReverse();
+          setMarkBit(map, e);
+          setMarkBit(map, ef);
+          setMarkBit(map, er);
+          if (ef.getB() != null) {
+            consumer.accept(new Vertex[]{e.getA(), ef.getA(), er.getA()}); //NOPMD
+          }
         }
-      }
-      if (getMarkBit(map, d) == 0) {
-        IQuadEdge df = d.getForward();
-        IQuadEdge dr = d.getReverse();
-        setMarkBit(map, d);
-        setMarkBit(map, df);
-        setMarkBit(map, dr);
-        if (makeTriangle && df.getB() != null) {
-          consumer.accept(new Vertex[]{d.getA(), d.getB(), df.getB()}); //NOPMD
+        if (getMarkBit(map, d) == 0) {
+          IQuadEdge df = d.getForward();
+          IQuadEdge dr = d.getReverse();
+          setMarkBit(map, d);
+          setMarkBit(map, df);
+          setMarkBit(map, dr);
+          if (df.getB() != null) {
+            consumer.accept(new Vertex[]{d.getA(), df.getA(), dr.getA()}); //NOPMD
+          }
         }
       }
     }
