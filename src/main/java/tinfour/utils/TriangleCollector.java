@@ -25,8 +25,31 @@
  * 11/2017  G. Lucas     Replaced recursion with deque
  *
  * Notes:
- *   This class was written by Martin Janda.
+ *   This class was originally written by Martin Janda.
  *
+ * Collecting triangles from constrained regions ------------------
+ *  The triangle collector for a constrained region uses a mesh-traversal
+ * operation where it traverses from edge to edge, identifying triangles and
+ * calling the accept() method from a Java consumer.  In general, this 
+ * process is straightforward, though there is one special case.
+ *  Recall that in Tinfour, the interior to a constrained region is always to
+ * the left of an edge.  Thus, a polygon enclosing a region would be given
+ * in counterclockwise order.  Conversely, if a polygon were given in
+ * clockwise order such that the area it enclosed was always to the right
+ * of the edges, the polygon would define a "hole" in the constrained
+ * region. The region it enclosed would not belong to the constrained region.
+ *   Now imaging a case where a constrained region is defined by a single
+ * clockwise polygon somewhere within the overall domain of the Delaunay
+ * Triangulation. The "constrained region" that it establishes is somewhat
+ * counterintuitively defined as being outside the polygon and extendending
+ * to the perimeter of the overall triangulation.
+ *   In this case, if we attempt to use traversal, some of the triangles 
+ * we collect will actually be the "ghost" triangles that define the
+ * exterior to the triangulation. Ghost triangles are those that include
+ * the so-called "ghost" vertex.  Tinfour manages the ghost vertex using
+ * a null vertex.  Thus it would be possible to collect triangles which
+ * contain null vertices.   In order to avoid passing null vertices to 
+ * the accept() method, Tinfour must screen for this condition.
  * -----------------------------------------------------------------------
  */
 package tinfour.utils;
@@ -180,8 +203,15 @@ public final class TriangleCollector {
         setMarkBit(map, e);
         setMarkBit(map, f);
         setMarkBit(map, r);
-        consumer.accept(new Vertex[]{e.getA(), f.getA(), r.getA()}); //NOPMD
-
+        // the rationale for the null check is given in the
+        // discussion at the beginning of this file.
+        Vertex a = e.getA();
+        Vertex b = f.getA();
+        Vertex c = r.getA();
+        if (a != null && b != null && c != null) {
+          consumer.accept(new Vertex[]{a, b, c}); //NOPMD
+        } 
+        
         IQuadEdge df = f.getDual();
         IQuadEdge dr = r.getDual();
         if (getMarkBit(map, df) == 0 && !f.isConstrainedRegionBorder()) {
