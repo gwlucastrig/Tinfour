@@ -40,24 +40,48 @@ import java.util.Random;
  */
 public class BootstrapUtility {
 
-    /**
+  /**
    * An arbitrary maximum number of trials for selecting a bootstrap triangle.
    */
-  private static final int N_TRIAL_LIMIT = 10;  //NOPMD
+  private static final int N_TRIAL_MAX = 16;  //NOPMD
+  
+  /**
+   * An arbitrary minimum number of trials for selecting a bootstrap triangle
+   */
+  private static final int N_TRIAL_MIN = 3;  //NOPMD
 
-    /**
+  /**
    * An arbitrary factor for estimating the number of trials for selecting
    * a bootstrap triangle.
    */
   private static final double TRIAL_FACTOR = (1.0 / 3.0);  //NOPMD
+  
+  /**
+   * An arbitrary factor for computing the triangle min-area threshold.
+   * The current specifies an area 1/64th that of a equilateral triangle
+   * with edges of the length of the nominal point spacing.
+   */
+  private static final double MIN_AREA_FACTOR = Math.sqrt(3.0)/4.0/64.0;
 
 
   final private double halfPlaneThreshold;
   final private double halfPlaneThresholdNeg;
+  
+  /**
+   * The threshold for determining whether the initial random-triangle
+   * selection produced a sufficiently robust triangle to begin
+   * triangulation.  The assignment of this value is arbitrary.
+   * If a sufficiently large area triangle is not found, the routine
+   * reverts to an exhaustive search.
+   */
+  final private double triangleMinAreaThreshold;
+  
 
   public BootstrapUtility(Thresholds thresholds){
     halfPlaneThreshold = thresholds.getHalfPlaneThreshold();
     halfPlaneThresholdNeg = -halfPlaneThreshold;
+    triangleMinAreaThreshold = 
+            thresholds.getNominalPointSpacing()*MIN_AREA_FACTOR;
   }
 
   /**
@@ -69,7 +93,7 @@ public class BootstrapUtility {
    * as the calling application provides additional vertices.
    *
    * @param list a valid list of input vertices.
-   * @param geoOp a valid instance constructed with appropriate threasholds
+   * @param geoOp a valid instance constructed with appropriate thresholds
    * @return if successful, a valid array of the initial three vertices.
    */
   public Vertex [] bootstrap(final List<Vertex> list, GeometricOperations geoOp) {
@@ -82,11 +106,13 @@ public class BootstrapUtility {
     Vertex[] vtest = new Vertex[3];
     int n = list.size();
     int nTrial = (int) Math.pow((double) n, TRIAL_FACTOR);
-    if (nTrial < 1) {
-      nTrial = 1;
-    } else if (nTrial > N_TRIAL_LIMIT) {
-      nTrial = N_TRIAL_LIMIT;
+    if (nTrial < N_TRIAL_MIN) {
+      nTrial = N_TRIAL_MIN;
+    } else if (nTrial > N_TRIAL_MAX) {
+      nTrial = N_TRIAL_MAX;
     }
+ 
+    
     double bestScore = Double.NEGATIVE_INFINITY;
     for (int iTrial = 0; iTrial < nTrial; iTrial++) {
       if (n == 3) {
@@ -127,8 +153,8 @@ public class BootstrapUtility {
         v[2] = vtest[2];
       }
     }
-
-    if (bestScore == Double.NEGATIVE_INFINITY) {
+ 
+    if (bestScore < triangleMinAreaThreshold) {
       if (n == 3) {
         // the above trials already tested this case.
         // the set of vertices is not yet sufficient
