@@ -67,6 +67,7 @@ import tinfour.common.IConstraint;
 /**
  * Provides a utility for collecting triangles from a TIN.
  */
+@SuppressWarnings("PMD.AvoidDeeplyNestedIfStmts")
 public final class TriangleCollector {
 
   /**
@@ -136,6 +137,9 @@ public final class TriangleCollector {
    * region. As triangles are identified, this method calls the accept method of
    * a consumer. If the TIN has not been bootstrapped, this routine exits
    * without further processing.
+   * <p>
+   * All triangles produced by this method are valid (non-ghost) triangles
+   * with valid, non-null vertices.
    *
    * @param tin a valid instance
    * @param consumer an application-specific consumer.
