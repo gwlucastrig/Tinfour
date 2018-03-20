@@ -15,7 +15,7 @@
  * ---------------------------------------------------------------------
  */
 
-/*
+ /*
  * -----------------------------------------------------------------------
  *
  * Revision History:
@@ -27,16 +27,14 @@
  *
  * -----------------------------------------------------------------------
  */
-
 package tinfour.common;
 
 import java.util.List;
 import java.util.Random;
 
 /**
- * A utility for performing the part of the bootstrap operation
- * that is common to both the standard and virtual incremental TIN
- * implementations.
+ * A utility for performing the part of the bootstrap operation that is common
+ * to both the standard and virtual incremental TIN implementations.
  */
 public class BootstrapUtility {
 
@@ -44,59 +42,56 @@ public class BootstrapUtility {
    * An arbitrary maximum number of trials for selecting a bootstrap triangle.
    */
   private static final int N_TRIAL_MAX = 16;  //NOPMD
-  
+
   /**
    * An arbitrary minimum number of trials for selecting a bootstrap triangle
    */
   private static final int N_TRIAL_MIN = 3;  //NOPMD
 
   /**
-   * An arbitrary factor for estimating the number of trials for selecting
-   * a bootstrap triangle.
+   * An arbitrary factor for estimating the number of trials for selecting a
+   * bootstrap triangle.
    */
   private static final double TRIAL_FACTOR = (1.0 / 3.0);  //NOPMD
-  
-  /**
-   * An arbitrary factor for computing the triangle min-area threshold.
-   * The current specifies an area 1/64th that of a equilateral triangle
-   * with edges of the length of the nominal point spacing.
-   */
-  private static final double MIN_AREA_FACTOR = Math.sqrt(3.0)/4.0/64.0;
 
+  /**
+   * An arbitrary factor for computing the triangle min-area threshold. The
+   * current specifies an area 1/64th that of a equilateral triangle with edges
+   * of the length of the nominal point spacing.
+   */
+  private static final double MIN_AREA_FACTOR = Math.sqrt(3.0) / 4.0 / 64.0;
 
   final private double halfPlaneThreshold;
   final private double halfPlaneThresholdNeg;
-  
+
   /**
-   * The threshold for determining whether the initial random-triangle
-   * selection produced a sufficiently robust triangle to begin
-   * triangulation.  The assignment of this value is arbitrary.
-   * If a sufficiently large area triangle is not found, the routine
-   * reverts to an exhaustive search.
+   * The threshold for determining whether the initial random-triangle selection
+   * produced a sufficiently robust triangle to begin triangulation. The
+   * assignment of this value is arbitrary. If a sufficiently large area
+   * triangle is not found, the routine reverts to an exhaustive search.
    */
   final private double triangleMinAreaThreshold;
-  
 
-  public BootstrapUtility(Thresholds thresholds){
+  public BootstrapUtility(Thresholds thresholds) {
     halfPlaneThreshold = thresholds.getHalfPlaneThreshold();
     halfPlaneThresholdNeg = -halfPlaneThreshold;
-    triangleMinAreaThreshold = 
-            thresholds.getNominalPointSpacing()*MIN_AREA_FACTOR;
+    triangleMinAreaThreshold
+            = thresholds.getNominalPointSpacing() * MIN_AREA_FACTOR;
   }
 
   /**
-   * Obtain the initial three vertices for building the mesh
-   * by selecting from the input list. Logic is provided to attempt to identify
-   * an initial triangle with a non-trivial area (on the theory that this
-   * stipulation produces a more robust initial mesh). In the event
-   * of an unsuccessful bootstrap attempt, future attempts can be conducted
-   * as the calling application provides additional vertices.
+   * Obtain the initial three vertices for building the mesh by selecting from
+   * the input list. Logic is provided to attempt to identify an initial
+   * triangle with a non-trivial area (on the theory that this stipulation
+   * produces a more robust initial mesh). In the event of an unsuccessful
+   * bootstrap attempt, future attempts can be conducted as the calling
+   * application provides additional vertices.
    *
    * @param list a valid list of input vertices.
    * @param geoOp a valid instance constructed with appropriate thresholds
    * @return if successful, a valid array of the initial three vertices.
    */
-  public Vertex [] bootstrap(final List<Vertex> list, GeometricOperations geoOp) {
+  public Vertex[] bootstrap(final List<Vertex> list, GeometricOperations geoOp) {
 
     final Random random = new Random(0);
     if (list.size() < 3) {
@@ -111,8 +106,7 @@ public class BootstrapUtility {
     } else if (nTrial > N_TRIAL_MAX) {
       nTrial = N_TRIAL_MAX;
     }
- 
-    
+
     double bestScore = Double.NEGATIVE_INFINITY;
     for (int iTrial = 0; iTrial < nTrial; iTrial++) {
       if (n == 3) {
@@ -153,46 +147,48 @@ public class BootstrapUtility {
         v[2] = vtest[2];
       }
     }
- 
-    if (bestScore < triangleMinAreaThreshold) {
-      if (n == 3) {
-        // the above trials already tested this case.
-        // the set of vertices is not yet sufficient
-        // to bootstrap the TIN
-        return null; //NOPMD
-      }
-      exhaustiveLoop:
-      for (int i = 0; i < n - 2; i++) {
-        vtest[0] = list.get(i);
-        for (int j = i + 1; j < n - 1; j++) {
-          vtest[1] = list.get(j);
-          for (int k = j + 1; k < n; k++) {
-            vtest[2] = list.get(k);
-            double a = geoOp.area(vtest[0], vtest[1], vtest[2]);
-            if (a < halfPlaneThresholdNeg) {
-              bestScore = -a;
+
+    if (bestScore >= triangleMinAreaThreshold) {
+      return v;
+    }
+
+    if (n == 3) {
+      // the above trials already tested this case.
+      // the set of vertices is not yet sufficient
+      // to bootstrap the TIN
+      return null; //NOPMD
+    }
+    exhaustiveLoop:
+    for (int i = 0; i < n - 2; i++) {
+      vtest[0] = list.get(i);
+      for (int j = i + 1; j < n - 1; j++) {
+        vtest[1] = list.get(j);
+        for (int k = j + 1; k < n; k++) {
+          vtest[2] = list.get(k);
+          double a = geoOp.area(vtest[0], vtest[1], vtest[2]);
+          double aAbs = Math.abs(a);
+          if (aAbs > bestScore) {
+            bestScore = aAbs;
+            if (a < 0) {
               v[0] = vtest[2];
               v[1] = vtest[1];
               v[2] = vtest[0];
-              break exhaustiveLoop;
-            } else if (a > halfPlaneThreshold) {
-              bestScore = a;
+            } else {
               v[0] = vtest[0];
               v[1] = vtest[1];
               v[2] = vtest[2];
-              break exhaustiveLoop;
+            }
+            if (aAbs >= triangleMinAreaThreshold) {
+              return v;
             }
           }
         }
       }
-      if (bestScore == Double.NEGATIVE_INFINITY) {
-        // the expensive loop above failed to discover a
-        // useful initial triangle.  we'll just have
-        // to wait for more vertices
-        return null; // NOPMD
-      }
     }
 
-    return v;
+    // the expensive loop above failed to discover a
+    // useful initial triangle.  we'll just have
+    // to wait for more vertices.
+    return null; // NOPMD
   }
 }
