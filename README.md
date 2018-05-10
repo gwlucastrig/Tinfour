@@ -8,7 +8,7 @@ High-Performance 2D Delaunay Triangulation and Related Utilities Written in Java
 The Delaunay Triangulation defines an optimal form for organizing unstructured or semi-random
 sample points into a triangular mesh. That optimality makes the Delaunay Triangulation
 a useful tool for interpolation, grid construction, and surface analysis.
-![Surface Models using TINs](doc/images/TwoTins.jpg "Surface Models using TINs")
+![Surface Models using TINs](doc/images/TwoTins.png "Surface Models using TINs")
 
 ### Tinfour ###
 Tinfour is a software library written in Java that provides tools for constructing 
