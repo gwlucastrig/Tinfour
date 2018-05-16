@@ -20,7 +20,7 @@
  * Revision History:
  * Date     Name        Description
  * ------   ---------   -------------------------------------------------
- * 02/2013  G. Lucas    Created
+ * 02/2014  G. Lucas    Created
  * 03/2014  G. Lucas    Moved z from public to protected and added getZ()
  *                       methods as preferred means of access.  This is needed
  *                       to support the merger class which may return a computed

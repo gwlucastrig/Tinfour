@@ -75,7 +75,7 @@ public class SingleBuildTest implements IDevelopmentTest {
 
       ps.println("usage: TestSingleBuild");
       ps.println("   Mandatory Arguments:");
-      ps.println("       -in <valid LAS file>");
+      ps.println("       -in <valid LAS, CSV, or TXT file>");
       ps.println("   Optional Arguments:");
       ps.println("       -lidarClass      value in the range 0 to 255, defaults to not applied");
       ps.println("       -lidarThinning   thinnging factor, range 0 to 1.0, defaults to not applied");

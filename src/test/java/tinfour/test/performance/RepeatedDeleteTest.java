@@ -42,25 +42,26 @@ import java.util.SimpleTimeZone;
 import tinfour.common.IIncrementalTin;
 import tinfour.common.IIntegrityCheck;
 import tinfour.common.Vertex;
+import tinfour.common.VertexMergerGroup;
 import tinfour.test.utils.IDevelopmentTest;
 import tinfour.test.utils.TestOptions;
 import tinfour.test.utils.VertexLoader;
 
 /**
- * A test application that repeatedly builds a TIN and tracks the time
- * required for each iteration.
+ * A test application that repeatedly builds a TIN and then removes points
+ * tracking the time required for each iteration.
  */
-public class RepeatedBuildTest implements IDevelopmentTest {
+public class RepeatedDeleteTest implements IDevelopmentTest {
 
   /**
-   * Perform a simple test of the TIN building functions
-   * over a fixed number of repetitions collecting timing statistics.
+   * Perform a simple test of the TIN building and vertex removal
+   * functions over a fixed number of repetitions collecting timing statistics.
    *
    * @param args command line arguments providing specifications for test
    */
   public static void main(String args[]) {
 
-    RepeatedBuildTest test = new RepeatedBuildTest();
+    RepeatedDeleteTest test = new RepeatedDeleteTest();
     try {
       test.runTest(System.out, args);
     } catch (IOException | IllegalArgumentException ex) {
@@ -73,7 +74,7 @@ static final String[] mandatoryOptions = {
 };
 
 static final String[] usage = {
-    "Usage for Test Repeated Build",
+    "Usage for Test Repeated Deletion and Reinsert",
     "   Mandatory Arguments:",
     "       -in <valid LAS, CSV, or TXT file>",
     "   Optional Arguments:",
@@ -146,9 +147,17 @@ static final String[] usage = {
         tin.preAllocateEdges(nVertices);
         time1 = System.nanoTime();
         preallocTime = String.format("%12.3f", (time1 - time0) / 1000000.0);
-      }
-      time0 = System.nanoTime();
+      }     
       tin.add(vertexList, null);
+      List<Vertex>testList = tin.getVertices();
+      time0 = System.nanoTime();
+      for(Vertex v: testList){
+        if(v instanceof VertexMergerGroup){
+          continue;
+        }
+        tin.remove(v);
+        tin.add(v);
+      }
       time1 = System.nanoTime();
       long deltaBuild = (time1 - time0);
 
@@ -201,6 +210,7 @@ static final String[] usage = {
     if (!status) {
       ps.println("Integrity check failed " + sane2.getMessage());
     }
+    tin.printDiagnostics(ps);
     ps.println("Test complete");
   }
 
