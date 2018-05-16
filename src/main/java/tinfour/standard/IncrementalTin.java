@@ -1479,8 +1479,10 @@ public class IncrementalTin implements IIncrementalTin {
     // step 1: Cavitation
     //         remove vertex and create a polygonal cavity
     //         eliminating all connecting edges
+    int initialSize = edgePool.size();
     n1 = n0.getForward();
     while (true) {
+      //nRemoved++;
       n2 = n1.getForward();
       n3 = n2.getDual().getForward();
       //n2 is to be deleted.  set the forward edge
@@ -1495,8 +1497,18 @@ public class IncrementalTin implements IIncrementalTin {
         edgePool.deallocateEdge(n2);
       }
     }
-
     n0 = n1;
+    
+    if(initialSize-edgePool.size() == 3){
+      // Three edges deleted, which indicates that
+      // the removal of the vertex resulted in a single triangle
+      // that is already Delaunay.  The cavitation process should
+      // have reset the links.  So the removal operation is done.
+      setSearchEdgeAfterRemoval(n0);
+      return true;
+    }
+    
+
 
     // Step 2 -- Ear Creation
     //           Create a set of Devillers Ears around
@@ -1520,14 +1532,7 @@ public class IncrementalTin implements IIncrementalTin {
     } while (n1 != pStart);
     priorEar.next = firstEar;
     firstEar.prior = priorEar;
-
-    if (nEar == 3) {
-      // the removal of the vertex resulted in a single triangle
-      // which is already Delaunay.  The cavitation process should
-      // have reset the links.  So the removal operation is done.
-      setSearchEdgeAfterRemoval(firstEar.c);
-      return true;
-    }
+ 
 
     // Step 3: Ear Closing
     // loop through the set of ears, finding the one
