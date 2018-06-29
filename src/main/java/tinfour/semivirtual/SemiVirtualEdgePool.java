@@ -436,7 +436,18 @@ class SemiVirtualEdgePool implements Iterable<IQuadEdge> {
    */
   @Override
   public Iterator<IQuadEdge> iterator() {
+    return getIterator(true);
+  }
+    
+  /**
+   * Constructs an iterator that will optionally skip ghost edges.
+   *
+   * @param includeGhostEdgess indicates that ghost edges are included.
+   * @return a valid instance of an iterator
+   */
+  Iterator<IQuadEdge> getIterator(boolean includeGhostEdges) {
     return new Iterator<IQuadEdge>() {
+      boolean skipGhostEdges = !includeGhostEdges;
       SemiVirtualEdgePool pool;
       int iEdge;
       int iPage;
@@ -445,17 +456,31 @@ class SemiVirtualEdgePool implements Iterable<IQuadEdge> {
 
       private boolean processHasNext(int pageIndex, int edgeIndex) {
         iPage = pageIndex;
-        iEdge = edgeIndex + 1;
-        while (iEdge >= map.length) {
-          if (iPage == pages.length - 1) {
-            return false;
+        iEdge = edgeIndex;
+        while (iPage < pages.length) {
+          iEdge++;
+          if (iEdge >= map.length) {
+            iPage++;
+            iEdge = -1;
+            if (iPage == pages.length) {
+              return false;
+            }
+            map = pages[iPage].getAllocations();
+            continue;
+          } else {
+            // there is an edge, do we need to test whether it's a ghost?
+            if (skipGhostEdges) {
+              int i = map[iEdge]&INDEX_MASK;
+              Vertex[] v = pages[iPage].vertices;
+              if (v[i] == null || v[i + 1] == null) {
+                continue;
+              }
+            }
+            return true;
           }
-          iPage++;
-          iEdge = 0;
-          map = pages[iPage].getAllocations();
         }
 
-        return true;
+        return false;
       }
 
       @Override
@@ -476,10 +501,18 @@ class SemiVirtualEdgePool implements Iterable<IQuadEdge> {
         return e;
       }
 
+      /**
+       * Overrides the default remove operation with an implementation that
+       * throws an UnsupportedOperationException. Tinfour requires a specific
+       * set of relationships between edges, and removing an edge from an
+       * iterator would damage the overall structure and result in faulty
+       * behavior. Therefore, Tinfour iterators do not support remove
+       * operations.
+       */
       @Override
       public void remove() {
         throw new UnsupportedOperationException(
-          "The remove method is not supported by this iterator");
+                "Remove operation not supported by this iterator");
       }
 
     };

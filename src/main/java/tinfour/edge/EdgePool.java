@@ -409,21 +409,41 @@ public class EdgePool implements Iterable<IQuadEdge> {
 
   @Override
   public Iterator<IQuadEdge> iterator() {
+    return getIterator(true);
+  }
+
+  /**
+   * Constructs an iterator that will optionally skip 
+   * ghost edges. 
+   * @param includeGhostEdges indicates that ghost edges are 
+   * to be included in the iterator production.
+   * @return a valid instance of an iterator
+   */
+  public Iterator<IQuadEdge> getIterator(final boolean includeGhostEdges) {
     Iterator<IQuadEdge> ix = new Iterator<IQuadEdge>() {
       QuadEdge currentEdge;
       int nextPage;
       int nextEdge;
+      boolean  skipGhosts = !includeGhostEdges;
       boolean hasNext = findNextEdge(0, -1);
 
       private boolean findNextEdge(int iPage, int iEdge) {
         nextPage = iPage;
-        nextEdge = iEdge + 1;
+        nextEdge = iEdge;
         while (nextPage < pages.length) {
+          nextEdge++;
           if (nextEdge < pages[nextPage].nAllocated) {
+            if (skipGhosts) {
+              IQuadEdge e = pages[nextPage].edges[nextEdge];
+              if (e.getA()==null || e.getB()==null) {
+                continue;
+              }
+            }
             return true;
+          } else {
+            nextEdge = -1;
+            nextPage++;
           }
-          nextPage++;
-          nextEdge = 0;
         }
         return false;
       }
@@ -433,35 +453,18 @@ public class EdgePool implements Iterable<IQuadEdge> {
         return hasNext;
       }
 
+      /**
+       * Overrides the default remove operation with an implementation that
+       * throws an UnsupportedOperationException. Tinfour requires a specific
+       * set of relationships between edges, and removing an edge from an
+       * iterator would damage the overall structure and result in faulty
+       * behavior. Therefore, Tinfour iterators do not support remove
+       * operations.
+       */
       @Override
       public void remove() {
-        if (currentEdge == null) {
-          return;
-        }
-
-         // the deallocation operation will potentially move
-        // a QuadEdge into the place of the one to be deleted.
-        // so the next QuadEdge flags will have to be adjusted.
-        // If the iEdge is less than nAllocated-1, this shift will
-        // happen and so we reset the "next" flags to point at the
-        // page and QuadEdge-index of the current QuadEdge.
-        // But if the iEdge is greater than or equal to nAllocated-1,
-        // we're deleting the last QuadEdge on the page and we need
-        // to move to the next page to find the next QuadEdge.
-        int refIndex = currentEdge.getIndex()/2;
-        int iPage = currentEdge.getIndex() / pageSize;
-        int iEdge = refIndex- iPage* pageSize;
-        if (hasNext) {
-          nextPage = iPage;
-          nextEdge = iEdge;
-          if (nextEdge >= pages[iPage].nAllocated - 1) {
-            hasNext = findNextEdge(iPage + 1, -1);
-          }
-        }
-
-        deallocateEdge(currentEdge);
-        currentEdge = null;
-
+        throw new UnsupportedOperationException(
+                "Remove operation not supported by this iterator");
       }
 
       @Override

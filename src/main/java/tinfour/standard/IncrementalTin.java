@@ -186,7 +186,8 @@ import tinfour.edge.QuadEdgeConstants;
  * <p>
  * Because of the unusually demanding performance considerations related to the
  * use of this class, object instances are frequently reused and, thus, are
- * subject to change. Thus the implementation provides little protection for
+ * subject to change. Consequently, this implementation provides little 
+ * protection against improper method calls by
  * applications accessing its data. In particular, applications must never
  * modify an object (such as an edge) obtained from instances of this class.
  * Furthermore, they must assume that any addition or removal of vertices to the
@@ -1289,6 +1290,16 @@ public class IncrementalTin implements IIncrementalTin {
     return edgePool.iterator();
   }
 
+  @Override
+  public Iterable<IQuadEdge>edges(){
+    return new Iterable<IQuadEdge>(){
+      @Override
+      public Iterator<IQuadEdge> iterator() {
+         return edgePool.getIterator(false);
+      }
+    };
+  }
+  
   @Override
   public int getMaximumEdgeAllocationIndex() {
     return edgePool.getMaximumAllocationIndex();
