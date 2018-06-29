@@ -15,7 +15,7 @@ Tinfour is a software library written in Java that provides tools for constructi
 and applying Triangulated Irregular Networks (TINs) that conform to the Delaunay
 criterion. Because it is intended to process large data sets,
 the implementation gives a great deal of attention to performance and
-memory use. On a conventional laptop it is capable of processing sample
+memory use. On a conventional laptop, Tinfour is capable of processing sample
 points at a rate of better than one million points per second.
 
 The Tinfour source code includes extensive documentation. This project also includes
@@ -106,7 +106,7 @@ packages are included with the Tinfour download.
 Most of the Tinfour code compiles under Java 7, but some of the
 utility classes required Java 8.  The laszip4j library used to
 read compressed lidar files also requires Java 8.
-libraries requires Java 8.  T 
+libraries requires Java 8. 
 
 ### Configuring Tinfour in an IDE ###
 Configuring Tinfour in an IDE is pretty simple:

@@ -60,10 +60,7 @@ public class BootstrapUtility {
    * of the length of the nominal point spacing.
    */
   private static final double MIN_AREA_FACTOR = Math.sqrt(3.0) / 4.0 / 64.0;
-
-  final private double halfPlaneThreshold;
-  final private double halfPlaneThresholdNeg;
-
+ 
   /**
    * The threshold for determining whether the initial random-triangle selection
    * produced a sufficiently robust triangle to begin triangulation. The
@@ -73,8 +70,6 @@ public class BootstrapUtility {
   final private double triangleMinAreaThreshold;
 
   public BootstrapUtility(Thresholds thresholds) {
-    halfPlaneThreshold = thresholds.getHalfPlaneThreshold();
-    halfPlaneThresholdNeg = -halfPlaneThreshold;
     triangleMinAreaThreshold
             = thresholds.getNominalPointSpacing() * MIN_AREA_FACTOR;
   }
@@ -91,6 +86,7 @@ public class BootstrapUtility {
    * @param geoOp a valid instance constructed with appropriate thresholds
    * @return if successful, a valid array of the initial three vertices.
    */
+  @SuppressWarnings("PMD.ReturnEmptyArrayRatherThanNull")
   public Vertex[] bootstrap(final List<Vertex> list, GeometricOperations geoOp) {
 
     final Random random = new Random(0);

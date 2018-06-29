@@ -51,14 +51,14 @@ package tinfour.common;
  * or BoundedRangeModel would invoke their setValue() methods using
  * the SwingUtility class to ensure the operation executed in the
  * Event Dispatch Thread.
- * <code>
+ * <pre>
  *     void reportProgress(int progressValueInPercent){
  *         final int value = progressValueInPercent;
  *         SwingUtilities.invokeLater(new Runnable(){
  *              setValue(value);
  *         });
  *     }
- * </code>
+ * </pre>
  *
  */
 public interface IMonitorWithCancellation {

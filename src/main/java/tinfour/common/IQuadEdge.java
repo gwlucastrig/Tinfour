@@ -210,10 +210,10 @@ public interface IQuadEdge {
   /**
    * Gets an instance of an iterable that performs a pinwheel operation.
    * This instance may be used in a Java for statement
-   * <code>
+   * <pre>
    *    for(IQuadEdge e: startingEdge.pinwheel()){
    *    }
-   * </code>
+   * </pre>
    * @return a valid Iterable.
    */
   public Iterable<IQuadEdge>pinwheel();

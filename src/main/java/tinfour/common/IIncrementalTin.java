@@ -96,7 +96,8 @@ public interface IIncrementalTin {
   List<IQuadEdge> getEdges();
 
   /**
-   * Gets an iterator for stepping through the list of current edges.
+   * Gets an iterator for stepping through the collection of edges
+   * currently stored in the TIN.
    * <p>
    * <strong>Warning:</strong> For efficiency purposes, the edges
    * returned by this routine are the same objects as those currently being used
@@ -111,6 +112,27 @@ public interface IIncrementalTin {
    * @return a valid iterator.
    */
   public Iterator<IQuadEdge> getEdgeIterator();
+  
+  
+  /**
+   * Provides a convenience implementation of a wrapper class
+   * that can be used in a Java enhanced-loop statement. The
+   * edges produced by this Iterator are filtered so that the
+   * fictitious edges (ghost edges) are not produced by the
+   * iteration.  For example, this method could be used in the
+   * following manner:
+   * <pre>
+   *     IIncremntal tin = // some implementation
+   *     for(IQuadEdge e: tin.edges(){
+   *            // some processing logic
+   *     }
+   * </pre>
+   * 
+   * <p>Please see the API documentation for getEdgeIterator() for
+   * cautions regarding the use of this method.
+   * @return a valid instance.
+   */
+  public Iterable<IQuadEdge>edges();
 
   /**
    * Gets the maximum index of the currently allocated edges. This
