@@ -28,6 +28,8 @@
  */
 package tinfour.common;
 
+import java.awt.geom.Rectangle2D;
+
 /**
  * Provides center coordinates and radius for a circumcircle.
  */
@@ -60,6 +62,14 @@ public class Circumcircle {
    */
   public double getRadiusSq() {
     return r2;
+  }
+  
+  /**
+   * Gets the radius of the circumcircle
+   * @return for a non-degenerate triangle, a positive floating point value
+   */
+  public double getRadius(){
+      return Math.sqrt(r2);
   }
 
   /**
@@ -114,34 +124,7 @@ public class Circumcircle {
       circle.r2 = Double.POSITIVE_INFINITY;
       return circle;
     }
-    double bx, by, cx, cy, d, c2, b2;
-    double x0 = a.x;
-    double y0 = a.y;
-
-    bx = b.x - x0;
-    by = b.y - y0;
-    cx = c.x - x0;
-    cy = c.y - y0;
-
-    d = 2 * (bx * cy - by * cx);
-    if (d < MIN_TRIG_AREA) {
-      // the triangle is close to the degenerate case
-      // (all 3 points in a straight line)
-      // even if determinant d is not zero, numeric precision
-      // issues might lead to a very poor computation for
-      // the circumcircle.
-      circle.centerX = Double.POSITIVE_INFINITY;
-      circle.centerY = Double.POSITIVE_INFINITY;
-      circle.r2 = Double.POSITIVE_INFINITY;
-      return circle;
-    }
-    b2 = bx * bx + by * by;
-    c2 = cx * cx + cy * cy;
-    circle.centerX = (cy * b2 - by * c2) / d;
-    circle.centerY = (bx * c2 - cx * b2) / d;
-    circle.r2 = circle.centerX * circle.centerX + circle.centerY + circle.centerY;
-    circle.centerX += a.x;
-    circle.centerY += a.y;
+    circle.compute(a.getX(), a.getY(), b.getX(), b.getY(), c.getX(), c.getY());
 
     return circle;
   }
@@ -169,35 +152,8 @@ public class Circumcircle {
       r2 = Double.POSITIVE_INFINITY;
       return false;
     }
-    double bx, by, cx, cy, d, c2, b2;
-    double x0 = a.x;
-    double y0 = a.y;
-
-    bx = b.x - x0;
-    by = b.y - y0;
-    cx = c.x - x0;
-    cy = c.y - y0;
-
-    d = 2 * (bx * cy - by * cx);
-    if (d < MIN_TRIG_AREA) {
-      // the triangle is close to the degenerate case
-      // (all 3 points in a straight line)
-      // even if determinant d is not zero, numeric precision
-      // issues might lead to a very poor computation for
-      // the circumcircle.
-      this.centerX = Double.POSITIVE_INFINITY;
-      this.centerY = Double.POSITIVE_INFINITY;
-      r2 = Double.POSITIVE_INFINITY;
-      return false;
-    }
-    b2 = bx * bx + by * by;
-    c2 = cx * cx + cy * cy;
-    centerX = (cy * b2 - by * c2) / d;
-    centerY = (bx * c2 - cx * b2) / d;
-    r2 = this.centerX * this.centerX + this.centerY + this.centerY;
-    centerX += a.x;
-    centerY += a.y;
-    return true;
+    compute(a.getX(), a.getY(), b.getX(), b.getY(), c.getX(), c.getY());
+    return Double.isFinite(r2); // also covers NaN case
   }
 
   /**
@@ -232,7 +188,7 @@ public class Circumcircle {
     cy = y2 - y0;
 
     d = 2 * (bx * cy - by * cx);
-    if (d < MIN_TRIG_AREA) {
+    if (Math.abs(d) < MIN_TRIG_AREA) {
       // the triangle is close to the degenerate case
       // (all 3 points in a straight line)
       // even if determinant d is not zero, numeric precision
@@ -247,7 +203,7 @@ public class Circumcircle {
     c2 = cx * cx + cy * cy;
     this.centerX = (cy * b2 - by * c2) / d;
     this.centerY = (bx * c2 - cx * b2) / d;
-    r2 = this.centerX * this.centerX + this.centerY + this.centerY;
+    r2 = this.centerX * this.centerX + this.centerY * this.centerY;
     this.centerX += x0;
     this.centerY += y0;
   }
@@ -266,4 +222,19 @@ public class Circumcircle {
     this.r2 = r2;
   }
 
+  
+  @Override
+  public String toString(){
+      return String.format("(%7.4f,%7.4f) r=%6.4f", 
+              centerX, centerY, Math.sqrt(r2));
+  }
+  
+  /**
+   * Gets the bounds of the circumcircle.
+   * @return 
+   */
+  public Rectangle2D getBounds(){
+      double r = getRadius();
+      return new Rectangle2D.Double(centerX-r, centerY-r, 2*r, 2*r);
+  }
 }
