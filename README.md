@@ -24,6 +24,7 @@ of the software with enough detail to support potential developers
 who may wish to contribute code or employ Tinfour in their own work. For more details, see
 [Data Elements and Algorithms for the Tinfour Libary](http://gwlucastrig.github.io/Tinfour/doc/TinfourAlgorithmsAndDataElements.pdf "Data Elements and Algorithms").
 The Tinfour API documentation is available at [Tinfour API](http://gwlucastrig.github.io/Tinfour/doc/javadoc/ "Javadoc for Tinfour API").
+And, to support our user community, we've recently started a mailing list at the [Tinfour Users Group](https://groups.google.com/forum/#!forum/tinfour-users-group). 
 
 ### The Tinfour Viewer ###
 When someone first sees a project like Tinfour, they might reasonably ask
