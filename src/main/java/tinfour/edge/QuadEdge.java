@@ -266,6 +266,7 @@ public class QuadEdge implements IQuadEdge {
    *
    * @return a valid reference
    */
+  @Override
   public final QuadEdge getDualFromReverse() {
     return r.dual;
   }
