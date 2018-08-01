@@ -65,10 +65,10 @@ class QuadEdgePartner extends QuadEdge {
     return dual.index+1;
   }
 
+ 
   @Override
-  public void setIndex(final int index) {
+  protected void setIndex(final int index) {
     dual.index = index;
-
   }
 
   @Override
