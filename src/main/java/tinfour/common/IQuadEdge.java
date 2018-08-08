@@ -206,6 +206,20 @@ public interface IQuadEdge {
    * Sets the constrained region membership flag for the edge to true.
    */
   public void setConstrainedRegionInteriorFlag( );
+  
+  /**
+   * Sets the synthetic flag for the edge. Synthetic edges are
+   * those that do not arise naturally from the TIN-building logic but
+   * are created by special operations.
+   * @param status true if the edge is synthetic; otherwise, false.
+   */
+  public void setSynthetic(boolean status);
+  
+  /**
+   * Indicates whether the synthetic flag is set for the edge.
+   * @return true if the edge is synthetic; otherwise, false.
+   */
+  public boolean isSynthetic();
 
   /**
    * Gets an instance of an iterable that performs a pinwheel operation.

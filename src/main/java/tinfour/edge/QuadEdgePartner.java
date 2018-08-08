@@ -43,6 +43,7 @@ import static tinfour.edge.QuadEdgeConstants.CONSTRAINT_INDEX_MAX;
 import static tinfour.edge.QuadEdgeConstants.CONSTRAINT_REGION_INTERIOR_FLAG;
 import static tinfour.edge.QuadEdgeConstants.CONSTRAINT_REGION_MEMBER_FLAGS;
 import static tinfour.edge.QuadEdgeConstants.CONSTRAINT_REGION_BORDER_FLAG;
+import static tinfour.edge.QuadEdgeConstants.SYNTHETIC_EDGE_FLAG;
 
 
 /**
@@ -198,4 +199,18 @@ class QuadEdgePartner extends QuadEdge {
     index |= CONSTRAINT_REGION_INTERIOR_FLAG;
   }
  
+  
+  @Override
+  public void setSynthetic(boolean status) {
+    if (status) {
+      index |= SYNTHETIC_EDGE_FLAG;
+    } else {
+      index &= ~SYNTHETIC_EDGE_FLAG;
+    }
+  }
+
+  @Override
+  public boolean isSynthetic() {
+    return (index & SYNTHETIC_EDGE_FLAG) != 0;
+  }
 }

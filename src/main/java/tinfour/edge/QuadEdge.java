@@ -108,6 +108,7 @@ import tinfour.common.IQuadEdge;
 import tinfour.common.Vertex;
 import static tinfour.edge.QuadEdgeConstants.CONSTRAINT_REGION_INTERIOR_FLAG;
 import static tinfour.edge.QuadEdgeConstants.CONSTRAINT_REGION_BORDER_FLAG;
+import static tinfour.edge.QuadEdgeConstants.SYNTHETIC_EDGE_FLAG;
 
 /**
  * A representation of an edge with forward and reverse links on one
@@ -527,6 +528,21 @@ public class QuadEdge implements IQuadEdge {
     dual.index |= CONSTRAINT_REGION_INTERIOR_FLAG;
   }
 
+  @Override
+  public void setSynthetic(boolean status){
+    if(status){
+      dual.index |= SYNTHETIC_EDGE_FLAG;
+    }else{
+      dual.index &= ~SYNTHETIC_EDGE_FLAG;
+    }
+  }
+  
+  @Override
+  public boolean isSynthetic(){
+    return (dual.index&SYNTHETIC_EDGE_FLAG)!=0;
+  }
+  
+  
   @Override
   public Iterable<IQuadEdge> pinwheel() {
     return new QuadEdgePinwheel(this);
