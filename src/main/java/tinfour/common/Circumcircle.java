@@ -231,7 +231,7 @@ public class Circumcircle {
   
   /**
    * Gets the bounds of the circumcircle.
-   * @return 
+   * @return a valid rectangle instance.
    */
   public Rectangle2D getBounds(){
       double r = getRadius();

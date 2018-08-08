@@ -604,5 +604,28 @@ public final class SemiVirtualEdge implements IQuadEdge {
     return new QuadEdgePinwheel(this);
   }
 
+  @Override
+  public void setSynthetic(boolean status) {
+    int ix = indexOnPage / 2;
+    int c[] = page.readySynthetic();
+    int cIndex = ix / 32;
+    int cBit = ix & 0x1F;
+    int cMask = (1 << cBit);
+    if (status) {
+      c[cIndex] |= cMask;
+    } else {
+      c[cIndex] &= cMask;
+    }
+  }
+
+  @Override
+  public boolean isSynthetic() {
+    int ix = indexOnPage / 2;
+    int c[] = page.readySynthetic();
+    int cIndex = ix / 32;
+    int cBit = ix & 0x1F;
+    int cMask = (1 << cBit);
+    return (c[cIndex] & cMask) != 0;
+  }
 
 }

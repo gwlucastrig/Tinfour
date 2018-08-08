@@ -60,6 +60,7 @@ class SemiVirtualEdgePage {
   final int[] links;
   short[] freePairs;
   int []constraints;
+  int []synthetic;
   SemiVirtualEdgePage nextPage;
 
   SemiVirtualEdgePage(int pageID) {
@@ -186,11 +187,18 @@ class SemiVirtualEdgePage {
   }
 
   @SuppressWarnings("PMD.MethodReturnsInternalArray")
-  int [] readyConstraints() {
-     if(constraints==null){
-       constraints = new int[PAIRS_PER_PAGE];
-     }
-     return constraints;
+  int[] readyConstraints() {
+    if (constraints == null) {
+      constraints = new int[PAIRS_PER_PAGE];
+    }
+    return constraints;
   }
 
+  @SuppressWarnings("PMD.MethodReturnsInternalArray")
+  int[] readySynthetic() {
+    if (synthetic == null) {
+      synthetic = new int[(PAIRS_PER_PAGE + 31) / 32];
+    }
+    return synthetic;
+  }
 }

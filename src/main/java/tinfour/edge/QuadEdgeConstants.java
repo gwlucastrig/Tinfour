@@ -77,4 +77,9 @@ public final class QuadEdgeConstants {
    */
   public static final int CONSTRAINT_REGION_MEMBER_FLAGS 
            = (CONSTRAINT_REGION_BORDER_FLAG | CONSTRAINT_REGION_INTERIOR_FLAG);
+  
+  /**
+   * A bit indicating that an edge has been marked as synthetic.
+   */
+  public static final int SYNTHETIC_EDGE_FLAG = (1<<28);
 }
