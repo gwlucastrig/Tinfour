@@ -48,8 +48,8 @@ import tinfour.edge.QuadEdge;
  * covers only a finite domain on the coordinate plane (unlike a true Voronoi
  * Diagram, which covers an infinite domain).
  * <p>
- * <strong>This class is under development and is subject to 
- * changes in its API and behavior.</strong>
+ * <strong>This class is under development and is subject to changes in its API
+ * and behavior.</strong>
  */
 public class LimitedVoronoi {
 
@@ -67,13 +67,14 @@ public class LimitedVoronoi {
 
   final private List<Vertex> circleList = new ArrayList<>();
 
- final  private List<ThiessenPolygon> polygons = new ArrayList<>();
+  final private List<ThiessenPolygon> polygons = new ArrayList<>();
 
   private double maxRadius = -1;
 
   /**
-   * Constructs an instance of a Voronoi Diagram that corresponds to 
-   * the input Delaunay Triangulation.
+   * Constructs an instance of a Voronoi Diagram that corresponds to the input
+   * Delaunay Triangulation.
+   *
    * @param delaunayTriangulation a valid instance of a Delaunay Triangulation
    * implementation.
    */
@@ -91,7 +92,7 @@ public class LimitedVoronoi {
             r2d.getY(),
             r2d.getWidth(),
             r2d.getHeight());
-    
+
     this.tin = delaunayTriangulation;
     this.edgePool = new EdgePool();
     buildStructure();
@@ -430,7 +431,7 @@ public class LimitedVoronoi {
       index = d.getIndex();
       if (!visited[index] && parts[index] != null) {
         scratch.clear();
-        Vertex hub = e.getA();
+        Vertex hub = d.getA();
         QuadEdge prior = null;
         QuadEdge first = null;
         for (IQuadEdge p : d.pinwheel()) {
@@ -453,27 +454,28 @@ public class LimitedVoronoi {
       }
     }
   }
-  
+
   /**
    * Prints diagnostic statistics for the Voronoi Diagram object.
+   *
    * @param ps a valid print stream instance.
    */
   public void printDiagnostics(PrintStream ps) {
     int nClosed = 0;
     double sumArea = 0;
-    for(ThiessenPolygon p: polygons){
+    for (ThiessenPolygon p : polygons) {
       double a = p.getArea();
-      if(!Double.isInfinite(a)){
-        sumArea+=a;
+      if (!Double.isInfinite(a)) {
+        sumArea += a;
         nClosed++;
       }
     }
-    int nOpen = polygons.size()-nClosed;
+    int nOpen = polygons.size() - nClosed;
     ps.format("Limited Voronoi Diagram%n");
     ps.format("   Polygons:   %8d%n", polygons.size());
     ps.format("     Open:     %8d%n", nOpen);
     ps.format("     Closed:   %8d%n", nClosed);
-    ps.format("     Avg Area: %13.4f%n", sumArea/nClosed);
+    ps.format("     Avg Area: %13.4f%n", sumArea / nClosed);
     ps.format("   Vertices:   %8d%n", circleList.size());
     ps.format("   Edges:      %8d%n", edgePool.size());
     ps.format("   Voronoi Bounds%n");
@@ -546,7 +548,5 @@ public class LimitedVoronoi {
   public IIncrementalTin getTin() {
     return tin;
   }
-
-
 
 }
