@@ -31,6 +31,8 @@
  * 12/2014  G. Lucas    Modified to implement ISamplePoint interface
  * 08/2015  G. Lucas    To reduce memory use, removed mark and reference elements,
  *                        reduced z to a float.
+ * 08/2018  G. Lucas    Redefined element reserved2 to become colorIndex
+ *                        in support of graph-coloring algorithms.
  *
  * Notes:
  *
@@ -139,9 +141,9 @@ public class Vertex implements ISamplePoint {
    */
   protected byte reserved1;
   /**
-   * An unused field reserved for use by applications and derived classes
+   * The color index used for graph coloring algorithms
    */
-  protected byte reserved2;
+  private byte colorIndex;
 
   /**
    * Construct a vertex with the specified coordinates and z value. Intended
@@ -388,6 +390,29 @@ public class Vertex implements ISamplePoint {
    */
   public boolean isConstraintMember() {
     return (status & BIT_CONSTRAINT) != 0;
+  }
+
+  /**
+   * Gets the color index for the vertex. The color index field is provided
+   * in support of graph-coloring algorithms. 
+   * @return  an integer value in the range 0 to 255
+   */
+  public int getColorIndex() {
+    return colorIndex;
+  }
+
+  /**
+   * Sets the color index for the vertex. The color index field is provided
+   * in support of graph-coloring algorithms.  Values in the range 
+   * 0 to 255 are supported. 
+   * @param colorIndex a value in the range 0 to 255
+   */
+  public void setColorIndex(int colorIndex) {
+    if((colorIndex&0xffffff00)!=0){
+      throw new IllegalArgumentException(
+              "Color index out of valid range [0..255]");
+    }
+    this.colorIndex = (byte)(colorIndex&0xff);
   }
 
 }

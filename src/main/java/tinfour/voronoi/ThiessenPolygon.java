@@ -25,7 +25,7 @@ import tinfour.common.Vertex;
 public class ThiessenPolygon {
 
   final boolean open;
-  final Vertex vertex;
+  private final Vertex vertex;
   final IQuadEdge[] edges;
   final double area;
 
@@ -76,5 +76,13 @@ public class ThiessenPolygon {
    */
   public double getArea() {
     return area;
+  }
+
+  /**
+   * Gets the central vertex of the polygon.
+   * @return the vertex 
+   */
+  public Vertex getVertex() {
+    return vertex;
   }
 }
