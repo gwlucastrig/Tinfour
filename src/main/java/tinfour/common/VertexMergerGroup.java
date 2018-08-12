@@ -234,4 +234,21 @@ public class VertexMergerGroup extends Vertex {
     return list.contains(v);
   }
 
+  /**
+   * Sets the color index for the vertex. The color index field is provided in
+   * support of graph-coloring algorithms. Values in the range 0 to 255 are
+   * supported.
+   * <p>
+   * This method will set the color index for all vertices contain within the
+   * merger group.
+   *
+   * @param colorIndex a value in the range 0 to 255
+   */
+  @Override
+  public void setColorIndex(int colorIndex) {
+    super.setColorIndex(colorIndex);
+    for (Vertex v : list) {
+      v.setColorIndex(colorIndex);
+    }
+  }
 }
