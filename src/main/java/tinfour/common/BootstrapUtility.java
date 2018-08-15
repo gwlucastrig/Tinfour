@@ -113,7 +113,7 @@ public class BootstrapUtility {
         // pick three unique vertices at random
         for (int i = 0; i < 3; i++) {
           while (true) {
-            int index = (int) (n * random.nextDouble());
+            int index = random.nextInt(n); // (int) (n * random.nextDouble());
             vtest[i] = list.get(index);
             for (int j = 0; j < i; j++) {
               if (vtest[j] == vtest[i]) {

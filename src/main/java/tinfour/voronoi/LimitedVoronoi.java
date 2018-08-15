@@ -24,6 +24,10 @@
  * 07/2018  G. Lucas  Initial implementation 
  *
  * Notes:
+ *   At this time, the only reason that this class retains the defining
+ *   Delaunay Triangulation after the structure is constructed is to 
+ *   provide an efficient way for performing polygon lookups.  Given an
+ *   efficient alternate, there would be no reason to retain the TIN.
  *
  * -----------------------------------------------------------------------
  */
@@ -36,8 +40,11 @@ import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
 import tinfour.common.Circumcircle;
+import tinfour.common.GeometricOperations;
 import tinfour.common.IIncrementalTin;
+import tinfour.common.INeighborEdgeLocator;
 import tinfour.common.IQuadEdge;
+import tinfour.common.Thresholds;
 import tinfour.common.Vertex;
 import tinfour.edge.EdgePool;
 import tinfour.edge.QuadEdge;
@@ -71,6 +78,12 @@ public class LimitedVoronoi {
 
   private double maxRadius = -1;
 
+  private final int[] edgeToPolygon;
+
+  private final INeighborEdgeLocator locator;
+  
+  private final  GeometricOperations geoOp;
+
   /**
    * Constructs an instance of a Voronoi Diagram that corresponds to the input
    * Delaunay Triangulation.
@@ -94,7 +107,16 @@ public class LimitedVoronoi {
             r2d.getHeight());
 
     this.tin = delaunayTriangulation;
-    this.edgePool = new EdgePool();
+    edgePool = new EdgePool();
+
+    int maxEdgeIndex = tin.getMaximumEdgeAllocationIndex() + 1;
+    edgeToPolygon = new int[maxEdgeIndex];
+    Arrays.fill(edgeToPolygon, -1);
+    locator = tin.getNeighborEdgeLocator();
+    
+    Thresholds thresholds = tin.getThresholds();
+    geoOp = new GeometricOperations(thresholds);
+
     buildStructure();
   }
 
@@ -322,6 +344,8 @@ public class LimitedVoronoi {
       visited[index ^ 0x01] = true;
     }
 
+    int polygonIndex = 0;
+
     // first build the open loops starting at perimeters edges
     for (IQuadEdge e : perimeter) {
       int index = e.getIndex();
@@ -330,11 +354,13 @@ public class LimitedVoronoi {
       }
       scratch.clear();
       Vertex hub = e.getA();
+      polygonIndex = polygons.size();
       QuadEdge prior = null;
       QuadEdge first = null;
       for (IQuadEdge p : e.pinwheel()) {
         index = p.getIndex();
         visited[index] = true;
+        edgeToPolygon[index] = polygonIndex;
         QuadEdge q = parts[index];
         if (q == null) {
           // we've reached the exterior, the pinwheel would
@@ -407,11 +433,13 @@ public class LimitedVoronoi {
       if (!visited[index] && parts[index] != null) {
         scratch.clear();
         Vertex hub = e.getA();
+        polygonIndex = polygons.size();
         QuadEdge prior = null;
         QuadEdge first = null;
         for (IQuadEdge p : e.pinwheel()) {
           index = p.getIndex();
           visited[index] = true;
+          edgeToPolygon[index] = polygonIndex;
           QuadEdge q = parts[p.getIndex()];
           scratch.add(q);
           if (prior == null) {
@@ -432,11 +460,13 @@ public class LimitedVoronoi {
       if (!visited[index] && parts[index] != null) {
         scratch.clear();
         Vertex hub = d.getA();
+        polygonIndex = polygons.size();
         QuadEdge prior = null;
         QuadEdge first = null;
         for (IQuadEdge p : d.pinwheel()) {
           index = p.getIndex();
           visited[index] = true;
+          edgeToPolygon[index] = polygonIndex;
           QuadEdge q = parts[p.getIndex()];
           scratch.add(q);
           if (prior == null) {
@@ -450,7 +480,6 @@ public class LimitedVoronoi {
           first.setReverse(prior);
           polygons.add(new ThiessenPolygon(hub, scratch, false));
         }
-
       }
     }
   }
@@ -539,14 +568,207 @@ public class LimitedVoronoi {
     return list;
   }
 
+
   /**
-   * Gets the instance of IIncrementalTin that was used to create this Voronoi
-   * Diagram object.
+   * Gets the polygon that contains the specified coordinate point (x,y).
+   * <p>
+   * <strong>Note: </strong>Although a true Voronoi Diagram covers the entire
+   * plane, the Limited Voronoi class is has a finite domain. If the specified
+   * coordinates are outside the bounds of this instance, no polygon will be
+   * found and a null result will be returned.
    *
-   * @return a valid IIncrementalTin instance.
+   * @param x a valid floating point value
+   * @param y a valid floating point value
+   * @return the containing polygon or a null if none is found.
    */
-  public IIncrementalTin getTin() {
-    return tin;
+  public ThiessenPolygon getContainingPolygon(double x, double y) {
+    if(!bounds.contains(x, y)){
+      return null;
+    }
+    IQuadEdge edge = locateEdge(x, y);
+    if (edge == null) {
+      return null;
+    }
+
+    int polygonIndex = edgeToPolygon[edge.getIndex()];
+    if (polygonIndex < 0) {
+      return null;
+    }
+    return polygons.get(polygonIndex);
   }
 
+  /**
+   * Locate an edge which begins with the specified vertex.
+   *
+   * @param locator the edge locator associated with the tin
+   * @param v a valid vertex
+   * @return a valid edge
+   */
+  private IQuadEdge locateEdge(double x, double y) {
+    // We have in memory an edge-to-polygon table which 
+    // maps the index of an edge from the Delaunay Triangulation
+    // to a polygon.  So, to find the polygon that contains (x,y),
+    // we need to find an edge that starts with the vertex that 
+    // 
+    // Tinfour provides a utility called INeighborEdgeLocator that
+    // efficiently traverses the Delaunay Triangulation and finds
+    // the triangle that contains (x,y).  Since Tinfour doesn't
+    // implement a class or data element that represents a triangle,
+    // the output from the locator is an edge. That edge belongs to
+    // the triangle that contains (x,y).   Now, which of the three edges
+    // that it picks is arbitrary.   So the edge it produces 
+    // may not be the edge that is closes to (x,y).
+    // In fact, the triangle itself may not necessary include
+    // the vertex that is closest to (x,y).  If (x,y) is close
+    // to an edge, the opposite vertex from the adjacent triangle may be closer
+    // than the one in the triangle.
+    //    Thus the logic below has to test both the vertices of the
+    // containing triangle -- A, B, C -- and those from the immediately
+    // adjacent triangles to see which one is closest.  Vertex A and B
+    // are guaranteed to not be null, but many of the others could be
+    // null.  So the tests below do perform null checks.
+
+    IQuadEdge e = locator.getNeigborEdge(x, y);
+    if (e == null) {
+      return null;  // not expected to happen
+    }
+    IQuadEdge f = e.getForward();
+    IQuadEdge r = e.getReverse();
+
+
+    Vertex A = e.getA();
+    Vertex B = f.getA();
+    Vertex C = r.getA();
+    if (C == null) {
+      // the query point is outside the convex hull of the Delaunay Triangulation
+      // the locator produced the exterior-side of the perimeter edge.
+      // we need to take its dual so that we pick up the inside vertex C.
+      e = e.getDual();
+      f = e.getForward();
+      r = e.getReverse();
+      A = e.getA();
+      B = f.getA();
+      C = r.getA();
+    }
+    
+    IQuadEdge d = e.getReverseFromDual();
+    IQuadEdge g = f.getReverseFromDual();
+    IQuadEdge h = r.getReverseFromDual();
+    Vertex D = d.getA();
+    Vertex G = g.getA();
+    Vertex H = h.getA();
+     
+    double dA = A.getDistanceSq(x, y);
+    double dB = B.getDistanceSq(x, y);
+    
+    double minD2;
+    IQuadEdge minEdge;
+    
+    // we're guaranteed that A,B are not null. But after that,
+    // all bets are off.
+    if (dA < dB) {
+      minD2 = dA;
+      minEdge = e;
+    } else {
+      minD2 = dB;
+      minEdge = f;
+    }
+
+    if (C != null) {
+      double dC = C.getDistanceSq(x, y);
+      if (dC < minD2) {
+        minD2 = dC;
+        minEdge = r;
+      }
+    }
+    
+    if (D != null) {
+      double dD = D.getDistanceSq(x, y);
+      if (dD < minD2) {
+        minD2 = dD;
+        minEdge = d;
+      }
+    }
+    
+    if (G != null) {
+      double dG = G.getDistanceSq(x, y);
+      if (dG < minD2) {
+        minD2 = dG;
+        minEdge = g;
+      }
+    }
+    
+    if (H != null) {
+      double dH = H.getDistanceSq(x, y);
+      if (dH < minD2) {
+        minD2 = dH;
+        minEdge = h;
+      }
+    }
+
+    return minEdge;
+            
+     
+    // There is a flaw in the edge locator.getNeighborEdge() logic. 
+    // When (x,y) is outside the convex hull for the Delaunay Triangulation,
+    // it does not necessarily locate the best edge (the edge that most
+    // nearly subtends the coordinate point).   So we have to do some 
+    // extra work.  This is a problem that should be improved later.
+    // 
+    // Compare distances for edge e with those from the prior and next
+    // perimeter edges.
+//    IQuadEdge p = r.getReverseFromDual();   // prior
+//    IQuadEdge n = f.getForwardFromDual(); // next
+//    TestResult eTest = testPerimeterEdge(e, x, y);
+//    TestResult pTest = testPerimeterEdge(p, x, y);
+//    TestResult nTest = testPerimeterEdge(n, x, y);
+//
+//    if(eTest.d2<pTest.d2){
+//      // compare eTest with nTest
+//      if(eTest.d2<nTest.d2){
+//        return eTest.edge;
+//      }else{
+//        return nTest.edge;
+//      }
+//    }else{
+//      if(pTest.d2<nTest.d2){
+//        return pTest.edge;
+//      }else{
+//        return nTest.edge;
+//      }
+//    }
+ 
+  }
+  
+  private static class TestResult {
+    IQuadEdge edge;
+    double d2;
+    TestResult(IQuadEdge edge, double d2){
+      this.edge = edge;
+      this.d2 = d2;
+    }
+  }
+  
+  private TestResult testPerimeterEdge(IQuadEdge edge, double x, double y){
+    IQuadEdge e = edge.getDual();
+    IQuadEdge f = e.getForward();
+    IQuadEdge r = e.getReverse();
+
+    double dA = e.getA().getDistanceSq(x, y);
+    double dB = f.getA().getDistanceSq(x, y);
+    double dC = r.getA().getDistanceSq(x, y);
+
+    if (dA < dB) {
+      if (dA < dC) {
+        return new TestResult(e, dA); // vertex A is closest to (x,y)
+      } else {
+        return new TestResult(r, dC); // vertex C is closest to (x,y)
+      }
+    } else if (dB < dC) {
+      return new TestResult(f, dB); // vertex B is closes to (x,y)
+    } else {
+      return new TestResult(r, dC); // vertex C is closest to (x,y)
+    }
+  }
+   
 }

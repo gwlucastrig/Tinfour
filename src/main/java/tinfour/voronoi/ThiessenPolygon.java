@@ -13,6 +13,7 @@
  */
 package tinfour.voronoi;
 
+import java.awt.geom.Rectangle2D;
 import java.util.Arrays;
 import java.util.List;
 import tinfour.common.IQuadEdge;
@@ -28,6 +29,7 @@ public class ThiessenPolygon {
   private final Vertex vertex;
   final IQuadEdge[] edges;
   final double area;
+  final Rectangle2D bounds;
 
   /**
    * Constructs a Thiessen Polygon representation. The open flag is used to
@@ -43,17 +45,18 @@ public class ThiessenPolygon {
     this.vertex = vertex;
     this.edges = edgeList.toArray(new IQuadEdge[edgeList.size()]);
     this.open = open;
-    if (open) {
-      area = Double.POSITIVE_INFINITY;
-    } else {
+ 
+    Vertex v = edgeList.get(0).getA();
+    bounds = new Rectangle2D.Double(v.getX(), v.getY(), 0, 0);
       double s = 0;
       for (IQuadEdge e : edgeList) {
         Vertex A = e.getA();
         Vertex B = e.getB();
         s += A.getX() * B.getY() - A.getY() * B.getX();
+        bounds.add(B.getX(), B.getY());
       }
       area = s / 2;
-    }
+     
   }
 
   /**
@@ -84,5 +87,18 @@ public class ThiessenPolygon {
    */
   public Vertex getVertex() {
     return vertex;
+  }
+  
+  public Rectangle2D getBounds(){
+    return new Rectangle2D.Double(
+            bounds.getX(),
+            bounds.getY(),
+            bounds.getWidth(), 
+            bounds.getHeight());
+  }
+  
+  @Override
+  public String toString(){
+    return String.format("ThiessenPolygon index=%d", vertex.getIndex());
   }
 }
