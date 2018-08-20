@@ -22,6 +22,7 @@
  * Date Name Description
  * ------   --------- -------------------------------------------------
  * 07/2018  G. Lucas  Initial implementation 
+ * 08/2018  G. Lucas  Added vertex based constructor and build options
  *
  * Notes:
  *
@@ -41,6 +42,8 @@ import tinfour.common.IQuadEdge;
 import tinfour.common.Vertex;
 import tinfour.edge.EdgePool;
 import tinfour.edge.QuadEdge;
+import tinfour.semivirtual.SemiVirtualIncrementalTin;
+import tinfour.standard.IncrementalTin;
 import tinfour.utils.TinInstantiationUtility;
 
 /**
@@ -84,8 +87,11 @@ public class LimitedVoronoi {
    * Construct a Voronoi Diagram structure based on the input vertex set.
    *
    * @param vertexList a valid list of vertices
+   * @param options optional specification for setting build parameters or a
+   * null to use defaults.
+   *
    */
-  public LimitedVoronoi(List<Vertex> vertexList) {
+  public LimitedVoronoi(List<Vertex> vertexList, LimitedVoronoiBuildOptions options) {
     if (vertexList == null) {
       throw new IllegalArgumentException(
               "Null input not allowed for constructor");
@@ -130,7 +136,11 @@ public class LimitedVoronoi {
 
     edgePool = new EdgePool();
 
-    buildStructure(tin);
+    LimitedVoronoiBuildOptions pOptions = options;
+    if (options == null) {
+      pOptions = new LimitedVoronoiBuildOptions();
+    }
+    buildStructure(tin, pOptions);
   }
 
   /**
@@ -158,8 +168,8 @@ public class LimitedVoronoi {
             sampleBounds.getHeight());
 
     edgePool = new EdgePool();
-
-    buildStructure(delaunayTriangulation);
+    LimitedVoronoiBuildOptions pOptions = new LimitedVoronoiBuildOptions();
+    buildStructure(delaunayTriangulation, pOptions);
   }
 
   private void buildPart(IQuadEdge e, Vertex[] center, IQuadEdge[] part) {
@@ -289,7 +299,6 @@ public class LimitedVoronoi {
       IQuadEdge r = e.getReverse();
       Vertex C = e.getForward().getB();
       if (C != null) {
-        cCircle.compute(A, B, C);
         if (!cCircle.compute(A, B, C)) {
           throw new IllegalStateException(
                   "Internal error, triangle does not yield circumcircle");
@@ -312,7 +321,32 @@ public class LimitedVoronoi {
   }
 
   @SuppressWarnings("PMD.AvoidInstantiatingObjectsInLoops")
-  private void buildStructure(IIncrementalTin tin) {
+  private void buildStructure(
+          IIncrementalTin tin,
+          LimitedVoronoiBuildOptions pOptions) 
+  {
+    List<IQuadEdge> perimeter = tin.getPerimeter();
+    Circumcircle cCircle = new Circumcircle();
+    if (pOptions.enableAdjustments) {
+      double w = sampleBounds.getWidth();
+      double h = sampleBounds.getHeight();
+      double diagonal = Math.sqrt(w * w + h * h);
+      double threshold = pOptions.adjustmentThreshold * diagonal;
+      int iPerimeter = 0;
+      while (iPerimeter < perimeter.size()) {
+        IQuadEdge p = perimeter.get(iPerimeter);
+        Vertex A = p.getA();
+        Vertex B = p.getB();
+        Vertex C = p.getForward().getB();
+        cCircle.compute(A, B, C);
+        if (cCircle.getRadius() > threshold) {
+          adjustPerimeterEdge(tin, perimeter, iPerimeter);
+          iPerimeter += 2;
+        } else {
+          iPerimeter++;
+        }
+      }
+    }
 
     // The visited array tracks which of the TIN edges were 
     // visited for various processes.  It is used more than once.
@@ -328,7 +362,6 @@ public class LimitedVoronoi {
     // build the circumcircle-center vertices 
     // also collect some information about the overall
     // bounds and edge length of the input TIN.
-    Circumcircle cCircle = new Circumcircle();
     Iterator<IQuadEdge> edgeIterator = tin.getEdgeIterator();
     double sumEdgeLength = 0;
     int nEdgeLength = 0;
@@ -357,7 +390,6 @@ public class LimitedVoronoi {
 
     // perimeter edges get special treatment because they give rise
     // to an infinite ray outward from circumcenter
-    List<IQuadEdge> perimeter = tin.getPerimeter();
     for (IQuadEdge p : perimeter) {
       visited[p.getIndex()] = true;
       buildPerimeterRay(p, centers, parts);
@@ -661,38 +693,23 @@ public class LimitedVoronoi {
     }
     return minP;
   }
-
-  private static class TestResult {
-
-    IQuadEdge edge;
-    double d2;
-
-    TestResult(IQuadEdge edge, double d2) {
-      this.edge = edge;
-      this.d2 = d2;
-    }
-  }
-
-  private TestResult testPerimeterEdge(IQuadEdge edge, double x, double y) {
-    IQuadEdge e = edge.getDual();
+ 
+  void adjustPerimeterEdge(
+          IIncrementalTin tin,
+          List<IQuadEdge> perimeter,
+          int index) 
+  {
+    IQuadEdge e = perimeter.get(index);
     IQuadEdge f = e.getForward();
     IQuadEdge r = e.getReverse();
-
-    double dA = e.getA().getDistanceSq(x, y);
-    double dB = f.getA().getDistanceSq(x, y);
-    double dC = r.getA().getDistanceSq(x, y);
-
-    if (dA < dB) {
-      if (dA < dC) {
-        return new TestResult(e, dA); // vertex A is closest to (x,y)
-      } else {
-        return new TestResult(r, dC); // vertex C is closest to (x,y)
-      }
-    } else if (dB < dC) {
-      return new TestResult(f, dB); // vertex B is closes to (x,y)
-    } else {
-      return new TestResult(r, dC); // vertex C is closest to (x,y)
+    IQuadEdge fd = f.getDual();
+    IQuadEdge rd = r.getDual();
+    if (tin instanceof IncrementalTin) {
+      ((IncrementalTin) tin).collapsePerimeterEdge(e);
+    } else if (tin instanceof SemiVirtualIncrementalTin) {
+      ((SemiVirtualIncrementalTin) tin).collapsePerimeterEdge(e);
     }
+    perimeter.set(index, rd);
+    perimeter.add(index + 1, fd);
   }
-
 }
