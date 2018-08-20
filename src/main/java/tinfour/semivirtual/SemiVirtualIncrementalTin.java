@@ -52,6 +52,7 @@ import tinfour.common.IQuadEdge;
 import tinfour.common.Thresholds;
 import tinfour.common.TriangleCount;
 import tinfour.common.Vertex;
+import tinfour.common.VertexAdjustment;
 import tinfour.common.VertexMergerGroup;
 import tinfour.edge.QuadEdgeConstants;
 
@@ -2520,4 +2521,68 @@ public class SemiVirtualIncrementalTin implements IIncrementalTin {
     return null;
   }
 
+  /**
+   * Provides a means to remove very skinny triangles from the 
+   * perimeter of a Delaunay Triangulation by adjusting the coordinates
+   * of the interior vertex so that it lies directly on the outer edge
+   * of the perimeter.  The perimeter edge is replaced by two edges.
+   * The original vertex is replaced by a VertexAdjustment object.
+   * <p>
+   * This method should be used with great caution because it has the
+   * effect of changing the geometry of the input vertices. In particular, it is 
+   * possible that this operation may result in a non-Delaunay triangle.
+   * 
+   * @param p the perimeter edge
+   * @return true if the edge was adjusted; otherwise false
+   */
+  public boolean collapsePerimeterEdge(  IQuadEdge p ){
+    SemiVirtualEdge e = (SemiVirtualEdge)p ;
+    SemiVirtualEdge f = e.getForward();
+    SemiVirtualEdge r = e.getReverse();
+    SemiVirtualEdge d = e.getDual();
+    SemiVirtualEdge df = d.getForward();
+    SemiVirtualEdge dr = d.getReverse();
+    if(df.getB()!=null){
+      throw new IllegalArgumentException("Specification is not a perimeter edge");
+    }
+    
+    Vertex A = e.getA();
+    Vertex B = f.getA();
+    Vertex C = r.getA();
+    double xA = B.getX()-A.getX();
+    double yA = B.getY()-A.getY();
+    double a = e.getLength();
+    xA/=a;
+    yA/=a;
+    double xC = C.getX()-A.getX();
+    double yC = C.getY()-A.getY();
+    double s = xA*xC+yA*yC;
+    if(s<=0 || s>=1){
+      return false;
+    }
+    double x = A.getX()+s*xA;
+    double y = A.getY()+s*yA;
+    VertexAdjustment X = new VertexAdjustment(x,y, C);
+
+    edgePool.deallocateEdge((SemiVirtualEdge)e);
+    SemiVirtualEdge  n = edgePool.allocateEdge(X, null);
+    SemiVirtualEdge nd = n.getDual();
+    r.setForward(df);
+    df.setForward(nd);
+    nd.setForward(r);
+    f.setForward(n);
+    n.setForward(dr);
+    dr.setForward(f);
+    r.setVertices(X, A);
+    f.setVertices(B, X);
+    for(IQuadEdge spoke: r.pinwheel()){
+      SemiVirtualEdge q = (SemiVirtualEdge)spoke;
+      q.setVertices(X, q.getB());
+    }
+    
+    //IIntegrityCheck ic = this.getIntegrityCheck();
+    //boolean status = ic.inspect();
+    //ic.printSummary(System.out);
+    return true;
+  }
 }

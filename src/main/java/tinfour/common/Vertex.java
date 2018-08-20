@@ -143,7 +143,7 @@ public class Vertex implements ISamplePoint {
   /**
    * The color index used for graph coloring algorithms
    */
-  private byte colorIndex;
+  protected byte colorIndex;
 
   /**
    * Construct a vertex with the specified coordinates and z value. Intended
