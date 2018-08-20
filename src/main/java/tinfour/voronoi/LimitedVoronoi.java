@@ -24,10 +24,6 @@
  * 07/2018  G. Lucas  Initial implementation 
  *
  * Notes:
- *   At this time, the only reason that this class retains the defining
- *   Delaunay Triangulation after the structure is constructed is to 
- *   provide an efficient way for performing polygon lookups.  Given an
- *   efficient alternate, there would be no reason to retain the TIN.
  *
  * -----------------------------------------------------------------------
  */
@@ -40,14 +36,12 @@ import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
 import tinfour.common.Circumcircle;
-import tinfour.common.GeometricOperations;
 import tinfour.common.IIncrementalTin;
-import tinfour.common.INeighborEdgeLocator;
 import tinfour.common.IQuadEdge;
-import tinfour.common.Thresholds;
 import tinfour.common.Vertex;
 import tinfour.edge.EdgePool;
 import tinfour.edge.QuadEdge;
+import tinfour.utils.TinInstantiationUtility;
 
 /**
  * Constructs a Voronoi Diagram structure from a populated instance of an
@@ -66,9 +60,9 @@ public class LimitedVoronoi {
   final private Rectangle2D bounds;
 
   /**
-   * The Delaunay Triangulation associated with the structure.
+   * The overall bounds of the sample points
    */
-  final private IIncrementalTin tin;
+  final private Rectangle2D sampleBounds;
 
   final private EdgePool edgePool;
 
@@ -78,11 +72,66 @@ public class LimitedVoronoi {
 
   private double maxRadius = -1;
 
-  private final int[] edgeToPolygon;
+  private LimitedVoronoi() {
+    // a private constructor to deter applications from
+    // invoking the default constructor
+    sampleBounds = null;
+    bounds = null;
+    edgePool = null;
+  }
 
-  private final INeighborEdgeLocator locator;
-  
-  private final  GeometricOperations geoOp;
+  /**
+   * Construct a Voronoi Diagram structure based on the input vertex set.
+   *
+   * @param vertexList a valid list of vertices
+   */
+  public LimitedVoronoi(List<Vertex> vertexList) {
+    if (vertexList == null) {
+      throw new IllegalArgumentException(
+              "Null input not allowed for constructor");
+    }
+
+    int nVertices = vertexList.size();
+    if (nVertices < 3) {
+      throw new IllegalArgumentException(
+              "Insufficent input size, at least 3 vertices are required");
+    }
+
+    sampleBounds = new Rectangle2D.Double(
+            vertexList.get(0).getX(),
+            vertexList.get(0).getY(),
+            0, 0);
+
+    for (Vertex v : vertexList) {
+      sampleBounds.add(v.getX(), v.getY());
+    }
+
+    // estimate a nominal point spacing based on the domain of the
+    // input data set and assuming a rougly uniform density.
+    // the value 0.866 is based on the parameters of a regular
+    // hexagonal tesselation of a plane
+    double area = sampleBounds.getWidth() * sampleBounds.getHeight();
+    double nominalPointSpacing = Math.sqrt(area / nVertices / 0.866);
+    TinInstantiationUtility maker
+            = new TinInstantiationUtility(0.25, vertexList.size());
+    IIncrementalTin tin = maker.constructInstance(nominalPointSpacing);
+    tin.add(vertexList, null);
+    if (!tin.isBootstrapped()) {
+      throw new IllegalArgumentException(
+              "Input vertex geometry is insufficient "
+              + "to establish a Voronoi Diagram");
+    }
+
+    this.bounds = new Rectangle2D.Double(
+            sampleBounds.getX(),
+            sampleBounds.getY(),
+            sampleBounds.getWidth(),
+            sampleBounds.getHeight());
+
+    edgePool = new EdgePool();
+
+    buildStructure(tin);
+  }
 
   /**
    * Constructs an instance of a Voronoi Diagram that corresponds to the input
@@ -93,31 +142,24 @@ public class LimitedVoronoi {
    */
   public LimitedVoronoi(IIncrementalTin delaunayTriangulation) {
     if (delaunayTriangulation == null) {
-      throw new IllegalArgumentException("Null input is not allowed for TIN");
+      throw new IllegalArgumentException(
+              "Null input is not allowed for TIN");
     }
     if (!delaunayTriangulation.isBootstrapped()) {
-      throw new IllegalArgumentException("Input TIN is not bootstrapped (populated)");
+      throw new IllegalArgumentException(
+              "Input TIN is not bootstrapped (populated)");
     }
 
-    Rectangle2D r2d = delaunayTriangulation.getBounds();
+    sampleBounds = delaunayTriangulation.getBounds();
     this.bounds = new Rectangle2D.Double(
-            r2d.getX(),
-            r2d.getY(),
-            r2d.getWidth(),
-            r2d.getHeight());
+            sampleBounds.getX(),
+            sampleBounds.getY(),
+            sampleBounds.getWidth(),
+            sampleBounds.getHeight());
 
-    this.tin = delaunayTriangulation;
     edgePool = new EdgePool();
 
-    int maxEdgeIndex = tin.getMaximumEdgeAllocationIndex() + 1;
-    edgeToPolygon = new int[maxEdgeIndex];
-    Arrays.fill(edgeToPolygon, -1);
-    locator = tin.getNeighborEdgeLocator();
-    
-    Thresholds thresholds = tin.getThresholds();
-    geoOp = new GeometricOperations(thresholds);
-
-    buildStructure();
+    buildStructure(delaunayTriangulation);
   }
 
   private void buildPart(IQuadEdge e, Vertex[] center, IQuadEdge[] part) {
@@ -177,7 +219,7 @@ public class LimitedVoronoi {
     double tY = Double.POSITIVE_INFINITY;
     double x = Double.NaN;
     double y = Double.NaN;
-    double z = Double.NaN;
+    double z;
     // in the following, we screen out the uX==0 and uY==0 cases
     // because the they only intersect one edge
     if (uX < 0) {
@@ -270,7 +312,7 @@ public class LimitedVoronoi {
   }
 
   @SuppressWarnings("PMD.AvoidInstantiatingObjectsInLoops")
-  private void buildStructure() {
+  private void buildStructure(IIncrementalTin tin) {
 
     // The visited array tracks which of the TIN edges were 
     // visited for various processes.  It is used more than once.
@@ -339,12 +381,12 @@ public class LimitedVoronoi {
     // to visited so that they are not processed below
     Arrays.fill(visited, false);
     for (IQuadEdge e : perimeter) {
-      int index = e.getForward().getIndex();
+      IQuadEdge f = e.getForwardFromDual();
+      int index = f.getIndex();
+      //int index = e.getForwardFromDual().getIndex();
       visited[index] = true;
       visited[index ^ 0x01] = true;
     }
-
-    int polygonIndex = 0;
 
     // first build the open loops starting at perimeters edges
     for (IQuadEdge e : perimeter) {
@@ -354,21 +396,15 @@ public class LimitedVoronoi {
       }
       scratch.clear();
       Vertex hub = e.getA();
-      polygonIndex = polygons.size();
       QuadEdge prior = null;
       QuadEdge first = null;
       for (IQuadEdge p : e.pinwheel()) {
         index = p.getIndex();
         visited[index] = true;
-        edgeToPolygon[index] = polygonIndex;
         QuadEdge q = parts[index];
         if (q == null) {
           // we've reached the exterior, the pinwheel would
           // continue out to ghost edges, but we don't want them.
-          //System.out.println("");
-          //for (IQuadEdge m : eList) {
-          //    System.out.println("   " + m.toString());
-          //}
           Vertex vLast = prior.getB();
           Vertex vFirst = first.getA();
           int iLast = (int) vLast.getZ();
@@ -433,13 +469,11 @@ public class LimitedVoronoi {
       if (!visited[index] && parts[index] != null) {
         scratch.clear();
         Vertex hub = e.getA();
-        polygonIndex = polygons.size();
         QuadEdge prior = null;
         QuadEdge first = null;
         for (IQuadEdge p : e.pinwheel()) {
           index = p.getIndex();
           visited[index] = true;
-          edgeToPolygon[index] = polygonIndex;
           QuadEdge q = parts[p.getIndex()];
           scratch.add(q);
           if (prior == null) {
@@ -460,13 +494,11 @@ public class LimitedVoronoi {
       if (!visited[index] && parts[index] != null) {
         scratch.clear();
         Vertex hub = d.getA();
-        polygonIndex = polygons.size();
         QuadEdge prior = null;
         QuadEdge first = null;
         for (IQuadEdge p : d.pinwheel()) {
           index = p.getIndex();
           visited[index] = true;
-          edgeToPolygon[index] = polygonIndex;
           QuadEdge q = parts[p.getIndex()];
           scratch.add(q);
           if (prior == null) {
@@ -512,19 +544,19 @@ public class LimitedVoronoi {
     ps.format("      y min:  %16.4f%n", bounds.getMinY());
     ps.format("      x max:  %16.4f%n", bounds.getMaxX());
     ps.format("      y max:  %16.4f%n", bounds.getMaxY());
-    Rectangle2D r2d = tin.getBounds();
-    ps.format("   Input Triangulation Bounds%n");
-    ps.format("      x min:  %16.4f%n", r2d.getMinX());
-    ps.format("      y min:  %16.4f%n", r2d.getMinY());
-    ps.format("      x max:  %16.4f%n", r2d.getMaxX());
-    ps.format("      y max:  %16.4f%n", r2d.getMaxY());
     ps.format("   Max Circumcircle Radius:  %6.4f%n", maxRadius);
+    ps.format("   Data Sample Bounds%n");
+    ps.format("      x min:  %16.4f%n", sampleBounds.getMinX());
+    ps.format("      y min:  %16.4f%n", sampleBounds.getMinY());
+    ps.format("      x max:  %16.4f%n", sampleBounds.getMaxX());
+    ps.format("      y max:  %16.4f%n", sampleBounds.getMaxY());
   }
 
   /**
-   * Gets the bounds of the limited Voronoi Diagram. If there are "skinny"
-   * triangles along the perimeter, the bounds may be substantially larger than
-   * those of the original TIN.
+   * Gets the bounds of the limited Voronoi Diagram. If the associated Delaunay
+   * Triangulation included "skinny" triangles along its perimeter, the Voronoi
+   * Diagram's bounds may be substantially larger than those of the original
+   * input data set
    *
    * @return a valid rectangle
    */
@@ -537,17 +569,48 @@ public class LimitedVoronoi {
   }
 
   /**
-   * Gets a list of the edges in the Voronoi Diagram
+   * Gets the bounds of the sample data set. These will usually be smaller than
+   * the bounds of the overall structure.
    *
-   * @return a valid list
+   * @return a valid rectangle
+   */
+  public Rectangle2D getSampleBounds() {
+    return new Rectangle2D.Double(
+            sampleBounds.getX(),
+            sampleBounds.getY(),
+            sampleBounds.getWidth(),
+            sampleBounds.getHeight());
+  }
+
+  /**
+   * Gets a list of the edges in the Voronoi Diagram. Applications are
+   * <strong>strongly cautioned against modifying these edges.</strong>
+   *
+   * @return a valid list of edges
    */
   public List<IQuadEdge> getEdges() {
     return edgePool.getEdges();
   }
 
   /**
+   * Gets a list of the vertices that define the Voronoi Diagram. This list is
+   * based on the input set, though in some cases coincident or nearly
+   * coincident vertices will be combined into a single vertex of type
+   * VertexMergerGroup.
+   *
+   * @return a valid list
+   */
+  public List<Vertex> getVertices() {
+    List<Vertex> vList = new ArrayList<>(polygons.size());
+    for (ThiessenPolygon p : polygons) {
+      vList.add(p.getVertex());
+    }
+    return vList;
+  }
+
+  /**
    * Gets the vertices that were created to produce the Voronoi Diagram. The
-   * output does not include the original vertices from the TIN.
+   * output does not include the original vertices from the input source
    *
    * @return a valid list of vertices
    */
@@ -568,7 +631,6 @@ public class LimitedVoronoi {
     return list;
   }
 
-
   /**
    * Gets the polygon that contains the specified coordinate point (x,y).
    * <p>
@@ -582,174 +644,36 @@ public class LimitedVoronoi {
    * @return the containing polygon or a null if none is found.
    */
   public ThiessenPolygon getContainingPolygon(double x, double y) {
-    if(!bounds.contains(x, y)){
-      return null;
-    }
-    IQuadEdge edge = locateEdge(x, y);
-    if (edge == null) {
-      return null;
-    }
+    // The containing polygon is simply the one with the vertex
+    // closest to the specified coordinates (x,y).
+    ThiessenPolygon minP = null;
+    if (bounds.contains(x, y)) {
+      double minD = Double.POSITIVE_INFINITY;
 
-    int polygonIndex = edgeToPolygon[edge.getIndex()];
-    if (polygonIndex < 0) {
-      return null;
+      for (ThiessenPolygon p : polygons) {
+        Vertex v = p.getVertex();
+        double d = v.getDistanceSq(x, y);
+        if (d < minD) {
+          minD = d;
+          minP = p;
+        }
+      }
     }
-    return polygons.get(polygonIndex);
+    return minP;
   }
 
-  /**
-   * Locate an edge which begins with the specified vertex.
-   *
-   * @param locator the edge locator associated with the tin
-   * @param v a valid vertex
-   * @return a valid edge
-   */
-  private IQuadEdge locateEdge(double x, double y) {
-    // We have in memory an edge-to-polygon table which 
-    // maps the index of an edge from the Delaunay Triangulation
-    // to a polygon.  So, to find the polygon that contains (x,y),
-    // we need to find an edge that starts with the vertex that 
-    // 
-    // Tinfour provides a utility called INeighborEdgeLocator that
-    // efficiently traverses the Delaunay Triangulation and finds
-    // the triangle that contains (x,y).  Since Tinfour doesn't
-    // implement a class or data element that represents a triangle,
-    // the output from the locator is an edge. That edge belongs to
-    // the triangle that contains (x,y).   Now, which of the three edges
-    // that it picks is arbitrary.   So the edge it produces 
-    // may not be the edge that is closes to (x,y).
-    // In fact, the triangle itself may not necessary include
-    // the vertex that is closest to (x,y).  If (x,y) is close
-    // to an edge, the opposite vertex from the adjacent triangle may be closer
-    // than the one in the triangle.
-    //    Thus the logic below has to test both the vertices of the
-    // containing triangle -- A, B, C -- and those from the immediately
-    // adjacent triangles to see which one is closest.  Vertex A and B
-    // are guaranteed to not be null, but many of the others could be
-    // null.  So the tests below do perform null checks.
-
-    IQuadEdge e = locator.getNeigborEdge(x, y);
-    if (e == null) {
-      return null;  // not expected to happen
-    }
-    IQuadEdge f = e.getForward();
-    IQuadEdge r = e.getReverse();
-
-
-    Vertex A = e.getA();
-    Vertex B = f.getA();
-    Vertex C = r.getA();
-    if (C == null) {
-      // the query point is outside the convex hull of the Delaunay Triangulation
-      // the locator produced the exterior-side of the perimeter edge.
-      // we need to take its dual so that we pick up the inside vertex C.
-      e = e.getDual();
-      f = e.getForward();
-      r = e.getReverse();
-      A = e.getA();
-      B = f.getA();
-      C = r.getA();
-    }
-    
-    IQuadEdge d = e.getReverseFromDual();
-    IQuadEdge g = f.getReverseFromDual();
-    IQuadEdge h = r.getReverseFromDual();
-    Vertex D = d.getA();
-    Vertex G = g.getA();
-    Vertex H = h.getA();
-     
-    double dA = A.getDistanceSq(x, y);
-    double dB = B.getDistanceSq(x, y);
-    
-    double minD2;
-    IQuadEdge minEdge;
-    
-    // we're guaranteed that A,B are not null. But after that,
-    // all bets are off.
-    if (dA < dB) {
-      minD2 = dA;
-      minEdge = e;
-    } else {
-      minD2 = dB;
-      minEdge = f;
-    }
-
-    if (C != null) {
-      double dC = C.getDistanceSq(x, y);
-      if (dC < minD2) {
-        minD2 = dC;
-        minEdge = r;
-      }
-    }
-    
-    if (D != null) {
-      double dD = D.getDistanceSq(x, y);
-      if (dD < minD2) {
-        minD2 = dD;
-        minEdge = d;
-      }
-    }
-    
-    if (G != null) {
-      double dG = G.getDistanceSq(x, y);
-      if (dG < minD2) {
-        minD2 = dG;
-        minEdge = g;
-      }
-    }
-    
-    if (H != null) {
-      double dH = H.getDistanceSq(x, y);
-      if (dH < minD2) {
-        minD2 = dH;
-        minEdge = h;
-      }
-    }
-
-    return minEdge;
-            
-     
-    // There is a flaw in the edge locator.getNeighborEdge() logic. 
-    // When (x,y) is outside the convex hull for the Delaunay Triangulation,
-    // it does not necessarily locate the best edge (the edge that most
-    // nearly subtends the coordinate point).   So we have to do some 
-    // extra work.  This is a problem that should be improved later.
-    // 
-    // Compare distances for edge e with those from the prior and next
-    // perimeter edges.
-//    IQuadEdge p = r.getReverseFromDual();   // prior
-//    IQuadEdge n = f.getForwardFromDual(); // next
-//    TestResult eTest = testPerimeterEdge(e, x, y);
-//    TestResult pTest = testPerimeterEdge(p, x, y);
-//    TestResult nTest = testPerimeterEdge(n, x, y);
-//
-//    if(eTest.d2<pTest.d2){
-//      // compare eTest with nTest
-//      if(eTest.d2<nTest.d2){
-//        return eTest.edge;
-//      }else{
-//        return nTest.edge;
-//      }
-//    }else{
-//      if(pTest.d2<nTest.d2){
-//        return pTest.edge;
-//      }else{
-//        return nTest.edge;
-//      }
-//    }
- 
-  }
-  
   private static class TestResult {
+
     IQuadEdge edge;
     double d2;
-    TestResult(IQuadEdge edge, double d2){
+
+    TestResult(IQuadEdge edge, double d2) {
       this.edge = edge;
       this.d2 = d2;
     }
   }
-  
-  private TestResult testPerimeterEdge(IQuadEdge edge, double x, double y){
+
+  private TestResult testPerimeterEdge(IQuadEdge edge, double x, double y) {
     IQuadEdge e = edge.getDual();
     IQuadEdge f = e.getForward();
     IQuadEdge r = e.getReverse();
@@ -770,5 +694,5 @@ public class LimitedVoronoi {
       return new TestResult(r, dC); // vertex C is closest to (x,y)
     }
   }
-   
+
 }
