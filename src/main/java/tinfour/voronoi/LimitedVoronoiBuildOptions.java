@@ -35,12 +35,23 @@ package tinfour.voronoi;
 public class LimitedVoronoiBuildOptions {
   
   protected boolean enableAdjustments = true;
-  protected double  adjustmentThreshold = 32;
   
-  /**
+  // The default adjustment value of 30 was chosen through trial and error.
+  // A round number was chosen to reflect the fact that it is an arbitrary
+  // choice and not a theory-defined value (a number like 32 might have
+  // seemed to be more meaningful that it actually was).
+  protected double  adjustmentThreshold = 30;
+  
+/**
    * Specifies whether adjustments to the perimeter triangle are
    * permitted to avoid excessive circumcircle radius values
-   * from occurring at the perimeter triangles.
+   * from occurring at the perimeter triangles.  When a triangle
+   * is defined by a perimeter edge and an interior vertex that lies
+   * close to the edge, the geometry can give rise to a very large
+   * circumcircle radius (with the resulting circumcircle center being
+   * positioned far outside the boundaries of the Delaunay triangulation).
+   * This, in turn results in a Limited Voronoi Diagram structure with a
+   * bounds much larger than the original bounds of the data.
    * @param status true if enabled; otherwise, false
    */
   public void setAdjustmentsEnabled(boolean status){
@@ -48,16 +59,15 @@ public class LimitedVoronoiBuildOptions {
   }
   
   /**
-   * Specify the adjustment threshold factor.  The adjustment threshold 
-   * factor will be applied to the length of the diagonal of the sample
-   * bounds to compute a maximum target circumcircle radius for the
-   * perimeter triangles.
-   * @param threshold a value in the range 1.0 to positive infinity
+   * Specify the threshold for deciding whether a triangle is a 
+   * subject to potential adjustment to improve the ratio of its
+   * circumcircle to its maximum edge length.
+   * @param threshold a value in the range 8 to positive infinity
    */
   public void setAdjustmentThreshold(double threshold) {
-    if (threshold < 1) {
+    if (threshold < 8) {
       throw new IllegalArgumentException("Threshold value " + threshold
-              + " is less than minimum of 1");
+              + " is less than minimum of 8");
     }
     this.adjustmentThreshold = threshold;
   }
