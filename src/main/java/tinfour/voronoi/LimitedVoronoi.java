@@ -323,28 +323,15 @@ public class LimitedVoronoi {
   @SuppressWarnings("PMD.AvoidInstantiatingObjectsInLoops")
   private void buildStructure(
           IIncrementalTin tin,
-          LimitedVoronoiBuildOptions pOptions) 
-  {
-    List<IQuadEdge> perimeter = tin.getPerimeter();
-    Circumcircle cCircle = new Circumcircle();
+          LimitedVoronoiBuildOptions pOptions) {
+
     if (pOptions.enableAdjustments) {
-      double w = sampleBounds.getWidth();
-      double h = sampleBounds.getHeight();
-      double diagonal = Math.sqrt(w * w + h * h);
-      double threshold = pOptions.adjustmentThreshold * diagonal;
-      int iPerimeter = 0;
-      while (iPerimeter < perimeter.size()) {
-        IQuadEdge p = perimeter.get(iPerimeter);
-        Vertex A = p.getA();
-        Vertex B = p.getB();
-        Vertex C = p.getForward().getB();
-        cCircle.compute(A, B, C);
-        if (cCircle.getRadius() > threshold) {
-          adjustPerimeterEdge(tin, perimeter, iPerimeter);
-          iPerimeter += 2;
-        } else {
-          iPerimeter++;
-        }
+      if (tin instanceof IncrementalTin) {
+        ((IncrementalTin) tin).collaspsePerimeterTriangles(
+                pOptions.adjustmentThreshold);
+      }else if(tin instanceof SemiVirtualIncrementalTin){
+        ((SemiVirtualIncrementalTin)tin).collaspsePerimeterTriangles(
+                pOptions.adjustmentThreshold);
       }
     }
 
@@ -358,7 +345,8 @@ public class LimitedVoronoi {
     Vertex[] centers = new Vertex[maxEdgeIndex];
     QuadEdge[] parts = new QuadEdge[maxEdgeIndex];
     List<IQuadEdge> scratch = new ArrayList<>();
-
+    List<IQuadEdge> perimeter = tin.getPerimeter();
+    Circumcircle cCircle = new Circumcircle();
     // build the circumcircle-center vertices 
     // also collect some information about the overall
     // bounds and edge length of the input TIN.
@@ -692,24 +680,5 @@ public class LimitedVoronoi {
       }
     }
     return minP;
-  }
- 
-  void adjustPerimeterEdge(
-          IIncrementalTin tin,
-          List<IQuadEdge> perimeter,
-          int index) 
-  {
-    IQuadEdge e = perimeter.get(index);
-    IQuadEdge f = e.getForward();
-    IQuadEdge r = e.getReverse();
-    IQuadEdge fd = f.getDual();
-    IQuadEdge rd = r.getDual();
-    if (tin instanceof IncrementalTin) {
-      ((IncrementalTin) tin).collapsePerimeterEdge(e);
-    } else if (tin instanceof SemiVirtualIncrementalTin) {
-      ((SemiVirtualIncrementalTin) tin).collapsePerimeterEdge(e);
-    }
-    perimeter.set(index, rd);
-    perimeter.add(index + 1, fd);
   }
 }
