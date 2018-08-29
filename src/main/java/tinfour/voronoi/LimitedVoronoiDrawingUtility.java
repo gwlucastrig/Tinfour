@@ -56,6 +56,7 @@ import tinfour.utils.VertexColorizerKempe6;
  * Provides utilities for drawing graphical representations of a limited Voronoi
  * Diagram instances.
  */
+@SuppressWarnings("PMD.AvoidInstantiatingObjectsInLoops")
 public class LimitedVoronoiDrawingUtility {
 
   private final LimitedVoronoi diagram;

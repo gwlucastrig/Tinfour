@@ -2790,7 +2790,7 @@ public class IncrementalTin implements IIncrementalTin {
       }
     }
 
-    edgePool.deallocateEdge((QuadEdge) e);
+    edgePool.deallocateEdge(e);
     QuadEdge n = edgePool.allocateEdge(X, null);
     QuadEdge nd = n.getDual();
     r.setForward(df);
