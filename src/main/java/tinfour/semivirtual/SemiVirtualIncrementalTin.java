@@ -2659,7 +2659,7 @@ public class SemiVirtualIncrementalTin implements IIncrementalTin {
       }
     }
 
-    edgePool.deallocateEdge((SemiVirtualEdge) e);
+    edgePool.deallocateEdge(e);
     SemiVirtualEdge n = edgePool.allocateEdge(X, null);
     SemiVirtualEdge nd = n.getDual();
     r.setForward(df);

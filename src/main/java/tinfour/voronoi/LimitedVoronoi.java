@@ -45,6 +45,7 @@ import tinfour.edge.QuadEdge;
 import tinfour.semivirtual.SemiVirtualIncrementalTin;
 import tinfour.standard.IncrementalTin;
 import tinfour.utils.TinInstantiationUtility;
+import tinfour.utils.VertexColorizerKempe6;
 
 /**
  * Constructs a Voronoi Diagram structure from a populated instance of an
@@ -61,6 +62,10 @@ public class LimitedVoronoi {
    * The overall domain of the structure
    */
   final private Rectangle2D bounds;
+  double xmin;
+  double xmax;
+  double ymin;
+  double ymax;
 
   /**
    * The overall bounds of the sample points
@@ -140,7 +145,13 @@ public class LimitedVoronoi {
     if (options == null) {
       pOptions = new LimitedVoronoiBuildOptions();
     }
+
     buildStructure(tin, pOptions);
+    if (pOptions.enableAutomaticColorAssignment) {
+      VertexColorizerKempe6 kempe6 = new VertexColorizerKempe6();
+      kempe6.assignColorsToVertices(tin);
+    }
+    tin.dispose();
   }
 
   /**
@@ -182,10 +193,164 @@ public class LimitedVoronoi {
     int dIndex = d.getIndex();
     Vertex v0 = center[dIndex];
     Vertex v1 = center[eIndex];
-    if (v0 != null && v1 != null) {
-      IQuadEdge n = edgePool.allocateEdge(v0, v1);
+    if (v0 == null || v1 == null) {
+      // this is a ghost triangle.  just ignore it
+      return;
+    }
+
+//    int outcode0 = v0.getColorIndex();
+//    int outcode1 = v1.getColorIndex();
+//    if((outcode0 & outcode1)!=0){
+//      // the edge is entirely outside the bounded area 
+//      // and does not intersect it.  It can be rejected trivially.
+//      // Note that this determination will also reject edges that
+//      // lie exactly on a boundary.
+//    }
+//    if ((outcode0|outcode1)==0) {
+//      // both vertices are entirely within the bounded area.
+//      // the edge can be accepted trivially
+//      IQuadEdge n = edgePool.allocateEdge(v0, v1);
+//      part[eIndex] = n;
+//      part[dIndex] = n.getDual();
+//    }
+    // the edge intersects at least one and potentially two boundaries.
+    IQuadEdge n = liangBarsky(v0, v1);
+    if (n != null) {
       part[eIndex] = n;
       part[dIndex] = n.getDual();
+    }
+
+  }
+
+  private IQuadEdge liangBarsky(Vertex v0, Vertex v1) {
+    double x0 = v0.getX();
+    double y0 = v0.getY();
+    double x1 = v1.getX();
+    double y1 = v1.getY();
+
+    double t0 = 0;
+    double t1 = 1;
+    int iBorder0 = -1;
+    int iBorder1 = -1;
+    double xDelta = x1 - x0;
+    double yDelta = y1 - y0;
+    double p, q, r;
+
+    for (int iBorder = 0; iBorder < 4; iBorder++) {
+      switch (iBorder) {
+        case 0:
+          // bottom
+          p = -yDelta;
+          q = -(ymin - y0);
+          break;
+        case 1:
+          // right
+          p = xDelta;
+          q = xmax - x0;
+          break;
+        case 2:
+          // top 
+          p = yDelta;
+          q = ymax - y0;
+          break;
+        case 3:
+        default:
+          // left
+          p = -xDelta;
+          q = -(xmin - x0);
+          break;
+      }
+
+      if (p == 0) {
+        // if q<0, the line is entirely outside.
+        // otherwise, it is ambiguous
+        if (q < 0) {
+          // line is entirely outside
+          return null;
+        }
+      } else {
+        r = q / p;
+        if (p < 0) {
+          if (r > t1) {
+            return null;
+          } else if (r > t0) {
+            t0 = r;
+            iBorder0 = iBorder;
+          }
+        } else // p>0
+         if (r < t0) {
+            return null;
+          } else if (r < t1) {
+            t1 = r;
+            iBorder1 = iBorder;
+          }
+
+      }
+    }
+
+    Vertex p0;
+    Vertex p1;
+
+    double x, y, z;
+    if (iBorder0 == -1) {
+      p0 = v0;
+    } else {
+      x = x0 + t0 * xDelta;
+      y = y0 + t0 * yDelta;
+      z = computeZ(iBorder0, x, y);
+      p0 = new Vertex(x, y, z, v0.getIndex());
+      p0.setSynthetic(true);
+    }
+
+    if (iBorder1 == -1) {
+      p1 = v1;
+    } else {
+      x = x0 + t1 * xDelta;
+      y = y0 + t1 * yDelta;
+      z = computeZ(iBorder1, x, y);
+      p1 = new Vertex(x, y, z, v1.getIndex());
+      p1.setSynthetic(true);
+    }
+
+    return edgePool.allocateEdge(p0, p1);
+  }
+
+  @SuppressWarnings("PMD.CollapsibleIfStatements")
+  private double computeZ(double x, double y) {
+    if (y == ymin) {
+      // bottom border range 0 to 1
+      if (xmin <= x && x <= xmax) {
+        return (x - xmin) / (xmax - xmin);
+      }
+    } else if (x == xmax) {
+      // right border, range 1 to 2
+      if (ymin <= y && y <= ymax) {
+        return 1 + (y - ymin) / (ymax - ymin);
+      }
+    } else if (y == ymax) {
+      // top border, range 2 to 3
+      if (xmin <= x && x <= xmax) {
+        return 3 - (x - xmin) / (xmax - xmin);
+      }
+    } else if (x == xmin) {
+      // left border, range 3 to 4
+      if (ymin <= y && y <= ymin) {
+        return 4 - (y - ymin) / (ymax - ymin);
+      }
+    }
+    return Double.NaN;
+  }
+
+  private double computeZ(int iBoarder, double x, double y) {
+    switch (iBoarder) {
+      case 0:
+        return (x - xmin) / (xmax - xmin);
+      case 1:
+        return 1 + (y - ymin) / (ymax - ymin);
+      case 2:
+        return 3 - (x - xmin) / (xmax - xmin);
+      default:
+        return 4 - (y - ymin) / (ymax - ymin);
     }
   }
 
@@ -278,6 +443,48 @@ public class LimitedVoronoi {
 
   }
 
+  /**
+   * Computes the outcode for a vertex (usually a circumcenter) and stores the
+   * result in the color-index field of the vertex. It is assumed that the
+   * vertex is "owned" by this instance and that the color index will not be
+   * used for other purposes. The layout of the outcodes used here, in Cartesian
+   * coordinates is
+   * <pre>
+   *    top     1001  1000  1010      (top row 1000)
+   *            0001  0000  0010
+   *    bottom  0101  0100  0110      (bottom row 0100)
+   *
+   *    left column  0001
+   *    right column 0010
+   * </pre> For this application, we define a vertex lying on the border as
+   * having a non-zero outcode for that border. In the Cohen-Sutherland
+   * algorithm, if the AND of the outcodes for the two endpoints of a segment
+   * comes up with a non-zero value, the segment is treated as being completely
+   * exterior and non-intersecting with the bounded area. Using that logic, this
+   * algorithm treats any edge lying along one of the edges for that border as
+   * being exterior to bounded area.
+   *
+   * @param c a valid vertex (usually a circumcircle)
+   */
+  private void computeAndSetOutcode(Vertex c) {
+    double x = c.getX();
+    double y = c.getY();
+    int code;
+    if (x <= xmin) {
+      code = 0b0001;
+    } else if (x >= xmax) {
+      code = 0b0010;
+    } else {
+      code = 0;
+    }
+    if (y <= ymin) {
+      code |= 0b0100;
+    } else if (y >= ymax) {
+      code |= 0b1000;
+    }
+    c.setColorIndex(code);
+  }
+
   private int mindex(IQuadEdge e, IQuadEdge f, IQuadEdge r) {
     int index = e.getIndex();
     if (f.getIndex() < index) {
@@ -290,6 +497,23 @@ public class LimitedVoronoi {
     }
   }
 
+  /**
+   * Builds the circumcircle for the triangle to the left of the specified edge.
+   * The resulting circumcircle-center vertex is stored in the centers[] array
+   * which maps the inside-edge-index for each edge of the triangle to the
+   * circumcircle-center vertex.
+   * <p>
+   * This routine also adds the circumcircle vertex to the centersList.
+   * <p>
+   * Because of the way the edge iterator works, this routine may be called up
+   * to three times for the same triangle. The circumcircle calculation will
+   * only be performed the first time.
+   *
+   * @param cCircle a re-usable circumcircle instance for making the calculation
+   * and storing the results.
+   * @param e an inner-side object of the edge of the triangle of interest
+   * @param centers the array for storing triangle centers.
+   */
   private void buildCenter(Circumcircle cCircle, IQuadEdge e, Vertex[] centers) {
     int index = e.getIndex();
     if (centers[index] == null) {
@@ -305,7 +529,7 @@ public class LimitedVoronoi {
         }
         double x = cCircle.getX();
         double y = cCircle.getY();
-        double z = Double.NaN;
+        double z = computeZ(x, y);
         Vertex v = new Vertex(x, y, z, mindex(e, f, r));
         centers[e.getIndex()] = v;
         centers[f.getIndex()] = v;
@@ -329,8 +553,8 @@ public class LimitedVoronoi {
       if (tin instanceof IncrementalTin) {
         ((IncrementalTin) tin).collaspsePerimeterTriangles(
                 pOptions.adjustmentThreshold);
-      }else if(tin instanceof SemiVirtualIncrementalTin){
-        ((SemiVirtualIncrementalTin)tin).collaspsePerimeterTriangles(
+      } else if (tin instanceof SemiVirtualIncrementalTin) {
+        ((SemiVirtualIncrementalTin) tin).collaspsePerimeterTriangles(
                 pOptions.adjustmentThreshold);
       }
     }
@@ -369,12 +593,28 @@ public class LimitedVoronoi {
       buildCenter(cCircle, e.getDual(), centers);
     }
 
-    double avgLen = sumEdgeLength / nEdgeLength;
-    double x0 = bounds.getMinX() - avgLen / 4;
-    double x1 = bounds.getMaxX() + avgLen / 4;
-    double y0 = bounds.getMinY() - avgLen / 4;
-    double y1 = bounds.getMaxY() + avgLen / 4;
-    bounds.setRect(x0, y0, x1 - x0, y1 - y0);
+    if (pOptions.bounds == null) {
+      double avgLen = sumEdgeLength / nEdgeLength;
+      xmin = sampleBounds.getMinX() - avgLen / 4;
+      xmax = sampleBounds.getMaxX() + avgLen / 4;
+      ymin = sampleBounds.getMinY() - avgLen / 4;
+      ymax = sampleBounds.getMaxY() + avgLen / 4;
+      bounds.setRect(xmin, ymin, xmax - xmin, ymax - ymin);
+    } else {
+      if (!pOptions.bounds.contains(sampleBounds)) {
+        throw new IllegalArgumentException(
+                "Optional bounds specification does not entirely contain the sample set");
+      }
+      xmin = pOptions.bounds.getMinX();
+      xmax = pOptions.bounds.getMaxX();
+      ymin = pOptions.bounds.getMinY();
+      ymax = pOptions.bounds.getMaxY();
+      bounds.setRect(xmin, ymin, xmax - xmin, ymax - ymin);
+    }
+
+    for (Vertex circumcircle : circleList) {
+      computeAndSetOutcode(circumcircle);
+    }
 
     // perimeter edges get special treatment because they give rise
     // to an infinite ray outward from circumcenter
@@ -408,132 +648,172 @@ public class LimitedVoronoi {
       visited[index ^ 0x01] = true;
     }
 
-    // first build the open loops starting at perimeters edges
+    // the first polygons we build are those that are anchored by a perimeter
+    // vertex.  This is the set of all the open polygons.  Once these
+    // are built, all other polygons are closed.
     for (IQuadEdge e : perimeter) {
       int index = e.getIndex();
-      if (visited[index]) {
-        continue;
-      }
-      scratch.clear();
       Vertex hub = e.getA();
-      QuadEdge prior = null;
-      QuadEdge first = null;
-      for (IQuadEdge p : e.pinwheel()) {
-        index = p.getIndex();
-        visited[index] = true;
-        QuadEdge q = parts[index];
-        if (q == null) {
-          // we've reached the exterior, the pinwheel would
-          // continue out to ghost edges, but we don't want them.
-          Vertex vLast = prior.getB();
-          Vertex vFirst = first.getA();
-          int iLast = (int) vLast.getZ();
-          int iFirst = (int) vFirst.getZ();
-          if (iFirst < iLast) {
-            // it wraps around the lower-left corner
-            iFirst += 4;
-          }
-          // construct edges as necessary to connect vLast to vFirst
-          for (int i = iLast + 1; i <= iFirst; i++) {
-            double x = 0;
-            double y = 0;
-            // anding with 0x03 is equivalent to modulus 4
-            int iCorner = i & 0x03;
-            if (iCorner == 0) {
-              // lower-left corner
-              x = x0;
-              y = y0;
-            } else if (iCorner == 1) {
-              x = x1;
-              y = y0;
-            } else if (iCorner == 2) {
-              x = x1;
-              y = y1;
-            } else {
-              // iCorner == 3
-              x = x0;
-              y = y1;
-            }
-
-            Vertex v = new Vertex(x, y, Double.NaN, -1);
-            v.setSynthetic(true);
-            QuadEdge n = edgePool.allocateEdge(vLast, v);
-            n.setSynthetic(true);
-            n.setReverse(prior);
-            vLast = v;
-            prior = n;
-            scratch.add(n);
-          }
-          QuadEdge n = edgePool.allocateEdge(vLast, vFirst);
-          n.setSynthetic(true);
-          n.setReverse(prior);
-          first.setReverse(n);
-          scratch.add(n);
-          break;
-        }
-        scratch.add(q);
-        if (prior == null) {
-          first = q;
-        } else {
-          q.setReverse(prior);
-        }
-        prior = q;
+      if (!visited[index]) {
+        scratch.clear();
+        buildPolygon(e, visited, parts, scratch);
+        polygons.add(new ThiessenPolygon(hub, scratch, true));
       }
-      polygons.add(new ThiessenPolygon(hub, scratch, true));
     }
-
     edgeIterator = tin.getEdgeIterator();
     while (edgeIterator.hasNext()) {
       IQuadEdge e = edgeIterator.next();
       int index = e.getIndex();
-      if (!visited[index] && parts[index] != null) {
+      Vertex hub = e.getA();
+      if (hub == null) {
+        // a ghost edge.  no polygon possible
+        visited[index] = true;
+      } else if (!visited[index]) {
         scratch.clear();
-        Vertex hub = e.getA();
-        QuadEdge prior = null;
-        QuadEdge first = null;
-        for (IQuadEdge p : e.pinwheel()) {
-          index = p.getIndex();
-          visited[index] = true;
-          QuadEdge q = parts[p.getIndex()];
-          scratch.add(q);
-          if (prior == null) {
-            first = q;
-          } else {
-            q.setReverse(prior);
-          }
-          prior = q;
-        }
-        if (first != null && prior != null) {
-          first.setReverse(prior);
-          polygons.add(new ThiessenPolygon(hub, scratch, false));
-        }
+        buildPolygon(e, visited, parts, scratch);
+        polygons.add(new ThiessenPolygon(hub, scratch, false));
       }
 
       IQuadEdge d = e.getDual();
       index = d.getIndex();
-      if (!visited[index] && parts[index] != null) {
+      hub = d.getA();
+      if (hub == null) {
+        // a ghost edge, no polygon possible
+        visited[index] = true;
+      } else if (!visited[index]) {
         scratch.clear();
-        Vertex hub = d.getA();
-        QuadEdge prior = null;
-        QuadEdge first = null;
-        for (IQuadEdge p : d.pinwheel()) {
-          index = p.getIndex();
-          visited[index] = true;
-          QuadEdge q = parts[p.getIndex()];
-          scratch.add(q);
-          if (prior == null) {
-            first = q;
-          } else {
-            q.setReverse(prior);
-          }
-          prior = q;
-        }
-        if (first != null && prior != null) {
-          first.setReverse(prior);
-          polygons.add(new ThiessenPolygon(hub, scratch, false));
-        }
+        buildPolygon(d, visited, parts, scratch);
+        polygons.add(new ThiessenPolygon(hub, scratch, false));
       }
     }
+  }
+
+  private void buildPolygon(IQuadEdge e,
+          boolean[] visited,
+          QuadEdge[] parts,
+          List<IQuadEdge> scratch) {
+    int index = e.getIndex();
+    QuadEdge prior = null;
+    QuadEdge first = null;
+    for (IQuadEdge p : e.pinwheel()) {
+      index = p.getIndex();
+      visited[index] = true;
+      QuadEdge q = parts[p.getIndex()];
+      if (q == null) {
+        // we've reached a discontinuity in the construction.
+        // the discontinuity could be due a clipping border or a perimeter ray.
+        // we will leave the prior edge alone and complete the links the
+        // next time we encounter a valid edge
+        continue;
+      }
+      if (first == null) {
+        first = q;
+        prior = q;
+        continue; // note: "first" not yet added to scratch
+      }
+      linkEdges(prior, q, scratch);
+      prior = q;
+    }
+
+    linkEdges(prior, first, scratch); // "first" will be added here
+  }
+
+  @SuppressWarnings("PMD.AvoidInstantiatingObjectsInLoops")
+  private void linkEdges(QuadEdge xprior, QuadEdge q, List<IQuadEdge> scratch) {
+    QuadEdge prior = xprior;
+    // connect v0 to v1
+    Vertex v0 = prior.getB();
+    Vertex v1 = q.getA();
+    double z0 = v0.getZ();
+    double z1 = v1.getZ();
+    if (Double.isNaN(z0)) {
+      // v0 should be same object as v1
+      // a simple link is all that's required
+      scratch.add(q);
+      prior.setForward(q);
+      return;
+    }
+
+    // construct new edges to thread a line for z0 to z1
+    // 
+    // first, it is possible that z0 and z1 are nearly equal but not quite.
+    // this could happen due to round-off in the clipping routine.
+    // at this time, I have never observed this special case happening
+    // but I am including code to handle it anyway
+    double test = Math.abs(z0 - z1);
+    if (test < 1.0e-9 || test > 4 - 1.0e-9) {
+      // a simple link is all that's required
+      // TO DO: do we want to replace one of the vertices so that 
+      // they are identical?  But what happens in a reverse order 
+      // of traversal?
+      scratch.add(q);
+      prior.setForward(q);
+      return;
+    }
+
+    // we need to thread v0 to v1.  If both lie on the same
+    // border, then this action requires the construction of a synthetic
+    // edge from v0 to v1.  But if the vertices lie on different borders,
+    // it will be necessary to construct joining lines that bend 
+    // around the corners.
+    //     the borders are numbered from 0 to 3 in the order
+    // bottom, right, top, left.  The z coordinates indicate which
+    // border the vertices lie on, with z being given as a fractional
+    // value. 
+    //  
+    // TO DO: are variable names iLast, iFirst confusing? change them?
+    int iLast = (int) z0;
+    int iFirst = (int) z1;
+    if (iFirst < iLast) {
+      // it wraps around the lower-left corner
+      iFirst += 4;
+    }
+
+    // add corners, if any
+    for (int i = iLast + 1; i <= iFirst; i++) {
+      double x;
+      double y;
+      // anding with 0x03 is equivalent to modulus 4
+      int iCorner = i & 0x03;
+      switch (iCorner) {
+        case 0:
+          // lower-left corner
+          x = xmin;
+          y = ymin;
+          break;
+        case 1:
+          x = xmax;
+          y = ymin;
+          break;
+        case 2:
+          x = xmax;
+          y = ymax;
+          break;
+        default:
+          // iCorner == 3
+          x = xmin;
+          y = ymax;
+          break;
+      }
+
+      Vertex v = new Vertex(x, y, Double.NaN, -1);
+      v.setSynthetic(true);
+      QuadEdge n = edgePool.allocateEdge(v0, v);
+      n.setSynthetic(true);
+      v0 = v;
+
+      scratch.add(n);
+      n.setReverse(prior);
+      prior = n;
+
+    }
+
+    QuadEdge n = edgePool.allocateEdge(v0, v1);
+    n.setSynthetic(true);
+    scratch.add(n);
+    scratch.add(q);
+    n.setReverse(prior);
+    q.setReverse(n);
   }
 
   /**

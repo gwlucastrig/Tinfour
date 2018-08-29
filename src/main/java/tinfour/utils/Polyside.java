@@ -108,7 +108,7 @@ public final class Polyside {
     }
 
     IQuadEdge e0 = list.get(0);
-    IQuadEdge e1 = list.get(1);
+    IQuadEdge e1 = list.get(n-1);
     if (!e0.getA().equals(e1.getB())) {
       throw new IllegalArgumentException("Input polygon is not closed "
               + "(last edge must at at start of first)");

@@ -86,7 +86,7 @@
   
 
 <!--   PMD       to run this, you will have to set up the PMD class path first.
-                 this configuration assumes it is in a parallel folder. 
+                 this configuration assumes it is in a parallel folder.  
 <path id="pmd.classpath">
     <fileset dir="../pmd-bin-5.4.1/lib">
         <include name="*.jar"/>
@@ -107,7 +107,7 @@
           </fileset>
       </pmd>
 </target>
- -->
+-->
  
   
 </project>
