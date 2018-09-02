@@ -23,8 +23,23 @@
  * ------   --------- -------------------------------------------------
  * 07/2018  G. Lucas  Initial implementation 
  * 08/2018  G. Lucas  Added vertex based constructor and build options
+ * 09/2018  G. Lucas  Fixed bugs with infinite rays, refined concept of operations
  *
  * Notes:
+ *
+ *   The clipping algorithm used here applied elements of both the classic
+ * Cohen-Sutherland line clipping algorithm (from the 1960s!) and the
+ * Liang Barsky method.  In the general case, Liang Barsky is more efficient,
+ * but in cases where the edges to be clipped would include a large percent
+ * of edges in the interior of the clip region, the "trivially accept" logic
+ * in Cohen-Sutherland provides a useful shortcut.  And that is just the
+ * case for an input data set with a large number of sample points
+ * (except for features developed at the perimeter edges, all edges will
+ * be interior).
+ *   The clipping performed here is also complicated by the fact that 
+ * a true Voronoi Diagram covers the entire plane (is unbounded) and 
+ * so some of the boundary divisions are infinite rays rather than 
+ * finite segments.
  *
  * -----------------------------------------------------------------------
  */
@@ -48,15 +63,15 @@ import tinfour.utils.TinInstantiationUtility;
 import tinfour.utils.VertexColorizerKempe6;
 
 /**
- * Constructs a Voronoi Diagram structure from a populated instance of an
- * IncrementalTin. The resulting structure is "limited" in the sense that it
+ * Constructs a Voronoi Diagram structure from a set of sample points.
+ * The resulting structure is "bounded" in the sense that it
  * covers only a finite domain on the coordinate plane (unlike a true Voronoi
  * Diagram, which covers an infinite domain).
  * <p>
- * <strong>This class is under development and is subject to changes in its API
- * and behavior.</strong>
+ * <strong>This class is under development and is subject to minor 
+ * changes in its API and behavior.</strong>
  */
-public class LimitedVoronoi {
+public class BoundedVoronoi {
 
   /**
    * The overall domain of the structure
@@ -80,7 +95,7 @@ public class LimitedVoronoi {
 
   private double maxRadius = -1;
 
-  private LimitedVoronoi() {
+  private BoundedVoronoi() {
     // a private constructor to deter applications from
     // invoking the default constructor
     sampleBounds = null;
@@ -96,7 +111,7 @@ public class LimitedVoronoi {
    * null to use defaults.
    *
    */
-  public LimitedVoronoi(List<Vertex> vertexList, LimitedVoronoiBuildOptions options) {
+  public BoundedVoronoi(List<Vertex> vertexList, BoundedVoronoiBuildOptions options) {
     if (vertexList == null) {
       throw new IllegalArgumentException(
               "Null input not allowed for constructor");
@@ -141,9 +156,9 @@ public class LimitedVoronoi {
 
     edgePool = new EdgePool();
 
-    LimitedVoronoiBuildOptions pOptions = options;
+    BoundedVoronoiBuildOptions pOptions = options;
     if (options == null) {
-      pOptions = new LimitedVoronoiBuildOptions();
+      pOptions = new BoundedVoronoiBuildOptions();
     }
 
     buildStructure(tin, pOptions);
@@ -156,12 +171,12 @@ public class LimitedVoronoi {
 
   /**
    * Constructs an instance of a Voronoi Diagram that corresponds to the input
-   * Delaunay Triangulation.
+   * Delaunay Triangulation. 
    *
    * @param delaunayTriangulation a valid instance of a Delaunay Triangulation
    * implementation.
    */
-  public LimitedVoronoi(IIncrementalTin delaunayTriangulation) {
+  public BoundedVoronoi(IIncrementalTin delaunayTriangulation) {
     if (delaunayTriangulation == null) {
       throw new IllegalArgumentException(
               "Null input is not allowed for TIN");
@@ -179,7 +194,7 @@ public class LimitedVoronoi {
             sampleBounds.getHeight());
 
     edgePool = new EdgePool();
-    LimitedVoronoiBuildOptions pOptions = new LimitedVoronoiBuildOptions();
+    BoundedVoronoiBuildOptions pOptions = new BoundedVoronoiBuildOptions();
     buildStructure(delaunayTriangulation, pOptions);
   }
 
@@ -198,21 +213,25 @@ public class LimitedVoronoi {
       return;
     }
 
-//    int outcode0 = v0.getColorIndex();
-//    int outcode1 = v1.getColorIndex();
-//    if((outcode0 & outcode1)!=0){
-//      // the edge is entirely outside the bounded area 
-//      // and does not intersect it.  It can be rejected trivially.
-//      // Note that this determination will also reject edges that
-//      // lie exactly on a boundary.
-//    }
-//    if ((outcode0|outcode1)==0) {
-//      // both vertices are entirely within the bounded area.
-//      // the edge can be accepted trivially
-//      IQuadEdge n = edgePool.allocateEdge(v0, v1);
-//      part[eIndex] = n;
-//      part[dIndex] = n.getDual();
-//    }
+    // The Cohen-Sutherland line-clipping algorithm allows us to 
+    // trivially reject an edge that is completely outside the bounds
+    // and one that is completely inside the bounds.
+    int outcode0 = v0.getColorIndex();
+    int outcode1 = v1.getColorIndex();
+
+    if ((outcode0&outcode1)!=0) {
+      return;
+    }
+    
+    if ((outcode0|outcode1)==0) {
+      // both vertices are entirely within the bounded area.
+      // the edge can be accepted trivially
+      IQuadEdge n = edgePool.allocateEdge(v0, v1);
+      part[eIndex] = n;
+      part[dIndex] = n.getDual();
+      return;
+    }
+    
     // the edge intersects at least one and potentially two boundaries.
     IQuadEdge n = liangBarsky(v0, v1);
     if (n != null) {
@@ -355,13 +374,34 @@ public class LimitedVoronoi {
   }
 
   /**
-   * Build an edge based on the ray outward from the associated circumcenter and
-   * perpendicular to the perimeter edge
+   * Insert the vertex into the array in increasing order of distance from
+   * circumcenter (given by parameter t). Note that the circumcenter will not be
+   * included in the build if it is outside the clipping area.
    *
-   * @param e a perimeter edge
-   * @param center the array of circumcenters
-   * @param part the array to store parts
+   * @param nBuild number of vertices in the build
+   * @param vBuild the vertices in the build
+   * @param tBuild the distance parameters in the build
+   * @param t the distance of vertex v from the circumcenter
+   * @param v the vertex
+   * @return the incremented number of vertices in the build.
    */
+  private int insertRayVertex(
+          int nBuild, Vertex[] vBuild, double[] tBuild, double t, Vertex v) {
+    int index = nBuild;
+    for (int i = nBuild - 1; i >= 0; i--) {
+      if (t < tBuild[i]) {
+        tBuild[i + 1] = tBuild[i];
+        vBuild[i + 1] = vBuild[i];
+        index = i;
+      } else {
+        break;
+      }
+    }
+    tBuild[index] = t;
+    vBuild[index] = v;
+    return nBuild + 1;
+  }
+
   private void buildPerimeterRay(IQuadEdge e, Vertex[] center, IQuadEdge[] part) {
     int index = e.getIndex();
     Vertex vCenter = center[index]; // vertex at the circumcenter
@@ -371,6 +411,16 @@ public class LimitedVoronoi {
     double x1 = bounds.getMaxX();
     double y0 = bounds.getMinY();
     double y1 = bounds.getMaxY();
+
+    int nBuild = 0;
+    double[] tBuild = new double[5];
+    Vertex[] vBuild = new Vertex[5];
+    int outcode = vCenter.getColorIndex();
+    if (outcode == 0) {
+      vBuild[0] = vCenter;
+      tBuild[0] = 0;
+      nBuild = 1;
+    }
 
     // construct and edge from the outside to the inside.
     //   the edge we construct is based on an infinite ray outward
@@ -390,57 +440,52 @@ public class LimitedVoronoi {
     double uY = -eX / u;
     double cX = vCenter.getX();
     double cY = vCenter.getY();
-    double tX = Double.POSITIVE_INFINITY;
-    double tY = Double.POSITIVE_INFINITY;
-    double x = Double.NaN;
-    double y = Double.NaN;
+    double x;
+    double y;
     double z;
+
     // in the following, we screen out the uX==0 and uY==0 cases
-    // because the they only intersect one edge
-    if (uX < 0) {
-      // off to the left
-      tX = (x0 - cX) / uX;
-      x = x0;
-    } else if (uX > 0) {
-      tX = (x1 - cX) / uX;
-      x = x1;
-    }
-    if (uY < 0) {
-      tY = (y0 - cY) / uY;
-      y = y0;
-    } else if (tY > 0) {
-      tY = (y1 - cY) / uY;
-      y = y1;
-    }
-    if (tX < tY) {
-      // find the y corresponding to x = tX*uX+cX;
-      y = tX * uY + cY;
-      double s = (y - y0) / (y1 - y0);
-      if (uX < 0) {
-        // the left side, descending
-        z = 4 - s;
-      } else {
-        // the right edge, ascending
-        z = 1 + s;
+    // because (uX, uY) is a unit vector, t corresponds to a distance
+    if (uX != 0) {
+      double t = (x0 - cX) / uX;
+      y = t * uY + cY;
+      if (t >= 0 && y0 <= y && y <= y1) {
+        z = 4 - (y - y0) / (y1 - y0); // the left side, descending, z in [3,4]
+        Vertex v = new Vertex(x0, y, z, -vCenter.getIndex());
+        nBuild = insertRayVertex(nBuild, vBuild, tBuild, t, v);
       }
-    } else {
-      // find the x correspoinding to y = tY*uY+cY
-      x = tY * uX + cX;
-      double s = (x - x0) / (x1 - x0);
-      if (uY < 0) {
-        z = s;
-      } else {
-        z = 3 - s;
+      t = (x1 - cX) / uX;
+      y = t * uY + cY;
+      if (t >= 0 && y0 <= y && y <= y1) {
+        z = 1 + (y - y0) / (y1 - y0); // right side, ascending, z in [1,2]
+        Vertex v = new Vertex(x1, y, z, -vCenter.getIndex());
+        nBuild = insertRayVertex(nBuild, vBuild, tBuild, t, v);
       }
     }
 
-    // the negative vertex index is just a diagnostic/debugging tool.
-    Vertex vOut = new Vertex(x, y, z, -vCenter.getIndex());
+    if (uY != 0) {
+      double t = (y0 - cY) / uY;
+      x = t * uX + cX;
+      if (t >= 0 && x0 <= x && x <= x1) {
+        z = (x - x0) / (x1 - x0); // bottom side, ascending, z in [0,1]
+        Vertex v = new Vertex(x, y0, z, -vCenter.getIndex());
+        nBuild = insertRayVertex(nBuild, vBuild, tBuild, t, v);
+      }
 
-    QuadEdge n = edgePool.allocateEdge(vOut, vCenter); // from out to in
-    part[index] = n;
-    part[index ^ 0x01] = n.getDual();
+      t = (y1 - cY) / uY;
+      x = t * uX + cX;
+      if (t >= 0 && x0 <= x && x <= x1) {
+        z = 3 - (x - x0) / (x1 - x0); // top side, descending, z in [2,3] 
+        Vertex v = new Vertex(x, y1, z, -vCenter.getIndex());
+        nBuild = insertRayVertex(nBuild, vBuild, tBuild, t, v);
+      }
+    }
 
+    if (nBuild >= 2) {
+      QuadEdge n = edgePool.allocateEdge(vBuild[1], vBuild[0]); // from out to in
+      part[index] = n;
+      part[index ^ 0x01] = n.getDual();
+    }
   }
 
   /**
@@ -547,7 +592,7 @@ public class LimitedVoronoi {
   @SuppressWarnings("PMD.AvoidInstantiatingObjectsInLoops")
   private void buildStructure(
           IIncrementalTin tin,
-          LimitedVoronoiBuildOptions pOptions) {
+          BoundedVoronoiBuildOptions pOptions) {
 
     if (pOptions.enableAdjustments) {
       if (tin instanceof IncrementalTin) {
@@ -634,6 +679,7 @@ public class LimitedVoronoi {
       }
       visited[eIndex] = true;
       visited[dIndex] = true;
+
       buildPart(e, centers, parts);
     }
 
@@ -649,17 +695,17 @@ public class LimitedVoronoi {
     }
 
     // the first polygons we build are those that are anchored by a perimeter
-    // vertex.  This is the set of all the open polygons.  Once these
-    // are built, all other polygons are closed.
+    // vertex.  This is the set of all the open polygons.   
+    // All other polygons are closed. So, as a diagnostic, we could check to
+    // verify that all polygons at the end of this loop are open and all
+    // polygons created by the next loop are closed.
     for (IQuadEdge e : perimeter) {
       int index = e.getIndex();
-      Vertex hub = e.getA();
       if (!visited[index]) {
-        scratch.clear();
         buildPolygon(e, visited, parts, scratch);
-        polygons.add(new ThiessenPolygon(hub, scratch, true));
       }
     }
+
     edgeIterator = tin.getEdgeIterator();
     while (edgeIterator.hasNext()) {
       IQuadEdge e = edgeIterator.next();
@@ -669,9 +715,7 @@ public class LimitedVoronoi {
         // a ghost edge.  no polygon possible
         visited[index] = true;
       } else if (!visited[index]) {
-        scratch.clear();
         buildPolygon(e, visited, parts, scratch);
-        polygons.add(new ThiessenPolygon(hub, scratch, false));
       }
 
       IQuadEdge d = e.getDual();
@@ -681,9 +725,7 @@ public class LimitedVoronoi {
         // a ghost edge, no polygon possible
         visited[index] = true;
       } else if (!visited[index]) {
-        scratch.clear();
         buildPolygon(d, visited, parts, scratch);
-        polygons.add(new ThiessenPolygon(hub, scratch, false));
       }
     }
   }
@@ -692,12 +734,17 @@ public class LimitedVoronoi {
           boolean[] visited,
           QuadEdge[] parts,
           List<IQuadEdge> scratch) {
-    int index = e.getIndex();
+    scratch.clear();
     QuadEdge prior = null;
     QuadEdge first = null;
+    boolean ghostEdgeFound = false;
+    Vertex hub = e.getA();
     for (IQuadEdge p : e.pinwheel()) {
-      index = p.getIndex();
+      int index = p.getIndex();
       visited[index] = true;
+      if (p.getB() == null) {
+        ghostEdgeFound = true;
+      }
       QuadEdge q = parts[p.getIndex()];
       if (q == null) {
         // we've reached a discontinuity in the construction.
@@ -715,7 +762,12 @@ public class LimitedVoronoi {
       prior = q;
     }
 
-    linkEdges(prior, first, scratch); // "first" will be added here
+    if (prior == null && first == null) {
+      // should never happen
+      return;
+    }
+    linkEdges(prior, first, scratch); // this adds "first" to scratch list
+    polygons.add(new ThiessenPolygon(hub, scratch, ghostEdgeFound));
   }
 
   @SuppressWarnings("PMD.AvoidInstantiatingObjectsInLoops")
@@ -796,7 +848,9 @@ public class LimitedVoronoi {
           break;
       }
 
-      Vertex v = new Vertex(x, y, Double.NaN, -1);
+      // adding the corner point we will set the ID to be the corner
+      // index and will also set it as synthetic.
+      Vertex v = new Vertex(x, y, Double.NaN, iCorner);
       v.setSynthetic(true);
       QuadEdge n = edgePool.allocateEdge(v0, v);
       n.setSynthetic(true);
@@ -832,7 +886,7 @@ public class LimitedVoronoi {
       }
     }
     int nOpen = polygons.size() - nClosed;
-    ps.format("Limited Voronoi Diagram%n");
+    ps.format("Bounded Voronoi Diagram%n");
     ps.format("   Polygons:   %8d%n", polygons.size());
     ps.format("     Open:     %8d%n", nOpen);
     ps.format("     Closed:   %8d%n", nClosed);
@@ -853,7 +907,7 @@ public class LimitedVoronoi {
   }
 
   /**
-   * Gets the bounds of the limited Voronoi Diagram. If the associated Delaunay
+   * Gets the bounds of the bounded Voronoi Diagram. If the associated Delaunay
    * Triangulation included "skinny" triangles along its perimeter, the Voronoi
    * Diagram's bounds may be substantially larger than those of the original
    * input data set
@@ -935,7 +989,7 @@ public class LimitedVoronoi {
    * Gets the polygon that contains the specified coordinate point (x,y).
    * <p>
    * <strong>Note: </strong>Although a true Voronoi Diagram covers the entire
-   * plane, the Limited Voronoi class is has a finite domain. If the specified
+   * plane, the Bounded Voronoi class is has a finite domain. If the specified
    * coordinates are outside the bounds of this instance, no polygon will be
    * found and a null result will be returned.
    *
@@ -960,5 +1014,23 @@ public class LimitedVoronoi {
       }
     }
     return minP;
+  }
+
+  /**
+   * Gets the maximum index of the currently allocated edges. This method can be
+   * used in support of applications that require the need to survey the edge
+   * set and maintain a parallel array or collection instance that tracks
+   * information about the edges. In such cases, the maximum edge index provides
+   * a way of knowing how large to size the array or collection.
+   * <p>
+   * Internally, Tinfour uses edge index values to manage edges in memory. The
+   * while there can be small gaps in the indexing sequence, this method
+   * provides a way of obtaining the absolute maximum value of currently
+   * allocated edges.
+   *
+   * @return a positive value or zero if the TIN is not bootstrapped.
+   */
+  public int getMaximumEdgeAllocationIndex() {
+    return edgePool.getMaximumAllocationIndex();
   }
 }

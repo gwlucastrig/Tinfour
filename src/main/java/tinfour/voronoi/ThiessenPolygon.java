@@ -1,15 +1,31 @@
-/*-----------------------------------------------------------------------
+/* --------------------------------------------------------------------
+ * Copyright 2018 Gary W. Lucas.
  *
- * Copyright (C) 2018 Sonalysts Inc. All Rights Reserved.
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0A
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ * ---------------------------------------------------------------------
+ */
+
+ /*
+ * -----------------------------------------------------------------------
  *
  * Revision History:
- * Date     Name         Description
- * ------   ---------    -------------------------------------------------
- * 08/2018  G. Lucas     Created
+ * Date Name Description
+ * ------   --------- -------------------------------------------------
+ * 08/2018  G. Lucas  Initial implementation
  *
  * Notes:
  *
- *--------------------------------------------------------------------------
+ * -----------------------------------------------------------------------
  */
 package tinfour.voronoi;
 
@@ -22,7 +38,7 @@ import tinfour.utils.Polyside;
 
 /**
  * Provides elements and methods for representing a Thiessen Polygon created by
- * the LimitedVoronoi class.
+ * the BoundedVoronoi class.
  */
 public class ThiessenPolygon {
 
@@ -74,7 +90,7 @@ public class ThiessenPolygon {
   /**
    * Gets the area of the Voronoi polygon. If the polygon is an open polygon,
    * its actual area would be infinite,  but the reported area matches
-   * the domain of the Limited Voronoi Diagram class.
+   * the domain of the Bounded Voronoi Diagram class.
    *
    * @return  a valid, finite floating point value
    */
@@ -118,8 +134,16 @@ public class ThiessenPolygon {
     return result.isCovered();
   }
 
+  /**
+   * Indicates that in a true Voronoi Diagram the polygon would
+   * not form a closed polygon and would have an infinite domain.
+   * @return true if the polygon is open, otherwise false.
+   */
+  public boolean isOpen(){
+      return open;
+  }
   @Override
   public String toString() {
-    return String.format("ThiessenPolygon index=%d", vertex.getIndex());
+    return String.format("ThiessenPolygon vertex=%s", vertex.getLabel());
   }
 }

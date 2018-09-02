@@ -36,6 +36,7 @@ import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.Paint;
 import java.awt.RenderingHints;
+import java.awt.Shape;
 import java.awt.font.FontRenderContext;
 import java.awt.font.TextLayout;
 import java.awt.geom.AffineTransform;
@@ -53,13 +54,13 @@ import tinfour.utils.TinInstantiationUtility;
 import tinfour.utils.VertexColorizerKempe6;
 
 /**
- * Provides utilities for drawing graphical representations of a limited Voronoi
- * Diagram instances.
+ * Provides utilities for drawing graphical representations of a 
+ * BoundedVoronoiDiagram instance.
  */
 @SuppressWarnings("PMD.AvoidInstantiatingObjectsInLoops")
-public class LimitedVoronoiDrawingUtility {
+public class BoundedVoronoiDrawingUtility {
 
-  private final LimitedVoronoi diagram;
+  private final BoundedVoronoi diagram;
   private final AffineTransform af;
   private final Rectangle2D bounds;
   
@@ -67,16 +68,15 @@ public class LimitedVoronoiDrawingUtility {
     Color.YELLOW,
     Color.MAGENTA,
     Color.ORANGE,
-    Color.DARK_GRAY,
     Color.LIGHT_GRAY,
     Color.PINK,
-    Color.WHITE,
-    Color.RED,
-    Color.GREEN,
-    Color.BLUE,};
+    Color.GREEN.brighter(),
+        Color.RED,
+    Color.BLUE,
+       };
 
   /**
-   * Constructs drawing utility instance for the specified Limited Voronoi
+   * Constructs drawing utility instance for the specified Bounded Voronoi
    * Diagram. An affine transform is created that will scale the diagram to the
    * specified graphics surface.
    * <p>
@@ -99,8 +99,8 @@ public class LimitedVoronoiDrawingUtility {
    * @param optionalBounds an alternate bounds specification, or a null if the
    * defaults are to be used.
    */
-  public LimitedVoronoiDrawingUtility(
-          LimitedVoronoi diagram,
+  public BoundedVoronoiDrawingUtility(
+          BoundedVoronoi diagram,
           int width,
           int height,
           int pad,
@@ -325,6 +325,65 @@ public class LimitedVoronoiDrawingUtility {
       }
     }
   }
+  
+  
+  /**
+   * Draws a the vertices of the specified list. The font
+   * specification is optional. If it is specified, the vertices will be
+   * labeled. If it is null, the vertices will not be labeled. All other
+   * specifications are mandatory
+   *
+   * @param g the graphics surface for drawing
+   * @param foreground the color for drawing the graphics
+   * @param font an optional font specification for labeling vertices; or null
+   * if no labeling is to be performed.
+   * @param vertexList the list of vertices to be drawn
+   */
+  public void drawVertices(
+          Graphics g,
+          Color foreground,
+          Font font,
+          List<Vertex> vertexList) {
+    Graphics2D g2d = (Graphics2D) g;
+    g2d.setRenderingHint(
+            RenderingHints.KEY_ANTIALIASING,
+            RenderingHints.VALUE_ANTIALIAS_ON);
+    g2d.setRenderingHint(
+            RenderingHints.KEY_TEXT_ANTIALIASING,
+            RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
+
+    Point2D p0 = new Point2D.Double();
+    Point2D p1 = new Point2D.Double();
+
+    Ellipse2D e2d = new Ellipse2D.Double();
+
+    g2d.setClip(null);
+    g2d.setStroke(new BasicStroke(1.0f));
+
+    g2d.setColor(foreground);
+    FontRenderContext frc = null;
+    if (font != null) {
+      g2d.setFont(font);
+      frc = new FontRenderContext(null, true, true);
+    }
+    for (Vertex v : vertexList) {
+      double x = v.getX();
+      double y = v.getY();
+      p0.setLocation(x, y);
+      af.transform(p0, p1);
+      e2d.setFrame(p1.getX() - 2, p1.getY() - 2, 6.0f, 6.0f);
+      g2d.fill(e2d);
+      g2d.draw(e2d);
+      if (font != null) {
+        String text = v.getLabel();
+        TextLayout layout = new TextLayout(text, font, frc);
+        double yOffset = layout.getAscent() + 2;
+        g2d.drawString(text,
+                (int) (p1.getX() + 3),
+                (int) (p1.getY() + 3 + yOffset));
+      }
+    }
+  }
 
   /**
    * Performs area-fill operations on the polygons that are defined by the
@@ -430,4 +489,53 @@ public class LimitedVoronoiDrawingUtility {
     g2d.setClip(null);
   }
 
+  
+   /**
+   * Draws a the edges from the specified list.
+   *
+   * @param g the graphics surface for drawing
+   * @param foreground the color for drawing the graphics
+   * @param strokeWidth the width of the line features to be draw (typically, a
+   * value of 2).
+   * @param edgeList the edges to be drawn
+   */
+  public void drawEdges(
+          Graphics g,
+          Color foreground,
+          double strokeWidth,
+          List<IQuadEdge>edgeList) {
+    Graphics2D g2d = (Graphics2D) g;
+    g2d.setRenderingHint(
+            RenderingHints.KEY_ANTIALIASING,
+            RenderingHints.VALUE_ANTIALIAS_ON);
+    g2d.setRenderingHint(
+            RenderingHints.KEY_TEXT_ANTIALIASING,
+            RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
+
+
+    Shape saveClip = g2d.getClip();
+    g2d.setClip(null);
+    g2d.setColor(foreground);
+    g2d.setStroke(new BasicStroke((float) strokeWidth));
+
+    Point2D p0 = new Point2D.Double();
+    Point2D p1 = new Point2D.Double();
+    Line2D l2d = new Line2D.Double();
+
+    // draw the edges
+    for (IQuadEdge e : edgeList) {
+      Vertex A = e.getA();
+      Vertex B = e.getB();
+      if(A==null || B==null){
+        continue;
+      }
+      p0.setLocation(A.getX(), A.getY());
+      p1.setLocation(B.getX(), B.getY());
+      af.transform(p0, p0);
+      af.transform(p1, p1);
+      l2d.setLine(p0, p1);
+      g2d.draw(l2d);
+    }
+    g2d.setClip(saveClip);
+  }
 }
