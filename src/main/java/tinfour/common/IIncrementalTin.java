@@ -139,8 +139,8 @@ public interface IIncrementalTin {
    * method can be used in support of applications that require the need
    * to survey the edge set and maintain a parallel array or
    * collection instance that tracks information about the edges.
-   * In such cases, the edge index provides a way of indexing the
-   * array or collection.
+   * In such cases, the maximum edge index provides a way of knowing how large 
+   * to size the array or collection.
    * <p>
    * Internally, Tinfour uses edge index values to manage edges in memory.
    * The while there can be small gaps in the indexing sequence, this

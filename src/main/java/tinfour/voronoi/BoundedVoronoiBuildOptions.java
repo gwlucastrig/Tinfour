@@ -32,9 +32,9 @@ package tinfour.voronoi;
 import java.awt.geom.Rectangle2D;
 
 /**
- * Specifies options for building a limited Voronoi Diagram 
+ * Specifies options for building a bounded Voronoi Diagram 
  */
-public class LimitedVoronoiBuildOptions {
+public class BoundedVoronoiBuildOptions {
   
   protected boolean enableAdjustments = true;
   
@@ -56,7 +56,7 @@ public class LimitedVoronoiBuildOptions {
    * close to the edge, the geometry can give rise to a very large
    * circumcircle radius (with the resulting circumcircle center being
    * positioned far outside the boundaries of the Delaunay triangulation).
-   * This, in turn results in a Limited Voronoi Diagram structure with a
+   * This, in turn results in a Bounded Voronoi Diagram structure with a
    * bounds much larger than the original bounds of the data.
    * @param status true if enabled; otherwise, false
    */
@@ -79,9 +79,9 @@ public class LimitedVoronoiBuildOptions {
   }
   
   /**
-   * Sets the bounds for the Limited Voronoi Diagram.  The domain of a true 
+   * Sets the bounds for the Bounded Voronoi Diagram.  The domain of a true 
    * Voronoi Diagram is the entire coordinate plane. For practical purposes
-   * the limited Voronoi Diagram class limits the bounds to a finite
+   * the bounded Voronoi Diagram class limits the bounds to a finite
    * domain.  By default, the constructor will create bounds that are
    * slightly larger than the bounds of the input sample data set.
    * However, if an application has a specific need, it can specify
