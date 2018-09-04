@@ -7,7 +7,8 @@ High-Performance 2D Delaunay Triangulation and Related Utilities Written in Java
 ### Delaunay Triangulation ###
 The Delaunay Triangulation defines an optimal form for organizing unstructured or semi-random
 sample points into a triangular mesh. That optimality makes the Delaunay Triangulation
-a useful tool for interpolation, grid construction, and surface analysis.
+a useful tool for interpolation, grid construction, and surface analysis.  
+
 ![Surface Models using TINs](doc/images/TwoTins.png "Surface Models using TINs")
 
 ### Tinfour ###

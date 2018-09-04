@@ -34,16 +34,30 @@ import java.util.List;
 import tinfour.common.IQuadEdge;
 import tinfour.common.Vertex;
 
+/**
+ * Provides tools for checking the correctness of the construction of
+ * a Voronoi Diagram.
+ */
 public class BoundedVoronoiIntegrityCheck {
 
     String message;
     BoundedVoronoi lmv;
 
+    /**
+     * Constructs an instance of the integrity checker tied to the
+     * specified instance.
+     * @param BoundedVoronoi a valid, correctly populated instance 
+     */
     public BoundedVoronoiIntegrityCheck(BoundedVoronoi BoundedVoronoi) {
         lmv = BoundedVoronoi;
         message = null;
     }
 
+    /**
+     * Tests the Voronoi Diagram to see if it passes a number of sanity 
+     * checks for correctness of implementaiton.
+     * @return true if the structure passes the test series; otherwise, false.
+     */
     public boolean inspect() {
         message = null;
 
@@ -54,11 +68,17 @@ public class BoundedVoronoiIntegrityCheck {
         // Test Series 1:
         //   Verify that the edges of polygons make a complete circuit
         //   Verify that the anchor vertex is always inside the polygon
+        //   Verify that all polygons have positive area
         //   Also:
         //       Populate the visited array to indicate which edges
         //          are members of polygons.
         for (int index = 0; index < polyList.size(); index++) {
             ThiessenPolygon poly = polyList.get(index);
+            double area = poly.getArea();
+            if(area<=0){
+              message = "Polygon " + index+ " has non-positive area "+area;
+              return false;
+            }
             List<IQuadEdge> eList = poly.getEdges();
             IQuadEdge first = eList.get(0);
             IQuadEdge edge = first;
