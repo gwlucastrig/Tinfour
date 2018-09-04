@@ -964,7 +964,9 @@ public class BoundedVoronoi {
 
   /**
    * Gets the vertices that were created to produce the Voronoi Diagram. The
-   * output does not include the original vertices from the input source
+   * output includes all circumcircle vertices that were computed when the
+   * structure was created. It does not include the original vertices
+   * from the input source
    *
    * @return a valid list of vertices
    */

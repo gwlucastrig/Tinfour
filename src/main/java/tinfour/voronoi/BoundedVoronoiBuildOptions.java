@@ -36,7 +36,7 @@ import java.awt.geom.Rectangle2D;
  */
 public class BoundedVoronoiBuildOptions {
   
-  protected boolean enableAdjustments = true;
+  protected boolean enableAdjustments = false;
   
   // The default adjustment value of 30 was chosen through trial and error.
   // A round number was chosen to reflect the fact that it is an arbitrary
