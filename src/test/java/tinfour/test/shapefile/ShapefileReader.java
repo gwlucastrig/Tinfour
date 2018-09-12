@@ -76,8 +76,8 @@ public class ShapefileReader {
     }
 
     minX = raf.readDouble();
-    maxX = raf.readDouble();
     minY = raf.readDouble();
+    maxX = raf.readDouble();
     maxY = raf.readDouble();
     minZ = raf.readDouble();
     maxZ = raf.readDouble();
@@ -196,6 +196,19 @@ public class ShapefileReader {
         + ", expected " + shapefileType.getTypeCode());
     }
     switch (shapefileType) {
+        case Point:
+        // simple case, but we populate other record items for consistency
+        record.setSizes(1,1);
+        record.nParts = 1;
+        record.nPoints = 1;
+        record.partStart[1] = 1;
+        record.x0 = raf.readDouble();
+        record.y0 = raf.readDouble();
+        record.x1 = record.x0;
+        record.y1 = record.y0;
+        record.xyz[0] = record.x0;
+        record.xyz[1] = record.y0;        
+        break;
       case PolyLineZ:
       case PolygonZ: {
         record.x0 = raf.readDouble();

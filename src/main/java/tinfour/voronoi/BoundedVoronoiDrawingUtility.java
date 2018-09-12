@@ -60,7 +60,7 @@ import tinfour.utils.VertexColorizerKempe6;
 @SuppressWarnings("PMD.AvoidInstantiatingObjectsInLoops")
 public class BoundedVoronoiDrawingUtility {
 
-  private final BoundedVoronoi diagram;
+  private final BoundedVoronoiDiagram diagram;
   private final AffineTransform af;
   private final Rectangle2D bounds;
   
@@ -100,7 +100,7 @@ public class BoundedVoronoiDrawingUtility {
    * defaults are to be used.
    */
   public BoundedVoronoiDrawingUtility(
-          BoundedVoronoi diagram,
+          BoundedVoronoiDiagram diagram,
           int width,
           int height,
           int pad,
