@@ -99,7 +99,7 @@ public class ThiessenPolygon {
   }
 
   /**
-   * Gets the central vertex of the polygon.
+   * Gets the defining vertex of the polygon.
    *
    * @return the vertex
    */
@@ -142,6 +142,20 @@ public class ThiessenPolygon {
   public boolean isOpen(){
       return open;
   }
+  
+  /**
+   * Gets the index element of the defining vertex for this polygon.
+   * The vertex index is under the control of the calling application
+   * and is not modified by the Voronoi classes. Note that the
+   * index of a vertex is not necessarily unique but left to the
+   * requirements of the application that constructs it.
+   * @return an integer value
+   */
+  public int getIndex(){
+    return vertex.getIndex();
+  }
+  
+  
   @Override
   public String toString() {
     return String.format("ThiessenPolygon vertex=%s", vertex.getLabel());

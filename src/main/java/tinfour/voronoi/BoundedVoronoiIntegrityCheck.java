@@ -41,14 +41,14 @@ import tinfour.common.Vertex;
 public class BoundedVoronoiIntegrityCheck {
 
     String message;
-    BoundedVoronoi lmv;
+    BoundedVoronoiDiagram lmv;
 
     /**
      * Constructs an instance of the integrity checker tied to the
      * specified instance.
      * @param BoundedVoronoi a valid, correctly populated instance 
      */
-    public BoundedVoronoiIntegrityCheck(BoundedVoronoi BoundedVoronoi) {
+    public BoundedVoronoiIntegrityCheck(BoundedVoronoiDiagram BoundedVoronoi) {
         lmv = BoundedVoronoi;
         message = null;
     }

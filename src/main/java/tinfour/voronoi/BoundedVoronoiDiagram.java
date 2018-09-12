@@ -57,8 +57,6 @@ import tinfour.common.IQuadEdge;
 import tinfour.common.Vertex;
 import tinfour.edge.EdgePool;
 import tinfour.edge.QuadEdge;
-import tinfour.semivirtual.SemiVirtualIncrementalTin;
-import tinfour.standard.IncrementalTin;
 import tinfour.utils.TinInstantiationUtility;
 import tinfour.utils.VertexColorizerKempe6;
 
@@ -71,7 +69,7 @@ import tinfour.utils.VertexColorizerKempe6;
  * <strong>This class is under development and is subject to minor 
  * changes in its API and behavior.</strong>
  */
-public class BoundedVoronoi {
+public class BoundedVoronoiDiagram {
 
   /**
    * The overall domain of the structure
@@ -95,7 +93,7 @@ public class BoundedVoronoi {
 
   private double maxRadius = -1;
 
-  private BoundedVoronoi() {
+  private BoundedVoronoiDiagram() {
     // a private constructor to deter applications from
     // invoking the default constructor
     sampleBounds = null;
@@ -111,7 +109,7 @@ public class BoundedVoronoi {
    * null to use defaults.
    *
    */
-  public BoundedVoronoi(List<Vertex> vertexList, BoundedVoronoiBuildOptions options) {
+  public BoundedVoronoiDiagram(List<Vertex> vertexList, BoundedVoronoiBuildOptions options) {
     if (vertexList == null) {
       throw new IllegalArgumentException(
               "Null input not allowed for constructor");
@@ -176,7 +174,7 @@ public class BoundedVoronoi {
    * @param delaunayTriangulation a valid instance of a Delaunay Triangulation
    * implementation.
    */
-  public BoundedVoronoi(IIncrementalTin delaunayTriangulation) {
+  public BoundedVoronoiDiagram(IIncrementalTin delaunayTriangulation) {
     if (delaunayTriangulation == null) {
       throw new IllegalArgumentException(
               "Null input is not allowed for TIN");
@@ -316,8 +314,8 @@ public class BoundedVoronoi {
     } else {
       x = x0 + t0 * xDelta;
       y = y0 + t0 * yDelta;
-      z = computeZ(iBorder0, x, y);
-      p0 = new Vertex(x, y, z, v0.getIndex());
+      z = computePerimeterParameter(iBorder0, x, y);
+      p0 = new PerimeterVertex(x, y, z, v0.getIndex());
       p0.setSynthetic(true);
     }
 
@@ -326,8 +324,8 @@ public class BoundedVoronoi {
     } else {
       x = x0 + t1 * xDelta;
       y = y0 + t1 * yDelta;
-      z = computeZ(iBorder1, x, y);
-      p1 = new Vertex(x, y, z, v1.getIndex());
+      z = computePerimeterParameter(iBorder1, x, y);
+      p1 = new PerimeterVertex(x, y, z, v1.getIndex());
       p1.setSynthetic(true);
     }
 
@@ -335,7 +333,7 @@ public class BoundedVoronoi {
   }
 
   @SuppressWarnings("PMD.CollapsibleIfStatements")
-  private double computeZ(double x, double y) {
+  private double computePerimeterParameter(double x, double y) {
     if (y == ymin) {
       // bottom border range 0 to 1
       if (xmin <= x && x <= xmax) {
@@ -360,7 +358,7 @@ public class BoundedVoronoi {
     return Double.NaN;
   }
 
-  private double computeZ(int iBoarder, double x, double y) {
+  private double computePerimeterParameter(int iBoarder, double x, double y) {
     switch (iBoarder) {
       case 0:
         return (x - xmin) / (xmax - xmin);
@@ -451,14 +449,14 @@ public class BoundedVoronoi {
       y = t * uY + cY;
       if (t >= 0 && y0 <= y && y <= y1) {
         z = 4 - (y - y0) / (y1 - y0); // the left side, descending, z in [3,4]
-        Vertex v = new Vertex(x0, y, z, -vCenter.getIndex());
+        Vertex v = new PerimeterVertex(x0, y, z, -vCenter.getIndex());
         nBuild = insertRayVertex(nBuild, vBuild, tBuild, t, v);
       }
       t = (x1 - cX) / uX;
       y = t * uY + cY;
       if (t >= 0 && y0 <= y && y <= y1) {
         z = 1 + (y - y0) / (y1 - y0); // right side, ascending, z in [1,2]
-        Vertex v = new Vertex(x1, y, z, -vCenter.getIndex());
+        Vertex v = new PerimeterVertex(x1, y, z, -vCenter.getIndex());
         nBuild = insertRayVertex(nBuild, vBuild, tBuild, t, v);
       }
     }
@@ -468,7 +466,7 @@ public class BoundedVoronoi {
       x = t * uX + cX;
       if (t >= 0 && x0 <= x && x <= x1) {
         z = (x - x0) / (x1 - x0); // bottom side, ascending, z in [0,1]
-        Vertex v = new Vertex(x, y0, z, -vCenter.getIndex());
+        Vertex v = new PerimeterVertex(x, y0, z, -vCenter.getIndex());
         nBuild = insertRayVertex(nBuild, vBuild, tBuild, t, v);
       }
 
@@ -476,7 +474,7 @@ public class BoundedVoronoi {
       x = t * uX + cX;
       if (t >= 0 && x0 <= x && x <= x1) {
         z = 3 - (x - x0) / (x1 - x0); // top side, descending, z in [2,3] 
-        Vertex v = new Vertex(x, y1, z, -vCenter.getIndex());
+        Vertex v = new PerimeterVertex(x, y1, z, -vCenter.getIndex());
         nBuild = insertRayVertex(nBuild, vBuild, tBuild, t, v);
       }
     }
@@ -574,8 +572,16 @@ public class BoundedVoronoi {
         }
         double x = cCircle.getX();
         double y = cCircle.getY();
-        double z = computeZ(x, y);
-        Vertex v = new Vertex(x, y, z, mindex(e, f, r));
+        // there is a low, but non-zero, probability that the center
+        // will lie on one of the perimeter edges.
+        double z = computePerimeterParameter(x, y);
+        Vertex v;
+        if (Double.isNaN(z)) {
+          v = new Vertex(x, y, z, mindex(e, f, r));
+        } else {
+          v = new PerimeterVertex(x, y, z, mindex(e, f, r));
+        }
+        
         centers[e.getIndex()] = v;
         centers[f.getIndex()] = v;
         centers[r.getIndex()] = v;
@@ -594,15 +600,18 @@ public class BoundedVoronoi {
           IIncrementalTin tin,
           BoundedVoronoiBuildOptions pOptions) {
 
-    if (pOptions.enableAdjustments) {
-      if (tin instanceof IncrementalTin) {
-        ((IncrementalTin) tin).collaspsePerimeterTriangles(
-                pOptions.adjustmentThreshold);
-      } else if (tin instanceof SemiVirtualIncrementalTin) {
-        ((SemiVirtualIncrementalTin) tin).collaspsePerimeterTriangles(
-                pOptions.adjustmentThreshold);
-      }
-    }
+ 
+    // The TIN classes' adjustment logic has a flaw, so it is supressed here
+    // pending a fix or permanent removal
+    //if (pOptions.enableAdjustments) {
+    //  if (tin instanceof IncrementalTin) {
+    //    ((IncrementalTin) tin).collaspsePerimeterTriangles(
+    //            pOptions.adjustmentThreshold);
+    //  } else if (tin instanceof SemiVirtualIncrementalTin) {
+    //    ((SemiVirtualIncrementalTin) tin).collaspsePerimeterTriangles(
+    //            pOptions.adjustmentThreshold);
+    //  }
+    //}
 
     // The visited array tracks which of the TIN edges were 
     // visited for various processes.  It is used more than once.
