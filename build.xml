@@ -86,7 +86,7 @@
   
 
 <!--   PMD       to run this, you will have to set up the PMD class path first.
-                 this configuration assumes it is in a parallel folder.  
+                 this configuration assumes it is in a parallel folder. 
 <path id="pmd.classpath">
     <fileset dir="../pmd-bin-5.4.1/lib">
         <include name="*.jar"/>
@@ -95,19 +95,17 @@
 
 <taskdef name="pmd" classname="net.sourceforge.pmd.ant.PMDTask" classpathref="pmd.classpath"/>
 
-  
 <target name="pmd">
-      <pmd  rulesetfiles="pmd_ruleset.xml" >
-          <formatter type="net.sourceforge.pmd.renderers.HTMLRenderer" toFile="pmd_results.html"/>
-          <fileset dir="${src.dir}">
-				<include name="**/*.java" />
-          </fileset>
-		  <fileset dir="${testsrc.dir}">
-				<include name="**/*.java" />
-          </fileset>
-      </pmd>
+	<pmd  rulesetfiles="pmd_ruleset.xml" >
+	  <formatter type="net.sourceforge.pmd.renderers.HTMLRenderer" toFile="pmd_results.html"/>
+	  <fileset dir="${src.dir}">
+			<include name="**/*.java" />
+	  </fileset>
+	  <fileset dir="${testsrc.dir}">
+			<include name="**/*.java" />
+	  </fileset>
+	</pmd>
 </target>
 -->
- 
-  
+
 </project>
