@@ -64,16 +64,15 @@ public class BoundedVoronoiDrawingUtility {
   private final AffineTransform af;
   private final Rectangle2D bounds;
   
-   private static final Color defaultColors[] = {
+  private static final Color defaultColors[] = {
     Color.YELLOW,
     Color.MAGENTA,
     Color.ORANGE,
     Color.LIGHT_GRAY,
     Color.PINK,
     Color.GREEN.brighter(),
-        Color.RED,
-    Color.BLUE,
-       };
+    Color.RED,
+    Color.BLUE,};
 
   /**
    * Constructs drawing utility instance for the specified Bounded Voronoi
@@ -408,7 +407,15 @@ public class BoundedVoronoiDrawingUtility {
   public void drawPolygons(
           Graphics g,
           Paint[] paintSpec,
-          boolean assignAutomaticColors) {
+          boolean assignAutomaticColors) 
+  {
+        Graphics2D g2d = (Graphics2D) g;
+    g2d.setRenderingHint(
+            RenderingHints.KEY_ANTIALIASING,
+            RenderingHints.VALUE_ANTIALIAS_ON);
+    g2d.setRenderingHint(
+            RenderingHints.KEY_TEXT_ANTIALIASING,
+            RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
 
     Paint [] paint = paintSpec;
     if(paintSpec==null){
@@ -419,41 +426,9 @@ public class BoundedVoronoiDrawingUtility {
         throw new IllegalArgumentException(
                 "Input paint specification must include at least 6 values");
       }
-      List<Vertex> vertexList = diagram.getVertices();
-      int nVertices = vertexList.size();
-      Rectangle2D sampleBounds = new Rectangle2D.Double(
-              vertexList.get(0).getX(),
-              vertexList.get(0).getY(),
-              0, 0);
-
-      for (Vertex v : vertexList) {
-        sampleBounds.add(v.getX(), v.getY());
-      }
-
-      // estimate a nominal point spacing based on the domain of the
-      // input data set and assuming a rougly uniform density.
-      // the value 0.866 is based on the parameters of a regular
-      // hexagonal tesselation of a plane
-      double area = sampleBounds.getWidth() * sampleBounds.getHeight();
-      double nominalPointSpacing = Math.sqrt(area / nVertices / 0.866);
-      TinInstantiationUtility maker
-              = new TinInstantiationUtility(0.25, vertexList.size());
-      IIncrementalTin tin = maker.constructInstance(nominalPointSpacing);
-      tin.add(vertexList, null);
-      if (!tin.isBootstrapped()) {
-        return;
-      }
-      VertexColorizerKempe6 kempe6 = new VertexColorizerKempe6();
-      kempe6.assignColorsToVertices(tin);
+      assignAutomaticColors();
     }
-
-    Graphics2D g2d = (Graphics2D) g;
-    g2d.setRenderingHint(
-            RenderingHints.KEY_ANTIALIASING,
-            RenderingHints.VALUE_ANTIALIAS_ON);
-    g2d.setRenderingHint(
-            RenderingHints.KEY_TEXT_ANTIALIASING,
-            RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
+ 
 
     // edges are drawn with clip on, but vertices are drawn
     // with the clip off.
@@ -538,4 +513,151 @@ public class BoundedVoronoiDrawingUtility {
     }
     g2d.setClip(saveClip);
   }
+  
+  
+  /**
+   * Assigns automatic color selections to the vertices and associated
+   * polygons in the bounded Voronoi diagram stored when this instance
+   * was constructed.
+   * <p>
+   * This method is potentially costly for diagrams containing a large
+   * number of vertices. Therefore, it should only be called once when rendering.
+   * <p>
+   * This method assigns six color indices to polygons (in the range 0 to 5).
+   * If applications that use automatic color assignment require a custom
+   * palette, they must specify and array of Color or Paint instances
+   * with at least six elements.  If a smaller palette is supplied, the
+   * results are undefined.
+   */
+  public void assignAutomaticColors(){
+      List<Vertex> vertexList = diagram.getVertices();
+      int nVertices = vertexList.size();
+      Rectangle2D sampleBounds = new Rectangle2D.Double(
+              vertexList.get(0).getX(),
+              vertexList.get(0).getY(),
+              0, 0);
+
+      for (Vertex v : vertexList) {
+        sampleBounds.add(v.getX(), v.getY());
+      }
+
+      // estimate a nominal point spacing based on the domain of the
+      // input data set and assuming a rougly uniform density.
+      // the value 0.866 is based on the parameters of a regular
+      // hexagonal tesselation of a plane
+      double area = sampleBounds.getWidth() * sampleBounds.getHeight();
+      double nominalPointSpacing = Math.sqrt(area / nVertices / 0.866);
+      TinInstantiationUtility maker
+              = new TinInstantiationUtility(0.25, vertexList.size());
+      IIncrementalTin tin = maker.constructInstance(nominalPointSpacing);
+      tin.add(vertexList, null);
+      if (!tin.isBootstrapped()) {
+        return;
+      }
+      VertexColorizerKempe6 kempe6 = new VertexColorizerKempe6();
+      kempe6.assignColorsToVertices(tin);
+      tin.dispose();
+  }
+  
+  /**
+   * Draws the Bounded Voronoi Diagram using the specified styler
+   * <p>
+   * <strong>This method is under development.</strong> 
+   * It is not yet ready for use and may be subject to changes.
+   * @param g a valid graphic surface
+   * @param specifiedStyler a valid styler implementation, or a null if 
+   * defaults are to be used
+   */
+  public void draw(Graphics g, IBoundedVoronoiStyler specifiedStyler) {
+    IBoundedVoronoiStyler styler = specifiedStyler;
+    if(styler==null){
+      styler = new BoundedVoronoiStylerDefault();
+    }
+    
+    Graphics2D g2d = (Graphics2D) g;
+    g2d.setRenderingHint(
+            RenderingHints.KEY_ANTIALIASING,
+            RenderingHints.VALUE_ANTIALIAS_ON);
+    g2d.setRenderingHint(
+            RenderingHints.KEY_TEXT_ANTIALIASING,
+            RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
+    
+
+    // edges are drawn with clip on, but vertices are drawn
+    // with the clip off.
+    g2d.setClip(getClipBounds());
+    g2d.setStroke(new BasicStroke(1.0f));
+    
+    if (styler.isFeatureTypeEnabled(BoundedVoronoiRenderingType.Area)) {
+      this.drawAreaFill(g2d, styler);
+    }
+
+    if (styler.isFeatureTypeEnabled(BoundedVoronoiRenderingType.Line)) {
+      this.drawLines(g2d, styler);
+    }
+
+ 
+    
+    
+  }
+  
+  private void drawAreaFill(
+          Graphics2D g2d,
+          IBoundedVoronoiStyler styler) 
+  {
+
+    Point2D p0 = new Point2D.Double();
+    List<ThiessenPolygon> polygons = diagram.getPolygons();
+
+    for (ThiessenPolygon poly : polygons) {
+      if(styler.isRenderingEnabled(poly, BoundedVoronoiRenderingType.Area)){
+      List<IQuadEdge> qList = poly.getEdges();
+      Path2D path = new Path2D.Double();
+      IQuadEdge q0 = qList.get(0);
+      p0.setLocation(q0.getA().getX(), q0.getA().getY());
+      af.transform(p0, p0);
+      path.moveTo(p0.getX(), p0.getY());
+      for (IQuadEdge q : qList) {
+        p0.setLocation(q.getB().getX(), q.getB().getY());
+        af.transform(p0, p0);
+        path.lineTo(p0.getX(), p0.getY());
+      }
+      path.closePath();
+      
+      styler.applyStylingForAreaFill(g2d, poly);
+      g2d.fill(path);
+      g2d.draw(path);
+    }
+    }
+  }
+  
+  private void drawLines(Graphics2D g2d, IBoundedVoronoiStyler styler){
+     Point2D p0 = new Point2D.Double();
+    Point2D p1 = new Point2D.Double();
+    Line2D l2d = new Line2D.Double();
+    
+    boolean drawn[] =  new boolean[diagram.getMaximumEdgeAllocationIndex()];
+    for(ThiessenPolygon poly : diagram.getPolygons()){
+      
+      if(styler.isRenderingEnabled(poly, BoundedVoronoiRenderingType.Line)){
+         for (IQuadEdge e : poly.getEdges()){
+           if(!drawn[e.getIndex()]){
+             drawn[e.getIndex()] = true;
+             drawn[e.getIndex()^0x01] = true;
+              Vertex A = e.getA();
+      Vertex B = e.getB();
+ 
+      p0.setLocation(A.getX(), A.getY());
+      p1.setLocation(B.getX(), B.getY());
+      af.transform(p0, p0);
+      af.transform(p1, p1);
+      l2d.setLine(p0, p1);
+      g2d.draw(l2d);
+           }
+         }
+      }
+    }
+  
+  }
+
 }

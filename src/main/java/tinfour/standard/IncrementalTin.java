@@ -61,7 +61,6 @@ import java.util.BitSet;
 import java.util.Iterator;
 import java.util.List;
 import tinfour.common.BootstrapUtility;
-import tinfour.common.Circumcircle;
 import tinfour.common.GeometricOperations;
 import tinfour.common.IConstraint;
 import tinfour.common.IIncrementalTin;
@@ -73,7 +72,6 @@ import tinfour.common.IQuadEdge;
 import tinfour.common.Thresholds;
 import tinfour.common.TriangleCount;
 import tinfour.common.Vertex;
-import tinfour.common.VertexAdjustment;
 import tinfour.common.VertexMergerGroup;
 import tinfour.edge.EdgePool;
 import tinfour.edge.QuadEdge;
@@ -2654,161 +2652,4 @@ public class IncrementalTin implements IIncrementalTin {
     return null;
   }
  
-    /**
-   * Provides a means to remove very skinny triangles from the perimeter of a
-   * Delaunay Triangulation by adjusting the coordinates of the interior vertex
-   * so that it lies directly on the outer edge of the perimeter. The perimeter
-   * edge is replaced by two edges. The original vertex is replaced by a
-   * VertexAdjustment object.
-   * <p>
-   * A triangle is considered "skinny" if the ratio of the circumcircle radius
-   * divided by the longest edge exceeds a specified threshold value.
-   * <p>
-   * This method should be used with great caution because it has the effect of
-   * changing the geometry of the input vertices. In testing with a ratio of 30,
-   * and a set of random vertices, the mean non-zero adjustment was about 0.002
-   * times the average length of the triangle edges.
-   *
-   * @param thresholdRatio the threshold for adjustment
-   */
-  public void collaspsePerimeterTriangles(double thresholdRatio) {
-    if (!isBootstrapped()) {
-      throw new IllegalStateException(
-              "Unable to collapse triangles, TIN is not bootstrapped");
-    }
-    if (isLocked) {
-      if (isDisposed) {
-        throw new IllegalStateException(
-                "Unable to collapse triangles after a call to dispose()");
-      } else {
-        throw new IllegalStateException(
-                "Unable to collapse triangles, TIN is locked");
-      }
-    }
-    Circumcircle cCircle = new Circumcircle();
-    List<IQuadEdge> perimeter = getPerimeter();
-    for (IQuadEdge p : perimeter) {
-      Vertex A = p.getA();
-      Vertex B = p.getB();
-      Vertex C = p.getForward().getB();
-      double aLen = A.getDistance(B);
-      double bLen = B.getDistance(C);
-      double cLen = C.getDistance(A);
-      double maxLen = aLen > bLen ? aLen : bLen;
-      maxLen = cLen > maxLen ? cLen : maxLen;
-      cCircle.compute(A, B, C);
-      double test = cCircle.getRadius() / maxLen;
-      if (test > thresholdRatio) {
-        collapsePerimeterEdge((QuadEdge)p);
-      }
-    }
-
-  }
-
-  /**
-   * Provides a means to remove very skinny triangles from the perimeter of a
-   * Delaunay Triangulation by adjusting the coordinates of the interior vertex
-   * so that it lies directly on the outer edge of the perimeter. The perimeter
-   * edge is replaced by two edges. The original vertex is replaced by a
-   * VertexAdjustment object.
-   * <p>
-   * This method should be used with great caution because it has the effect of
-   * changing the geometry of the input vertices. In particular, it is possible
-   * that this operation may result in a non-Delaunay triangle.
-   *
-   * @param e the perimeter edge, interior side
-   * @return true if the edge was adjusted; otherwise false
-   */
-  boolean collapsePerimeterEdge(QuadEdge e) {
-    QuadEdge f = e.getForward();
-    QuadEdge r = e.getReverse();
-    QuadEdge d = e.getDual();
-    QuadEdge df = d.getForward();
-    QuadEdge dr = d.getReverse();
-    if (df.getB() != null) {
-      throw new IllegalArgumentException("Specification is not a perimeter edge");
-    }
-
-    Vertex A = e.getA();
-    Vertex B = f.getA();
-    Vertex C = r.getA();
-    double xA = B.getX() - A.getX();
-    double yA = B.getY() - A.getY();
-    double a = e.getLength();
-    xA /= a;
-    yA /= a;
-    double xC = C.getX() - A.getX();
-    double yC = C.getY() - A.getY();
-    double s = xA * xC + yA * yC;
-    if (s <= 0 || s >= 1) {
-      return false;
-    }
-    double x = A.getX() + s * xA;
-    double y = A.getY() + s * yA;
-    VertexAdjustment X = new VertexAdjustment(x, y, C);
-    // This block of diagnostic code was intended to evaluate
-    // the magnitude of the coordinate adjustment by dividing the
-    // distance moved by the average length of triangle sides.
-    //    double bLen = B.getDistance(C);
-    //    double cLen = C.getDistance(A);
-    //    double mLen = (a+bLen+cLen)/3.0;
-    //    double delta = X.getDistance(C);
-    //    System.out.println("Delta/mean(len)= "+(delta/mLen));
-
-    // The following tests to see if the resulting vertex change
-    // would result in a non-Delaunay triangle.   Even though a triangle
-    // with a very large radius is removed, it's circumcircle was 
-    // placed far to the exterior of the triangulation and so did not
-    // cover any interior vertices.  However, the two adjusted triangles
-    // will be placed to the interior of the triangulation and may include
-    // circumcircles that include interior vertices.
-    QuadEdge rdr = r.getReverseFromDual();
-    Vertex P = rdr.getA();
-    if (P != null) {
-      for (IQuadEdge w : rdr.pinwheel()) {
-        Vertex T = w.getB();
-        if (T != null && T != A && T != C) {
-          double test = geoOp.inCircle(A, X, P, T);
-          if (test > 0) {
-            return false;
-          }
-        }
-      }
-    }
-
-    QuadEdge fdr = f.getReverseFromDual();
-    Vertex Q = fdr.getA();
-    if (Q != null) {
-      for (IQuadEdge w : rdr.pinwheel()) {
-        Vertex T = w.getB();
-        if (T != null && T != B && T != Q) {
-          double test = geoOp.inCircle(X, B, Q, T);
-          if (test > 0) {
-            return false;
-          }
-        }
-      }
-    }
-
-    edgePool.deallocateEdge(e);
-    QuadEdge n = edgePool.allocateEdge(X, null);
-    QuadEdge nd = n.getDual();
-    r.setForward(df);
-    df.setForward(nd);
-    nd.setForward(r);
-    f.setForward(n);
-    n.setForward(dr);
-    dr.setForward(f);
-    r.setVertices(X, A);
-    f.setVertices(B, X);
-    for (IQuadEdge spoke : r.pinwheel()) {
-      QuadEdge q = (QuadEdge) spoke;
-      q.setVertices(X, q.getB());
-    }
-
-    //IIntegrityCheck ic = this.getIntegrityCheck();
-    //boolean status = ic.inspect();
-    //ic.printSummary(System.out);
-    return true;
-  }
 }

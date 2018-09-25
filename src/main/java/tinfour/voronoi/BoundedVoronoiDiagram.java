@@ -599,19 +599,7 @@ public class BoundedVoronoiDiagram {
   private void buildStructure(
           IIncrementalTin tin,
           BoundedVoronoiBuildOptions pOptions) {
-
  
-    // The TIN classes' adjustment logic has a flaw, so it is supressed here
-    // pending a fix or permanent removal
-    //if (pOptions.enableAdjustments) {
-    //  if (tin instanceof IncrementalTin) {
-    //    ((IncrementalTin) tin).collaspsePerimeterTriangles(
-    //            pOptions.adjustmentThreshold);
-    //  } else if (tin instanceof SemiVirtualIncrementalTin) {
-    //    ((SemiVirtualIncrementalTin) tin).collaspsePerimeterTriangles(
-    //            pOptions.adjustmentThreshold);
-    //  }
-    //}
 
     // The visited array tracks which of the TIN edges were 
     // visited for various processes.  It is used more than once.

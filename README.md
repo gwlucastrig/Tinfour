@@ -105,10 +105,7 @@ For your convenience, a copy of both the laszip4j and the Commons math
 packages are included with the Tinfour download.
 
 ### What version of Java is required for Tinfour? ###
-Most of the Tinfour code compiles under Java 7, but some of the
-utility classes required Java 8.  The laszip4j library used to
-read compressed lidar files also requires Java 8.
-libraries requires Java 8. 
+Tinfour is compiled under Java 8.   
 
 ### Configuring Tinfour in an IDE ###
 Configuring Tinfour in an IDE is pretty simple:
@@ -126,6 +123,14 @@ Configuring Tinfour in an IDE is pretty simple:
    of this option is not as critical as it once was.
  
 ### Current Work ###
+Early in the Tinfour project, I made the mistake of including
+compiled binaries (jar files) in the code tree.  Over time, pull requests have grown
+quite large. I am currently setting up a new approach in which I will move
+the binaries into the Github Release feature and remove them from the main software
+download.
+
+The most recent addition to the Tinfour package is support for Voronoi Diagrams.
+
 The current focus of Tinfour development is polishing aspects
 of the Constrained Delaunay Triangulation (CDT) implementation. The CDT
 is a technique for representing discontinuities in a Triangulated Irregular Network.
