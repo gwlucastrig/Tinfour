@@ -130,6 +130,8 @@ the binaries into the Github Release feature and remove them from the main softw
 download.
 
 The most recent addition to the Tinfour package is support for Voronoi Diagrams.
+We've also added a new article on [Natural Neighbor Interpolation](https://github.com/gwlucastrig/Tinfour/wiki/Introduction-to-Natural-Neighbor-Interpolation)
+to our wiki.
 
 The current focus of Tinfour development is polishing aspects
 of the Constrained Delaunay Triangulation (CDT) implementation. The CDT

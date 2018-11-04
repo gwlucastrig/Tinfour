@@ -36,16 +36,14 @@ import java.util.Iterator;
 import java.util.List;
 
 /**
- * An implementation of the IConstraint interface intended to store
- * constraints comprised of a chain of connected line segments.
- * Constraint chains must be non-self-intersecting (except at segment
- * endpoints). The chain must never "fold back" on itself. All segments
- * in the chain must be non-zero-length.
- * Do not use this class for closed polygons.
+ * An implementation of the IConstraint interface intended to store constraints
+ * comprised of a chain of connected line segments. Constraint chains must be
+ * non-self-intersecting (except at segment endpoints). The chain must never
+ * "fold back" on itself. All segments in the chain must be non-zero-length. Do
+ * not use this class for closed polygons.
  */
-public abstract class PolyLineConstraintAdapter 
-        implements IConstraint, Iterable<Vertex>
-{
+public abstract class PolyLineConstraintAdapter
+        implements IConstraint, Iterable<Vertex> {
 
   protected final List<Vertex> list;
   private final Rectangle2D bounds = new Rectangle2D.Double();
@@ -133,17 +131,62 @@ public abstract class PolyLineConstraintAdapter
   }
 
   @Override
-  public IQuadEdge getConstraintLinkingEdge(){
-      return constraintLinkingEdge;
+  public IQuadEdge getConstraintLinkingEdge() {
+    return constraintLinkingEdge;
   }
 
   @Override
-  public void setConstraintLinkingEdge(IQuadEdge edge){
-      constraintLinkingEdge = edge;
+  public void setConstraintLinkingEdge(IQuadEdge edge) {
+    constraintLinkingEdge = edge;
   }
 
   @Override
-  public IIncrementalTin getManagingTin(){
-      return maintainingTin;
+  public IIncrementalTin getManagingTin() {
+    return maintainingTin;
+  }
+
+  @Override
+  public boolean isPointInsideConstraint(double x, double y) {
+    if (!this.isPolygon()) {
+      return false;
+    }
+    if (!isComplete) {
+      return false;
+    }
+    int rCross = 0;
+    int lCross = 0;
+    Vertex v0 = list.get(list.size() - 1);
+    for (Vertex v1 : list) {
+
+      double x0 = v0.getX();
+      double y0 = v0.getY();
+      double x1 = v1.getX();
+      double y1 = v1.getY();
+      v0 = v1;
+
+      double yDelta = y0 - y1;
+      if ((y1 > y) != (y0 > y)) {
+        double xTest = (x1 * y0 - x0 * y1 + y * (x0 - x1)) / yDelta;
+        if (xTest > x) {
+          rCross++;
+        }
+      }
+      if ((y1 < y) != (y0 < y)) {
+        double xTest = (x1 * y0 - x0 * y1 + y * (x0 - x1)) / yDelta;
+        if (xTest < x) {
+          lCross++;
+        }
+      }
+
+    }
+
+    // (rCross%2) != (lCross%2)
+    if (((rCross ^ lCross) & 0x01) == 1) {
+      return false; // on border
+    } else if ((rCross & 0x01) == 1) {
+      return true; // unambiguously inside
+    }
+    return false; // unambiguously outside
+
   }
 }

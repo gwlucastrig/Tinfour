@@ -77,66 +77,47 @@ public interface IBoundedVoronoiStyler {
   public boolean isRenderingEnabled(
           ThiessenPolygon polygon,
           BoundedVoronoiRenderingType type);
+ 
 
-  /**
-   * Indicates whether vertex labeling is enabled for a specific feature
-   *
-   * @param polygon a valid instance of a polygon to be tested for labeling.
-   * @return true if vertices are to be labeled; otherwise, false
-   */
-  public boolean isVertexLabelingEnabled(ThiessenPolygon polygon);
-
-  /**
-   * Indicates whether vertex labeling is enabled
-   *
-   * @param polygon a valid instance
-   * @return true if vertices are to be labeled; otherwise, false
-   */
-  public boolean isVertexSymbolEnabled(ThiessenPolygon polygon);
+ 
   
   /**
-   * Gets the symbol size for the vertex to be drawn for the 
-   * specified polygon.
+   * Tests to see if the polygon is enabled for rendering a symbol
+   * at the vertex position and, if it is, returns a vertex symbol
+   * that can be used for rendering
    * @param polygon a valid polygon
-   * @return a value greater than zero.
+   * @return if rendering is enabled, a valid symbol instance; otherwise,
+   * a null.
    */
-  public double getVertexSymbolSize(ThiessenPolygon polygon);
+  public IBoundedVoronoiVertexSymbol getVertexSymbol(ThiessenPolygon polygon);
 
   /**
    * Called once at the beginning of rendering to set up the Graphics2D surface
    * for rendering. One common use of this routine is to ensure that
    * anti-aliasing is activated, though other settings may also be applied.
    *
-   * @param g the graphics surface for rendering
+   * @param g2d the graphics surface for rendering
    */
-  public void initializeRendering(Graphics2D g);
+  public void initializeRendering(Graphics2D g2d);
 
   /**
    * Applies styling for area fill operations. Styling may include setting a
    * Java Color or Paint, a Composite, clipping, etc.
    *
-   * @param g the graphics surface for rendering
+   * @param g2d the graphics surface for rendering
    * @param polygon a valid polygon instance
    */
-  public void applyStylingForAreaFill(Graphics2D g, ThiessenPolygon polygon);
+  public void applyStylingForAreaFill(Graphics2D g2d, ThiessenPolygon polygon);
 
   /**
    * Applies styling for line drawing operations. Styling may include setting a
    * Java Color or Paint, a Stroke, a Composite, clipping, etc.
    *
-   * @param g the graphics surface for rendering
+   * @param g2d the graphics surface for rendering
    * @param polygon a valid polygon instance
    */
-  public void applyStylingForLineDrawing(Graphics2D g, ThiessenPolygon polygon);
+  public void applyStylingForLineDrawing(Graphics2D g2d, ThiessenPolygon polygon);
 
-  /**
-   * Applies styling for line drawing operations. Styling may include setting a
-   * Java Color or Paint, a Stroke, a Composite, clipping, etc. If vertex
-   * labeling is specified, this method should also set an appropriate font.
-   *
-   * @param g the graphics surface for rendering
-   * @param polygon a valid polygon instance
-   */
-  public void applyStylingForVertexDraw(Graphics2D g, ThiessenPolygon polygon);
+ 
 
 }

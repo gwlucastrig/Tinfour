@@ -332,4 +332,37 @@ public interface IModel {
    */
   public boolean areConstraintsLoaded();
 
+    /**
+   * Gets the x-axis scale factor for mapping geographic coordinates to a
+   * Cartesian system.
+   *
+   * @return a scale adjustment, or 1.0 if undefined.
+   */
+  public double getGeoScaleX();
+
+  /**
+   * Gets the y-axis scale factor for mapping geographic coordinates to a
+   * Cartesian system.
+   *
+   * @return a scale adjustment, or 1.0 if undefined.
+   */
+  public double getGeoScaleY();
+
+  /**
+   * Gets the x-axis offset factor for mapping geographic coordinates to a
+   * Cartesian system.
+   *
+   * @return a coordinate offset, or 0.0 if undefined.
+   */
+  public double getGeoOffsetX();
+
+  /**
+   * Gets the y-axis offset factor for mapping geographic coordinates to a
+   * Cartesian system.
+   *
+   * @return a coordinate offset, or 0.0 if undefined.
+   */
+  public double getGeoOffsetY();
+
+
 }

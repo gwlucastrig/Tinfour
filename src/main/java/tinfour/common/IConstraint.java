@@ -169,8 +169,25 @@ public interface IConstraint extends IPolyline {
   public void setConstraintLinkingEdge(IQuadEdge linkingEdge);
 
 
-
+  /**
+   * Gets the instance of the incremental TIN interface that 
+   * is managing this constraint, if any.
+   * @return if under management, a valid instance; otherwise, a null.
+   */
   public IIncrementalTin getManagingTin();
 
+  
+  /**
+   * Indicates if a point at the specified coordinates is unambiguously
+   * inside the constraint.  Points on the constraint border are not treated
+   * as inside the constraint.
+   * <p>
+   * This method will only return true for polygon constraints.  For all other
+   * constraint implementations, it will return a value of false.
+   * @param x the Cartesian coordinate for the point
+   * @param y the Cartesian coordinate for the point
+   * @return true if the point is in the interior of the constraint.
+   */
+  public boolean isPointInsideConstraint(double x, double y);
 
 }

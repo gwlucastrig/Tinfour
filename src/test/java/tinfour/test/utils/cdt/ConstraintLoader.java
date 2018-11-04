@@ -157,6 +157,7 @@ public class ConstraintLoader {
                                 }
                             }
                             con.setApplicationData(record.recordNumber);
+                            con.complete();
                             conList.add(con);
                         }
                         break;
@@ -272,6 +273,7 @@ public class ConstraintLoader {
                     con.add(v);
                 }
                 conList.add(con);
+                con.complete();
                 return conList;
             }
 

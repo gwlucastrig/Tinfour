@@ -357,9 +357,9 @@ public class ModelAdapter implements IModel {
     if (geographicCoordinates) {
       StringBuilder sb = new StringBuilder();
       Formatter fmt = new Formatter(sb);
-      fmtGeo(fmt, y / geoScaleY + geoOffsetY, true);
+      fmtGeo(fmt, y / getGeoScaleY() + getGeoOffsetY(), true);
       sb.append(" / ");
-      fmtGeo(fmt, x / geoScaleX + geoOffsetX, false);
+      fmtGeo(fmt, x / getGeoScaleX() + getGeoOffsetX(), false);
       return sb.toString();
     }
     return String.format("%4.2f,%4.2f", x, y);
@@ -370,7 +370,7 @@ public class ModelAdapter implements IModel {
     if (geographicCoordinates) {
       StringBuilder sb = new StringBuilder();
       Formatter fmt = new Formatter(sb);
-      fmtGeo(fmt, x / geoScaleX + geoOffsetX, false);
+      fmtGeo(fmt, x / getGeoScaleX() + getGeoOffsetX(), false);
       return sb.toString();
     }
     return String.format("%11.2f", x);
@@ -382,7 +382,7 @@ public class ModelAdapter implements IModel {
       StringBuilder sb = new StringBuilder();
       sb.append(' '); // to provide vertical alignment with longitudes
       Formatter fmt = new Formatter(sb);
-      fmtGeo(fmt, y / geoScaleY + geoOffsetY, true);
+      fmtGeo(fmt, y / getGeoScaleY() + getGeoOffsetY(), true);
       return sb.toString();
     }
     return String.format("%11.2f", y);
@@ -515,10 +515,10 @@ public class ModelAdapter implements IModel {
     this.nominalPointSpacing = model.nominalPointSpacing;
     this.area = model.area;
 
-    this.geoScaleX = model.geoScaleX;
-    this.geoScaleY = model.geoScaleY;
-    this.geoOffsetX = model.geoOffsetX;
-    this.geoOffsetY = model.geoOffsetY;
+    this.geoScaleX = model.getGeoScaleX();
+    this.geoScaleY = model.getGeoScaleY();
+    this.geoOffsetX = model.getGeoOffsetX();
+    this.geoOffsetY = model.getGeoOffsetY();
     this.geographicCoordinates = model.geographicCoordinates;
 
     this.timeToLoad = model.timeToLoad;
@@ -570,6 +570,29 @@ public class ModelAdapter implements IModel {
   @Override
   public boolean areConstraintsLoaded() {
     return hasConstraints();  // probably to be deprecated.
+  }
+
+ 
+  @Override
+  public double getGeoScaleX() {
+    return geoScaleX;
+  }
+
+ 
+  @Override
+  public double getGeoScaleY() {
+    return geoScaleY;
+  }
+ 
+  @Override
+  public double getGeoOffsetX() {
+    return geoOffsetX;
+  }
+
+ 
+  @Override
+  public double getGeoOffsetY() {
+    return geoOffsetY;
   }
 
 }

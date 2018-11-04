@@ -54,8 +54,11 @@ import tinfour.utils.TinInstantiationUtility;
 import tinfour.utils.VertexColorizerKempe6;
 
 /**
- * Provides utilities for drawing graphical representations of a 
+ * Provides utilities for drawing graphical representations of a
  * BoundedVoronoiDiagram instance.
+ * <p>
+ * <strong>Note: This class is under construction and not yet fully
+ * tested.</strong> Use with caution.
  */
 @SuppressWarnings("PMD.AvoidInstantiatingObjectsInLoops")
 public class BoundedVoronoiDrawingUtility {
@@ -63,7 +66,8 @@ public class BoundedVoronoiDrawingUtility {
   private final BoundedVoronoiDiagram diagram;
   private final AffineTransform af;
   private final Rectangle2D bounds;
-  
+  private final Rectangle2D clipBounds;
+
   private static final Color defaultColors[] = {
     Color.YELLOW,
     Color.MAGENTA,
@@ -87,9 +91,8 @@ public class BoundedVoronoiDrawingUtility {
    * space around the edges of the diagram.
    * <p>
    * Normally, the transform will be initialized using the a rectangle slightly
-   * larger than the sample bounds of the
-   * diagram, but if desired an application may specify an alternate alternate
-   * bounds specification.
+   * larger than the sample bounds of the diagram, but if desired an application
+   * may specify an alternate alternate bounds specification.
    *
    * @param diagram a valid instance of a Voronoi Diagram structure
    * @param width the width of the graphics surface
@@ -142,6 +145,17 @@ public class BoundedVoronoiDrawingUtility {
     double x1 = bounds.getMaxX();
     double y1 = bounds.getMaxY();
     af = this.initTransform(width, height, pad, x0, x1, y0, y1);
+    clipBounds = computeClipBounds();
+  }
+
+  public BoundedVoronoiDrawingUtility(
+          BoundedVoronoiDiagram diagram,
+          Rectangle2D clipBounds,
+          AffineTransform af) {
+    this.diagram = diagram;
+    this.af = af;
+    this.bounds = diagram.getBounds();
+    this.clipBounds = clipBounds;
   }
 
   /**
@@ -232,7 +246,7 @@ public class BoundedVoronoiDrawingUtility {
     return transform;
   }
 
-  private Rectangle2D getClipBounds() {
+  private Rectangle2D computeClipBounds() {
     double x0 = bounds.getMinX();
     double y0 = bounds.getMinY();
     double x1 = bounds.getMaxX();
@@ -275,7 +289,6 @@ public class BoundedVoronoiDrawingUtility {
 
     // edges are drawn with clip on, but vertices are drawn
     // with the clip off.
-    g2d.setClip(getClipBounds());
     g2d.setColor(foreground);
     g2d.setStroke(new BasicStroke((float) strokeWidth));
 
@@ -324,13 +337,11 @@ public class BoundedVoronoiDrawingUtility {
       }
     }
   }
-  
-  
+
   /**
-   * Draws a the vertices of the specified list. The font
-   * specification is optional. If it is specified, the vertices will be
-   * labeled. If it is null, the vertices will not be labeled. All other
-   * specifications are mandatory
+   * Draws a the vertices of the specified list. The font specification is
+   * optional. If it is specified, the vertices will be labeled. If it is null,
+   * the vertices will not be labeled. All other specifications are mandatory
    *
    * @param g the graphics surface for drawing
    * @param foreground the color for drawing the graphics
@@ -398,8 +409,8 @@ public class BoundedVoronoiDrawingUtility {
    * an array of Color objects is a valid input.
    *
    * @param g the graphics surface for drawing
-   * @param paintSpec an array of paint instances corresponding to the color index
-   * values of each vertex
+   * @param paintSpec an array of paint instances corresponding to the color
+   * index values of each vertex
    * @param assignAutomaticColors indicates that the vertices are to be assigned
    * color index values automatically. Doing so will override any color-index
    * values previously stored in the vertices.
@@ -407,9 +418,8 @@ public class BoundedVoronoiDrawingUtility {
   public void drawPolygons(
           Graphics g,
           Paint[] paintSpec,
-          boolean assignAutomaticColors) 
-  {
-        Graphics2D g2d = (Graphics2D) g;
+          boolean assignAutomaticColors) {
+    Graphics2D g2d = (Graphics2D) g;
     g2d.setRenderingHint(
             RenderingHints.KEY_ANTIALIASING,
             RenderingHints.VALUE_ANTIALIAS_ON);
@@ -417,22 +427,21 @@ public class BoundedVoronoiDrawingUtility {
             RenderingHints.KEY_TEXT_ANTIALIASING,
             RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
 
-    Paint [] paint = paintSpec;
-    if(paintSpec==null){
-      paint  = defaultColors;
+    Paint[] paint = paintSpec;
+    if (paintSpec == null) {
+      paint = defaultColors;
     }
     if (assignAutomaticColors) {
-      if (  paint.length < 6) {
+      if (paint.length < 6) {
         throw new IllegalArgumentException(
                 "Input paint specification must include at least 6 values");
       }
       assignAutomaticColors();
     }
- 
 
     // edges are drawn with clip on, but vertices are drawn
     // with the clip off.
-    g2d.setClip(getClipBounds());
+    g2d.setClip(clipBounds);
     g2d.setStroke(new BasicStroke(1.0f));
 
     Point2D p0 = new Point2D.Double();
@@ -464,8 +473,7 @@ public class BoundedVoronoiDrawingUtility {
     g2d.setClip(null);
   }
 
-  
-   /**
+  /**
    * Draws a the edges from the specified list.
    *
    * @param g the graphics surface for drawing
@@ -478,7 +486,7 @@ public class BoundedVoronoiDrawingUtility {
           Graphics g,
           Color foreground,
           double strokeWidth,
-          List<IQuadEdge>edgeList) {
+          List<IQuadEdge> edgeList) {
     Graphics2D g2d = (Graphics2D) g;
     g2d.setRenderingHint(
             RenderingHints.KEY_ANTIALIASING,
@@ -486,7 +494,6 @@ public class BoundedVoronoiDrawingUtility {
     g2d.setRenderingHint(
             RenderingHints.KEY_TEXT_ANTIALIASING,
             RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
-
 
     Shape saveClip = g2d.getClip();
     g2d.setClip(null);
@@ -501,7 +508,7 @@ public class BoundedVoronoiDrawingUtility {
     for (IQuadEdge e : edgeList) {
       Vertex A = e.getA();
       Vertex B = e.getB();
-      if(A==null || B==null){
+      if (A == null || B == null) {
         continue;
       }
       p0.setLocation(A.getX(), A.getY());
@@ -513,67 +520,65 @@ public class BoundedVoronoiDrawingUtility {
     }
     g2d.setClip(saveClip);
   }
-  
-  
+
   /**
-   * Assigns automatic color selections to the vertices and associated
-   * polygons in the bounded Voronoi diagram stored when this instance
-   * was constructed.
+   * Assigns automatic color selections to the vertices and associated polygons
+   * in the bounded Voronoi diagram stored when this instance was constructed.
    * <p>
-   * This method is potentially costly for diagrams containing a large
-   * number of vertices. Therefore, it should only be called once when rendering.
+   * This method is potentially costly for diagrams containing a large number of
+   * vertices. Therefore, it should only be called once when rendering.
    * <p>
-   * This method assigns six color indices to polygons (in the range 0 to 5).
-   * If applications that use automatic color assignment require a custom
-   * palette, they must specify and array of Color or Paint instances
-   * with at least six elements.  If a smaller palette is supplied, the
-   * results are undefined.
+   * This method assigns six color indices to polygons (in the range 0 to 5). If
+   * applications that use automatic color assignment require a custom palette,
+   * they must specify and array of Color or Paint instances with at least six
+   * elements. If a smaller palette is supplied, the results are undefined.
    */
-  public void assignAutomaticColors(){
-      List<Vertex> vertexList = diagram.getVertices();
-      int nVertices = vertexList.size();
-      Rectangle2D sampleBounds = new Rectangle2D.Double(
-              vertexList.get(0).getX(),
-              vertexList.get(0).getY(),
-              0, 0);
+  public void assignAutomaticColors() {
+    List<Vertex> vertexList = diagram.getVertices();
+    int nVertices = vertexList.size();
+    Rectangle2D sampleBounds = new Rectangle2D.Double(
+            vertexList.get(0).getX(),
+            vertexList.get(0).getY(),
+            0, 0);
 
-      for (Vertex v : vertexList) {
-        sampleBounds.add(v.getX(), v.getY());
-      }
+    for (Vertex v : vertexList) {
+      sampleBounds.add(v.getX(), v.getY());
+    }
 
-      // estimate a nominal point spacing based on the domain of the
-      // input data set and assuming a rougly uniform density.
-      // the value 0.866 is based on the parameters of a regular
-      // hexagonal tesselation of a plane
-      double area = sampleBounds.getWidth() * sampleBounds.getHeight();
-      double nominalPointSpacing = Math.sqrt(area / nVertices / 0.866);
-      TinInstantiationUtility maker
-              = new TinInstantiationUtility(0.25, vertexList.size());
-      IIncrementalTin tin = maker.constructInstance(nominalPointSpacing);
-      tin.add(vertexList, null);
-      if (!tin.isBootstrapped()) {
-        return;
-      }
-      VertexColorizerKempe6 kempe6 = new VertexColorizerKempe6();
-      kempe6.assignColorsToVertices(tin);
-      tin.dispose();
+    // estimate a nominal point spacing based on the domain of the
+    // input data set and assuming a rougly uniform density.
+    // the value 0.866 is based on the parameters of a regular
+    // hexagonal tesselation of a plane
+    double area = sampleBounds.getWidth() * sampleBounds.getHeight();
+    double nominalPointSpacing = Math.sqrt(area / nVertices / 0.866);
+    TinInstantiationUtility maker
+            = new TinInstantiationUtility(0.25, vertexList.size());
+    IIncrementalTin tin = maker.constructInstance(nominalPointSpacing);
+    tin.add(vertexList, null);
+    if (!tin.isBootstrapped()) {
+      return;
+    }
+    VertexColorizerKempe6 kempe6 = new VertexColorizerKempe6();
+    kempe6.assignColorsToVertices(tin);
+    tin.dispose();
   }
-  
+
   /**
    * Draws the Bounded Voronoi Diagram using the specified styler
    * <p>
-   * <strong>This method is under development.</strong> 
+   * <strong>This method is under development.</strong>
    * It is not yet ready for use and may be subject to changes.
+   *
    * @param g a valid graphic surface
-   * @param specifiedStyler a valid styler implementation, or a null if 
-   * defaults are to be used
+   * @param specifiedStyler a valid styler implementation, or a null if defaults
+   * are to be used
    */
   public void draw(Graphics g, IBoundedVoronoiStyler specifiedStyler) {
     IBoundedVoronoiStyler styler = specifiedStyler;
-    if(styler==null){
+    if (styler == null) {
       styler = new BoundedVoronoiStylerDefault();
     }
-    
+
     Graphics2D g2d = (Graphics2D) g;
     g2d.setRenderingHint(
             RenderingHints.KEY_ANTIALIASING,
@@ -581,83 +586,101 @@ public class BoundedVoronoiDrawingUtility {
     g2d.setRenderingHint(
             RenderingHints.KEY_TEXT_ANTIALIASING,
             RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
-    
 
     // edges are drawn with clip on, but vertices are drawn
     // with the clip off.
-    g2d.setClip(getClipBounds());
+    g2d.setClip(clipBounds);
     g2d.setStroke(new BasicStroke(1.0f));
-    
+
     if (styler.isFeatureTypeEnabled(BoundedVoronoiRenderingType.Area)) {
-      this.drawAreaFill(g2d, styler);
+      drawAreaFill(g2d, styler);
     }
 
     if (styler.isFeatureTypeEnabled(BoundedVoronoiRenderingType.Line)) {
-      this.drawLines(g2d, styler);
+      drawLines(g2d, styler);
     }
 
- 
-    
-    
+    if (styler.isFeatureTypeEnabled(BoundedVoronoiRenderingType.Vertex)) {
+      drawVertices(g2d, styler);
+    }
+
   }
-  
+
   private void drawAreaFill(
           Graphics2D g2d,
-          IBoundedVoronoiStyler styler) 
-  {
+          IBoundedVoronoiStyler styler) {
 
     Point2D p0 = new Point2D.Double();
     List<ThiessenPolygon> polygons = diagram.getPolygons();
 
     for (ThiessenPolygon poly : polygons) {
-      if(styler.isRenderingEnabled(poly, BoundedVoronoiRenderingType.Area)){
-      List<IQuadEdge> qList = poly.getEdges();
-      Path2D path = new Path2D.Double();
-      IQuadEdge q0 = qList.get(0);
-      p0.setLocation(q0.getA().getX(), q0.getA().getY());
-      af.transform(p0, p0);
-      path.moveTo(p0.getX(), p0.getY());
-      for (IQuadEdge q : qList) {
-        p0.setLocation(q.getB().getX(), q.getB().getY());
+      if (styler.isRenderingEnabled(poly, BoundedVoronoiRenderingType.Area)) {
+        List<IQuadEdge> qList = poly.getEdges();
+        Path2D path = new Path2D.Double();
+        IQuadEdge q0 = qList.get(0);
+        p0.setLocation(q0.getA().getX(), q0.getA().getY());
         af.transform(p0, p0);
-        path.lineTo(p0.getX(), p0.getY());
+        path.moveTo(p0.getX(), p0.getY());
+        for (IQuadEdge q : qList) {
+          p0.setLocation(q.getB().getX(), q.getB().getY());
+          af.transform(p0, p0);
+          path.lineTo(p0.getX(), p0.getY());
+        }
+        path.closePath();
+
+        styler.applyStylingForAreaFill(g2d, poly);
+        g2d.fill(path);
+        g2d.draw(path);
       }
-      path.closePath();
-      
-      styler.applyStylingForAreaFill(g2d, poly);
-      g2d.fill(path);
-      g2d.draw(path);
-    }
     }
   }
-  
-  private void drawLines(Graphics2D g2d, IBoundedVoronoiStyler styler){
-     Point2D p0 = new Point2D.Double();
+
+  private void drawLines(Graphics2D g2d, IBoundedVoronoiStyler styler) {
+    Point2D p0 = new Point2D.Double();
     Point2D p1 = new Point2D.Double();
     Line2D l2d = new Line2D.Double();
-    
-    boolean drawn[] =  new boolean[diagram.getMaximumEdgeAllocationIndex()];
-    for(ThiessenPolygon poly : diagram.getPolygons()){
-      
-      if(styler.isRenderingEnabled(poly, BoundedVoronoiRenderingType.Line)){
-         for (IQuadEdge e : poly.getEdges()){
-           if(!drawn[e.getIndex()]){
-             drawn[e.getIndex()] = true;
-             drawn[e.getIndex()^0x01] = true;
-              Vertex A = e.getA();
-      Vertex B = e.getB();
- 
-      p0.setLocation(A.getX(), A.getY());
-      p1.setLocation(B.getX(), B.getY());
-      af.transform(p0, p0);
-      af.transform(p1, p1);
-      l2d.setLine(p0, p1);
-      g2d.draw(l2d);
-           }
-         }
+
+    boolean drawn[] = new boolean[diagram.getMaximumEdgeAllocationIndex()];
+    for (ThiessenPolygon poly : diagram.getPolygons()) {
+
+      if (styler.isRenderingEnabled(poly, BoundedVoronoiRenderingType.Line)) {
+        styler.applyStylingForLineDrawing(g2d, poly);
+        for (IQuadEdge e : poly.getEdges()) {
+          if (!drawn[e.getIndex()]) {
+            drawn[e.getIndex()] = true;
+            drawn[e.getIndex() ^ 0x01] = true;
+            Vertex A = e.getA();
+            Vertex B = e.getB();
+
+            p0.setLocation(A.getX(), A.getY());
+            p1.setLocation(B.getX(), B.getY());
+            af.transform(p0, p0);
+            af.transform(p1, p1);
+            l2d.setLine(p0, p1);
+            g2d.draw(l2d);
+          }
+        }
       }
     }
-  
+
+  }
+
+  private void drawVertices(Graphics2D g2d, IBoundedVoronoiStyler styler) {
+    Point2D p0 = new Point2D.Double();
+    Point2D p1 = new Point2D.Double();
+
+    for (ThiessenPolygon poly : diagram.getPolygons()) {
+      if (styler.isRenderingEnabled(poly, BoundedVoronoiRenderingType.Vertex)) {
+        Vertex v = poly.getVertex();
+        p0.setLocation(v.getX(), v.getY());
+        af.transform(p0, p1);
+        if(clipBounds!=null && !clipBounds.contains(p1)){
+          continue;
+        }
+        IBoundedVoronoiVertexSymbol s = styler.getVertexSymbol(poly);
+        s.draw(g2d, p1.getX(), p1.getY());
+      }
+    }
   }
 
 }
