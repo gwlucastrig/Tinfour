@@ -721,6 +721,13 @@ public class TestPalette {
     return name;
   }
 
+  /**
+   * Gets an icon depicting the palette for User Interface purposes.
+   * @param name the name of the palette
+   * @param width the width of the icon
+   * @param height the height of the icon
+   * @return if the name is recognized, a valid icon; otherwise, a null.
+   */
   public static Icon getIconByName(String name, int width, int height) {
     TestPalette p = getPaletteByName(name);
     BufferedImage bImage = new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB);

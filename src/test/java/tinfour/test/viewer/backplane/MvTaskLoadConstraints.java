@@ -77,6 +77,14 @@ class MvTaskLoadConstraints implements IModelViewTask {
         = backplaneManager.getProgressMonitor(taskIndex);
       monitor.postMessage("Loading constraints from " + constraintsFile.getName());
       ConstraintLoader loader = new ConstraintLoader();
+      if (model.isCoordinateSystemGeographic()) {
+        loader.setGeographic(
+                model.getGeoScaleX(),
+                model.getGeoScaleY(),
+                model.getGeoOffsetX(),
+                model.getGeoOffsetY()
+        );
+      }
       List<IConstraint> constraints = loader.readConstraintsFile(constraintsFile);
       model.addConstraints(constraintsFile, constraints);
       monitor.reportDone();

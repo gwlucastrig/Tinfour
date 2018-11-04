@@ -51,6 +51,8 @@ public class ShapefileRecord {
    * @param nParts the number of parts in the record
    */
   void setSizes(int nPoints, int nParts) {
+    this.nPoints = nPoints;
+    this.nParts = nParts;
     if (partStart == null) {
       partStart = new int[nParts + 1];
       xyz = new double[nPoints * 3];
@@ -63,8 +65,6 @@ public class ShapefileRecord {
       if (xyz.length < nPoints * 3) {
         xyz = new double[nPoints * 3];
       }
-      this.nPoints = nPoints;
-      this.nParts = nParts;
     }
   }
 

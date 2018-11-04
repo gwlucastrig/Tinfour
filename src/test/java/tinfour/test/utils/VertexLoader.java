@@ -597,7 +597,7 @@ public class VertexLoader {
         } else if (s.toLowerCase().startsWith("lon")) {
           geoText = true;
           xColumn = k;
-        } else if (s.toUpperCase().startsWith("lat")) {
+        } else if (s.toLowerCase().startsWith("lat")) {
           geoText = true;
           yColumn = k;
         }

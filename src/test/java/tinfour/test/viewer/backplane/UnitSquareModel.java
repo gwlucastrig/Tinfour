@@ -290,4 +290,27 @@ public class UnitSquareModel implements IModel {
     // not supported in this case.
   }
 
+  
+  @Override
+  public double getGeoScaleX() {
+    return 1.0;
+  }
+ 
+  @Override
+  public double getGeoScaleY() {
+    return 1.0;
+  }
+ 
+  @Override
+  public double getGeoOffsetX() {
+    return 0.0;
+  }
+
+ 
+  @Override
+  public double getGeoOffsetY() {
+    return 0.0;
+  }
+
+  
 }

@@ -411,7 +411,12 @@ public class GeometricOperations {
    * order of the vertices
    */
   public double area(Vertex a, Vertex b, Vertex c) {
-    double h = (c.x - a.x) * (a.y - b.y) + (c.y - a.y) * (b.x - a.x);
+    // the computation used here and the one used in the
+    // halfPlane() method are the same.  However, to save operations
+    // in the halfPlane() calculation, we swap a couple of variables
+    // so as to avoid a subtraction.  So the h calculation could be written
+    // double h = (c.x - a.x) * (a.y - b.y) + (c.y - a.y) * (b.x - a.x);
+    double h =  (c.y - a.y) * (b.x - a.x) - (c.x - a.x) * (b.y - a.y );
     if (-inCircleThreshold < h && h < inCircleThreshold) {
       h = halfPlane(a.x, a.y, b.x, b.y, c.x, c.y);
     }

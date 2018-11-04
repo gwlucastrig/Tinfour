@@ -63,6 +63,7 @@ public class BoundedVoronoiStylerDefault implements IBoundedVoronoiStyler {
   Font vertexLabelingFont = new Font("Dialog", Font.BOLD, 12);
   Color[] palette = defaultPalette;
   Color lineColor = Color.black;
+  Color vertexColor = Color.black;
   Stroke lineStroke = thinStroke;
   Stroke borderStroke = new BasicStroke(2.0f);
 
@@ -88,22 +89,6 @@ public class BoundedVoronoiStylerDefault implements IBoundedVoronoiStyler {
   }
 
   @Override
-  public boolean isVertexLabelingEnabled(ThiessenPolygon polygon) {
-    if (polygon == null) {
-      return false;
-    }
-    return vertexLabelingEnabled;
-  }
-
-  @Override
-  public boolean isVertexSymbolEnabled(ThiessenPolygon polygon) {
-    if (polygon == null) {
-      return false;
-    }
-    return vertexSymbolEnabled;
-  }
-
-  @Override
   public void initializeRendering(Graphics2D g) {
     g.setRenderingHint(
             RenderingHints.KEY_ANTIALIASING,
@@ -125,17 +110,6 @@ public class BoundedVoronoiStylerDefault implements IBoundedVoronoiStyler {
   public void applyStylingForLineDrawing(Graphics2D g, ThiessenPolygon polygon) {
     g.setColor(lineColor);
     g.setStroke(lineStroke);
-  }
-
-  @Override
-  public void applyStylingForVertexDraw(Graphics2D g, ThiessenPolygon polygon) {
-    g.setColor(lineColor);
-    g.setStroke(thinStroke);
-  }
-
-  @Override
-  public double getVertexSymbolSize(ThiessenPolygon polygon) {
-    return vertexSymbolSize;
   }
 
   /**
@@ -246,6 +220,27 @@ public class BoundedVoronoiStylerDefault implements IBoundedVoronoiStyler {
    */
   public void setVertexSymbolEnabled(boolean enabled) {
     vertexSymbolEnabled = enabled;
+  }
+
+  /**
+   * Tests to see if the polygon is enabled for rendering a symbol at the vertex
+   * position and, if it is, returns a vertex symbol that can be used for
+   * rendering.
+   * <p>
+   * @param polygon a valid polygon
+   * @return if rendering is enabled, a valid symbol instance; otherwise, a
+   * null.
+   */
+  @Override
+  public IBoundedVoronoiVertexSymbol getVertexSymbol(ThiessenPolygon polygon) {
+    if (isRenderingEnabled(polygon, BoundedVoronoiRenderingType.Vertex)) {
+      BoundedVoronoiVertexSymbol symbol = new BoundedVoronoiVertexSymbol();
+      symbol.setColor(vertexColor);
+      symbol.setFont(vertexLabelingFont);
+      symbol.setLabel(Integer.toString(polygon.getVertex().getIndex()));
+      return symbol;
+    }
+    return null;
   }
 
 }

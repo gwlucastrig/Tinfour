@@ -253,8 +253,8 @@ public class ModelFromLas extends ModelAdapter implements IModel {
   @Override
   public void xy2geo(double x, double y, double[] geo) {
     if (geographicCoordinates) {
-      geo[0] = y / geoScaleY + geoOffsetY;
-      geo[1] = x / geoScaleX + geoOffsetX;
+      geo[0] = y / getGeoScaleY() + getGeoOffsetY();
+      geo[1] = x / getGeoScaleX() + getGeoOffsetX();
     }
   }
 
@@ -262,14 +262,14 @@ public class ModelFromLas extends ModelAdapter implements IModel {
   public void geo2xy(double latitude, double longitude, double[] xy) {
     if (this.geographicCoordinates) {
 
-      double delta = longitude - geoOffsetX;
+      double delta = longitude - getGeoOffsetX();
       if (delta < -180) {
         delta += 360;
       } else if (delta >= 180) {
         delta -= 360;
       }
-      xy[0] = delta * geoScaleX;
-      xy[1] = (latitude - geoOffsetY) * geoScaleY;
+      xy[0] = delta * getGeoScaleX();
+      xy[1] = (latitude - getGeoOffsetY()) * getGeoScaleY();
     }
   }
 
