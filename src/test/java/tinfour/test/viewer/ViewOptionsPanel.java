@@ -245,8 +245,8 @@ import tinfour.test.viewer.backplane.ViewOptions.RasterInterpolationMethod;
         JOptionPane.showMessageDialog(paletteAssignFixedRange, "Invalid entry for specified palette range", "Bad Numeric Entry", JOptionPane.ERROR_MESSAGE);
         useRangeOfValues = false;
         badInput = true;
-      } else if (a >= b) {
-        JOptionPane.showMessageDialog(paletteAssignFixedRange, "Palette range entries must be increasing values", "Values out of order", JOptionPane.ERROR_MESSAGE);
+      } else if (Math.abs(a-b)<Math.abs(a+b)/1.0e+6) {
+        JOptionPane.showMessageDialog(paletteAssignFixedRange, "Palette range entries must be distinct", "Values not distinct", JOptionPane.ERROR_MESSAGE);
         useRangeOfValues = false;
         badInput = true;
       }

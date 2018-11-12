@@ -44,7 +44,7 @@ import tinfour.common.Vertex;
 import tinfour.test.shapefile.ShapefileReader;
 import tinfour.test.shapefile.ShapefileRecord;
 import tinfour.test.shapefile.ShapefileType;
-import tinfour.test.utils.DelimitedReader;
+import tinfour.io.DelimitedReader;
 
 /**
  * Provides tools for loading constraints from either a Shapefile or a text

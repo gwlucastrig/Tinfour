@@ -29,6 +29,7 @@
  */
 package tinfour.test.utils;
 
+import tinfour.io.DelimitedReader;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -180,6 +181,8 @@ public class VertexLoader {
         delimiter = ' ';
       }
       return readDelimitedFile(file, delimiter);
+    } else if("shp".equalsIgnoreCase(ext)){
+      return readShapefile(file, null);
     }
 
     LasFileReader reader = new LasFileReader(file);
@@ -668,6 +671,41 @@ public class VertexLoader {
     return vList;
   }
 
+   /**
+   * Read the records from the Shapefile and use them to populate vertices. For
+   * those Shapefile types that support z coordintes, the value of the z
+   * coordinates will be used. Otherwise a zero value will be used for the z
+   * coordinate.
+   * <p>
+   * The index of the vertex is set to be the shapefile record number. Thus many
+   * vertices may be assigned with the same record number, particularly if the
+   * input is a polygon or line feature.
+   *
+   * @param dbfFieldForZ the name of the DBF field to use as a z value
+   * @return a valid, potentially empty list of vertices
+   * @throws IOException in the event of an unrecoverable I/O condition
+   */
+   public List<Vertex> readShapefile(File file, String dbfFieldForZ) throws IOException {
+    VertexLoaderShapefile vls = new VertexLoaderShapefile(file);
+    List<Vertex> vList = vls.loadVertices(dbfFieldForZ);
+    vls.close();
+    if (vls.isSourceInGeographicCoordinates()) {
+      isSourceInGeographicCoordinates = true;
+      geoOffsetX = vls.geoOffsetX;
+      geoOffsetY = vls.geoOffsetY;
+      geoScaleX = vls.geoScaleX;
+      geoScaleY = vls.geoScaleY;
+    } else {
+      isSourceInGeographicCoordinates = false;
+      geoOffsetX = 0;
+      geoOffsetY = 0;
+      geoScaleX = 1;
+      geoScaleY = 1;
+    }
+    postProcessList(vList);
+    return vList;
+  }
+   
   /**
    * Gets the linear units for the coordinate system used by the
    * data. It is assumed that the vertical and horizontal coordinate

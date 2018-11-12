@@ -192,6 +192,8 @@ public class BackplaneManager {
       model = new ModelFromText(file, ' ');
     } else if ("CSV".equalsIgnoreCase(ext)) {
       model = new ModelFromText(file, ',');
+    } else if ("SHP".equalsIgnoreCase(ext)) {
+      model = new ModelFromShapefile(file);
     } else {
       postStatusMessage(taskIndex, "Unrecognized file extension " + ext);
       return null;

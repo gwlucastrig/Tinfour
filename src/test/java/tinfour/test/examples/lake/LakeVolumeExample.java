@@ -26,10 +26,10 @@
  * Notes:
  *
  * -----------------------------------------------------------------------
- */ 
-
+ */
 package tinfour.test.examples.lake;
 
+import tinfour.utils.KahanSummation;
 import java.io.File;
 import java.io.IOException;
 import java.io.PrintStream;
@@ -58,18 +58,38 @@ public class LakeVolumeExample {
    * @param args the command line arguments
    */
   public static void main(String[] args) {
-    File folder = new File("LakeVictoriaShapefiles");
-    File inputSoundingsFile = new File(folder, "finbath.csv");
-    File inputLakeFile = new File(folder, "LAKE.SHP");
-    File inputIslandFile = new File(folder, "ISLANDS.SHP");
+    File folder;
+    File inputSoundingsFile;
+    File inputLakeFile;
+    File inputIslandFile;
+    String dbfFieldForDepth;
+
+    // set up for processing.  In this case, the default is to 
+    // use the Silsbe sample, but if an argument is passed into the
+    // main, it uses the Salisbury University sample
+    if (args.length == 0) {
+      folder = new File("LakeVictoriaSilsbe");
+      inputSoundingsFile = new File(folder, "finbath.shp");
+      inputLakeFile = new File(folder, "LAKE.SHP");
+      inputIslandFile = new File(folder, "ISLANDS.SHP");
+      dbfFieldForDepth = "DEPTH";
+    } else {
+      folder = new File("LakeVictoriaSalisburyUniversity");
+      inputSoundingsFile = new File(folder, "LV_Bathymetry_Points_V7.shp");
+      inputLakeFile = new File(folder, "LakeVictoriaShoreline.shp");
+      inputIslandFile = null;
+      dbfFieldForDepth = "Z";
+    }
+    
     try {
-      BathymetryData data = new BathymetryData(
+      BathymetryData bathyData = new BathymetryData(
               inputSoundingsFile,
               inputLakeFile,
-              inputIslandFile);
-      data.printSummary(System.out);
+              inputIslandFile,
+              dbfFieldForDepth);
+      bathyData.printSummary(System.out);
       LakeVolumeExample lvCalc = new LakeVolumeExample();
-      lvCalc.processVolume(System.out, data);
+      lvCalc.processVolume(System.out, bathyData);
     } catch (IOException ioex) {
       System.out.println(
               "Exception processing lake volume files, "
@@ -78,29 +98,29 @@ public class LakeVolumeExample {
   }
 
   /**
-   * A Java Consumer to collect the contribution from each water
-   * triangle in the Constrained Delaunay Triangulation.
+   * A Java Consumer to collect the contribution from each water triangle in the
+   * Constrained Delaunay Triangulation.
    */
   private static class LakeData implements Consumer<SimpleTriangle> {
-    boolean []water;
+
+    boolean[] water;
     final GeometricOperations geoOp;
     int nTriangles;
-    double totalVolume;
-    double surfaceArea;
+
     KahanSummation volumeSum = new KahanSummation();
     KahanSummation areaSum = new KahanSummation();
 
     /**
-     * Constructs an instance for processing and extracts the
-     * water/land values based on the integer index assigned
-     * to the constraints. 
+     * Constructs an instance for processing and extracts the water/land values
+     * based on the integer index assigned to the constraints.
+     *
      * @param tin A valid Constrained Delaunay Triangulation
      */
     LakeData(IIncrementalTin tin) {
       List<IConstraint> constraintsFromTin = tin.getConstraints();
       water = new boolean[constraintsFromTin.size()];
-      for(IConstraint con: constraintsFromTin){
-        water[con.getConstraintIndex()] = (Boolean)con.getApplicationData();
+      for (IConstraint con : constraintsFromTin) {
+        water[con.getConstraintIndex()] = (Boolean) con.getApplicationData();
       }
       Thresholds thresholds = tin.getThresholds();
       geoOp = new GeometricOperations(thresholds);
@@ -115,19 +135,15 @@ public class LakeVolumeExample {
         Vertex vA = a.getA();
         Vertex vB = b.getA();
         Vertex vC = c.getA();
-        double zA = -vA.getZ();
-        double zB = -vB.getZ();
-        double zC = -vC.getZ();
+        double zA = vA.getZ();
+        double zB = vB.getZ();
+        double zC = vC.getZ();
         double zMean = (zA + zB + zC) / 3;
         double area = geoOp.area(vA, vB, vC);
 
         nTriangles++;
-       // totalVolume += zMean * area;
-        
-        volumeSum.add(zMean*area);
+        volumeSum.add(zMean * area);
         areaSum.add(area);
-        surfaceArea = areaSum.getSum();
-        totalVolume = volumeSum.getSum();
 
       }
     }
@@ -138,26 +154,36 @@ public class LakeVolumeExample {
       }
       if (edge.isConstrainedRegionInterior()) {
         int index = edge.getConstraintIndex();
-         return water[index];
+        return water[index];
       }
       return false;
+    }
+
+    double getVolume() {
+      return Math.abs(volumeSum.getSum());
+    }
+
+    double getSurfaceArea() {
+      return areaSum.getSum();
     }
   }
 
   /**
-   * Performs the main process, printing the results to the specified
-   * print stream.
+   * Performs the main process, printing the results to the specified print
+   * stream.
+   *
    * @param ps
-   * @param data 
+   * @param data
    */
-  void processVolume(PrintStream ps, BathymetryData data) {
+  public void processVolume(PrintStream ps, BathymetryData data) {
     List<Vertex> soundings = data.getSoundings();
-    List<IConstraint> lakeConstraints = data.getLakeConstraints();
-    List<IConstraint> islandConstraints = data.getIslandConstraints();
-    for (IConstraint con : lakeConstraints) {
+    List<PolygonConstraint> lakeConstraints = data.getLakeConstraints();
+    List<PolygonConstraint> islandConstraints = data.getIslandConstraints();
+
+    for (PolygonConstraint con : lakeConstraints) {
       con.setApplicationData(true);
     }
-    for (IConstraint con : islandConstraints) {
+    for (PolygonConstraint con : islandConstraints) {
       con.setApplicationData(false);
     }
 
@@ -167,62 +193,83 @@ public class LakeVolumeExample {
 
     long time0 = System.nanoTime();
     IIncrementalTin tin;
-    if (soundings.size() > 500000) {
+    if (soundings.size() < 500000) {
       tin = new IncrementalTin(1.0);
     } else {
       tin = new SemiVirtualIncrementalTin(1.0);
     }
     tin.add(soundings, null);
     tin.addConstraints(allConstraints, true);
+    long time1 = System.nanoTime();
 
     LakeData results = new LakeData(tin);
     TriangleCollector.visitSimpleTriangles(tin, results);
-    long time1 = System.nanoTime();
-
+    long time2 = System.nanoTime();
 
     double lakeArea = getAreaSum(lakeConstraints);
     double islandArea = getAreaSum(islandConstraints);
+    double lakePerimeter = getPerimeterSum(lakeConstraints);
+    double islandPerimeter = getPerimeterSum(islandConstraints);
+    double netArea = lakeArea-islandArea;
+    double totalShore = lakePerimeter+islandPerimeter;
     ps.format("%nData from Shapefiles%n");
-    ps.format("  Lake area       %8.6e%n", lakeArea);
-    ps.format("  Island area     %8.6e%n", islandArea);
-    ps.format("  Net area        %8.6e%n", (lakeArea - islandArea));
-    ps.format("  N Islands       %d%n", islandConstraints.size());
+    ps.format("  Lake area        %10.8e %14.0f m2 %9.1f km2%n", lakeArea, lakeArea, lakeArea/1.0e+6);
+    ps.format("  Island area      %10.8e %14.0f m2 %9.1f km2%n", islandArea, islandArea, islandArea/1.0e+6);
+    ps.format("  Net area (water) %10.8e %14.0f m2 %9.1f km2%n", netArea, netArea, netArea/1.0e+6);
+    ps.format("  Lake shoreline   %10.8e %14.0f m  %9.1f km%n", lakePerimeter, lakePerimeter, lakePerimeter/1000);
+    ps.format("  Island shoreline %10.8e %14.0f m  %9.1f km%n", islandPerimeter, islandPerimeter, islandPerimeter/1000);
+    ps.format("  Total shoreline  %10.8e %14.0f m  %9.1f km%n", totalShore, totalShore, totalShore/1000);
+    ps.format("  N Islands        %d%n", islandConstraints.size());
 
+    
+    double volume = results.getVolume();
+    double surfArea = results.getSurfaceArea();
+    double avgDepth = volume/surfArea;
     ps.format("%nComputations from Constrained Delaunay Triangulation%n");
-    ps.format("  Volume          %8.6e%n", results.totalVolume);
-    ps.format("  Surface Area    %8.6e%n", results.surfaceArea);
-    ps.format("  Avg depth      %5.2f%n", results.totalVolume / results.surfaceArea);
-    ps.format("  N Triangles    %d%n", results.nTriangles);
-    ps.format("  Est. Sample Spacing %8.2f%n", estimateSampleSpacing(tin));
- 
-    ps.format("%n%nCompleted processing in %3.1f ms%n", (time1-time0)/1000000.0);
+    ps.format("  Volume           %10.8e %14.0f m3 %9.1f km3%n", volume, volume, volume/1.0e+9);
+    ps.format("  Surface Area     %10.8e %14.0f m2 %9.1f km2%n", surfArea, surfArea, surfArea/1.0e+6);
+    ps.format("  Avg depth       %5.2f m%n", avgDepth);
+    ps.format("  N Triangles     %d%n", results.nTriangles);
+    ps.format("  Est. Sample Spacing %8.2f m%n", estimateSampleSpacing(tin));
+
+    ps.format("%n%n%n");
+    ps.format("Time to load data           %7.1f ms%n", data.getTimeToLoadData()/1.0e+6);
+    ps.format("Time to build TIN           %7.1f ms%n", (time1 - time0) / 1.0e+6);
+    ps.format("Time to compute lake volume %7.1f ms%n", (time2 - time1) / 1.0e+6);
+    ps.format("Completed processing in     %7.1f ms%n", (time2 - time0) / 1.0e+6);
   }
 
-  private double getAreaSum(List<IConstraint> constraints) {
-    double areaSum = 0;
-    for (IConstraint con : constraints) {
-      if (con instanceof PolygonConstraint) {
-        PolygonConstraint pc = (PolygonConstraint) con;
-        areaSum += pc.getArea();
-      }
+  private double getAreaSum(List<PolygonConstraint> constraints) {
+    KahanSummation areaSum = new KahanSummation();
+    for (PolygonConstraint con : constraints) {
+      areaSum.add(con.getArea());
     }
-    return areaSum;
+    return areaSum.getSum();
   }
-  
-  private double estimateSampleSpacing(IIncrementalTin tin){
+
+  private double getPerimeterSum(List<PolygonConstraint> constraints) {
+    KahanSummation perimeterSum = new KahanSummation();
+    for (PolygonConstraint con : constraints) {
+      perimeterSum.add(con.getLength());
+    }
+    return perimeterSum.getSum();
+  }
+
+  private double estimateSampleSpacing(IIncrementalTin tin) {
     BitSet bitSet = new BitSet(tin.getMaximumEdgeAllocationIndex());
-    for(IQuadEdge e: tin.getPerimeter()){
+    for (IQuadEdge e : tin.getPerimeter()) {
       bitSet.set(e.getIndex());
     }
-    
-    double sumLength=0;
-    int n=0;
-    for(IQuadEdge e: tin.edges()){
-      if(!bitSet.get(e.getIndex()) && !e.isConstrainedRegionBorder()){
+
+    KahanSummation sumLength = new KahanSummation();
+    int n = 0;
+    for (IQuadEdge e : tin.edges()) {
+      if (!bitSet.get(e.getIndex()) && !e.isConstrainedRegionBorder()) {
         n++;
-        sumLength+=e.getLength();
+        sumLength.add(e.getLength());
       }
     }
-    return sumLength/n;
+    return sumLength.getSum() / n;
   }
+
 }

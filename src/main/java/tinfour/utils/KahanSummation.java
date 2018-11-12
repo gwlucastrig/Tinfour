@@ -27,7 +27,7 @@
  *
  * -----------------------------------------------------------------------
  */ 
-package tinfour.test.examples.lake;
+package tinfour.utils;
 
 /**
  * Provides methods and elements for Kahan's algorithm for 
@@ -44,6 +44,7 @@ package tinfour.test.examples.lake;
 public class KahanSummation {
  private double c;  // compensator for Kahan summation  
  private double s;  // summand
+ private int    n;
  
  /**
   * Add the value to the summation
@@ -55,6 +56,7 @@ public class KahanSummation {
     t = s + y;
     c = (t - s ) - y;
     s = t; 
+    n++;
  }
  
  /**
@@ -65,4 +67,24 @@ public class KahanSummation {
  public double getSum(){
    return s;
  }
+ 
+ /**
+  * Gets the mean value of the summands.
+  * @return a valid floating-point value.
+  */
+ public double getMean(){
+   if(n==0){
+     return 0;
+   }
+   return s/n;
+ }
+ 
+ /**
+  * Gets the number of summands that were added to the summation.
+  * @return a value of zero or greater.
+  */
+ public int getSummandCount(){
+   return n;
+ }
+ 
 }
