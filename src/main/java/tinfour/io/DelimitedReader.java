@@ -28,9 +28,10 @@
  * -----------------------------------------------------------------------
  */
 
-package tinfour.test.utils;
+package tinfour.io;
 
 import java.io.BufferedInputStream;
+import java.io.Closeable;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
@@ -45,7 +46,7 @@ import java.util.List;
  * trailing white space removed. Embedded white space characters are
  * preserved.
  */
-public class DelimitedReader {
+public class DelimitedReader implements Closeable {
 
   final InputStream fins;
   final BufferedInputStream bins;
@@ -151,6 +152,7 @@ public class DelimitedReader {
    * CLoses all open IO channels.
    * @throws IOException in the event of an unexpected I/O condition.
    */
+  @Override
   public void close() throws IOException {
     bins.close();
     fins.close();

@@ -29,9 +29,10 @@
  */
 package tinfour.test.shapefile;
 
+import java.io.Closeable;
 import java.io.File;
 import java.io.IOException;
-import tinfour.las.BufferedRandomAccessForLidar;
+import tinfour.io.BufferedRandomAccessReader;
 
 /**
  * Provides a partial implementation of a Shapefile reader intended to
@@ -41,9 +42,9 @@ import tinfour.las.BufferedRandomAccessForLidar;
  * not currently supported. Only a few Shapefile
  * types are supported.
  */
-public class ShapefileReader {
+public class ShapefileReader implements Closeable{
 
-  private final BufferedRandomAccessForLidar raf;
+  private final BufferedRandomAccessReader raf;
   final int fileLength; // 16-bit words
   final long fileLengthInBytes;
   final int version;
@@ -59,7 +60,7 @@ public class ShapefileReader {
   private int nPartsTotal;
 
   public ShapefileReader(File file) throws IOException {
-    raf = new BufferedRandomAccessForLidar(file);
+    raf = new BufferedRandomAccessReader(file);
 
     int fileCode = raf.readIntBigEndian();
     if (fileCode != 9994) {
@@ -100,6 +101,7 @@ public class ShapefileReader {
    *
    * @throws IOException in the event of an unexpected I/O exception
    */
+  @Override
   public void close() throws IOException {
     raf.close();
   }
@@ -208,6 +210,23 @@ public class ShapefileReader {
         record.y1 = record.y0;
         record.xyz[0] = record.x0;
         record.xyz[1] = record.y0;        
+        break;
+      case PointZ:
+        // simple case, but we populate other record items for consistency
+        record.setSizes(1, 1);
+        record.nParts = 1;
+        record.nPoints = 1;
+        record.partStart[1] = 1;
+        record.x0 = raf.readDouble();
+        record.y0 = raf.readDouble();
+        record.z0 = raf.readDouble();
+        record.x1 = record.x0;
+        record.y1 = record.y0;
+        record.z1 = record.z0;
+        record.xyz[0] = record.x0;
+        record.xyz[1] = record.y0;
+        record.xyz[2] = record.z0;
+        // there is also a measure, it is not processed at this time.
         break;
       case PolyLineZ:
       case PolygonZ: {

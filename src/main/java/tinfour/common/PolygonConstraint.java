@@ -203,9 +203,11 @@ public class PolygonConstraint extends PolyLineConstraintAdapter implements ICon
       for (Vertex v : geometry) {
           gList.add(v);
       }
-      return this.getConstraintWithNewGeometry(gList);
+      return  getConstraintWithNewGeometry(gList);
   }
 
+  
+  
   @Override
   public boolean isValid() {
     if (list.size() < 3) {

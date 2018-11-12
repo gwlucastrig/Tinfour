@@ -36,8 +36,10 @@ import java.io.PrintStream;
 import java.util.ArrayList;
 import java.util.List;
 import tinfour.common.IConstraint;
+import tinfour.common.PolygonConstraint;
 import tinfour.common.Vertex;
 import tinfour.test.utils.VertexLoader;
+import tinfour.test.utils.VertexLoaderShapefile;
 import tinfour.test.utils.cdt.ConstraintLoader;
 import tinfour.utils.HilbertSort;
 
@@ -45,35 +47,62 @@ import tinfour.utils.HilbertSort;
  * A class for loading bathymetry and shoreline data to be used for estimating
  * lake volume.
  */
+@SuppressWarnings("PMD.AvoidInstantiatingObjectsInLoops")
 public class BathymetryData {
 
   private final double zMin;
   private final double zMax;
   private final double zMean;
+  private final int zMaxIndex;
+  private final int zMinIndex;
 
   private final List<Vertex> soundings;
-  private final List<IConstraint> lakeConstraints;
-  private final List<IConstraint> islandConstraints;
+  private final List<PolygonConstraint> lakeConstraints;
+  private final List<PolygonConstraint> islandConstraints;
   private final Rectangle2D soundingBounds;
   private final Rectangle2D bounds;
   private final double nominalPointSpacing;
+  private final long timeToLoadData;
 
   /**
    * Load the test data from the specified files
+   * <p>
+   * The input soundings file may be a CSV file or a Shapefile. If the file is a
+   * Shapefile, there are two options for obtaining the depth coordinate. The
+   * depth coordinate may be taken from the z coordinates for each Shapefile
+   * point (if supplied) or they may be taken from a named field in the DBF
+   * file. If the dbfBathymetryField string is null, then the Z coordinate will
+   * be used. Otherwise, this class will use the named field.
    *
    * @param inputSoundingsFile a mandatory path for a CSV file giving soundings
    * @param inputShorelineFile a mandatory path for a Shapefile file giving
    * soundings
    * @param inputIslandFile an optional path for a Shapefile file giving
    * soundings
+   * @param dbfBathymetryField an option field used when the inputSoundingsFile
+   * is a Shapefile indicating DBF field of interest.
    * @throws IOException in the event of an unrecoverable I/O condition
    */
-  BathymetryData(File inputSoundingsFile,
+  public BathymetryData(
+          File inputSoundingsFile,
           File inputShorelineFile,
-          File inputIslandFile)
+          File inputIslandFile,
+          String dbfBathymetryField)
           throws IOException {
-    VertexLoader vLoader = new VertexLoader();
-    soundings = vLoader.readDelimitedFile(inputSoundingsFile, ',');
+    long time0 = System.nanoTime();
+    VertexLoader vLoader = null;
+    String extension = this.getFileExtension(inputSoundingsFile);
+    if ("csv".equalsIgnoreCase(extension)) {
+      vLoader = new VertexLoader();
+      soundings = vLoader.readDelimitedFile(inputSoundingsFile, ',');
+    } else if ("shp".equalsIgnoreCase(extension)) {
+      VertexLoaderShapefile vls = new VertexLoaderShapefile(inputSoundingsFile);
+      soundings = vls.loadVertices(dbfBathymetryField);
+    } else {
+      throw new IllegalArgumentException("Unsupported file format "
+              + extension
+              + " for input soundings " + inputSoundingsFile.getPath());
+    }
     if (soundings.size() < 3) {
       throw new IllegalArgumentException(
               "Input file contains fewer than 3 samples, "
@@ -88,6 +117,8 @@ public class BathymetryData {
     double z0 = Double.POSITIVE_INFINITY;
     double z1 = Double.NEGATIVE_INFINITY;
     double zSum = 0;
+    int indexOfMaxZ = -1;
+    int indexOfMinZ = -1;
 
     Vertex v0 = soundings.get(0);
     Rectangle2D r2d = new Rectangle2D.Double(v0.getX(), v0.getY(), 0, 0);
@@ -96,9 +127,11 @@ public class BathymetryData {
       double z = v.getZ();
       if (z > z1) {
         z1 = z;
+        indexOfMaxZ = v.getIndex();
       }
       if (z < z0) {
         z0 = z;
+        indexOfMinZ = v.getIndex();
       }
       zSum += z;
 
@@ -107,6 +140,8 @@ public class BathymetryData {
     zMin = z0;
     zMax = z1;
     zMean = zSum / soundings.size();
+    zMaxIndex = indexOfMaxZ;
+    zMinIndex = indexOfMinZ;
     soundingBounds = r2d;
     double area = soundingBounds.getWidth() * soundingBounds.getHeight();
     if (area == 0) {
@@ -117,24 +152,20 @@ public class BathymetryData {
     int n = soundings.size();
     nominalPointSpacing = Math.sqrt((area / n) * (2 / 0.866));
 
+  lakeConstraints = new ArrayList<>();
+   islandConstraints = new ArrayList<>();
     ConstraintLoader cLoader = new ConstraintLoader();
-    if (vLoader.isSourceInGeographicCoordinates()) {
+    if (vLoader != null && vLoader.isSourceInGeographicCoordinates()) {
       cLoader.setGeographic(
               vLoader.getGeoScaleX(),
               vLoader.getGeoScaleY(),
               vLoader.getGeoOffsetX(),
               vLoader.getGeoOffsetY());
     }
-    if (inputShorelineFile == null) {
-      lakeConstraints = new ArrayList<>(0); // empty list
-    } else {
-      lakeConstraints = cLoader.readConstraintsFile(inputShorelineFile);
-    }
-    if (inputIslandFile == null) {
-      islandConstraints = new ArrayList<>(0); // empty list
-    } else {
-      islandConstraints = cLoader.readConstraintsFile(inputIslandFile);
-    }
+
+    List<PolygonConstraint> listL = loadConstraints(cLoader, inputShorelineFile);
+    List<PolygonConstraint> listI = loadConstraints(cLoader, inputIslandFile);
+    transcribeConstraints(listL, listI);
 
     r2d = new Rectangle2D.Double(
             soundingBounds.getX(),
@@ -151,6 +182,121 @@ public class BathymetryData {
       r2d.add(b);
     }
     bounds = r2d;
+    long time1 = System.nanoTime();
+    timeToLoadData = time1-time0;
+  }
+
+  /**
+   * Loads the constraints from the specified file. The Tinfour ConstraintLoader
+   * class will produce List<IConstraint> containing instances of different
+   * classes depending on the nature of the features in the input file. However,
+   * the bathymetry analysis project requires polygon constraints and it will be
+   * more convenient to use PolygonConstraint instances rather than the generic
+   * interface. This method casts the features from the generic IConstraint
+   * interface to the specific PolygonConstraint used for this particular
+   * bathymetry analysis.
+   * <p>
+   * If the input file contains non-polygon features (open lines), this method
+   * throws an IllegalArgumentException.
+   *
+   * @param cLoader a valid instance
+   * @param file a valid file represent
+   * @return a list of polygon constraints
+   * @throws IOException in the event of an unrecoverable I/O condition
+   */
+  private List<PolygonConstraint> loadConstraints(
+          ConstraintLoader cLoader, File file) throws IOException {
+    List<PolygonConstraint> list = new ArrayList<>();
+    if (file == null) {
+      return list;
+    }
+
+    List<IConstraint> temp = cLoader.readConstraintsFile(file);
+    for (IConstraint con : temp) {
+      if (con instanceof PolygonConstraint) {
+        list.add((PolygonConstraint) con);
+      } else {
+        throw new IllegalArgumentException(
+                "Constraint file contains non-polygon features "
+                + file.getName());
+      }
+    }
+    return list;
+  }
+
+  /**
+   * In practice, I've seen two kinds of input files.
+   * <ol>
+   * <li>Two Shapefiles, one for the lake and one for the island</li>
+   * <li>One Shapefile, with "holes" where islands would go</li>
+   * </ol>
+   * <p>
+   * The Silsbe sample for Lake Victoria gave one Shapefile which defined a
+   * containing polygon for the entire lake and a separate file for islands. The
+   * containing Shapefile did not include "holes" for the islands.
+   * Traditionally, when Shapefiles include polygon features in which one
+   * polygon encloses another, the Shapefile stores a "hole" where the
+   * alternate feature would go. However, the holes are mandatory only in cases
+   * where the enclosed feature is part of the SAME Shapefile as the larger
+   * feature. Since Silsbe treated his islands as a separate file, there was no
+   * requirement for holes.
+   * <p>
+   * The Salisbury University Lake Victoria sample also provided two Shapefiles,
+   * one for the lake (they called it the "shoreline file") and one for the
+   * islands. But the lake Shapefile had hole features where the islands would
+   * go. And, since the lake file was sufficient to conduct the processing,
+   * there was no need to use the island features.
+   * <p>
+   * This logic attempts to organize different potential inputs into a form that
+   * is ready for processing by the LakeVolumeExample class.
+   * @param listL list of constraints loaded from the lake Shapefile
+   * @param listI list of constraints loaded from the island Shapefile
+   */
+  private void transcribeConstraints(
+          List<PolygonConstraint> listL, 
+          List<PolygonConstraint> listI) {
+    boolean lakeContainsHoles = false;
+    for (PolygonConstraint p : listL) {
+      if (p.getArea() < 0) {
+        lakeContainsHoles = true;
+        break;
+      }
+    }
+
+    // if the lake contains holes, it is sufficient for processing.
+    // the constraints from the polygon file will be ignored
+    if (lakeContainsHoles) {
+      for (PolygonConstraint p : listL) {
+        double a = p.getArea();
+        if (a > 0) {
+          lakeConstraints.add(p);
+        } else if (a < 0) {
+          islandConstraints.add(reverse(p));
+        }
+      }
+    } else {
+      lakeConstraints.addAll(listL);
+      // as a precaution, check the island constraints to
+      // ensure that all of them are oriented clockwise.
+      // it is possible that the islands may also contain
+      // holes (as in the case of an island lake)
+      for (PolygonConstraint p : listI) {
+        double a = p.getArea();
+        if (a > 0) {
+          islandConstraints.add(p);
+        }
+      }
+
+    }
+  }
+
+  private PolygonConstraint reverse(PolygonConstraint c) {
+    List<Vertex> vList = c.getVertices();
+    ArrayList<Vertex> nList = new ArrayList<>(vList.size());
+    for (int i = vList.size() - 1; i >= 0; i--) {
+      nList.add(vList.get(i));
+    }
+    return c.getConstraintWithNewGeometry(nList);
   }
 
   /**
@@ -229,7 +375,7 @@ public class BathymetryData {
    *
    * @return a valid, potentially empty, list.
    */
-  public List<IConstraint> getLakeConstraints() {
+  public List<PolygonConstraint> getLakeConstraints() {
     return lakeConstraints;
   }
 
@@ -238,7 +384,7 @@ public class BathymetryData {
    *
    * @return a valid, potentially empty, list.
    */
-  public List<IConstraint> getIslandConstraints() {
+  public List<PolygonConstraint> getIslandConstraints() {
     return islandConstraints;
   }
 
@@ -268,6 +414,18 @@ public class BathymetryData {
             bounds.getHeight());
   }
 
+  /**
+   * Gets the time required to load the input data
+   * @return a valid time in nanoseconds\
+   */
+  public long getTimeToLoadData(){
+    return timeToLoadData;
+  }
+  
+  /**
+   * Print a summary of the input data.
+   * @param ps a valid print stream such as system output.
+   */
   public void printSummary(PrintStream ps) {
     double x0 = soundingBounds.getMinX();
     double y0 = soundingBounds.getMinY();
@@ -276,9 +434,21 @@ public class BathymetryData {
     ps.format("Input Data%n");
     ps.format("  Soundings%n");
     ps.format("     Count:           %7d%n", soundings.size());
-    ps.format("     Min (x,y,z):     %9.1f, %9.1f, %9.2f%n", x0, y0, zMin);
-    ps.format("     Max (x,y,z):     %9.1f, %9.1f, %9.2f%n", x1, y1, zMax);
+    ps.format("     Min (x,y,z):     %9.1f, %9.1f, %9.2f (feature %d)%n", x0, y0, zMin, zMinIndex);
+    ps.format("     Max (x,y,z):     %9.1f, %9.1f, %9.2f (feature %d)%n", x1, y1, zMax, zMaxIndex);
     ps.format("     width,height:    %9.1f, %9.1f%n", x1 - x0, y1 - y0);
     ps.format("     Nominal Spacing: %9.1f%n", nominalPointSpacing);
   }
+
+  private String getFileExtension(File file) {
+    if (file != null) {
+      String name = file.getName();
+      int i = name.lastIndexOf('.');
+      if (i > 0 && i < name.length() - 1) {
+        return name.substring(i + 1, name.length());
+      }
+    }
+    return null;
+  }
+
 }

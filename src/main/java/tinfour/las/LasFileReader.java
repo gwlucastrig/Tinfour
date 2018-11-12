@@ -29,6 +29,7 @@
  */
 package tinfour.las;
 
+import tinfour.io.BufferedRandomAccessReader;
 import java.io.File;
 import java.io.IOException;
 import java.text.SimpleDateFormat;
@@ -117,7 +118,7 @@ public class LasFileReader {
   private boolean usesGeographicModel;
   private GeoTiffData gtData;
 
-  private final BufferedRandomAccessForLidar braf;
+  private final BufferedRandomAccessReader braf;
   private boolean isClosed;
 
   private final List<LasVariableLengthRecord> vlrList;
@@ -125,7 +126,7 @@ public class LasFileReader {
 
   public LasFileReader(File path) throws IOException {
     this.path = path;
-    braf = new BufferedRandomAccessForLidar(path);
+    braf = new BufferedRandomAccessReader(path);
     vlrList = new ArrayList<>();
     readHeader(); //NOPMD
   }

@@ -26,7 +26,7 @@
  *
  * -----------------------------------------------------------------------
  */
-package tinfour.las;
+package tinfour.io;
 
 import java.io.Closeable;
 import java.io.EOFException;
@@ -41,7 +41,7 @@ import java.nio.channels.FileChannel;
  * Accesses a random access file using a ByteBuffer with little-endian
  * byte order in support of the LAS file format.
  */
-public class BufferedRandomAccessForLidar implements  Closeable {
+public class BufferedRandomAccessReader implements  Closeable {
 
   /**
    * The default size for the read (and eventually write) buffer
@@ -94,7 +94,7 @@ public class BufferedRandomAccessForLidar implements  Closeable {
    * @throws IOException In the event of an unrecoverable IO condition
    * such as file not found, access denied, etc.
    */
-  public BufferedRandomAccessForLidar(File file) throws IOException {
+  public BufferedRandomAccessReader(File file) throws IOException {
     if (file == null) {
       throw new NullPointerException();
     }
@@ -225,7 +225,7 @@ public class BufferedRandomAccessForLidar implements  Closeable {
       return "";
     }
     StringBuilder builder = new StringBuilder(maximumLength);
-    BufferedRandomAccessForLidar.this.readAscii(builder, maximumLength);
+    BufferedRandomAccessReader.this.readAscii(builder, maximumLength);
     return builder.toString();
   }
 

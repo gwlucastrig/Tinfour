@@ -491,14 +491,27 @@ public class ModelAdapter implements IModel {
     return null;
   }
 
-  @Override
+ @Override
   public void xy2geo(double x, double y, double[] geo) {
-    // do nothing implementation
+    if (geographicCoordinates) {
+      geo[0] = y / getGeoScaleY() + getGeoOffsetY();
+      geo[1] = x / getGeoScaleX() + getGeoOffsetX();
+    }
   }
 
   @Override
   public void geo2xy(double latitude, double longitude, double[] xy) {
-    // do nothing implementation
+    if (this.geographicCoordinates) {
+
+      double delta = longitude - getGeoOffsetX();
+      if (delta < -180) {
+        delta += 360;
+      } else if (delta >= 180) {
+        delta -= 360;
+      }
+      xy[0] = delta * getGeoScaleX();
+      xy[1] = (latitude - getGeoOffsetY()) * getGeoScaleY();
+    }
   }
 
   void copyModelParameters(ModelAdapter model) {
