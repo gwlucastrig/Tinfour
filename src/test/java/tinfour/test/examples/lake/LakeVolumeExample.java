@@ -213,12 +213,12 @@ public class LakeVolumeExample {
     double netArea = lakeArea-islandArea;
     double totalShore = lakePerimeter+islandPerimeter;
     ps.format("%nData from Shapefiles%n");
-    ps.format("  Lake area        %10.8e %14.0f m2 %9.1f km2%n", lakeArea, lakeArea, lakeArea/1.0e+6);
-    ps.format("  Island area      %10.8e %14.0f m2 %9.1f km2%n", islandArea, islandArea, islandArea/1.0e+6);
-    ps.format("  Net area (water) %10.8e %14.0f m2 %9.1f km2%n", netArea, netArea, netArea/1.0e+6);
-    ps.format("  Lake shoreline   %10.8e %14.0f m  %9.1f km%n", lakePerimeter, lakePerimeter, lakePerimeter/1000);
-    ps.format("  Island shoreline %10.8e %14.0f m  %9.1f km%n", islandPerimeter, islandPerimeter, islandPerimeter/1000);
-    ps.format("  Total shoreline  %10.8e %14.0f m  %9.1f km%n", totalShore, totalShore, totalShore/1000);
+    ps.format("  Lake area        %10.8e %,20.0f m2 %9.1f km2%n", lakeArea, lakeArea, lakeArea/1.0e+6);
+    ps.format("  Island area      %10.8e %,20.0f m2 %9.1f km2%n", islandArea, islandArea, islandArea/1.0e+6);
+    ps.format("  Net area (water) %10.8e %,20.0f m2 %9.1f km2%n", netArea, netArea, netArea/1.0e+6);
+    ps.format("  Lake shoreline   %10.8e %,20.0f m  %9.1f km%n", lakePerimeter, lakePerimeter, lakePerimeter/1000);
+    ps.format("  Island shoreline %10.8e %,20.0f m  %9.1f km%n", islandPerimeter, islandPerimeter, islandPerimeter/1000);
+    ps.format("  Total shoreline  %10.8e %,20.0f m  %9.1f km%n", totalShore, totalShore, totalShore/1000);
     ps.format("  N Islands        %d%n", islandConstraints.size());
 
     
@@ -226,8 +226,8 @@ public class LakeVolumeExample {
     double surfArea = results.getSurfaceArea();
     double avgDepth = volume/surfArea;
     ps.format("%nComputations from Constrained Delaunay Triangulation%n");
-    ps.format("  Volume           %10.8e %14.0f m3 %9.1f km3%n", volume, volume, volume/1.0e+9);
-    ps.format("  Surface Area     %10.8e %14.0f m2 %9.1f km2%n", surfArea, surfArea, surfArea/1.0e+6);
+    ps.format("  Volume           %10.8e %,20.0f m3 %9.1f km3%n", volume, volume, volume/1.0e+9);
+    ps.format("  Surface Area     %10.8e %,20.0f m2 %9.1f km2%n", surfArea, surfArea, surfArea/1.0e+6);
     ps.format("  Avg depth       %5.2f m%n", avgDepth);
     ps.format("  N Triangles     %d%n", results.nTriangles);
     ps.format("  Est. Sample Spacing %8.2f m%n", estimateSampleSpacing(tin));
