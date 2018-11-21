@@ -34,7 +34,6 @@ import java.io.File;
 import java.io.IOException;
 import java.io.PrintStream;
 import java.util.ArrayList;
-import java.util.BitSet;
 import java.util.List;
 import java.util.function.Consumer;
 import tinfour.common.GeometricOperations;
@@ -225,18 +224,21 @@ public class LakeVolumeExample {
     double volume = results.getVolume();
     double surfArea = results.getSurfaceArea();
     double avgDepth = volume/surfArea;
+    double sampleSpacing = estimateSampleSpacing(tin, results);
     ps.format("%nComputations from Constrained Delaunay Triangulation%n");
     ps.format("  Volume           %10.8e %,20.0f m3 %9.1f km3%n", volume, volume, volume/1.0e+9);
     ps.format("  Surface Area     %10.8e %,20.0f m2 %9.1f km2%n", surfArea, surfArea, surfArea/1.0e+6);
     ps.format("  Avg depth       %5.2f m%n", avgDepth);
     ps.format("  N Triangles     %d%n", results.nTriangles);
-    ps.format("  Est. Sample Spacing %8.2f m%n", estimateSampleSpacing(tin));
+    ps.format("  Est. Sample Spacing %8.2f m%n", sampleSpacing);
 
     ps.format("%n%n%n");
     ps.format("Time to load data           %7.1f ms%n", data.getTimeToLoadData()/1.0e+6);
     ps.format("Time to build TIN           %7.1f ms%n", (time1 - time0) / 1.0e+6);
     ps.format("Time to compute lake volume %7.1f ms%n", (time2 - time1) / 1.0e+6);
-    ps.format("Completed processing in     %7.1f ms%n", (time2 - time0) / 1.0e+6);
+    ps.format("Time for all analysis       %7.1f ms%n", (time2 - time0) / 1.0e+6);
+    ps.format("Time for all operations     %7.1f ms%n", 
+            (data.getTimeToLoadData() + time2 - time0) / 1.0e+6);
   }
 
   private double getAreaSum(List<PolygonConstraint> constraints) {
@@ -255,18 +257,20 @@ public class LakeVolumeExample {
     return perimeterSum.getSum();
   }
 
-  private double estimateSampleSpacing(IIncrementalTin tin) {
-    BitSet bitSet = new BitSet(tin.getMaximumEdgeAllocationIndex());
-    for (IQuadEdge e : tin.getPerimeter()) {
-      bitSet.set(e.getIndex());
-    }
-
+  private double estimateSampleSpacing(IIncrementalTin tin, LakeData lakeData) {
     KahanSummation sumLength = new KahanSummation();
     int n = 0;
     for (IQuadEdge e : tin.edges()) {
-      if (!bitSet.get(e.getIndex()) && !e.isConstrainedRegionBorder()) {
-        n++;
-        sumLength.add(e.getLength());
+      if (lakeData.isWater(e)) {
+        // the edge lies in a water area, but we also need
+        // to exclude any edges that connect a sounding to
+        // a constraint border.
+        Vertex a = e.getA();
+        Vertex b = e.getB();
+        if (!a.isConstraintMember() && !b.isConstraintMember()) {
+          n++;
+          sumLength.add(e.getLength());
+        }
       }
     }
     return sumLength.getSum() / n;

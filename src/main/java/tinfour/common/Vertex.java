@@ -352,8 +352,8 @@ public class Vertex implements ISamplePoint {
   /**
    * Sets or clears the is-constraint-member status of a vertex.
    *
-   * @param constraintMember true if vertex is a constraint member; otherwise,
-   * false
+   * @param constraintMember true if vertex is a part of a constraint definition
+   * or lies on the border of an area constraint; otherwise,  false
    */
   public void setConstraintMember(boolean constraintMember) {
     if (constraintMember) {
@@ -384,7 +384,8 @@ public class Vertex implements ISamplePoint {
   }
 
   /**
-   * Indicates whether a vertex is a constraint member..
+   * Indicates whether a vertex is part of a constraint definition or
+   * lies on the border of an area constraint. 
    *
    * @return true if vertex is a constraint member; otherwise, false
    */

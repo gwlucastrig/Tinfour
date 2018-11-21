@@ -292,6 +292,8 @@ class DataViewerUI {
           fileChooser.addChoosableFileFilter(lasFileFilter);
           TextFileFilter textFileFilter = new TextFileFilter();
           fileChooser.addChoosableFileFilter(textFileFilter);
+          ShapeFileFilter shapeFilter = new ShapeFileFilter();
+          fileChooser.addChoosableFileFilter(shapeFilter);
           fileChooser.setFileFilter(lasFileFilter);
           fileChooser.setDialogTitle("Select a data source for the model");
         }

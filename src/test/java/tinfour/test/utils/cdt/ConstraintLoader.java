@@ -108,10 +108,7 @@ public class ConstraintLoader {
         try {
             reader = new ShapefileReader(file);
             ShapefileType shapefileType = reader.getShapefileType();
-
-//      if (shapefileType != ShapefileType.PolyLineZ) {
-//        throw new IOException("Not yet implemented Shapefile type " + shapefileType);
-//      }
+ 
             int vertexID = 0;
             ShapefileRecord record = null;
             while (reader.hasNext()) {

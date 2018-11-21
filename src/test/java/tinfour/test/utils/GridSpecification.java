@@ -15,7 +15,7 @@
  * ---------------------------------------------------------------------
  */
 
-/*
+ /*
  * -----------------------------------------------------------------------
  *
  * Revision History:
@@ -29,6 +29,7 @@
  */
 package tinfour.test.utils;
 
+import java.awt.geom.Point2D;
 import java.io.BufferedOutputStream;
 import java.io.File;
 import java.io.FileOutputStream;
@@ -36,17 +37,17 @@ import java.io.IOException;
 import java.io.PrintStream;
 
 /**
- * Provides metadata for describing a grid with convenience routines for
- * writing data to Esri's ASCII raster format (&#46;asc files).
+ * Provides metadata for describing a grid with convenience routines for writing
+ * data to Esri's ASCII raster format (&#46;asc files).
  */
 public class GridSpecification {
 
   /**
-   * Specifies how the cells are oriented relative to the coordinates of the
-   * of the grid. If CenterOfCell is specified, then the coordinates
-   * for the lower-left corner of the grid would lie in the center of the
-   * cell. If the CornerOfCell argument was specified, then the corner of
-   * the grid would lay on the lower-left corner of the cell.
+   * Specifies how the cells are oriented relative to the coordinates of the of
+   * the grid. If CenterOfCell is specified, then the coordinates for the
+   * lower-left corner of the grid would lie in the center of the cell. If the
+   * CornerOfCell argument was specified, then the corner of the grid would lay
+   * on the lower-left corner of the cell.
    */
   public enum CellPosition {
 
@@ -69,61 +70,49 @@ public class GridSpecification {
   private final int nRows;
   private final int nCols;
   private final int nCells;
-  private final double xCoordinateScale;
-  private final double yCoordinateScale;
-  private final double xCoordinateOffset;
-  private final double yCoordinateOffset;
 
   /**
    * Constructs an instance based on a specified set of bounds with the
-   * requirement that the grid coordinates are integral multiples of
-   * the cellSize.
+   * requirement that the grid coordinates are integral multiples of the
+   * cellSize.
    * <p>
-   * Because the grid coordinate points will
-   * be aligned on integral multiples of the cellSize, there is no
-   * guarantee that the grid coordinates will exactly match the
-   * xmin/xmax, ymin/ymax values. The guarantee is that the grid
-   * points will be within the specified bounds. The cell
-   * alignment will be treated according to the specified CellPosition.
-   * The number of rows and columns will be computed based on the
-   * bounds and cell size.
+   * Because the grid coordinate points will be aligned on integral multiples of
+   * the cellSize, there is no guarantee that the grid coordinates will exactly
+   * match the xmin/xmax, ymin/ymax values. The guarantee is that the grid
+   * points will be within the specified bounds. The cell alignment will be
+   * treated according to the specified CellPosition. The number of rows and
+   * columns will be computed based on the bounds and cell size.
    * <p>
-   * <strong>Geographic Coordinate</strong> present a special problem in that
-   * they are non-isotropic. The Tinfour vertex loader will optionally load
-   * geographic coordinates and apply a weak map projection to convert them
-   * to an isotropic coordinate system. If the source data is in geographic
-   * coordinate, obtain the geoScaleX and geoScaleY values from the vertex
-   * loader and pass them to this constructor so that the ASCII-formatted
-   * raster file may be written correctly.
-   *
-   * @param cellPosition the position of the cell relative to the
-   * coordinates of the grid.
+   * <strong>A caution regarding the interpretation of grid coordinates</strong>
+   * <p>
+   * The available documentation regarding how Esri specifies the coordinates
+   * for an ASCII grid are not available. Thus this class makes the following
+   * assumption based on the available information regarding the positioning of
+   * cells. If CenterOfCell is specified, then the coordinates for the
+   * lower-left corner and upper-right corners of the rectangular domain would
+   * lie in the lie in the center of the cell. If the CornerOfCell argument was
+   * specified, then these coordinates would lie respectively on the lower-left
+   * corner of the lower-left cell and on the upper-right corner of the
+   * upper-right cell. Consequently, when an application specifies a
+   * CornerOfCell positioning, the grid will contain one more row and column
+   * than when the application specifies a CenterOfCell.    *
+   * @param cellPosition specifies the orientation of grid cells relative
+   * to the origin; the origin may be at the center or lower-left corner
+   * of a grid cell. 
    * @param cellSize the dimension of the grid cell in the same coordinate
    * system as the bounds
    * @param xmin the minimum x coordinate for the area of interest
    * @param xmax the maximum x coordinate for the area of interest
    * @param ymin the minimum y coordinate for the area of interest
    * @param ymax the maximum y coordinate for the area of interest
-   * @param geoScaleX a scale factor to be used when storing data
-   * from a geographic coordinate system (enter either 1.0 or 0.0 if not used)
-   * @param geoScaleY a scale factor to be used when storing data
-   * from a geographic coordinate system (enter either 1.0 or 0.0 if not used)
-   * @param geoOffsetX an offset factor to be used when storing data
-   * from a geographic coordinate system (enter 0.0 if not used)
-   * @param geoOffsetY an offset factor to be used when storing data
-   * from a geographic coordinate system (enter 0.0 if not used)
    */
   public GridSpecification(
-    CellPosition cellPosition,
-    double cellSize,
-    double xmin,
-    double xmax,
-    double ymin,
-    double ymax,
-    double geoScaleX,
-    double geoScaleY,
-    double geoOffsetX,
-    double geoOffsetY) {
+          CellPosition cellPosition,
+          double cellSize,
+          double xmin,
+          double xmax,
+          double ymin,
+          double ymax) {
     this.cellPosition = cellPosition;
     this.cellSize = cellSize;
     if (cellSize <= 0) {
@@ -136,61 +125,114 @@ public class GridSpecification {
     int j1 = (int) Math.floor(xmax / cellSize);
     int i0 = (int) Math.ceil(ymin / cellSize);
     int i1 = (int) Math.floor(ymax / cellSize);
-    nRows = (i1 - i0 + 1);
-    nCols = (j1 - j0 + 1);
-    nCells = nRows * nCols;
-    if (nRows < 1 || nCols < 1) {
-      throw new IllegalArgumentException(
-        "Bounds are two small for specified cellSize");
-    }
-    xLowerLeft = j0 * cellSize;
-    yLowerLeft = i0 * cellSize;
-    xUpperRight = j1 * cellSize;
-    yUpperRight = i1 * cellSize;
 
-    if (geoScaleX <= 0 || Double.isNaN(geoScaleX)
-      || geoScaleY <= 0 || Double.isNaN(geoScaleY)) {
-      xCoordinateScale = 1.0;
-      yCoordinateScale = 1.0;
-      xCoordinateOffset = 0;
-      yCoordinateOffset = 0;
+    int nR, nC;
+    if (cellPosition == CellPosition.CornerOfCell) {
+      nR = (i1 - i0 + 1);
+      nC = (j1 - j0 + 1);
     } else {
-      xCoordinateScale = geoScaleX;
-      yCoordinateScale = geoScaleY;
-      xCoordinateOffset = geoOffsetX;
-      yCoordinateOffset = geoOffsetY;
+      // center of cell
+      nR = i1 - i0;
+      nC = j1 - j0;
     }
+    if (nR == 0) {
+      i1++;
+      nR = 1;
+    }
+    if (nC == 0) {
+      j1++;
+      nC = 1;
+    }
+    nRows = nR;
+    nCols = nC;
+    
+    nCells = nRows * nCols;
+    if (cellPosition == CellPosition.CornerOfCell) {
+      xLowerLeft = j0 * cellSize;
+      yLowerLeft = i0 * cellSize;
+    } else {
+      // center of cell
+      xLowerLeft = j0 * cellSize+ cellSize/2;
+      yLowerLeft = i0 * cellSize+cellSize/2;
+    }
+    xUpperRight = xLowerLeft+(nCols-1)*cellSize;
+    yUpperRight = yLowerLeft+(nRows-1)*cellSize;
+
+ 
+  }
+
+  /**
+   * Maps the specified row and column values to the Cartesian coordinates in
+   * the system defined by the grid. The result is stored in an instance of
+   * Point2D. 
+   *
+   * @param row the specified row, numbered from zero, ordered top to bottom
+   * @param col the specified column, numbered from zero, ordered left to right
+   * @param p2d an instance of Point2D to receive the x,y coordinates
+   */
+  public void mapRowColumnToXy(double row, double col, Point2D p2d) {
+    p2d.setLocation(
+            xLowerLeft + col * cellSize,
+            yUpperRight - row * cellSize);
 
   }
 
   /**
+   * Maps the specified x and y coordinates to non-integral row and column
+   * values.
+   *
+   * @param x the x coordinate for computation
+   * @param y the y coordinate for computation
+   * @param can array to store the row and column values; row will be stored at
+   * the specified offset, column will be stored at offset+1.
+   * @param offset
+   */
+  public void mapXyToRowColumn(double x, double y, double[] c, int offset) {
+    c[offset] = (y - yUpperRight) / cellSize;
+    c[offset + 1] = (x - xLowerLeft) / cellSize;
+  }
+
+  /**
+   * Maps the specified x and y coordinates to integral row and column values.
+   *
+   * @param x the x coordinate for computation
+   * @param y the y coordinate for computation
+   * @param can array to store the row and column values; row will be stored at
+   * the specified offset, column will be stored at offset+1.
+   * @param offset
+   */
+  public void mapXyToRowColumn(double x, double y, int[] c, int offset) {
+    c[offset] = (int) ((y - yUpperRight) / cellSize+0.5);
+    c[offset + 1] = (int) ((x - xLowerLeft) / cellSize+0.5);
+  }
+
+  /**
    * Writes a two dimensional array of values to a file in a form compatible
-   * with Esri's ASCII raster file format. The array is assumed
-   * to be structured to match the specifications of the current instance.
-   * Esri uses the extension ".asc" to indicate ASCII raster files.
+   * with Esri's ASCII raster file format. The array is assumed to be structured
+   * to match the specifications of the current instance. Esri uses the
+   * extension ".asc" to indicate ASCII raster files.
    * <p>
-   * The dataFormat is a Java-style format string, such as "%f" or
-   * "%8.3f". No default is provided because it is assumed that the
-   * application has more valid information about the nature of the data
-   * than could be readily deduced from the inputs. The no-data value
-   * is usually a string giving numeric value outside the range of what
-   * could be expected in the normal course of operations. These formats
-   * should follow the conventions defined by Esri (see on-line
-   * ArcGIS documentation for more detail).
+   * The dataFormat is a Java-style format string, such as "%f" or "%8.3f". No
+   * default is provided because it is assumed that the application has more
+   * valid information about the nature of the data than could be readily
+   * deduced from the inputs. The no-data value is usually a string giving
+   * numeric value outside the range of what could be expected in the normal
+   * course of operations. These formats should follow the conventions defined
+   * by Esri (see on-line ArcGIS documentation for more detail).
    *
    * @param file a value file reference.
-   * @param values a two-dimensional array of values to be written to
-   * the output file; array must be dimensioned compatible with the
-   * specifications of the current instance.
+   * @param values a two-dimensional array of values to be written to the output
+   * file; array must be dimensioned compatible with the specifications of the
+   * current instance.
    * @param dataFormat the format converter for formatting numerical values.
    * @param noDataString the string to be used for no-data values.
    * @throws IOException in the event of an unrecoverable I/O error.
    */
   @SuppressWarnings("ConvertToTryWithResources")
   public void writeAsciiFile(File file,
-    float[][] values,
-    String dataFormat,
-    String noDataString) throws IOException {
+          float[][] values,
+          String dataFormat,
+          String noDataString) throws IOException {
     FileOutputStream fos = new FileOutputStream(file);
     BufferedOutputStream bos = new BufferedOutputStream(fos);
     PrintStream output = new PrintStream(bos);
@@ -199,22 +241,18 @@ public class GridSpecification {
     output.format("NROWS %d\n", nRows);
     switch (getCellPosition()) {
       case CornerOfCell:
-        output.format("XLLCORNER %f\n", xCoordinateOffset+xLowerLeft/xCoordinateScale);
-        output.format("YLLCORNER %f\n", yCoordinateOffset+yLowerLeft/yCoordinateScale);
+        output.format("XLLCORNER %f\n", xLowerLeft);
+        output.format("YLLCORNER %f\n", yLowerLeft);
         break;
       case CenterOfCell:
       default:
-        output.format("XLLCENTER %f\n", xLowerLeft/xCoordinateScale);
-        output.format("YLLCENTER %f\n", yLowerLeft/yCoordinateScale);
+        output.format("XLLCENTER %f\n", xLowerLeft);
+        output.format("YLLCENTER %f\n", yLowerLeft);
         break;
     }
-    double adjCellSize = getCellSize()/yCoordinateScale;
-    if (adjCellSize < 1.0e-3) {
-      // probably geographic coordiates
-      output.format("CELLSIZE %e\n", adjCellSize);
-    } else {
-      output.format("CELLSIZE %f\n", adjCellSize);
-    }
+
+    output.format("CELLSIZE %f\n", getCellSize());
+
     output.format("NODATA_VALUE %s\n", noDataString);
     output.flush();
 
@@ -238,7 +276,6 @@ public class GridSpecification {
     output.flush();
     output.close();
   }
-
 
   /**
    * @return the cellPosition

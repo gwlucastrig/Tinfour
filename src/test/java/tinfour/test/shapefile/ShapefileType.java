@@ -33,25 +33,27 @@ package tinfour.test.shapefile;
  * An enumeration defining Shapefile
  */
 public enum ShapefileType {
-  NullShape(0),
-  Point(1),
-  PolyLine(3),
-  Polygon(5),
-  MultiPoint(8),
-  PointZ(11),
-  PolyLineZ(13),
-  PolygonZ(15),
-  MultiPointZ(18),
-  PointM(21),
-  PolyLineM(23),
-  PolygonM(25),
-  MultiPointM(28),
-  MultiPatch(31);
+  NullShape(0, false),
+  Point(1, false),
+  PolyLine(3, false),
+  Polygon(5, false),
+  MultiPoint(8, false),
+  PointZ(11, true),
+  PolyLineZ(13, true),
+  PolygonZ(15, true),
+  MultiPointZ(18, true),
+  PointM(21, false),
+  PolyLineM(23, false),
+  PolygonM(25, false),
+  MultiPointM(28, false),
+  MultiPatch(31, false);
 
   private final int shapeTypeCode;
+  private final boolean hasZ;
 
-  private ShapefileType(int shapeTypeCode) {
+  private ShapefileType(int shapeTypeCode, boolean hasZ) {
     this.shapeTypeCode = shapeTypeCode;
+    this.hasZ = hasZ;
   }
 
   /**
@@ -88,4 +90,12 @@ public enum ShapefileType {
     return this == PolygonZ || this == Polygon || this == PolygonM;
   }
 
+  /**
+   * Indicates whether the Shapefile has non-zero Z coordinates
+   * (is three-dimensional).
+   * @return true if the file is three-dimensional; otherwise, false.
+   */
+  public boolean is3D(){
+    return hasZ;
+  }
 }

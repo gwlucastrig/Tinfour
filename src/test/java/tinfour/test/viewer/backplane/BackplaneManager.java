@@ -163,10 +163,11 @@ public class BackplaneManager {
    * the loading task will queue rendering tasks.
    *
    * @param file a valid reference to a readable file in a supported format.
+   * @param option an optional data element based on the file-type
    * @return if the model was successfully initialized, a valid instance;
    * otherwise a null.
    */
-  public IModel loadModel(File file) {
+  public IModel loadModel(File file, String option) {
     cancelAllTasks();
     int taskIndex = taskIndexSource.incrementAndGet();
 
@@ -193,7 +194,7 @@ public class BackplaneManager {
     } else if ("CSV".equalsIgnoreCase(ext)) {
       model = new ModelFromText(file, ',');
     } else if ("SHP".equalsIgnoreCase(ext)) {
-      model = new ModelFromShapefile(file);
+      model = new ModelFromShapefile(file, option);
     } else {
       postStatusMessage(taskIndex, "Unrecognized file extension " + ext);
       return null;
