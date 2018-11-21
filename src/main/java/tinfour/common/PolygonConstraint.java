@@ -32,6 +32,7 @@ package tinfour.common;
 
 import java.util.ArrayList;
 import java.util.List;
+import tinfour.utils.KahanSummation;
 
 /**
  * An implementation of the IConstraint interface intended to store
@@ -58,6 +59,7 @@ import java.util.List;
 public class PolygonConstraint extends PolyLineConstraintAdapter implements IConstraint {
 
   private double squareArea;
+
 
   /**
    * Standard constructor
@@ -130,15 +132,32 @@ public class PolygonConstraint extends PolyLineConstraintAdapter implements ICon
       return;
     }
 
+    double xCenter =0;
+    double yCenter = 0;
+    for (Vertex v : list) {
+      xCenter += v.getX();
+      yCenter += v.getY();
+    }
+    xCenter/=list.size();
+    yCenter/=list.size();
+    
+    KahanSummation lenSum = new KahanSummation();
+    KahanSummation areaSum = new KahanSummation();
+    
     squareArea = 0;
     length = 0;
     Vertex a = list.get(list.size() - 1);
     for (Vertex b : list) {
-      length += a.getDistance(b);
-      squareArea += a.getX() * b.getY() - a.getY() * b.getX();
+      lenSum.add(a.getDistance(b));
+      double aX = a.getX()-xCenter;
+      double aY = a.getY()-yCenter;
+      double bX = b.getX()-xCenter;
+      double bY = b.getY()-yCenter;
+      areaSum.add(aX*bY-aY*bX);
       a = b;
     }
-    squareArea /= 2;
+    length = lenSum.getSum();
+    squareArea = areaSum.getSum()/2.0;
   }
 
   @Override
@@ -192,6 +211,7 @@ public class PolygonConstraint extends PolyLineConstraintAdapter implements ICon
     c.constraintLinkingEdge = constraintLinkingEdge;
     for (Vertex v : geometry) {
       c.add(v);
+      v.setConstraintMember(true);
     }
     c.complete();
     return c;
@@ -206,7 +226,7 @@ public class PolygonConstraint extends PolyLineConstraintAdapter implements ICon
       return  getConstraintWithNewGeometry(gList);
   }
 
-  
+
   
   @Override
   public boolean isValid() {
@@ -220,6 +240,18 @@ public class PolygonConstraint extends PolyLineConstraintAdapter implements ICon
       }
     }
     return true;
+  }
+  
+  @Override
+  public String toString() {
+    String appStr = "";
+    if (applicationData == null) {
+      return "PolygonConstraint, area=" + getArea();
+    } else {
+      appStr = applicationData.toString();
+
+      return "PolygonConstraint, area=" + getArea() + ", appData=" + appStr;
+    }
   }
 
 }

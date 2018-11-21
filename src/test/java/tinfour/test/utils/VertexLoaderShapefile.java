@@ -182,15 +182,14 @@ public class VertexLoaderShapefile implements Closeable {
   }
 
   /**
-   * Read the records from the Shapefile and use them to populate vertices. 
-   * The loader has the option of loading the z coordinate from either 
-   * the main Shapefile itself (the SHP file) or from the associated DBF
-   * file.  If you wish to use a field in the DBF file as a z coordinate,
-   * specify the name of the field as an argument. If you wish to use the
-   * z coordinate from the Shapefile, specify a null or empty string.
-   * If a null or empty string is specified, and the Shapefile does not
-   * contain a feature type that provides z coordinates, the z 
-   * coordinates will be uniformly populated with zeroes.
+   * Read the records from the Shapefile and use them to populate vertices. The
+   * loader has the option of loading the z coordinate from either the main
+   * Shapefile itself (the SHP file) or from the associated DBF file. If you
+   * wish to use a field in the DBF file as a z coordinate, specify the name of
+   * the field as an argument. If you wish to use the z coordinate from the
+   * Shapefile, specify a null or empty string. If a null or empty string is
+   * specified, and the Shapefile does not contain a feature type that provides
+   * z coordinates, the z coordinates will be uniformly populated with zeroes.
    * <p>
    * The index of the vertex is set to be the Shapefile record number. Thus many
    * vertices may be assigned with the same record number, particularly if the
@@ -207,23 +206,24 @@ public class VertexLoaderShapefile implements Closeable {
     DbfField zField = null;
     boolean useShapefileZ = true;
     if (dbfFieldForZ != null && !dbfFieldForZ.trim().isEmpty()) {
-      File dbfFile = new File(rootPath + ".dbf");
-      if (!dbfFile.exists()) {
-        dbfFile = new File(rootPath + ".DBF");
-        if (!dbfFile.exists()) {
-          dbfFile = new File(rootPath + ".Dbf");
-          if (!dbfFile.exists()) {
-            throw new IOException("No DBF file found for " + file.getName());
-          }
-        }
-      }
-      dbfReader = new DbfFileReader(dbfFile);
+      File dbfFile = reader.getCoFile("DBF");
+      dbfReader = reader.getDbfFileReader();
       zField = dbfReader.getFieldByName(dbfFieldForZ.trim());
       if (zField == null) {
+        try {
+          dbfReader.close();
+        } catch (IOException dontCare) {
+          // no action required.
+        }
         throw new IllegalArgumentException("The specified field "
                 + dbfFieldForZ + " was not found in " + dbfFile.getName());
       }
       if (!zField.isNumeric()) {
+        try {
+          dbfReader.close();
+        } catch (IOException dontCare) {
+          // no action required.
+        }
         throw new IllegalArgumentException(
                 "The specified field " + dbfFieldForZ + " is not numeric in"
                 + dbfFile.getName());
@@ -244,7 +244,7 @@ public class VertexLoaderShapefile implements Closeable {
       int recNo = record.recordNumber;
       double[] xyz = record.xyz;
       double z = 0;
-      if (zField != null) {
+      if (dbfReader != null && zField != null) {
         dbfReader.readField(recNo, zField);
         z = zField.getDouble();
       }
@@ -286,12 +286,13 @@ public class VertexLoaderShapefile implements Closeable {
     return vList;
   }
 
-  private ShapefileReader openFile(File file) throws IOException, IllegalArgumentException {
+  private ShapefileReader openFile(File file)
+          throws IOException, IllegalArgumentException {
     File target = file;
     ShapefileReader reader = null;
     try {
       reader = new ShapefileReader(target);
-      checkForGeographicCoordinates(reader, rootPath);
+      checkForGeographicCoordinates(reader);
     } catch (IOException ioex) {
       try {
         if (reader != null) {
@@ -305,10 +306,10 @@ public class VertexLoaderShapefile implements Closeable {
     return reader;
   }
 
-  private void checkForGeographicCoordinates(ShapefileReader reader, String path)
+  private void checkForGeographicCoordinates(ShapefileReader reader)
           throws IOException {
-    File target = new File(path + ".prj");
-    if (target.exists()) {
+    File target = reader.getCoFile("prj");
+    if (target != null) {
       try (FileInputStream fins = new FileInputStream(target)) {
         StringBuilder sb = new StringBuilder();
         byte[] buffer = new byte[8192];
@@ -361,17 +362,7 @@ public class VertexLoaderShapefile implements Closeable {
       geoOffsetY = y0;
     }
   }
-
-//  private String getFileExtension(File file) {
-//    if (file != null) {
-//      String name = file.getName();
-//      int i = name.lastIndexOf('.');
-//      if (i > 0 && i < name.length() - 1) {
-//        return name.substring(i + 1, name.length());
-//      }
-//    }
-//    return null;
-//  }
+ 
   @Override
   public void close() throws IOException {
     reader.close();

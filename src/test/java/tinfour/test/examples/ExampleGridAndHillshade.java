@@ -193,8 +193,7 @@ public class ExampleGridAndHillshade implements IDevelopmentTest {
     GridSpecification grid = new GridSpecification(
       GridSpecification.CellPosition.CenterOfCell,
       cellSize,
-      x0, x1, y0, y1,
-      geoScaleX, geoScaleY, geoOffsetX, geoOffsetY);
+      x0, x1, y0, y1 );
     ps.format("Output grid\n");
     ps.format("   Rows:              %8d\n", grid.getRowCount());
     ps.format("   Columns:           %8d\n", grid.getColumnCount());

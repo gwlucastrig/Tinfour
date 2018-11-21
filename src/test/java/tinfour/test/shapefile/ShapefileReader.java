@@ -35,15 +35,15 @@ import java.io.IOException;
 import tinfour.io.BufferedRandomAccessReader;
 
 /**
- * Provides a partial implementation of a Shapefile reader intended to
- * support testing of the Constrained Delaunay Triangulation feature of the
- * Tinfour software library. The present version is based on the assumption
- * that the Shapefile supplies constraints. More general applicastions are
- * not currently supported. Only a few Shapefile
- * types are supported.
+ * Provides a partial implementation of a Shapefile reader intended to support
+ * testing of the Constrained Delaunay Triangulation feature of the Tinfour
+ * software library. The present version is based on the assumption that the
+ * Shapefile supplies constraints. More general applicastions are not currently
+ * supported. Only a few Shapefile types are supported.
  */
-public class ShapefileReader implements Closeable{
+public class ShapefileReader implements Closeable {
 
+  private final File file;
   private final BufferedRandomAccessReader raf;
   final int fileLength; // 16-bit words
   final long fileLengthInBytes;
@@ -60,6 +60,7 @@ public class ShapefileReader implements Closeable{
   private int nPartsTotal;
 
   public ShapefileReader(File file) throws IOException {
+    this.file = file;
     raf = new BufferedRandomAccessReader(file);
 
     int fileCode = raf.readIntBigEndian();
@@ -167,16 +168,16 @@ public class ShapefileReader implements Closeable{
   }
 
   /**
-   * Reads the next record in the Shapefile. This method takes a
-   * reusable instance of the ShapefileRecord class. If a null is
-   * passed in, it creates a new instance. If a valid reference is supplied,
-   * the method returns the reference that was supplied.
+   * Reads the next record in the Shapefile. This method takes a reusable
+   * instance of the ShapefileRecord class. If a null is passed in, it creates a
+   * new instance. If a valid reference is supplied, the method returns the
+   * reference that was supplied.
    *
-   * @param pRecord a reusable instance to store data, or a null
-   * if the method is to allocate a new instance.
+   * @param pRecord a reusable instance to store data, or a null if the method
+   * is to allocate a new instance.
    * @return if successful, a valid instance of ShapefileRecord
-   * @throws IOException in the event of a file format error or unepected
-   * I/O condition
+   * @throws IOException in the event of a file format error or unepected I/O
+   * condition
    */
   @SuppressWarnings("PMD.SwitchDensity")
   public ShapefileRecord readNextRecord(ShapefileRecord pRecord) throws IOException {
@@ -194,13 +195,13 @@ public class ShapefileReader implements Closeable{
     int stc = raf.readInt();
     if (stc != shapefileType.getTypeCode()) {
       throw new IOException(
-        "Error reading Shapefile record, typecode mismatch, found " + stc
-        + ", expected " + shapefileType.getTypeCode());
+              "Error reading Shapefile record, typecode mismatch, found " + stc
+              + ", expected " + shapefileType.getTypeCode());
     }
     switch (shapefileType) {
-        case Point:
+      case Point:
         // simple case, but we populate other record items for consistency
-        record.setSizes(1,1);
+        record.setSizes(1, 1);
         record.nParts = 1;
         record.nPoints = 1;
         record.partStart[1] = 1;
@@ -209,7 +210,7 @@ public class ShapefileReader implements Closeable{
         record.x1 = record.x0;
         record.y1 = record.y0;
         record.xyz[0] = record.x0;
-        record.xyz[1] = record.y0;        
+        record.xyz[1] = record.y0;
         break;
       case PointZ:
         // simple case, but we populate other record items for consistency
@@ -314,8 +315,8 @@ public class ShapefileReader implements Closeable{
   }
 
   /**
-   * Gets the total number of points read from the Shapefile; or zero
-   * if the content of the Shapefile hasn't been read.
+   * Gets the total number of points read from the Shapefile; or zero if the
+   * content of the Shapefile hasn't been read.
    *
    * @return a positive integer.
    */
@@ -324,8 +325,8 @@ public class ShapefileReader implements Closeable{
   }
 
   /**
-   * Gets the total number of polyglines read from the Shapefile; or zero
-   * if the content of the Shapefile hasn't been read.
+   * Gets the total number of polyglines read from the Shapefile; or zero if the
+   * content of the Shapefile hasn't been read.
    *
    * @return a positive integer.
    */
@@ -342,4 +343,97 @@ public class ShapefileReader implements Closeable{
     return shapefileType;
   }
 
+  @Override
+  public String toString() {
+    return "ShapefileReader " + this.shapefileType + " " + file.getName();
+  }
+
+  /**
+   * Get a reference to the file that shares the same root name as the Shapefile
+   * but has an alternate extension. For example, this method could be used to
+   * get a reference to the DBF or PRJ file.
+   * <p>
+   * Capitalization does not matter under Windows, but does apply under Linux
+   * operating systems. Therefore, this method will try to find the matching
+   * file based on the following three rules:
+   * <ol>
+   * <li>Look for a file with an extension having the same capitalization as the
+   * main Shapefile</li>
+   * <li>Look for a file having the extension as all lower case letters</li>
+   * <li>Look for a file having the extension with all upper case letters</li>
+   * </ol>
+   * While there are other possible capitalization configurations, writing code
+   * to support them seems silly and is not implemented at this time.
+   *
+   * @param extension
+   * @return
+   */
+  public File getCoFile(String extension) {
+    if (extension == null || extension.length() != 3) {
+      return null; // not a valid Shapefile convention
+    }
+    String path = file.getPath();
+    int rootLen = path.lastIndexOf('.');
+    if (rootLen != path.length() - 4) {
+      return null; // invalid input, not expected
+    }
+    rootLen++;
+    StringBuilder sb = new StringBuilder(rootLen + 3);
+    for (int i = 0; i < rootLen; i++) {
+      sb.append(path.charAt(i));
+    }
+    for (int i = 0; i < 3; i++) {
+      char c = path.charAt(i + rootLen);
+      char x = extension.charAt(i);
+      if (Character.isUpperCase(c) && Character.isLowerCase(x)) {
+        sb.append(Character.toUpperCase(x));
+      } else if (Character.isLowerCase(c) && Character.isUpperCase(x)) {
+        sb.append(Character.toLowerCase(x));
+      } else {
+        sb.append(x);
+      }
+    }
+
+    File target = new File(sb.toString());
+    if (target.exists()) {
+      return target;
+    }
+
+    String rootName = path.substring(0, rootLen);
+    String test = rootName + extension.toLowerCase();
+    target = new File(test);
+    if (target.exists()) {
+      return target;
+    }
+
+    test = rootName + extension.toUpperCase();
+    target = new File(test);
+    if (target.exists()) {
+      return target;
+    }
+
+    return null;
+  }
+  
+  /**
+   * Get an DBF file reader for the current Shapefile
+   * @return if successful, a valid DbfFileReader instance.
+   * @throws IOException if the DBF file cannot be opened
+   */
+  public DbfFileReader getDbfFileReader() throws IOException {
+    File target = getCoFile("DBF");
+    if(target==null){
+      throw new IOException("DBF file not found for "+file.getName());
+    }
+    
+    return new DbfFileReader(target);
+  }
+  
+  /**
+   * Get the file associated with the Shapefile.
+   * @return a valid instance
+   */
+  public File getFile(){
+    return file;
+  }
 }

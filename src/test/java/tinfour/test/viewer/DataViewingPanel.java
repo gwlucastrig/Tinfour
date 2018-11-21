@@ -66,14 +66,17 @@ import java.awt.geom.Point2D;
 import java.awt.geom.Rectangle2D;
 import java.awt.image.BufferedImage;
 import java.io.File;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import javax.swing.JDialog;
 import javax.swing.JEditorPane;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.Timer;
+import tinfour.test.shapefile.ShapefileReader;
 import tinfour.test.viewer.backplane.BackplaneManager;
 import tinfour.test.viewer.backplane.CompositeImageScale;
 import tinfour.test.viewer.backplane.IModel;
@@ -508,11 +511,17 @@ public class DataViewingPanel extends JPanel {
    */
   void loadModel(File file) {
     clearState();
-    IModel model = backplaneManager.loadModel(file);
-    postModelName(model); // will handle null case
-    repaint();
+    String ext = getFileExtension(file);
+    if("shp".equalsIgnoreCase(ext)){
+       raiseShapefileOptions(file);
+    }else{
+      IModel model = backplaneManager.loadModel(file, null);
+      postModelName(model); // will handle null case
+      repaint();
+    }
   }
 
+  
   /**
    * Load the specified model. This method must be called from the
    * Event Dispatch Thread
@@ -1114,4 +1123,76 @@ public class DataViewingPanel extends JPanel {
     );
   }
 
+  
+  String getFileExtension(File file) {
+    if (file != null) {
+      String name = file.getName();
+      int i = name.lastIndexOf('.');
+      if (i > 0 && i < name.length() - 1) {
+        return name.substring(i + 1, name.length());
+      }
+    }
+    return null;
+  }
+     
+   private void raiseShapefileOptions(final File file) {
+    JFrame frame = null;
+    Component c = this.getParent();
+    while (c != null) {
+      if (c instanceof JFrame) {
+        frame = (JFrame) c;
+        break;
+      }
+      c = c.getParent();
+    }
+    if (frame == null) {
+      return;
+    }
+
+    ShapefileReader reader;
+    try {
+      reader = new ShapefileReader(file);
+    } catch (IOException ioex) {
+      return;
+    }
+
+    final ShapefileOptionsPanel shapefilePanel = new ShapefileOptionsPanel();
+    shapefilePanel.applyShapefile(reader);
+    try{
+      reader.close();
+    }catch(IOException ioex){
+      return;
+    }
+
+    ActionListener okActionListener = new ActionListener(){
+      @Override
+      public void actionPerformed(ActionEvent ae) {
+        String s = shapefilePanel.getMetadataSelection();
+           IModel model = backplaneManager.loadModel(file, s);
+      postModelName(model); // will handle null case
+      repaint();
+      }
+    };
+    
+    shapefilePanel.setOkActionListener(okActionListener);
+    
+    JDialog shapefileDialog = new JDialog(frame,
+            "Shapefile Options",
+            false);
+    shapefileDialog.setContentPane(shapefilePanel);
+    shapefileDialog.setDefaultCloseOperation(
+            JDialog.HIDE_ON_CLOSE);
+    //shapefileDialog.addWindowListener(new WindowAdapter() {
+    //  @Override
+    //  public void windowClosing(WindowEvent we) {
+    //
+    //  }
+    //
+    //});
+
+    shapefileDialog.pack();
+    shapefileDialog.setLocationRelativeTo(frame);
+    shapefileDialog.setVisible(true);
+
+  }
 }

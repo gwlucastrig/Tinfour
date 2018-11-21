@@ -49,6 +49,7 @@ public class ModelFromShapefile extends ModelAdapter implements IModel {
   static final double eFlattening = 1 / 298.257223560; // WGS-84
 
   String rootPath;
+  String dbfFieldOption;
 
   /**
    * Construct a model tied to the specified file.
@@ -57,8 +58,9 @@ public class ModelFromShapefile extends ModelAdapter implements IModel {
    * @param file a valid text or comma-separated value file
    *
    */
-  public ModelFromShapefile(File file) {
+  public ModelFromShapefile(File file, String dbfFieldOption) {
     super(file);
+    this.dbfFieldOption = dbfFieldOption;
     geoScaleX = 1.0;
     geoScaleY = 1.0;
     geoOffsetX = 0.0;
@@ -112,7 +114,7 @@ public class ModelFromShapefile extends ModelAdapter implements IModel {
     VertexLoader vLoader = new VertexLoader();
  
          
-    List<Vertex> vList = vLoader.readShapefile(file, null);
+    List<Vertex> vList = vLoader.readShapefile(file, dbfFieldOption);
  
     if (vList.isEmpty()) {
       monitor.reportDone(); // remove the progress bar
@@ -159,10 +161,10 @@ public class ModelFromShapefile extends ModelAdapter implements IModel {
     return String.format("Model From TXT %d %s%s", serialIndex, loaded, conType);
   }
 
-  private void checkForGeographicCoordinates(ShapefileReader reader, String path)
+  private void checkForGeographicCoordinates(ShapefileReader reader)
           throws IOException {
-    File target = new File(path + ".prj");
-    if (target.exists()) {
+    File target = reader.getCoFile("prj");
+    if (target!=null) {
       FileInputStream fins = null;
       try {
         fins = new FileInputStream(target);
@@ -241,7 +243,7 @@ public class ModelFromShapefile extends ModelAdapter implements IModel {
     ShapefileReader reader = null;
     try {
       reader = new ShapefileReader(target);
-      checkForGeographicCoordinates(reader, rootPath);
+      checkForGeographicCoordinates(reader);
     } catch (IOException ioex) {
       try {
         reader.close();
