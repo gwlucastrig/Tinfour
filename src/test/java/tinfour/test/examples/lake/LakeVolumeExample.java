@@ -230,7 +230,7 @@ public class LakeVolumeExample {
     ps.format("  Surface Area     %10.8e %,20.0f m2 %9.1f km2%n", surfArea, surfArea, surfArea/1.0e+6);
     ps.format("  Avg depth       %5.2f m%n", avgDepth);
     ps.format("  N Triangles     %d%n", results.nTriangles);
-    ps.format("  Est. Sample Spacing %8.2f m%n", sampleSpacing);
+    ps.format("  Sample Spacing %8.2f m%n", sampleSpacing);
 
     ps.format("%n%n%n");
     ps.format("Time to load data           %7.1f ms%n", data.getTimeToLoadData()/1.0e+6);

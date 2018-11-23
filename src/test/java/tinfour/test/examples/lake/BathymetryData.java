@@ -42,6 +42,7 @@ import tinfour.test.utils.VertexLoader;
 import tinfour.test.utils.VertexLoaderShapefile;
 import tinfour.test.utils.cdt.ConstraintLoader;
 import tinfour.utils.HilbertSort;
+import tinfour.utils.Tincalc;
 
 /**
  * A class for loading bathymetry and shoreline data to be used for estimating
@@ -150,7 +151,7 @@ public class BathymetryData {
               + inputSoundingsFile.getPath());
     }
     int n = soundings.size();
-    nominalPointSpacing = Math.sqrt((area / n) * (2 / 0.866));
+    nominalPointSpacing = Tincalc.sampleSpacing(area, n);
 
   lakeConstraints = new ArrayList<>();
    islandConstraints = new ArrayList<>();
@@ -433,11 +434,11 @@ public class BathymetryData {
     double y1 = soundingBounds.getMaxY();
     ps.format("Input Data%n");
     ps.format("  Soundings%n");
-    ps.format("     Count:           %7d%n", soundings.size());
-    ps.format("     Min (x,y,z):     %9.1f, %9.1f, %9.2f (feature %d)%n", x0, y0, zMin, zMinIndex);
-    ps.format("     Max (x,y,z):     %9.1f, %9.1f, %9.2f (feature %d)%n", x1, y1, zMax, zMaxIndex);
-    ps.format("     width,height:    %9.1f, %9.1f%n", x1 - x0, y1 - y0);
-    ps.format("     Nominal Spacing: %9.1f%n", nominalPointSpacing);
+    ps.format("     Count:               %7d%n", soundings.size());
+    ps.format("     Min (x,y,z):         %9.1f, %9.1f, %9.2f (feature %d)%n", x0, y0, zMin, zMinIndex);
+    ps.format("     Max (x,y,z):         %9.1f, %9.1f, %9.2f (feature %d)%n", x1, y1, zMax, zMaxIndex);
+    ps.format("     width,height:        %9.1f, %9.1f%n", x1 - x0, y1 - y0);
+    ps.format("     Est. sample spacing: %9.1f%n", nominalPointSpacing);
   }
 
   private String getFileExtension(File file) {

@@ -45,6 +45,7 @@ import tinfour.common.IQuadEdge;
 import tinfour.common.Vertex;
 import tinfour.standard.IncrementalTin;
 import tinfour.utils.LinearUnits;
+import tinfour.utils.Tincalc;
 
 /**
  * Provides a simple model covering a unit square and containing
@@ -136,7 +137,7 @@ public class UnitSquareModel implements IModel {
 
   @Override
   public double getNominalPointSpacing() {
-    return Math.sqrt(1.0 / vList.size() / 0.866);
+    return Tincalc.sampleSpacing(1.0 , vList.size());
   }
 
   @Override
