@@ -49,6 +49,7 @@ import tinfour.test.utils.TabulatorDelta;
 import tinfour.test.utils.TestOptions;
 import tinfour.test.utils.VertexLoader;
 import tinfour.utils.TinInstantiationUtility;
+import tinfour.utils.Tincalc;
 
 /**
  * Provides an example of code to build a GRID from an LAS file
@@ -163,7 +164,7 @@ public class ExampleCrossValidation implements IDevelopmentTest {
     // triangulated mesh (consisting of equilateral triangles). There would
     // be 3*N triangules of area s^2*sqrt(3)/4.
     double area = (xmax - xmin) * (ymax - ymin);
-    double sSpace = Math.sqrt(area / nVertices / 0.866);
+    double sSpace = Tincalc.sampleSpacing(area, nVertices);
     double nominalPointSpacing = sSpace; //used as an input into TIN class/
 
     double geoScaleX;
@@ -180,7 +181,7 @@ public class ExampleCrossValidation implements IDevelopmentTest {
       double gy0 = (ymin-geoOffsetY) / geoScaleY;
       double gy1 = (ymax-geoOffsetY) / geoScaleY;
       double gArea = (gx1 - gx0) * (gy1 - gy0);
-      double gsSpace = 0.87738 * Math.sqrt(gArea / nVertices);
+      double gsSpace = Tincalc.sampleSpacing(gArea, nVertices);
 
       ps.format("Source data was in geographic coordinates\n");
       ps.format("Range x values:     %11.6f, %11.6f, (%f)\n", gx0, gx1, gx1 - gx0);

@@ -154,7 +154,7 @@ public class NearestNeighborPointCollector {
 
     if (mergeDuplicates) {
       // the merge threshold is 1/10000th of the average spacing
-      double averageSpacing = Math.sqrt(xDelta * yDelta / (nV * 0.866));
+      double averageSpacing = Tincalc.sampleSpacing(xDelta * yDelta, nV);
       double mergeThreshold = averageSpacing / 1.0e+5;
       double m2 = mergeThreshold * mergeThreshold;
       boolean mergeFound = false;

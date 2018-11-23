@@ -43,6 +43,7 @@ import tinfour.common.Vertex;
 import tinfour.test.utils.IDevelopmentTest;
 import tinfour.test.utils.TestOptions;
 import tinfour.test.utils.VertexLoader;
+import tinfour.utils.Tincalc;
 
 /**
  * Builds a TIN from the specified Lidar file, running once and terminating to
@@ -126,12 +127,9 @@ public class SingleBuildTest implements IDevelopmentTest {
     double ymax = loader.getYMax();
     double zmin = loader.getZMin();
     double zmax = loader.getZMax();
-    // estimate the point spacing.  The estimate is based on the simplifying
-    // assumption that the points are arranged in a uniformly spaced
-    // triangulated mesh (consisting of equilateral triangles). There would
-    // be 3*N triangules of area s^2*sqrt(3)/4.
+    // estimate the point spacing. 
     double area = (xmax-xmin)*(ymax-ymin);
-    double sSpace = 0.87738*Math.sqrt(area/nVertices);
+    double sSpace = Tincalc.sampleSpacing(area, nVertices);
 
     if (loader.isSourceInGeographicCoordinates()) {
       double geoScaleX = loader.getGeoScaleX();
@@ -143,7 +141,7 @@ public class SingleBuildTest implements IDevelopmentTest {
       double gy0 = (ymin - geoOffsetY) / geoScaleY;
       double gy1 = (ymax - geoOffsetY) / geoScaleY;
       double gArea = (gx1 - gx0) * (gy1 - gy0);
-      double gsSpace = 0.87738 * Math.sqrt(gArea / nVertices);
+      double gsSpace = Tincalc.sampleSpacing(gArea, nVertices);
 
       ps.format("Source data was in geographic coordinates\n");
       ps.format("Range x values:     %11.6f, %11.6f, (%f)\n", gx0, gx1, gx1-gx0);

@@ -44,6 +44,7 @@ import tinfour.common.NeighborEdgeVertex;
 import tinfour.common.Vertex;
 import tinfour.utils.PolylineThinner;
 import tinfour.utils.TinInstantiationUtility;
+import tinfour.utils.Tincalc;
 
 /**
  * Provides a runnable for rendering in cases where a new model or
@@ -112,7 +113,7 @@ class MvTaskBuildTinAndRender implements IModelViewTask {
     double mx1 = model.getMaxX();
     double my1 = model.getMaxY();
     double area = (mx1 - mx0) * (my1 - my0);
-    double nominalPointSpacing = Math.sqrt(area / nVertices / 0.866);
+    double nominalPointSpacing = Tincalc.sampleSpacing(area ,nVertices );
 
     IIncrementalTin wireframeTin = composite.getWireframeTin();
     int reductionForWireframeTin = composite.getReductionForWireframe();
@@ -338,7 +339,7 @@ class MvTaskBuildTinAndRender implements IModelViewTask {
     double mx1 = model.getMaxX();
     double my1 = model.getMaxY();
     double area = (mx1 - mx0) * (my1 - my0);
-    double nominalPointSpacing = Math.sqrt(area / nVertices / 0.866);
+    double nominalPointSpacing = Tincalc.sampleSpacing(area, nVertices);
     List<IConstraint> constraintList = null;
     if (model.hasConstraints()) {
       constraintList = model.getConstraints();

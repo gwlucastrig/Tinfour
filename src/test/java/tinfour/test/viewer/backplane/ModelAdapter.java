@@ -50,6 +50,7 @@ import tinfour.common.Vertex;
 import tinfour.semivirtual.SemiVirtualIncrementalTin;
 import tinfour.utils.HilbertSort;
 import tinfour.utils.LinearUnits;
+import tinfour.utils.Tincalc;
 
 /**
  * A model for managing data taken from a text or comma-separated-value
@@ -155,7 +156,7 @@ public class ModelAdapter implements IModel {
       double mx1 = getMaxX();
       double my1 = getMaxY();
       area = (mx1 - mx0) * (my1 - my0);
-      nominalPointSpacing = Math.sqrt(area / nVertices / 0.866);
+      nominalPointSpacing = Tincalc.sampleSpacing(area, nVertices);
 
       prepareReferenceTin(list, null, monitor);
       areVerticesLoaded = true;
@@ -253,8 +254,7 @@ public class ModelAdapter implements IModel {
       s += x0 * y1 - x1 * y0;
     }
     area = s / 2;
-    nominalPointSpacing = Math.sqrt(area / nVertices / 0.866);
-
+    nominalPointSpacing = Tincalc.sampleSpacing(area, nVertices);
   }
 
   /**

@@ -52,6 +52,7 @@ import tinfour.test.utils.TestPalette;
 import tinfour.test.utils.VertexLoader;
 import tinfour.test.utils.cdt.ConstraintLoader;
 import tinfour.utils.TinInstantiationUtility;
+import tinfour.utils.Tincalc;
 
 /**
  * Provides an example of code to build a GRID from an LAS file
@@ -135,12 +136,9 @@ public class ExampleGridAndHillshade implements IDevelopmentTest {
     double ymax = vertexLoader.getYMax();
     double zmin = vertexLoader.getZMin();
     double zmax = vertexLoader.getZMax();
-    // estimate the point spacing.  The estimate is based on the simplifying
-    // assumption that the points are arranged in a uniformly spaced
-    // triangulated mesh (consisting of equilateral triangles). There would
-    // be 3*N triangules of area s^2*sqrt(3)/4.
+    // estimate the point spacing. 
     double area = (xmax - xmin) * (ymax - ymin);
-    double sSpace = 0.87738 * Math.sqrt(area / nVertices);
+    double sSpace = Tincalc.sampleSpacing(area, nVertices);
     double nominalPointSpacing = sSpace; //used as an input into TIN class/
 
     double geoScaleX = 0;
@@ -157,7 +155,7 @@ public class ExampleGridAndHillshade implements IDevelopmentTest {
       double gy0 = geoOffsetY + ymin / geoScaleY;
       double gy1 = geoOffsetY + ymax / geoScaleY;
       double gArea = (gx1 - gx0) * (gy1 - gy0);
-      double gsSpace = 0.87738 * Math.sqrt(gArea / nVertices);
+      double gsSpace = Tincalc.sampleSpacing(gArea, nVertices);
       ps.format("Source data was in geographic coordinates\n");
       ps.format("Range x values:     %11.6f, %11.6f, (%f)\n", gx0, gx1, gx1 - gx0);
       ps.format("Range y values:     %11.6f, %11.6f, (%f)\n", gy0, gy1, gy1 - gy0);

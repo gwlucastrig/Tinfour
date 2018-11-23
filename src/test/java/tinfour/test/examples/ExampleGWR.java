@@ -46,6 +46,7 @@ import tinfour.test.utils.IDevelopmentTest;
 import tinfour.test.utils.TestOptions;
 import tinfour.test.utils.VertexLoader;
 import tinfour.utils.TinInstantiationUtility;
+import tinfour.utils.Tincalc;
 
 /**
  * Provides an example of code to build a GRID from an LAS file
@@ -129,7 +130,7 @@ public class ExampleGWR implements IDevelopmentTest {
     double ymax = loader.getYMax();
 
     double area = (xmax - xmin) * (ymax - ymin);
-    double sSpace = 0.87738 * Math.sqrt(area / nVertices);
+    double sSpace = Tincalc.sampleSpacing(area ,nVertices);
     double nominalPointSpacing = sSpace; //used as an input into TIN class/
 
     ps.println("Building TIN");

@@ -58,6 +58,7 @@ import tinfour.common.Vertex;
 import tinfour.edge.EdgePool;
 import tinfour.edge.QuadEdge;
 import tinfour.utils.TinInstantiationUtility;
+import tinfour.utils.Tincalc;
 import tinfour.utils.VertexColorizerKempe6;
 
 /**
@@ -132,10 +133,10 @@ public class BoundedVoronoiDiagram {
 
     // estimate a nominal point spacing based on the domain of the
     // input data set and assuming a rougly uniform density.
-    // the value 0.866 is based on the parameters of a regular
+    // the estimated value is based on the parameters of a regular
     // hexagonal tesselation of a plane
     double area = sampleBounds.getWidth() * sampleBounds.getHeight();
-    double nominalPointSpacing = Math.sqrt(area / nVertices / 0.866);
+    double nominalPointSpacing = Tincalc.sampleSpacing(area, nVertices);
     TinInstantiationUtility maker
             = new TinInstantiationUtility(0.25, vertexList.size());
     IIncrementalTin tin = maker.constructInstance(nominalPointSpacing);
