@@ -188,7 +188,7 @@ public class GridSpecification {
    * @param offset
    */
   public void mapXyToRowColumn(double x, double y, double[] c, int offset) {
-    c[offset] = (y - yUpperRight) / cellSize;
+    c[offset] = (yUpperRight - y) / cellSize;
     c[offset + 1] = (x - xLowerLeft) / cellSize;
   }
 
@@ -202,7 +202,7 @@ public class GridSpecification {
    * @param offset
    */
   public void mapXyToRowColumn(double x, double y, int[] c, int offset) {
-    c[offset] = (int) ((y - yUpperRight) / cellSize+0.5);
+    c[offset] = (int) ((yUpperRight-y) / cellSize+0.5);
     c[offset + 1] = (int) ((x - xLowerLeft) / cellSize+0.5);
   }
 
@@ -339,5 +339,5 @@ public class GridSpecification {
   public int getCellCount() {
     return nCells;
   }
-
+ 
 }
