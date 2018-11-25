@@ -1329,6 +1329,11 @@ public class SurfaceGwr {
     return matrix;
   }
 
+  /**
+   * Compute the variance and hat matrix for the sample data.
+   * @throws SingularMatrixException if the data gives rise to an
+   * unsolvable or numerically ill-conditioned matrix.
+   */
   public void computeVarianceAndHat() {
 
     if (areVarianceAndHatPrepped) {

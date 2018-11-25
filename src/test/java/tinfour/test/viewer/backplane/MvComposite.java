@@ -47,6 +47,7 @@ import java.awt.image.BufferedImage;
 import java.util.Formatter;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
+import org.apache.commons.math3.linear.SingularMatrixException;
 import tinfour.common.IConstraint;
 import tinfour.common.IIncrementalTin;
 import tinfour.common.INeighborEdgeLocator;
@@ -955,33 +956,39 @@ public class MvComposite {
       double slope = Math.sqrt(zX * zX + zY * zY);
       double kP = Double.NaN;
       double kS = Double.NaN;
-
-      switch (interpolator.getSurfaceModel()) {
-        case QuadraticWithCrossTerms:
-        case CubicWithCrossTerms:
-          double zXX = 2 * beta[3];
-          double zYY = 2 * beta[4];
-          double zXY = beta[5];
-
-          kP = (zXX * zX * zX + 2 * zXY * zX * zY + zYY * zY * zY)
-            / ((zX * zX + zY * zY) * Math.pow(zX * zX + zY * zY + 1.0, 1.5));
-
-          kS = (zX * zY * (zXX - zYY) + (zY * zY - zX * zX) * zXY)
-            / Math.pow(zX * zX + zY * zY, 1.5);
-          break;
-        default:
-          break;
+      double h = Double.NaN;
+      try {
+        h = interpolator.getPredictionIntervalHalfRange(0.05);
+      } catch (SingularMatrixException smex) {
+        fmt.format("Data does not support statistical analysis\n");
       }
+      if (!Double.isNaN(h)) {
+        switch (interpolator.getSurfaceModel()) {
+          case QuadraticWithCrossTerms:
+          case CubicWithCrossTerms:
+            double zXX = 2 * beta[3];
+            double zYY = 2 * beta[4];
+            double zXY = beta[5];
 
-      double h = interpolator.getPredictionIntervalHalfRange(0.05);
-      fmt.format("Z:     %11.2f &plusmn; %4.2f %s\n", z, h, units);
-      fmt.format("Slope: %11.2f %%\n", slope * 100);
-      fmt.format("Curvature\n");
-      fmt.format("  Profile:    %8.5f (radian/%s)\n", kP, units);
-      fmt.format("  Streamline: %8.5f (radian/%s)\n", kS, units);
-      fmt.format("Steepest Descent\n");
-      fmt.format("  Azimuth:    %4d&deg;\n", (int) (descA));
-      fmt.format("  Compass Brg: %03d&deg;\n", (int) (descB));
+            kP = (zXX * zX * zX + 2 * zXY * zX * zY + zYY * zY * zY)
+                    / ((zX * zX + zY * zY) * Math.pow(zX * zX + zY * zY + 1.0, 1.5));
+
+            kS = (zX * zY * (zXX - zYY) + (zY * zY - zX * zX) * zXY)
+                    / Math.pow(zX * zX + zY * zY, 1.5);
+            break;
+          default:
+            break;
+        }
+
+        fmt.format("Z:     %11.2f &plusmn; %4.2f %s\n", z, h, units);
+        fmt.format("Slope: %11.2f %%\n", slope * 100);
+        fmt.format("Curvature\n");
+        fmt.format("  Profile:    %8.5f (radian/%s)\n", kP, units);
+        fmt.format("  Streamline: %8.5f (radian/%s)\n", kS, units);
+        fmt.format("Steepest Descent\n");
+        fmt.format("  Azimuth:    %4d&deg;\n", (int) (descA));
+        fmt.format("  Compass Brg: %03d&deg;\n", (int) (descB));
+      }
       fmt.format("Nearest Point\n");
       fmt.format("  Dist:  %11.2f %s\n", dNear, units);
       fmt.format("  X:     %s\n", model.getFormattedX(vNear.getX()));
@@ -991,7 +998,11 @@ public class MvComposite {
       if (model instanceof ModelFromLas) {
         ((ModelFromLas) model).formatLidarFields(fmt, vNear.getIndex());
       }
-      fmt.format("\nRegression used %d samples\n", interpolator.getSampleCount());
+
+      if (!Double.isNaN(h)) {
+        fmt.format("\nRegression used %d samples\n",
+                interpolator.getSampleCount());
+      }
     }
     fmt.format("</small></pre></html>");
     return new MvQueryResult(compositePoint, modelPoint, sb.toString());
