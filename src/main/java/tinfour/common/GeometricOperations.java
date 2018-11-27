@@ -525,4 +525,12 @@ public class GeometricOperations {
     result.setCircumcenter(x + vax, y + vay, x * x + y * y);
   }
 
+  
+  /**
+   * Gets the threshold values associated with this instance.
+   * @return a valid instance of Thresholds.
+   */
+  public Thresholds getThresholds(){
+    return thresholds;
+  }
 }

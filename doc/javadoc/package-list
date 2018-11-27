@@ -2,6 +2,7 @@ tinfour.common
 tinfour.edge
 tinfour.gwr
 tinfour.interpolation
+tinfour.io
 tinfour.las
 tinfour.semivirtual
 tinfour.standard
