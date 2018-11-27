@@ -35,7 +35,7 @@ package tinfour.utils;
 /**
  * Provides simple calculations useful for various Tinfour operations.
  */
-public class Tincalc {
+public final class Tincalc {
   
   /** The sine of 60 degrees */
   static private final double SIN60 =  Math.sqrt(3)/2.0;  // about 0.866
@@ -66,5 +66,13 @@ public class Tincalc {
               +"input n="+n);
     }
     return Math.sqrt((area/n)/SIN60);
+  }
+  
+  /**
+   * Private constructor to deter application code from
+   * instantiating this class.
+   */
+  private Tincalc(){
+    // no action required
   }
 }
