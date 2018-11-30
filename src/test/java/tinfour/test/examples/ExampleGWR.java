@@ -103,8 +103,8 @@ public class ExampleGWR implements IDevelopmentTest {
     SimpleDateFormat sdFormat =
       new SimpleDateFormat("dd MMM yyyy HH:mm", Locale.getDefault());
     sdFormat.setTimeZone(new SimpleTimeZone(0, "UTC"));
-    ps.println("Example Use of Geographically Weighted Regression (GWR)\n");
-    ps.format("Date/time of test: %s (UTC)\n", sdFormat.format(date));
+    ps.format("Example Use of Geographically Weighted Regression (GWR)%n");
+    ps.format("Date/time of test: %s (UTC)%n", sdFormat.format(date));
 
     TestOptions options = new TestOptions();
 
@@ -119,11 +119,11 @@ public class ExampleGWR implements IDevelopmentTest {
     // those that indicate Lidar classification for processing
     // (ground points only, etc.) and sorting options.
     File inputFile = options.getInputFile();
-    ps.format("Input file: %s\n", inputFile.getAbsolutePath());
+    ps.format("Input file: %s%n", inputFile.getAbsolutePath());
     VertexLoader loader = new VertexLoader();
     List<Vertex> vertexList = loader.readInputFile(options);
     int nVertices = vertexList.size();
-    ps.format("Number of vertices: %8d\n", nVertices);
+    ps.format("Number of vertices: %8d%n", nVertices);
     double xmin = loader.getXMin();
     double xmax = loader.getXMax();
     double ymin = loader.getYMin();
@@ -170,23 +170,23 @@ public class ExampleGWR implements IDevelopmentTest {
     double kP = (zXX * zX * zX + 2 * zXY * zX * zY + zYY * zY * zY)
       / ((zX * zX + zY * zY) * Math.pow(zX * zX + zY * zY + 1.0, 1.5));
 
-    ps.format("Interpolation x:                   %10.1f\n", x);
-    ps.format("Interpolation y:                   %10.1f\n", y);
-    ps.format("Estimated z:                          %12.5f\n", z);
-    ps.format("Prediction interval (95%% confidence): %12.5f to %6.5f   (%f)\n",
+    ps.format("Interpolation x:                   %10.1f%n", x);
+    ps.format("Interpolation y:                   %10.1f%n", y);
+    ps.format("Estimated z:                          %12.5f%n", z);
+    ps.format("Prediction interval (95%% confidence): %12.5f to %6.5f   (%f)%n",
       predictionInterval[0], predictionInterval[1],
       predictionInterval[1] - predictionInterval[0]);
-    ps.format("Zx:                                   %12.5f\n", beta[1]);
-    ps.format("Zy:                                   %12.5f\n", beta[2]);
-    ps.format("Azimuth steepest ascent               %12.5f\n", azimuth);
-    ps.format("Compass bearing steepest ascent          %05.1f\u00b0\n", compass);
-    ps.format("Grade                                 %8.1f%%\n", grade * 100);
-    ps.format("Slope:                                %8.1f\u00b0\n", slope);
-    ps.format("Profile curvature:                    %12.5f\n", kP);
-    ps.format("Eff deg of freedom:                   %12.5f\n", gwrInt.getEffectiveDegreesOfFreedom());
-    ps.format("Variance of the Residuals:            %12.5f\n", gwrInt.getVariance());
-    ps.format("Standard Deviation of the Residuals   %12.5f\n", gwrInt.getStandardDeviation());
-    ps.format("Bandwidth                             %12.5f\n", gwrInt.getBandwidth());
+    ps.format("Zx:                                   %12.5f%n", beta[1]);
+    ps.format("Zy:                                   %12.5f%n", beta[2]);
+    ps.format("Azimuth steepest ascent               %12.5f%n", azimuth);
+    ps.format("Compass bearing steepest ascent          %05.1f\u00b0%n", compass);
+    ps.format("Grade                                 %8.1f%%%n", grade * 100);
+    ps.format("Slope:                                %8.1f\u00b0%n", slope);
+    ps.format("Profile curvature:                    %12.5f%n", kP);
+    ps.format("Eff deg of freedom:                   %12.5f%n", gwrInt.getEffectiveDegreesOfFreedom());
+    ps.format("Variance of the Residuals:            %12.5f%n", gwrInt.getVariance());
+    ps.format("Standard Deviation of the Residuals   %12.5f%n", gwrInt.getStandardDeviation());
+    ps.format("Bandwidth                             %12.5f%n", gwrInt.getBandwidth());
   }
 
 }

@@ -326,6 +326,11 @@ public class NaturalNeighborInterpolator implements IInterpolatorOverTin {
     // The eList contains a series of edges definining the cavity
     // containing the polygon.
     double[] w = this.getBarycentricCoordinates(eList, x, y);
+    if(w == null){
+      // the coordinate is on the perimeter, no Barycentric coordinates 
+      // are available.
+      return Double.NaN;
+    }    
     double zSum = 0;
     int k = 0;
     for (IQuadEdge s : eList) {

@@ -105,7 +105,7 @@ public class GwrInterpolator {
   /**
    * A container for the results from a bootstrap analysis
    */
-  public class BootstrapResult {
+  public static class BootstrapResult {
 
     int n;
     double mean;

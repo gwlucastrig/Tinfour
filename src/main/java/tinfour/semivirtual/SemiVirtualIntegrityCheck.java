@@ -403,21 +403,21 @@ class SemiVirtualIntegrityCheck implements IIntegrityCheck {
   @Override
   public void printSummary(PrintStream ps) {
     Formatter fmt = new Formatter(ps);
-    fmt.format("Integrity Check Results:\n   %s\n", getMessage());
+    fmt.format("Integrity Check Results:%n   %s%n", getMessage());
     if (nDelaunayViolations == 0) {
-      fmt.format("   No Delaunay violations detected\n");
+      fmt.format("   No Delaunay violations detected%n");
     } else {
-      fmt.format("   Detected acceptable Delaunay violations within tolerance: %8.4e\n", thresholds.getDelaunayThreshold());
-      fmt.format("      N Violations:  %8d\n", nDelaunayViolations);
-      fmt.format("      Avg Violation: %8.4e\n", sumDelaunayViolations / nDelaunayViolations);
-      fmt.format("      Max Violation: %8.4e\n", maxDelaunayViolation);
+      fmt.format("   Detected acceptable Delaunay violations within tolerance: %8.4e%n", thresholds.getDelaunayThreshold());
+      fmt.format("      N Violations:  %8d%n", nDelaunayViolations);
+      fmt.format("      Avg Violation: %8.4e%n", sumDelaunayViolations / nDelaunayViolations);
+      fmt.format("      Max Violation: %8.4e%n", maxDelaunayViolation);
     }
     if (nDelaunayViolationsConstrained > 0) {
-      fmt.format("   Counted %d violations at constrained edges\n",
+      fmt.format("   Counted %d violations at constrained edges%n",
         nDelaunayViolationsConstrained);
-      fmt.format("      Avg Violation: %8.4e\n",
+      fmt.format("      Avg Violation: %8.4e%n",
         sumDelaunayViolationsConstrained / nDelaunayViolationsConstrained);
-      fmt.format("      Max Violation: %8.4e\n", maxDelaunayViolationConstrained);
+      fmt.format("      Max Violation: %8.4e%n", maxDelaunayViolationConstrained);
     }
 
     fmt.flush();

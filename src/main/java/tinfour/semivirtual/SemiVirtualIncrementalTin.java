@@ -1070,20 +1070,18 @@ public class SemiVirtualIncrementalTin implements IIncrementalTin {
   @Override
   public List<IQuadEdge> getPerimeter() {
     List<IQuadEdge> pList = new ArrayList<>();
-    if (!isBootstrapped) {
-      return pList;
-    }
-
     IQuadEdge g = edgePool.getStartingGhostEdge();
-    IQuadEdge s0 = g.getReverse();
-    IQuadEdge s = s0;
-    do {
-      pList.add(s.getDual());
-      s = s.getForward();
-      s = s.getForward();
-      s = s.getDual();
-      s = s.getReverse();
-    } while (!s.equals(s0));
+    if (isBootstrapped && g != null) {
+      IQuadEdge s0 = g.getReverse();
+      IQuadEdge s = s0;
+      do {
+        pList.add(s.getDual());
+        s = s.getForward();
+        s = s.getForward();
+        s = s.getDual();
+        s = s.getReverse();
+      } while (!s.equals(s0));
+    }
 
     return pList;
   }
@@ -1132,46 +1130,46 @@ public class SemiVirtualIncrementalTin implements IIncrementalTin {
     if (nOrdinary > 0) {
       avgPointSpacing = sumLength / nOrdinary;
     }
-    ps.format("Descriptive data\n");
-    ps.format("Number Vertices Inserted:     %8d\n", nVerticesInserted);
-    ps.format("Coincident Vertex Spacing:    %8f\n", vertexTolerance);
-    ps.format("   Sets:                      %8d\n", coincidenceList.size());
-    ps.format("   Total Count:               %8d\n", nCoincident);
-    ps.format("Number Ordinary Edges:        %8d\n", nOrdinary);
-    ps.format("Number Edges On Perimeter:    %8d\n", perimeter.size());
-    ps.format("Number Ghost Edges:           %8d\n", nGhost);
-    ps.format("Number Constrained Edges:     %8d\n", nConstrained);
-    ps.format("Number Edge Replacements:     %8d    (avg: %3.1f)\n",
+    ps.format("Descriptive data%n");
+    ps.format("Number Vertices Inserted:     %8d%n", nVerticesInserted);
+    ps.format("Coincident Vertex Spacing:    %8f%n", vertexTolerance);
+    ps.format("   Sets:                      %8d%n", coincidenceList.size());
+    ps.format("   Total Count:               %8d%n", nCoincident);
+    ps.format("Number Ordinary Edges:        %8d%n", nOrdinary);
+    ps.format("Number Edges On Perimeter:    %8d%n", perimeter.size());
+    ps.format("Number Ghost Edges:           %8d%n", nGhost);
+    ps.format("Number Constrained Edges:     %8d%n", nConstrained);
+    ps.format("Number Edge Replacements:     %8d    (avg: %3.1f)%n",
       nEdgesReplacedDuringBuild,
       (double) nEdgesReplacedDuringBuild / (double) (nVerticesInserted - nCoincident));
-    ps.format("Max Edge Replaced by add op:  %8d\n", maxEdgesReplacedDuringBuild);
-    ps.format("Average Point Spacing:        %11.2f\n", avgPointSpacing);
-    ps.format("Application's Nominal Spacing:%11.2f\n", nominalPointSpacing);
-    ps.format("Number Triangles:             %8d\n", trigCount.getCount());
-    ps.format("Average area of triangles:    %12.3f\n", trigCount.getAreaMean());
-    ps.format("Samp. std dev for area:       %12.3f\n", trigCount.getAreaStandardDeviation());
+    ps.format("Max Edge Replaced by add op:  %8d%n", maxEdgesReplacedDuringBuild);
+    ps.format("Average Point Spacing:        %11.2f%n", avgPointSpacing);
+    ps.format("Application's Nominal Spacing:%11.2f%n", nominalPointSpacing);
+    ps.format("Number Triangles:             %8d%n", trigCount.getCount());
+    ps.format("Average area of triangles:    %12.3f%n", trigCount.getAreaMean());
+    ps.format("Samp. std dev for area:       %12.3f%n", trigCount.getAreaStandardDeviation());
     if (trigCount.getAreaMin() < 1) {
-      ps.format("Minimum area:                        %f\n", trigCount.getAreaMin());
+      ps.format("Minimum area:                        %f%n", trigCount.getAreaMin());
     } else {
-      ps.format("Minimum area:                 %12.3f\n", trigCount.getAreaMin());
+      ps.format("Minimum area:                 %12.3f%n", trigCount.getAreaMin());
     }
-    ps.format("Maximum area:                 %12.3f\n", trigCount.getAreaMax());
-    ps.format("Total area:                   %10.1f\n", trigCount.getAreaSum());
+    ps.format("Maximum area:                 %12.3f%n", trigCount.getAreaMax());
+    ps.format("Total area:                   %10.1f%n", trigCount.getAreaSum());
 
-    ps.format("\nConstruction statistics\n");
+    ps.format("%nConstruction statistics%n");
     walker.printDiagnostics(ps);
 
-    ps.format("InCircle calculations:        %8d\n", nInCircle);
-    ps.format("   extended:                  %8d\n", nInCircleExtendedPrecision);
-    ps.format("   conflicts:                 %8d\n", nInCircleExtendedPrecisionConflicts);
+    ps.format("InCircle calculations:        %8d%n", nInCircle);
+    ps.format("   extended:                  %8d%n", nInCircleExtendedPrecision);
+    ps.format("   conflicts:                 %8d%n", nInCircleExtendedPrecisionConflicts);
 
-    ps.format("\n");
+    ps.format("%n");
     edgePool.printDiagnostics(ps);
-    ps.format("\n");
-    ps.format("Number of constraints:        %8d\n", constraintList.size());
-    ps.format("Max recursion during restore: %8d\n", maxDepthOfRecursionInRestore);
-    ps.format("Number of synthetic vertices: %8d\n", nSyntheticVertices);
-    ps.format("Max queue size in flood fill: %8d\n", this.maxLengthOfQueueInFloodFill);
+    ps.format("%n");
+    ps.format("Number of constraints:        %8d%n", constraintList.size());
+    ps.format("Max recursion during restore: %8d%n", maxDepthOfRecursionInRestore);
+    ps.format("Number of synthetic vertices: %8d%n", nSyntheticVertices);
+    ps.format("Max queue size in flood fill: %8d%n", this.maxLengthOfQueueInFloodFill);
   }
 
   /**

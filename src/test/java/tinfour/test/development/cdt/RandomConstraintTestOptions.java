@@ -259,11 +259,11 @@ class RandomConstraintTestOptions {
     ps.println("TIN class:                      " + tinClass.getName());
     ps.println("Constraint type:                " + constraintType);
     ps.println("Restore delaunay conformity:    " + restoreConformity);
-    ps.format("Number of vertex test sets:          %8d\n", testCount);
-    ps.format("Number of constraint tests per sets: %8d\n", testCount);
-    ps.format("Number of vertices to process:       %8d\n", vertexCount);
-    ps.format("Seed (for vertex generation):        %8d\n", vertexSeed);
-    ps.format("Seed (for constraint generation):    %8d\n", constraintSeed);
+    ps.format("Number of vertex test sets:          %8d%n", testCount);
+    ps.format("Number of constraint tests per sets: %8d%n", testCount);
+    ps.format("Number of vertices to process:       %8d%n", vertexCount);
+    ps.format("Seed (for vertex generation):        %8d%n", vertexSeed);
+    ps.format("Seed (for constraint generation):    %8d%n", constraintSeed);
   }
 
   /**

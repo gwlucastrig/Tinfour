@@ -120,7 +120,7 @@ public class SingleBuildTest implements IDevelopmentTest {
     ps.println("Number of vertices in file (all classes): "
       + loader.getNumberOfVerticesInFile());
       int nVertices = vertexList.size();
-    ps.format("Number of vertices to process: %8d\n", nVertices);
+    ps.format("Number of vertices to process: %8d%n", nVertices);
     double xmin = loader.getXMin();
     double xmax = loader.getXMax();
     double ymin = loader.getYMin();
@@ -143,23 +143,23 @@ public class SingleBuildTest implements IDevelopmentTest {
       double gArea = (gx1 - gx0) * (gy1 - gy0);
       double gsSpace = Tincalc.sampleSpacing(gArea, nVertices);
 
-      ps.format("Source data was in geographic coordinates\n");
-      ps.format("Range x values:     %11.6f, %11.6f, (%f)\n", gx0, gx1, gx1-gx0);
-      ps.format("Range y values:     %11.6f, %11.6f, (%f)\n", gy0, gy1, gy1-gy0);
-      ps.format("Est. sample spacing:   %e degrees of arc\n", gsSpace);
-      ps.format("Geographic coordinates are mapped to projected coordinates\n");
+      ps.format("Source data was in geographic coordinates%n");
+      ps.format("Range x values:     %11.6f, %11.6f, (%f)%n", gx0, gx1, gx1-gx0);
+      ps.format("Range y values:     %11.6f, %11.6f, (%f)%n", gy0, gy1, gy1-gy0);
+      ps.format("Est. sample spacing:   %e degrees of arc%n", gsSpace);
+      ps.format("Geographic coordinates are mapped to projected coordinates%n");
     }
 
-    ps.format("Range x values:     %12.3f, %12.3f, (%f)\n", xmin, xmax, xmax - xmin);
-    ps.format("Range y values:     %12.3f, %12.3f, (%f)\n", ymin, ymax, ymax - ymin);
-    ps.format("Range z values:     %12.3f, %12.3f, (%f)\n", zmin, zmax, zmax - zmin);
-    ps.format("Est. sample spacing:%12.3f\n", sSpace);
+    ps.format("Range x values:     %12.3f, %12.3f, (%f)%n", xmin, xmax, xmax - xmin);
+    ps.format("Range y values:     %12.3f, %12.3f, (%f)%n", ymin, ymax, ymax - ymin);
+    ps.format("Range z values:     %12.3f, %12.3f, (%f)%n", zmin, zmax, zmax - zmin);
+    ps.format("Est. sample spacing:%12.3f%n", sSpace);
 
     if (usePreSort) {
-      ps.format("Time for pre-sort:          %8.2f\n", timeForPreSort);
+      ps.format("Time for pre-sort:          %8.2f%n", timeForPreSort);
 
     } else {
-      ps.format("Pre-sort option is not used\n");
+      ps.format("Pre-sort option is not used%n");
     }
 
     loader = null; // to promote garbage collcetion
@@ -175,9 +175,9 @@ public class SingleBuildTest implements IDevelopmentTest {
       tin.preAllocateEdges(nVertices);
       time1 = System.nanoTime();
       preAllocTime = (time1 - time0);
-      ps.format("Time to pre-allocate edges: %8.2f\n", preAllocTime / 1000000.0);
+      ps.format("Time to pre-allocate edges: %8.2f%n", preAllocTime / 1000000.0);
     } else {
-      ps.format("Pre-alloc is not used\n");
+      ps.format("Pre-alloc is not used%n");
     }
 
     ps.println("Begin insertion");
@@ -185,8 +185,8 @@ public class SingleBuildTest implements IDevelopmentTest {
     tin.add(vertexList, null);
     time1 = System.nanoTime();
     long buildTime = (time1 - time0);
-    ps.format("Time build TIN:             %8.2f\n", buildTime / 1000000.0);
-    ps.format("Total time for TIN:         %8.2f\n",
+    ps.format("Time build TIN:             %8.2f%n", buildTime / 1000000.0);
+    ps.format("Total time for TIN:         %8.2f%n",
       (buildTime + preAllocTime) / 1000000.0);
 
     ps.println("Checking memory");
@@ -200,12 +200,12 @@ public class SingleBuildTest implements IDevelopmentTest {
     long totalMemory = Runtime.getRuntime().totalMemory();
 
     ps.println("Memory use (bytes/vertex) ");
-    ps.format("   All objects:              %6.2f\n", bytesPerVertex);
-    ps.format("   Vertices only:            %6.2f\n", verticesOnly);
-    ps.format("   Edges and other elements: %6.2f\n", tinOnly);
-    ps.format("\n");
-    ps.format("Total for application (mb): %6.2f\n", totalMemory / 1024.0 / 1024.0);
-    ps.format("\n\n");
+    ps.format("   All objects:              %6.2f%n", bytesPerVertex);
+    ps.format("   Vertices only:            %6.2f%n", verticesOnly);
+    ps.format("   Edges and other elements: %6.2f%n", tinOnly);
+    ps.format("%n");
+    ps.format("Total for application (mb): %6.2f%n", totalMemory / 1024.0 / 1024.0);
+    ps.format("%n%n");
 
     tin.printDiagnostics(System.out);
 

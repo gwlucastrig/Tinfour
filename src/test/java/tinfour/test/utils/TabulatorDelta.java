@@ -107,7 +107,7 @@ public class TabulatorDelta {
       // use the form below
       sigma = Math.sqrt((sumD2 - (sumD / nD) * sumD) / (nD - 1));
     }
-    ps.format("%s %13.6f %13.6f %10.3f %8.3f %9.3f\n",
+    ps.format("%s %13.6f %13.6f %10.3f %8.3f %9.3f%n",
       label, meanE, sigma, minD, maxD, sumSignedD);
   }
 

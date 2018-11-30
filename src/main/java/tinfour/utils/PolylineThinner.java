@@ -45,7 +45,7 @@ import tinfour.common.Vertex;
 
 public class PolylineThinner {
 
-  private class Node {
+  private static class Node {
 
     Vertex vertex;
     double area;

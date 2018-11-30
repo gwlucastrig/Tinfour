@@ -180,12 +180,12 @@ public class BoundedVoronoiDiagram {
       throw new IllegalArgumentException(
               "Null input is not allowed for TIN");
     }
-    if (!delaunayTriangulation.isBootstrapped()) {
+    sampleBounds = delaunayTriangulation.getBounds();
+    if (!delaunayTriangulation.isBootstrapped() || sampleBounds==null) {
       throw new IllegalArgumentException(
               "Input TIN is not bootstrapped (populated)");
     }
-
-    sampleBounds = delaunayTriangulation.getBounds();
+ 
     this.bounds = new Rectangle2D.Double(
             sampleBounds.getX(),
             sampleBounds.getY(),
@@ -884,11 +884,12 @@ public class BoundedVoronoiDiagram {
       }
     }
     int nOpen = polygons.size() - nClosed;
+    double avgArea = sumArea/(nClosed>0 ? nClosed:1);
     ps.format("Bounded Voronoi Diagram%n");
     ps.format("   Polygons:   %8d%n", polygons.size());
     ps.format("     Open:     %8d%n", nOpen);
     ps.format("     Closed:   %8d%n", nClosed);
-    ps.format("     Avg Area: %13.4f%n", sumArea / nClosed);
+    ps.format("     Avg Area: %13.4f%n", avgArea);
     ps.format("   Vertices:   %8d%n", circleList.size());
     ps.format("   Edges:      %8d%n", edgePool.size());
     ps.format("   Voronoi Bounds%n");

@@ -219,16 +219,16 @@ public class TinInstantiationUtility {
    * @param ps the print stream.
    */
   public void printSummary(PrintStream ps) {
-    ps.format("Number of vertices used for calculation:    %8d\n", nVertices);
-    ps.format("Memory limit for JVM:                       %12.3f megabytes\n",
+    ps.format("Number of vertices used for calculation:    %8d%n", nVertices);
+    ps.format("Memory limit for JVM:                       %12.3f megabytes%n",
       maxMemoryBytes / 1024.0 / 1024.0);
-    ps.format("Rule of thumb threshold for method choice:  %12.3f megabytes\n",
+    ps.format("Rule of thumb threshold for method choice:  %12.3f megabytes%n",
       maxAllowedForUse / 1024.0 / 1024.0);
-    ps.format("Memory required for standard edge class:    %12.3f megabytes\n",
+    ps.format("Memory required for standard edge class:    %12.3f megabytes%n",
       nBytesNeededForStandard / 1024.0 / 1024.0);
-    ps.format("Memory required for semi-virtual edge class:%12.3f megabytes\n",
+    ps.format("Memory required for semi-virtual edge class:%12.3f megabytes%n",
       nBytesNeededForVirtual / 1024.0 / 1024.0);
-    ps.format("Selected class:                             %s\n",
+    ps.format("Selected class:                             %s%n",
       tinClass.getName());
   }
 

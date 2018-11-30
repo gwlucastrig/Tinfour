@@ -77,8 +77,8 @@ public class ExampleGridAndHillshade implements IDevelopmentTest {
     SimpleDateFormat sdFormat
       = new SimpleDateFormat("dd MMM yyyy HH:mm", Locale.getDefault());
     sdFormat.setTimeZone(new SimpleTimeZone(0, "UTC"));
-    ps.println("ExampleGridAndHillshade\n");
-    ps.format("Date/time of test: %s (UTC)\n", sdFormat.format(date));
+    ps.format("ExampleGridAndHillshade%n");
+    ps.format("Date/time of test: %s (UTC)%n", sdFormat.format(date));
 
     // Load Options ---------------------------------------------
     //   The TestOptions class is designed to provide a convenient way
@@ -122,14 +122,14 @@ public class ExampleGridAndHillshade implements IDevelopmentTest {
     File inputFile = options.getInputFile();
     File outputFile = options.getOutputFile();
     File constraintsFile = options.getConstraintsFile();
-    ps.format("Input file:       %s\n", fmtFileName(inputFile));
-    ps.format("Output file:      %s\n", fmtFileName(outputFile));
-    ps.format("Constraints file: %s\n", fmtFileName(constraintsFile));
+    ps.format("Input file:       %s%n", fmtFileName(inputFile));
+    ps.format("Output file:      %s%n", fmtFileName(outputFile));
+    ps.format("Constraints file: %s%n", fmtFileName(constraintsFile));
 
     VertexLoader vertexLoader = new VertexLoader();
     List<Vertex> vertexList = vertexLoader.readInputFile(options);
     int nVertices = vertexList.size();
-    ps.format("Number of vertices: %8d\n", nVertices);
+    ps.format("Number of vertices: %8d%n", nVertices);
     double xmin = vertexLoader.getXMin();
     double xmax = vertexLoader.getXMax();
     double ymin = vertexLoader.getYMin();
@@ -156,22 +156,22 @@ public class ExampleGridAndHillshade implements IDevelopmentTest {
       double gy1 = geoOffsetY + ymax / geoScaleY;
       double gArea = (gx1 - gx0) * (gy1 - gy0);
       double gsSpace = Tincalc.sampleSpacing(gArea, nVertices);
-      ps.format("Source data was in geographic coordinates\n");
-      ps.format("Range x values:     %11.6f, %11.6f, (%f)\n", gx0, gx1, gx1 - gx0);
-      ps.format("Range y values:     %11.6f, %11.6f, (%f)\n", gy0, gy1, gy1 - gy0);
-      ps.format("Est. sample spacing:   %e degrees of arc\n", gsSpace);
-      ps.format("Geographic coordinates are mapped to projected coordinates\n");
+      ps.format("Source data was in geographic coordinates%n");
+      ps.format("Range x values:     %11.6f, %11.6f, (%f)%n", gx0, gx1, gx1 - gx0);
+      ps.format("Range y values:     %11.6f, %11.6f, (%f)%n", gy0, gy1, gy1 - gy0);
+      ps.format("Est. sample spacing:   %e degrees of arc%n", gsSpace);
+      ps.format("Geographic coordinates are mapped to projected coordinates%n");
     }
 
     if (Double.isNaN(cellSize)) {
       cellSize = nominalPointSpacing;
     }
 
-    ps.format("Range x values:     %12.3f, %12.3f, (%f)\n", xmin, xmax, xmax - xmin);
-    ps.format("Range y values:     %12.3f, %12.3f, (%f)\n", ymin, ymax, ymax - ymin);
-    ps.format("Range z values:     %12.3f, %12.3f, (%f)\n", zmin, zmax, zmax - zmin);
-    ps.format("Est. sample spacing:%12.3f\n", sSpace);
-    ps.format("Grid cell size:     %12.3f\n", cellSize);
+    ps.format("Range x values:     %12.3f, %12.3f, (%f)%n", xmin, xmax, xmax - xmin);
+    ps.format("Range y values:     %12.3f, %12.3f, (%f)%n", ymin, ymax, ymax - ymin);
+    ps.format("Range z values:     %12.3f, %12.3f, (%f)%n", zmin, zmax, zmax - zmin);
+    ps.format("Est. sample spacing:%12.3f%n", sSpace);
+    ps.format("Grid cell size:     %12.3f%n", cellSize);
     ps.flush();
 
     double x0 = xmin;
@@ -184,19 +184,19 @@ public class ExampleGridAndHillshade implements IDevelopmentTest {
       x1 = frame[1];
       y0 = frame[2];
       y1 = frame[3];
-      ps.format("Frame x values:     %12.3f, %12.3f, (%f)\n", x0, x1, (x1 - x0));
-      ps.format("Frame y values:     %12.3f, %12.3f, (%f)\n", y0, y1, (y1 - y0));
+      ps.format("Frame x values:     %12.3f, %12.3f, (%f)%n", x0, x1, (x1 - x0));
+      ps.format("Frame y values:     %12.3f, %12.3f, (%f)%n", y0, y1, (y1 - y0));
     }
 
     GridSpecification grid = new GridSpecification(
       GridSpecification.CellPosition.CenterOfCell,
       cellSize,
       x0, x1, y0, y1 );
-    ps.format("Output grid\n");
-    ps.format("   Rows:              %8d\n", grid.getRowCount());
-    ps.format("   Columns:           %8d\n", grid.getColumnCount());
-    ps.format("   Cells:             %8d\n", grid.getCellCount());
-    ps.format("   Interpolation method: %s\n\n", method);
+    ps.format("Output grid%n");
+    ps.format("   Rows:              %8d%n", grid.getRowCount());
+    ps.format("   Columns:           %8d%n", grid.getColumnCount());
+    ps.format("   Cells:             %8d%n", grid.getCellCount());
+    ps.format("   Interpolation method: %s%n%n", method);
 
     // Determine which TIN class to use  --------------------------
     //  The IncrementalTin class runs 60 percent faster than the
@@ -229,11 +229,11 @@ public class ExampleGridAndHillshade implements IDevelopmentTest {
     // The first time either TIN class is used, the performance is
     // affected by the overhead of class loaders and the Just-in-Time.
     // With repeated use, throughput improves substantially.
-    ps.format("\nBuilding TIN using: %s\n", tin.getClass().getName());
+    ps.format("%nBuilding TIN using: %s%n", tin.getClass().getName());
     long time0 = System.nanoTime();
     tin.add(vertexList, null);
     long time1 = System.nanoTime();
-    ps.format("Time to process vertices (milliseconds):    %12.3f\n",
+    ps.format("Time to process vertices (milliseconds):    %12.3f%n",
       (time1 - time0) / 1000000.0);
 
     if (constraintsFile != null) {
@@ -243,14 +243,14 @@ public class ExampleGridAndHillshade implements IDevelopmentTest {
       }
 
       List<IConstraint> conList = conLoader.readConstraintsFile(constraintsFile);
-      ps.format("Adding %d constraints, %d vertices to TIN\n",
+      ps.format("Adding %d constraints, %d vertices to TIN%n",
         conList.size(), conLoader.getTotalPointCount());
       time0 = System.nanoTime();
       tin.addConstraints(conList, true);
       time1 = System.nanoTime();
-      ps.format("Time to process constraints (milliseconds):%12.3f\n",
+      ps.format("Time to process constraints (milliseconds):%12.3f%n",
         (time1 - time0) / 1000000.0);
-      ps.format("Added %d synthetic vertices to restore Delaunay\n",
+      ps.format("Added %d synthetic vertices to restore Delaunay%n",
         tin.getSyntheticVertexCount());
     }
 
@@ -270,7 +270,7 @@ public class ExampleGridAndHillshade implements IDevelopmentTest {
           kVisible++;
       }
     }
-    ps.format("Estimated visible vertices: %11d\n", kVisible);
+    ps.format("Estimated visible vertices: %11d%n", kVisible);
     // Build the elevation grid --------------------------------------
     // Interpolate the elevation grid using either the default method
     // or the method specified on the command-line. The results are
@@ -281,7 +281,7 @@ public class ExampleGridAndHillshade implements IDevelopmentTest {
     time0 = System.nanoTime();
     float results[][] = buildElevationGrid(tin, method, grid);
     time1 = System.nanoTime();
-    ps.format("Elevation grid processing completed in %3.2f ms\n",
+    ps.format("Elevation grid processing completed in %3.2f ms%n",
       (time1 - time0) / 1000000.0);
     File file = prepFileNamedForSubject(outputFile, "_z", "asc");
     ps.println("Writing grid to file " + file.getAbsolutePath());
@@ -342,7 +342,7 @@ public class ExampleGridAndHillshade implements IDevelopmentTest {
     time0 = System.nanoTime();
     float[][] hillshade = buildHillshadeGrid(ps, tin, method, grid);
     time1 = System.nanoTime();
-    ps.format("Hillshade grid processing completed in %3.2f ms\n",
+    ps.format("Hillshade grid processing completed in %3.2f ms%n",
       (time1 - time0) / 1000000.0);
 
     // Create the hillshade image ---------------------------------
