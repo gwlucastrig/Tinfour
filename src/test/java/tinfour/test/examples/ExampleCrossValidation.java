@@ -108,8 +108,8 @@ public class ExampleCrossValidation implements IDevelopmentTest {
     SimpleDateFormat sdFormat =
        new SimpleDateFormat("dd MMM yyyy HH:mm", Locale.getDefault());
     sdFormat.setTimeZone(new SimpleTimeZone(0, "UTC"));
-    ps.println("Example Cross Validation\n");
-    ps.format("Date/time of test: %s (UTC)\n", sdFormat.format(date));
+    ps.format("Example Cross Validation%n");
+    ps.format("Date/time of test: %s (UTC)%n", sdFormat.format(date));
 
     // Load Options ---------------------------------------------
     //   The TestOptions class is designed to provide a convenient way
@@ -148,11 +148,11 @@ public class ExampleCrossValidation implements IDevelopmentTest {
     // those that indicate Lidar classification for processing
     // (ground points only, etc.) and sorting options.
     File inputFile = options.getInputFile();
-    ps.format("Input file: %s\n", inputFile.getAbsolutePath());
+    ps.format("Input file: %s%n", inputFile.getAbsolutePath());
     VertexLoader loader = new VertexLoader();
     List<Vertex> vertexList = loader.readInputFile(options);
     int nVertices = vertexList.size();
-    ps.format("Number of vertices: %8d\n", nVertices);
+    ps.format("Number of vertices: %8d%n", nVertices);
     double xmin = loader.getXMin();
     double xmax = loader.getXMax();
     double ymin = loader.getYMin();
@@ -183,17 +183,17 @@ public class ExampleCrossValidation implements IDevelopmentTest {
       double gArea = (gx1 - gx0) * (gy1 - gy0);
       double gsSpace = Tincalc.sampleSpacing(gArea, nVertices);
 
-      ps.format("Source data was in geographic coordinates\n");
-      ps.format("Range x values:     %11.6f, %11.6f, (%f)\n", gx0, gx1, gx1 - gx0);
-      ps.format("Range y values:     %11.6f, %11.6f, (%f)\n", gy0, gy1, gy1 - gy0);
-      ps.format("Est. sample spacing:   %e degrees of arc\n", gsSpace);
-      ps.format("Geographic coordinates are mapped to projected coordinates\n");
+      ps.format("Source data was in geographic coordinates%n");
+      ps.format("Range x values:     %11.6f, %11.6f, (%f)%n", gx0, gx1, gx1 - gx0);
+      ps.format("Range y values:     %11.6f, %11.6f, (%f)%n", gy0, gy1, gy1 - gy0);
+      ps.format("Est. sample spacing:   %e degrees of arc%n", gsSpace);
+      ps.format("Geographic coordinates are mapped to projected coordinates%n");
     }
 
-    ps.format("Range x values:     %12.3f, %12.3f, (%f)\n", xmin, xmax, xmax - xmin);
-    ps.format("Range y values:     %12.3f, %12.3f, (%f)\n", ymin, ymax, ymax - ymin);
-    ps.format("Range z values:     %12.3f, %12.3f, (%f)\n", zmin, zmax, zmax - zmin);
-    ps.format("Est. sample spacing:%12.3f\n", sSpace);
+    ps.format("Range x values:     %12.3f, %12.3f, (%f)%n", xmin, xmax, xmax - xmin);
+    ps.format("Range y values:     %12.3f, %12.3f, (%f)%n", ymin, ymax, ymax - ymin);
+    ps.format("Range z values:     %12.3f, %12.3f, (%f)%n", zmin, zmax, zmax - zmin);
+    ps.format("Est. sample spacing:%12.3f%n", sSpace);
 
     ps.flush();
 
@@ -208,8 +208,8 @@ public class ExampleCrossValidation implements IDevelopmentTest {
       y0 = frame[2];
       y1 = frame[3];
       ps.println("Using frame settings from supplied arguments");
-      ps.format("Frame x values:     %12.3f, %12.3f, (%f)\n", x0, x1, (x1 - x0));
-      ps.format("Frame y values:     %12.3f, %12.3f, (%f)\n", y0, y1, (y1 - y0));
+      ps.format("Frame x values:     %12.3f, %12.3f, (%f)%n", x0, x1, (x1 - x0));
+      ps.format("Frame y values:     %12.3f, %12.3f, (%f)%n", y0, y1, (y1 - y0));
     } else {
       double s = marginArg / 100.0;
       double dx = xmax - xmin;
@@ -219,8 +219,8 @@ public class ExampleCrossValidation implements IDevelopmentTest {
       y0 = ymin + s * dy;
       y1 = ymin + (1 - s) * dy;
       ps.println("Computing frame to allow a " + marginArg + " percent margin");
-      ps.format("Frame x values:     %12.3f, %12.3f, (%f)\n", x0, x1, (x1 - x0));
-      ps.format("Frame y values:     %12.3f, %12.3f, (%f)\n", y0, y1, (y1 - y0));
+      ps.format("Frame x values:     %12.3f, %12.3f, (%f)%n", x0, x1, (x1 - x0));
+      ps.format("Frame y values:     %12.3f, %12.3f, (%f)%n", y0, y1, (y1 - y0));
     }
 
     // Determine which TIN class to use  --------------------------
@@ -254,11 +254,11 @@ public class ExampleCrossValidation implements IDevelopmentTest {
     // The first time either TIN class is used, the performance is
     // affected by the overhead of class loaders and the Just-in-Time.
     // With repeated use, throughput improves substantially.
-    ps.format("\nBuilding TIN using: %s\n", tin.getClass().getName());
+    ps.format("%nBuilding TIN using: %s%n", tin.getClass().getName());
     long time0 = System.nanoTime();
     tin.add(vertexList, null);
     long time1 = System.nanoTime();
-    ps.format("Time to process vertices (milliseconds):    %12.3f\n",
+    ps.format("Time to process vertices (milliseconds):    %12.3f%n",
       (time1 - time0) / 1000000.0);
 
     NaturalNeighborInterpolator inNni = new NaturalNeighborInterpolator(tin);
@@ -350,7 +350,7 @@ public class ExampleCrossValidation implements IDevelopmentTest {
               double rate = progressModulus/deltaT;  // test per ms
               long estTimeRemaining = (long)((nExpected-nTest)/rate);
               Date estFinish = new Date(System.currentTimeMillis()+estTimeRemaining); //NOPMD
-              System.out.format("Completed %3d%%   (%f per sec)    est finish %s\n",
+              System.out.format("Completed %3d%%   (%f per sec)    est finish %s%n",
                 percentDone, rate*1000.0, estFinish.toString());
               System.out.flush();
             }
@@ -378,42 +378,42 @@ public class ExampleCrossValidation implements IDevelopmentTest {
     double deltaSeconds = ((double)(time1-time0)/1000000000.0);
     double testPerSec = nTest/deltaSeconds;
 
-    ps.format("Tested %d of %d vertices (%3.2f/sec)\n", nTest, vertexList.size(), testPerSec);
-    ps.println("Method                        "
-      + "mean |err|  std dev |err|     range of err     sum err");
+    ps.format("Tested %d of %d vertices (%3.2f/sec)%n", nTest, vertexList.size(), testPerSec);
+    ps.format("Method                        "
+      + "mean |err|  std dev |err|     range of err     sum err%n");
     tabTri.summarize(ps, "Triangular Facet         ");
     tabNni.summarize(ps, "Natural Neighbor         ");
     tabFix.summarize(ps, String.format("GWR, Fixed Bandwith %4.2f ", bandwidth));
     tabPro.summarize(ps, String.format("GWR, Proportionate  %4.2f ", 0.45));
     if (enableAutoBW) {
       tabAdp.summarize(ps, "GWR, Automatic BW AICc   ");
-      ps.println("\nValues for automatically selected bandwidth");
-      ps.format("   Mean:           %12.6f   (%8.6f of mean dist)\n",
+      ps.format("%nValues for automatically selected bandwidth");
+      ps.format("   Mean:           %12.6f   (%8.6f of mean dist)%n",
                tabBdw.getMeanAbsValue(), tabBdwPro.getMeanAbsValue());
-      ps.format("   Std Dev         %12.6f   (%8.6f)\n",
+      ps.format("   Std Dev         %12.6f   (%8.6f)%n",
         tabBdw.getStdDevAbsValue(), tabBdwPro.getStdDevAbsValue());
-      ps.format("   Min,Max:        %12.6f, %12.6f  (%5.3f, %5.3f of mean dist)\n",
+      ps.format("   Min,Max:        %12.6f, %12.6f  (%5.3f, %5.3f of mean dist)%n",
         tabBdw.getMinValue(),
         tabBdw.getMaxValue(),
         tabBdwPro.getMinValue(),
         tabBdwPro.getMaxValue());
-      ps.format("Number of Ordinary Least Squares: %d\n", nOrdinary);
+      ps.format("Number of Ordinary Least Squares: %d%n", nOrdinary);
       for (int i = 0; i < adpModelCount.length; i++) {
         SurfaceModel sm = smValues[i];
-        ps.format("%-25.25s  %8d\n", sm.name(), adpModelCount[i]);
+        ps.format("%-25.25s  %8d%n", sm.name(), adpModelCount[i]);
       }
       long nAdpTest = inGwr.getAutomaticBandwidthTestCount();
       double adpRate = (double)nAdpTest/adpModelCount.length/nTest;
-      ps.format("Number of Automatic Bandwidth Iterations %d (%f/model/vertex)\n",
+      ps.format("Number of Automatic Bandwidth Iterations %d (%f/model/vertex)%n",
               nAdpTest, adpRate);
     }
-    ps.format("\nValues for proportionately selected bandwidth\n");
-    ps.format("Mean:    %12.6f\n", tabProB.getMeanAbsValue());
-    ps.format("Std Dev: %12.6f\n", tabProB.getStdDevAbsValue());
+    ps.format("%nValues for proportionately selected bandwidth%n");
+    ps.format("Mean:    %12.6f%n", tabProB.getMeanAbsValue());
+    ps.format("Std Dev: %12.6f%n", tabProB.getStdDevAbsValue());
 
-    ps.format("\nNumber of samples used for GWR\n");
-    ps.format("Mean:    %12.6f\n", tabSampleCount.getMeanAbsValue());
-    ps.format("Std Dev: %12.6f\n", tabSampleCount.getStdDevAbsValue());
+    ps.format("%nNumber of samples used for GWR%n");
+    ps.format("Mean:    %12.6f%n", tabSampleCount.getMeanAbsValue());
+    ps.format("Std Dev: %12.6f%n", tabSampleCount.getStdDevAbsValue());
     ps.println("Example application processing complete.");
 
   }

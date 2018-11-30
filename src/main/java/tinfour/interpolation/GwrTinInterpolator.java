@@ -115,7 +115,7 @@ public class GwrTinInterpolator extends GwrInterpolator implements IInterpolator
       samples[k][0] = sample.x;
       samples[k][1] = sample.y;
       samples[k][2] = vq.value(sample);
-      //System.out.format("%2d: %12.2f,  %12.2f,  %10.5f %f\n",
+      //System.out.format("%2d: %12.2f,  %12.2f,  %10.5f %f%n",
       //  k, samples[k][0], samples[k][1], samples[k][2],
       //  sample.getDistance(qx, qy));
       k++;

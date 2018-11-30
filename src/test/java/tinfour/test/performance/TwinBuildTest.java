@@ -210,7 +210,7 @@ public class TwinBuildTest implements IDevelopmentTest {
 
       }
 
-      ps.format("%3d,    %12.3f, %12.3f,     %12.3f, %12.3f\n",
+      ps.format("%3d,    %12.3f, %12.3f,     %12.3f, %12.3f%n",
         iTest,
         deltaBuildA / 1000000.0,
         avgTotalA / 1000000.0,
@@ -224,7 +224,7 @@ public class TwinBuildTest implements IDevelopmentTest {
       sumTotalB -= maxB;
       double avgTotalA = (double) sumTotalA / (double) (nTotal - 1);
       double avgTotalB = (double) sumTotalB / (double) (nTotal - 1);
-      ps.format("avg with max removed  %12.3f,                   %12.3f\n",
+      ps.format("avg with max removed  %12.3f,                   %12.3f%n",
         avgTotalA / 1000000.0,
         avgTotalB / 1000000.0);
       ps.println("");

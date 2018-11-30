@@ -158,8 +158,8 @@ public class ExampleMultiThreadTest implements IDevelopmentTest {
     SimpleDateFormat sdFormat =
       new SimpleDateFormat("dd MMM yyyy HH:mm", Locale.getDefault());
     sdFormat.setTimeZone(new SimpleTimeZone(0, "UTC"));
-    ps.println("ExampleGridFromLasFile\n");
-    ps.format("Date/time of test: %s (UTC)\n", sdFormat.format(date));
+    ps.format("ExampleGridFromLasFile%n");
+    ps.format("Date/time of test: %s (UTC)%n", sdFormat.format(date));
 
     // Load Options ---------------------------------------------
     //   The TestOptions class is designed to provide a convenient way
@@ -193,7 +193,7 @@ public class ExampleMultiThreadTest implements IDevelopmentTest {
     // those that indicate Lidar classification for processing
     // (ground points only, etc.) and sorting options.
     File inputFile = options.getInputFile();
-    ps.format("Input file: %s\n", inputFile.getAbsolutePath());
+    ps.format("Input file: %s%n", inputFile.getAbsolutePath());
     VertexLoader loader = new VertexLoader();
     List<Vertex> vertexList = loader.readInputFile(options);
     int nVertices = vertexList.size();
@@ -203,24 +203,24 @@ public class ExampleMultiThreadTest implements IDevelopmentTest {
     double ymax = loader.getYMax();
     double zmin = loader.getZMin();
     double zmax = loader.getZMax();
-    ps.format("Number of vertices: %8d\n", nVertices);
-    ps.format("Range x values:     %11.3f, %11.3f, (%f)\n", xmin, xmax, xmax - xmin);
-    ps.format("Range y values:     %11.3f, %11.3f, (%f)\n", ymin, ymax, ymax - ymin);
-    ps.format("Range z values:     %11.3f, %11.3f, (%f)\n", zmin, zmax, zmax - zmin);
-    ps.format("Grid cell size:     %11.3f\n", cellSize);
+    ps.format("Number of vertices: %8d%n", nVertices);
+    ps.format("Range x values:     %11.3f, %11.3f, (%f)%n", xmin, xmax, xmax - xmin);
+    ps.format("Range y values:     %11.3f, %11.3f, (%f)%n", ymin, ymax, ymax - ymin);
+    ps.format("Range z values:     %11.3f, %11.3f, (%f)%n", zmin, zmax, zmax - zmin);
+    ps.format("Grid cell size:     %11.3f%n", cellSize);
     ps.flush();
 
     GridFromBounds grid = new GridFromBounds(cellSize, xmin, xmax, ymin, ymax);
-    ps.format("Output grid\n");
-    ps.format("   Rows:              %8d\n", grid.nRows);
-    ps.format("   Columns:           %8d\n", grid.nCols);
-    ps.format("   Cells:             %8d\n", grid.nCells);
-    ps.format("\n");
-    ps.format("Number of threads:    %8d\n", nThreads);
-    ps.format("Available processors: %8d\n",
+    ps.format("Output grid%n");
+    ps.format("   Rows:              %8d%n", grid.nRows);
+    ps.format("   Columns:           %8d%n", grid.nCols);
+    ps.format("   Cells:             %8d%n", grid.nCells);
+    ps.format("%n");
+    ps.format("Number of threads:    %8d%n", nThreads);
+    ps.format("Available processors: %8d%n",
       Runtime.getRuntime().availableProcessors());
-    ps.format("Number of tests:      %8d\n", nTests);
-    ps.format("\n");
+    ps.format("Number of tests:      %8d%n", nTests);
+    ps.format("%n");
 
     // Determine which TIN class to use  --------------------------
     //  The IncrementalTin class runs 60 percent faster than the
@@ -237,30 +237,30 @@ public class ExampleMultiThreadTest implements IDevelopmentTest {
       // get max memory from Java's Runtime class
       long maxMemoryBytes = Runtime.getRuntime().maxMemory();
       double maxAllowedForUse = maxMemoryBytes * MAX_MEMORY_FRACTION;
-      ps.format("Memory limit for JVM:                       %11.3f megabytes\n",
+      ps.format("Memory limit for JVM:                       %11.3f megabytes%n",
         maxMemoryBytes / 1024.0 / 1024.0);
-      ps.format("Rule of thumb threshold for method choice:  %11.3f megabytes\n",
+      ps.format("Rule of thumb threshold for method choice:  %11.3f megabytes%n",
         maxAllowedForUse / 1024.0 / 1024.0);
       long nBytesNeededForStandard = nVertices * MEMORY_FOR_STANDARD;
       long nBytesNeededForVirtual = nVertices * MEMORY_FOR_VIRTUAL;
-      ps.format("Memory required for standard edge class:    %11.3f megabytes\n",
+      ps.format("Memory required for standard edge class:    %11.3f megabytes%n",
         nBytesNeededForStandard / 1024.0 / 1024.0);
-      ps.format("Memory required for virtual edge class:     %11.3f megabytes\n",
+      ps.format("Memory required for virtual edge class:     %11.3f megabytes%n",
         nBytesNeededForVirtual / 1024.0 / 1024.0);
       if (nBytesNeededForStandard < maxAllowedForUse) {
         tin = new IncrementalTin();
       } else {
-        ps.format("Virtual edge representation selected\n");
+        ps.format("Virtual edge representation selected%n");
         tin = new SemiVirtualIncrementalTin();
       }
     }
 
     // Add vertices to TIN  -------------------------------------------
-    ps.format("\nBuilding TIN using: %s\n", tin.getClass().getName());
+    ps.format("%nBuilding TIN using: %s%n", tin.getClass().getName());
     long time0 = System.nanoTime();
     tin.add(vertexList, null);
     long time1 = System.nanoTime();
-    ps.format("Time to build TIN (milliseconds):  %11.3f\n",
+    ps.format("Time to build TIN (milliseconds):  %11.3f%n",
       (time1 - time0) / 1000000.0);
 
     ThreadPoolExecutor executor
@@ -270,14 +270,14 @@ public class ExampleMultiThreadTest implements IDevelopmentTest {
       });
 
     // Build the elevation grid --------------------------------------
-    ps.println("");
-    ps.println("Performing time comparison tests for elevation grid\n\n");
+    ps.format("%n");
+    ps.format("Performing time comparison tests for elevation grid%n%n");
 
     float[][] results1 = new float[grid.nRows][grid.nCols];
     float[][] resultsN = new float[grid.nRows][grid.nCols];
 
-    ps.format("         Time to Process (ms)\n");
-    ps.format("        Single        Multiple       Change (percent)\n");
+    ps.format("         Time to Process (ms)%n");
+    ps.format("        Single        Multiple       Change (percent)%n");
     for (int iTest = 0; iTest < nTests; iTest++) {
       time0 = System.nanoTime();
       this.populateElevationGrid(tin, grid, 0, grid.nRows, results1);
@@ -308,7 +308,7 @@ public class ExampleMultiThreadTest implements IDevelopmentTest {
       }
       time1 = System.nanoTime();
       double deltaN = (time1 - time0) / 1000000.0;
-      ps.format("%2d    %9.2f      %9.2f         %9.2f\n",
+      ps.format("%2d    %9.2f      %9.2f         %9.2f%n",
               iTest, delta1, deltaN, 100.0*deltaN/delta1);
       ps.flush();
 

@@ -654,13 +654,13 @@ public class LasFileReader {
 //        LasFileReader lf = new LasFileReader(file);
 //
 //        PrintStream ps = System.out;
-//        ps.format("Number of records:   %8d\n", lf.getNumberOfPointRecords());
-//        ps.format("X Min:               %10.2f\n", lf.getMinX());
-//        ps.format("X Max:               %10.2f\n", lf.getMaxX());
-//        ps.format("Y Min:               %10.2f\n", lf.getMinY());
-//        ps.format("Y Max:               %10.2f\n", lf.getMaxY());
-//        ps.format("Z Min:               %10.2f\n", lf.getMinZ());
-//        ps.format("Z Max:               %10.2f\n", lf.getMaxZ());
+//        ps.format("Number of records:   %8d%n", lf.getNumberOfPointRecords());
+//        ps.format("X Min:               %10.2f%n", lf.getMinX());
+//        ps.format("X Max:               %10.2f%n", lf.getMaxX());
+//        ps.format("Y Min:               %10.2f%n", lf.getMinY());
+//        ps.format("Y Max:               %10.2f%n", lf.getMaxY());
+//        ps.format("Z Min:               %10.2f%n", lf.getMinZ());
+//        ps.format("Z Max:               %10.2f%n", lf.getMaxZ());
 //
 //        lf.readRecord(0, p);
 //        lf.readRecord(1, p);

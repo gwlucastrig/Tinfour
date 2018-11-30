@@ -237,23 +237,23 @@ public class GridSpecification {
     BufferedOutputStream bos = new BufferedOutputStream(fos);
     PrintStream output = new PrintStream(bos);
 
-    output.format("NCOLS %d\n", nCols);
-    output.format("NROWS %d\n", nRows);
+    output.format("NCOLS %d%n", nCols);
+    output.format("NROWS %d%n", nRows);
     switch (getCellPosition()) {
       case CornerOfCell:
-        output.format("XLLCORNER %f\n", xLowerLeft);
-        output.format("YLLCORNER %f\n", yLowerLeft);
+        output.format("XLLCORNER %f%n", xLowerLeft);
+        output.format("YLLCORNER %f%n", yLowerLeft);
         break;
       case CenterOfCell:
       default:
-        output.format("XLLCENTER %f\n", xLowerLeft);
-        output.format("YLLCENTER %f\n", yLowerLeft);
+        output.format("XLLCENTER %f%n", xLowerLeft);
+        output.format("YLLCENTER %f%n", yLowerLeft);
         break;
     }
 
-    output.format("CELLSIZE %f\n", getCellSize());
+    output.format("CELLSIZE %f%n", getCellSize());
 
-    output.format("NODATA_VALUE %s\n", noDataString);
+    output.format("NODATA_VALUE %s%n", noDataString);
     output.flush();
 
     output.flush();
@@ -271,7 +271,7 @@ public class GridSpecification {
           output.format(dataFormat, z);
         }
       }
-      output.format("\n");
+      output.format("%n");
     }
     output.flush();
     output.close();

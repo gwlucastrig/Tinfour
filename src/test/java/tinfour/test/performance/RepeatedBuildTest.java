@@ -172,7 +172,7 @@ static final String[] usage = {
         tin.dispose();
       }
 
-      ps.format("%3d, %12.3f, %12.3f, %12.3f, %s\n",
+      ps.format("%3d, %12.3f, %12.3f, %12.3f, %s%n",
         iTest,
         deltaBuild / 1000000.0,
         avgTotal / 1000000.0,
@@ -181,21 +181,23 @@ static final String[] usage = {
     }
     if (nTotal > 1) {
       double avgTotal = (sumTotal - maxTime) / (nTotal - 1);
-      ps.format("Avg max removed:   %12.3f\n",  avgTotal / 1000000.0);
+      ps.format("Avg max removed:   %12.3f%n",  avgTotal / 1000000.0);
     }
     ps.println("");
     long deltaMemory = (mem2 - mem1);
     double bytesPerVertex = (double) (deltaMemory + vertexMemory) / (double) nVertices;
     double verticesOnly = (double) vertexMemory / (double) nVertices;
 
-    ps.println("\nStats for last run in series");
+	ps.println("");
+    ps.println("Stats for last run in series");
     ps.println("Vertices added to TIN:    " + nVertices);
     ps.println("Memory use (bytes/vertex) ");
-    ps.format("   All objects:           %6.2f\n", bytesPerVertex);
-    ps.format("   Vertices only:         %6.2f\n", verticesOnly);
+    ps.format("   All objects:           %6.2f%n", bytesPerVertex);
+    ps.format("   Vertices only:         %6.2f%n", verticesOnly);
     //tin.printDiagnostics(System.out);
 
-    ps.println("\nPerforming integrity check");
+	ps.println("");
+    ps.println("Performing integrity check");
     IIntegrityCheck sane2 = tin.getIntegrityCheck();
     boolean status = sane2.inspect();
     if (!status) {

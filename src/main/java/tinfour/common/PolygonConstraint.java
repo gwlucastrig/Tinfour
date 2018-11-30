@@ -56,7 +56,9 @@ import tinfour.utils.KahanSummation;
  * to be unique. Thus, if the polygon represents a triangle, the
  * getVertices and Vertex iterator methods will return exactly three vertices.
  */
-public class PolygonConstraint extends PolyLineConstraintAdapter implements IConstraint {
+public class PolygonConstraint 
+        extends PolyLineConstraintAdapter 
+        implements IConstraint {
 
   private double squareArea;
 

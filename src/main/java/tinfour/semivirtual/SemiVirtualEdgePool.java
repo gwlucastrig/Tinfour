@@ -380,16 +380,16 @@ class SemiVirtualEdgePool implements Iterable<IQuadEdge> {
         nConstraintInterior++;
       }
     }
-    ps.format("\nEdge pool diagnostics\n");
-    ps.format("   Edges allocated:             %8d\n", nAllocated);
-    ps.format("   Edges free:                  %8d\n", nFree);
-    ps.format("   Pages:                       %8d\n", pages.length);
-    ps.format("   Partially used pages:        %8d\n", nPartials);
-    ps.format("   Total allocation operations: %8d\n", nAllocationOperations);
-    ps.format("   Total free operations        %8d\n", nFreeOperations);
-    ps.format("Constrained edges               %8d\n", nConstrained);
-    ps.format("   Region borders:              %8d\n", nConstraintBorder);
-    ps.format("   Region interior:             %8d\n", nConstraintInterior);
+    ps.format("%nEdge pool diagnostics%n");
+    ps.format("   Edges allocated:             %8d%n", nAllocated);
+    ps.format("   Edges free:                  %8d%n", nFree);
+    ps.format("   Pages:                       %8d%n", pages.length);
+    ps.format("   Partially used pages:        %8d%n", nPartials);
+    ps.format("   Total allocation operations: %8d%n", nAllocationOperations);
+    ps.format("   Total free operations        %8d%n", nFreeOperations);
+    ps.format("Constrained edges               %8d%n", nConstrained);
+    ps.format("   Region borders:              %8d%n", nConstraintBorder);
+    ps.format("   Region interior:             %8d%n", nConstraintInterior);
   }
 
   /**

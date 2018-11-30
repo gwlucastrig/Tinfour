@@ -1420,24 +1420,24 @@ public class SurfaceGwr {
   public void printSummary(PrintStream ps) {
     computeVarianceAndHat();
     if (!this.areVarianceAndHatPrepped) {
-      ps.format("Regression statistics not available\n");
+      ps.format("Regression statistics not available%n");
       return;
     }
-//    ps.format("Regression coefficients & variance\n");
+//    ps.format("Regression coefficients & variance%n");
 //    for (int i = 0; i < beta.length; i++) {
-//      System.out.format("beta[%2d] %12.6f  %f\n",
+//      System.out.format("beta[%2d] %12.6f  %f%n",
 //        i, beta[i], Math.sqrt(vcMatrix.getEntry(i, i) * sigma2));
 //    }
-    ps.format("Regression coefficients & variance\n");
+    ps.format("Regression coefficients & variance%n");
     for (int i = 0; i < beta.length; i++) {
-      ps.format("beta[%2d] %12.6f\n",
+      ps.format("beta[%2d] %12.6f%n",
         i, beta[i]);
     }
-    ps.format("Residual standard deviation %f on %d degrees of freedom\n",
+    ps.format("Residual standard deviation %f on %d degrees of freedom%n",
       getStandardDeviation(), this.nDegOfFreedom);
-    ps.format("Correlation coefficient (r^2): %f\n", getR2());
-    ps.format("Adusted r^2:                   %f\n", getAdjustedR2());
-    ps.format("F statistic:  %f\n", getF());
+    ps.format("Correlation coefficient (r^2): %f%n", getR2());
+    ps.format("Adusted r^2:                   %f%n", getAdjustedR2());
+    ps.format("F statistic:  %f%n", getF());
 
   }
 

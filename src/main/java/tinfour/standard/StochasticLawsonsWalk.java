@@ -507,11 +507,11 @@ public class StochasticLawsonsWalk {
     if (nSLW > 0) {
       avgSLW = (double) nSLWSteps / (double) nSLW;
     }
-    ps.format("Number of SLW walks:          %8d\n", nSLW);
-    ps.format("   exterior phase:            %8d\n", nSLWGhost);
-    ps.format("   tests:                     %8d\n", nSLWTests);
-    ps.format("   extended:                  %8d\n", nHalfPlaneCalls);
-    ps.format("   avg steps to completion:   %11.2f\n", avgSLW);
+    ps.format("Number of SLW walks:          %8d%n", nSLW);
+    ps.format("   exterior phase:            %8d%n", nSLWGhost);
+    ps.format("   tests:                     %8d%n", nSLWTests);
+    ps.format("   extended:                  %8d%n", nHalfPlaneCalls);
+    ps.format("   avg steps to completion:   %11.2f%n", avgSLW);
     ps.flush();
   }
 

@@ -125,8 +125,9 @@ public class ExampleWireframeWithThinning implements IDevelopmentTest
         SimpleDateFormat sdFormat =
           new SimpleDateFormat("dd MMM yyyy HH:mm", Locale.getDefault());
         sdFormat.setTimeZone(new SimpleTimeZone(0, "UTC"));
-        ps.println("ExampleWireframeWithThinning\n");
-        ps.format("Date/time of test: %s (UTC)\n", sdFormat.format(date));
+        ps.println("ExampleWireframeWithThinning");
+		ps.println("");
+        ps.format("Date/time of test: %s (UTC)%n", sdFormat.format(date));
 
         // Load Options ---------------------------------------------
         //   The TestOptions class is designed to provide a convenient way
@@ -161,8 +162,8 @@ public class ExampleWireframeWithThinning implements IDevelopmentTest
         if(outputFile != null){
           outputPath = outputFile.getAbsolutePath();
         }
-        ps.format("Input file:  %s\n", inputFile.getAbsolutePath());
-        ps.format("Output file: %s\n", outputPath);
+        ps.format("Input file:  %s%n", inputFile.getAbsolutePath());
+        ps.format("Output file: %s%n", outputPath);
         VertexLoader loader = new VertexLoader();
         List<Vertex> vertexList = loader.readInputFile(options);
         int nVertices = vertexList.size();
@@ -172,10 +173,10 @@ public class ExampleWireframeWithThinning implements IDevelopmentTest
         double ymax = loader.getYMax();
         double zmin = loader.getZMin();
         double zmax = loader.getZMax();
-        ps.format("Number of vertices: %8d\n", nVertices);
-        ps.format("Range x values:     %11.3f, %11.3f, (%f)\n", xmin, xmax, xmax - xmin);
-        ps.format("Range y values:     %11.3f, %11.3f, (%f)\n", ymin, ymax, ymax - ymin);
-        ps.format("Range z values:     %11.3f, %11.3f, (%f)\n", zmin, zmax, zmax - zmin);
+        ps.format("Number of vertices: %8d%n", nVertices);
+        ps.format("Range x values:     %11.3f, %11.3f, (%f)%n", xmin, xmax, xmax - xmin);
+        ps.format("Range y values:     %11.3f, %11.3f, (%f)%n", ymin, ymax, ymax - ymin);
+        ps.format("Range z values:     %11.3f, %11.3f, (%f)%n", zmin, zmax, zmax - zmin);
         ps.flush();
 
         double x0 = xmin;
@@ -189,13 +190,13 @@ public class ExampleWireframeWithThinning implements IDevelopmentTest
             x1 = frame[1];
             y0 = frame[2];
             y1 = frame[3];
-            ps.format("Frame x values:     %11.3f, %11.3f, (%f)\n", x0, x1, (x1 - x0));
-            ps.format("Frame y values:     %11.3f, %11.3f, (%f)\n", y0, y1, (y1 - y0));
+            ps.format("Frame x values:     %11.3f, %11.3f, (%f)%n", x0, x1, (x1 - x0));
+            ps.format("Frame y values:     %11.3f, %11.3f, (%f)%n", y0, y1, (y1 - y0));
         }
 
         AffineTransform af = initTransform(width, height, x0, x1, y0, y1);
         double scale = Math.sqrt(Math.abs(af.getDeterminant()));
-        ps.format("Data to image scale: %11.3f\n", scale);
+        ps.format("Data to image scale: %11.3f%n", scale);
 
 
 
@@ -252,9 +253,9 @@ public class ExampleWireframeWithThinning implements IDevelopmentTest
             vertexList = thinList;
             nVertices = vertexList.size();
             time1 = System.nanoTime();
-            ps.format("Time to thin vertices (milliseconds):       %11.3f\n",
+            ps.format("Time to thin vertices (milliseconds):       %11.3f%n",
                     (time1 - time0) / 1000000.0);
-            ps.format("Number of thinned vertices:                 %7d\n",
+            ps.format("Number of thinned vertices:                 %7d%n",
                     nVertices);
         }
 
@@ -266,11 +267,11 @@ public class ExampleWireframeWithThinning implements IDevelopmentTest
             tin = new IncrementalTin();
         }
 
-        ps.format("\nBuilding TIN using: %s\n", tin.getClass().getName());
+        ps.format("%nBuilding TIN using: %s%n", tin.getClass().getName());
         time0 = System.nanoTime();
         tin.add(vertexList, null);
         time1 = System.nanoTime();
-        ps.format("Time to process vertices (milliseconds):    %11.3f\n",
+        ps.format("Time to process vertices (milliseconds):    %11.3f%n",
                 (time1 - time0) / 1000000.0);
 
         // Resolve the optional output file options
@@ -291,7 +292,7 @@ public class ExampleWireframeWithThinning implements IDevelopmentTest
                 fmt = "GIF";
             } else {
                 throw new IllegalArgumentException(
-                        "Output file must be one of PNG, JPEG, or GIF\n");
+                        "Output file must be one of PNG, JPEG, or GIF%n");
             }
         }
 
@@ -428,8 +429,8 @@ public class ExampleWireframeWithThinning implements IDevelopmentTest
         if (nEdgeLen > 0) {
             avgLen = sumEdgeLen / nEdgeLen;
         }
-        ps.format("Number of edges rendered:                   %7d\n", nEdgeLen);
-        ps.format("Average length of edges:                    %11.3f\n", avgLen);
+        ps.format("Number of edges rendered:                   %7d%n", nEdgeLen);
+        ps.format("Average length of edges:                    %11.3f%n", avgLen);
         g2d.setStroke(new BasicStroke(1.0f));
         for (Vertex v : vertexList) {
             if (inBounds(v, x0, x1, y0, y1)) {

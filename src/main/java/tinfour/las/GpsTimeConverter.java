@@ -241,12 +241,12 @@ public final class GpsTimeConverter {
   //        double g = gtc.linearTime[i];
   //        long j = gtc.javaTime[i];
   //        Date d = new Date(j);
-  //        System.out.format("%12.1f %s\n", g, sdf.format(d));
+  //        System.out.format("%12.1f %s%n", g, sdf.format(d));
   //    }
   //
   //    double g = 1119744016; // 1 July 2015,   00:00:00, leap second
   //    Date d = gtc.gpsToDate(g);
   //
-  //    System.out.format("%12.1f %s\n", g, sdf.format(d));
+  //    System.out.format("%12.1f %s%n", g, sdf.format(d));
   //}
 }

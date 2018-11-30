@@ -275,7 +275,7 @@ private static final String[] usage = {
       getUsedMemory();
       double buildTime = deltaBuild / 1000000.0;
       resultList.add(new Result(buildTime, nVertices)); // NOPMD
-      ps.format("%10d,  %10.7f, %10.2f,  %10.2f, %10.2f, %12d\n",
+      ps.format("%10d,  %10.7f, %10.2f,  %10.2f, %10.2f, %12d%n",
         nVertices,
         nVertices / 1000000.0,
         deltaBuild / 1000000.0,
@@ -287,7 +287,7 @@ private static final String[] usage = {
     }
 
     Collections.sort(resultList);
-    ps.format("\nn_vertices,    m_vertices,    time_ms,     million_per_sec\n");
+    ps.format("%nn_vertices,    m_vertices,    time_ms,     million_per_sec%n");
     for (Result r : resultList) {
       ps.format(
         "%10d, %10.3f, %10.3f, %10.3f\n",

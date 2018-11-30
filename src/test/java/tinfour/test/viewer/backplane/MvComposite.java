@@ -938,12 +938,12 @@ public class MvComposite {
     double z = interpolator.interpolate(SurfaceModel.QuadraticWithCrossTerms,
       BandwidthSelectionMethod.OptimalAICc, 1.0,
       mx, my, null);
-    fmt.format("X:     %s\n", model.getFormattedX(mx));
-    fmt.format("Y:     %s\n", model.getFormattedY(my));
+    fmt.format("X:     %s%n", model.getFormattedX(mx));
+    fmt.format("Y:     %s%n", model.getFormattedY(my));
     if (queryIsOutside) {
       fmt.format("Query point is outside of TIN");
     } else if (Double.isNaN(z)) {
-      fmt.format("Z:     Not available\n");
+      fmt.format("Z:     Not available%n");
     } else {
       double beta[] = interpolator.getCoefficients();
       double descA = Math.toDegrees(Math.atan2(-beta[2], -beta[1]));
@@ -960,7 +960,7 @@ public class MvComposite {
       try {
         h = interpolator.getPredictionIntervalHalfRange(0.05);
       } catch (SingularMatrixException smex) {
-        fmt.format("Data does not support statistical analysis\n");
+        fmt.format("Data does not support statistical analysis%n");
       }
       if (!Double.isNaN(h)) {
         switch (interpolator.getSurfaceModel()) {
@@ -980,27 +980,27 @@ public class MvComposite {
             break;
         }
 
-        fmt.format("Z:     %11.2f &plusmn; %4.2f %s\n", z, h, units);
-        fmt.format("Slope: %11.2f %%\n", slope * 100);
-        fmt.format("Curvature\n");
-        fmt.format("  Profile:    %8.5f (radian/%s)\n", kP, units);
-        fmt.format("  Streamline: %8.5f (radian/%s)\n", kS, units);
-        fmt.format("Steepest Descent\n");
-        fmt.format("  Azimuth:    %4d&deg;\n", (int) (descA));
-        fmt.format("  Compass Brg: %03d&deg;\n", (int) (descB));
+        fmt.format("Z:     %11.2f &plusmn; %4.2f %s%n", z, h, units);
+        fmt.format("Slope: %11.2f %%%n", slope * 100);
+        fmt.format("Curvature%n");
+        fmt.format("  Profile:    %8.5f (radian/%s)%n", kP, units);
+        fmt.format("  Streamline: %8.5f (radian/%s)%n", kS, units);
+        fmt.format("Steepest Descent%n");
+        fmt.format("  Azimuth:    %4d&deg;%n", (int) (descA));
+        fmt.format("  Compass Brg: %03d&deg;%n", (int) (descB));
       }
-      fmt.format("Nearest Point\n");
-      fmt.format("  Dist:  %11.2f %s\n", dNear, units);
-      fmt.format("  X:     %s\n", model.getFormattedX(vNear.getX()));
-      fmt.format("  Y:     %s\n", model.getFormattedY(vNear.getY()));
-      fmt.format("  Z:     %11.2f\n", vNear.getZ());
-      fmt.format("  ID:    %8d\n", vNear.getIndex());
+      fmt.format("Nearest Point%n");
+      fmt.format("  Dist:  %11.2f %s%n", dNear, units);
+      fmt.format("  X:     %s%n", model.getFormattedX(vNear.getX()));
+      fmt.format("  Y:     %s%n", model.getFormattedY(vNear.getY()));
+      fmt.format("  Z:     %11.2f%n", vNear.getZ());
+      fmt.format("  ID:    %8d%n", vNear.getIndex());
       if (model instanceof ModelFromLas) {
         ((ModelFromLas) model).formatLidarFields(fmt, vNear.getIndex());
       }
 
       if (!Double.isNaN(h)) {
-        fmt.format("\nRegression used %d samples\n",
+        fmt.format("%nRegression used %d samples%n",
                 interpolator.getSampleCount());
       }
     }
@@ -1476,12 +1476,12 @@ public class MvComposite {
     units = units.substring(0, 1).toUpperCase()
       + units.substring(1, units.length()).toLowerCase();
     fmt.format("<html><strong>Model</strong><br><pre><small>");
-    fmt.format("  Name: %s\n", model.getName());
-    fmt.format("  Type: %s\n", model.getDescription());
-    fmt.format("  Vertices:         %8d\n", model.getVertexCount());
-    fmt.format("  Load time(ms):    %8d\n", model.getTimeToLoadInMillis());
-    fmt.format("  Sort time(ms):    %8d\n", model.getTimeToSortInMillis());
-    fmt.format("  Linear Units:     %s\n", units);
+    fmt.format("  Name: %s%n", model.getName());
+    fmt.format("  Type: %s%n", model.getDescription());
+    fmt.format("  Vertices:         %8d%n", model.getVertexCount());
+    fmt.format("  Load time(ms):    %8d%n", model.getTimeToLoadInMillis());
+    fmt.format("  Sort time(ms):    %8d%n", model.getTimeToSortInMillis());
+    fmt.format("  Linear Units:     %s%n", units);
     if (model.hasConstraints()) {
       List<IConstraint> conList = model.getConstraints();
       int nPoly = 0;
@@ -1499,45 +1499,45 @@ public class MvComposite {
       } else if (nPoly > 0) {
         conType = "Polygon";
       }
-      fmt.format("  Constraints:      %8d %s\n", conList.size(), conType);
+      fmt.format("  Constraints:      %8d %s%n", conList.size(), conType);
     } else {
-      fmt.format("  Constraints:      None\n");
+      fmt.format("  Constraints:      None%n");
     }
-    fmt.format("  Bounds\n");
-    fmt.format("    Min X:          %s\n", model.getFormattedX(model.getMinX()));
-    fmt.format("    Max X:          %s\n", model.getFormattedX(model.getMaxX()));
-    fmt.format("    Min Y:          %s\n", model.getFormattedY(model.getMinY()));
-    fmt.format("    Max Y:          %s\n", model.getFormattedY(model.getMaxY()));
-    fmt.format("    Min Z:          %11.2f\n", model.getMinZ());
-    fmt.format("    Max Z:          %11.2f\n", model.getMaxZ());
-    fmt.format("  Area:             %11.2f\n", model.getArea());
-    fmt.format("  Est. Avg. Spacing:%11.2f\n", model.getNominalPointSpacing());
+    fmt.format("  Bounds%n");
+    fmt.format("    Min X:          %s%n", model.getFormattedX(model.getMinX()));
+    fmt.format("    Max X:          %s%n", model.getFormattedX(model.getMaxX()));
+    fmt.format("    Min Y:          %s%n", model.getFormattedY(model.getMinY()));
+    fmt.format("    Max Y:          %s%n", model.getFormattedY(model.getMaxY()));
+    fmt.format("    Min Z:          %11.2f%n", model.getMinZ());
+    fmt.format("    Max Z:          %11.2f%n", model.getMaxZ());
+    fmt.format("  Area:             %11.2f%n", model.getArea());
+    fmt.format("  Est. Avg. Spacing:%11.2f%n", model.getNominalPointSpacing());
 
     fmt.format("</small></pre><strong>Rendering</strong><br><pre><small>");
-    fmt.format("  Wireframe\n");
+    fmt.format("  Wireframe%n");
     if (timeForRenderWireframe1 > 0) {
       long timex = timeForRenderWireframe1 - timeForRenderWireframe0;
-      fmt.format("    Vertices:      %8d\n", nVerticesInWireframe);
-      fmt.format("    Reduction:     %s\n", formatReduction(reductionForWireframe));
-      fmt.format("    Time(ms):      %8d\n", timex);
+      fmt.format("    Vertices:      %8d%n", nVerticesInWireframe);
+      fmt.format("    Reduction:     %s%n", formatReduction(reductionForWireframe));
+      fmt.format("    Time(ms):      %8d%n", timex);
     } else {
-      fmt.format("    Not Available\n");
+      fmt.format("    Not Available%n");
     }
 
-    fmt.format("  Raster\n");
+    fmt.format("  Raster%n");
     if (timeForBuildRaster1 > 0) {
       long timex = timeForBuildRaster1 - timeForBuildRaster0;
-      fmt.format("    Reduction:     %s\n", formatReduction(reductionForRaster));
-      fmt.format("    Time(ms):      %8d\n", timex);
+      fmt.format("    Reduction:     %s%n", formatReduction(reductionForRaster));
+      fmt.format("    Time(ms):      %8d%n", timex);
     } else {
-      fmt.format("    Not Available\n");
+      fmt.format("    Not Available%n");
     }
 
     double[] rng = getRangeOfVisibleSamples();
     if (rng.length > 0) {
-      fmt.format("\nRange of visible samples\n");
-      fmt.format("    Min:      %11.3f\n", rng[0]);
-      fmt.format("    Max:      %11.3f\n", rng[1]);
+      fmt.format("%nRange of visible samples%n");
+      fmt.format("    Min:      %11.3f%n", rng[0]);
+      fmt.format("    Max:      %11.3f%n", rng[1]);
     }
 
     fmt.format("</small></pre></html>");
