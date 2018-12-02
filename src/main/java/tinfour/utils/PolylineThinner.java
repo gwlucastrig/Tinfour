@@ -161,7 +161,7 @@ public class PolylineThinner {
 
   }
 
-  private class NodeIterator implements Iterator<Vertex> {
+  private static class NodeIterator implements Iterator<Vertex> {
 
     Node node;
     int iNode;

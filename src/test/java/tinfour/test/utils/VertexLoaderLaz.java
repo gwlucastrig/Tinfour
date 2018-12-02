@@ -79,9 +79,10 @@ public class VertexLoaderLaz {
     LasPoint t4Point = new LasPoint();
     int iRecord = 0;
     for (LASPoint p : reader.getPoints()) {
-      if (pProgressThreshold == iProgressThreshold) {
+      if (pProgressThreshold == iProgressThreshold && progressMonitor!=null) {
         pProgressThreshold = 0;
-        progressMonitor.reportProgress((int) (0.1 + (100.0 * (iRecord + 1)) / nVertices));
+        progressMonitor.reportProgress(
+                (int) (0.1 + (100.0 * (iRecord + 1)) / nVertices));
       }
       iRecord++;
       pProgressThreshold++;

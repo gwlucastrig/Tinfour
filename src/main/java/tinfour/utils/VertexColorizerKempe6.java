@@ -111,6 +111,9 @@ public class VertexColorizerKempe6 {
       vertexList.remove(vRemove);
       stack.push(vRemove);
       IQuadEdge eRemove = locateEdge(locator, vRemove);
+      if(eRemove==null){
+        throw new IllegalStateException("Internal error, unable to locate edge");
+      }
       for (IQuadEdge p : eRemove.pinwheel()) {
         Vertex B = p.getB();
         if (B != null) {
@@ -264,6 +267,10 @@ public class VertexColorizerKempe6 {
     // requires a vertex that begins with input vertex v, a bit more
     // work is required to select the correct edge.
     IQuadEdge e = locator.getNeigborEdge(v.getX(), v.getY());
+    if(e == null){
+      // won't happen except when the TIN is not bootstraped
+      return null;
+    }
     if (e.getA() == v) {
       return e;
     }

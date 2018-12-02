@@ -52,12 +52,12 @@ public final class TinfourViewerMain {
       long maxMemory = Runtime.getRuntime().maxMemory();
       long maxVertices = (long) (0.75 * maxMemory / 124.0);
       System.out.format(
-        "Tinfour Viewer launched with max memory %3.1f megabytes.\n",
+        "Tinfour Viewer launched with max memory %3.1f megabytes.%n",
         maxMemory / (1024.0 * 1024.0));
       System.out.format(
-        "Estimated maximum number of vertices is %d\n", maxVertices);
+        "Estimated maximum number of vertices is %d%n", maxVertices);
       System.out.format(
-        "depending on whether full-resolution options are used.\n");
+        "depending on whether full-resolution options are used.%n");
       System.out.flush();
     }
     try {

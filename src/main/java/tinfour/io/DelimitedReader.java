@@ -51,7 +51,6 @@ public class DelimitedReader implements Closeable {
   final InputStream fins;
   final BufferedInputStream bins;
   final int delimiter;
-  boolean isClosed;
   int lineIndex;
 
   /**

@@ -69,8 +69,8 @@ public class VertexLoader {
   LinearUnits linearUnits = LinearUnits.UNKNOWN;
 
   /**
-   * Sets the maximum number of vertices that will be loaded from a source
-   * file. Useful in memory constrained environments
+   * Sets the maximum number of vertices that will be loaded from a source file.
+   * Useful in memory constrained environments
    *
    * @param maxN the maximum number of vertices.
    */
@@ -78,11 +78,11 @@ public class VertexLoader {
     maximumNumberOfVertices = maxN;
   }
 
-  private boolean isLazFile(File file){
+  private boolean isLazFile(File file) {
     String name = file.getName();
     int n = name.length();
-    return n>4
-      && ".LAZ".equalsIgnoreCase(name.substring(n-4, n));
+    return n > 4
+            && ".LAZ".equalsIgnoreCase(name.substring(n - 4, n));
   }
 
   /**
@@ -109,10 +109,10 @@ public class VertexLoader {
     /**
      * Implement a thinning filter.
      *
-     * @param classification only accept points of the designated
-     * classification (or -1 for wildcards).
-     * @param thinningFactor the fraction of the sample points to accept
-     * (1.0 to include all sample points).
+     * @param classification only accept points of the designated classification
+     * (or -1 for wildcards).
+     * @param thinningFactor the fraction of the sample points to accept (1.0 to
+     * include all sample points).
      * @param clipBounds bounds for clipping (xmin, xmax, ymin, ymax)
      */
     public ThinningClassificationFilter(int classification, double thinningFactor, double[] clipBounds) {
@@ -162,8 +162,8 @@ public class VertexLoader {
    *
    * @param options a valid options object
    * @return a list of vertices (potentially empty)
-   * @throws IOException in the event of a non-recoverable I/O condition such
-   * as file-not-found.
+   * @throws IOException in the event of a non-recoverable I/O condition such as
+   * file-not-found.
    */
   public List<Vertex> readInputFile(TestOptions options) throws IOException {
     geoCoordOpt = options.getGeoCoordinateOption();
@@ -181,7 +181,7 @@ public class VertexLoader {
         delimiter = ' ';
       }
       return readDelimitedFile(file, delimiter);
-    } else if("shp".equalsIgnoreCase(ext)){
+    } else if ("shp".equalsIgnoreCase(ext)) {
       return readShapefile(file, null);
     }
 
@@ -193,7 +193,7 @@ public class VertexLoader {
     double thinning = options.getLidarThinningFactor();
     maximumNumberOfVertices = options.getMaxVertices(Long.MAX_VALUE);
     if (maximumNumberOfVertices < Long.MAX_VALUE
-      && nRecords > maximumNumberOfVertices) {
+            && nRecords > maximumNumberOfVertices) {
       double tv = (double) maximumNumberOfVertices / (double) nRecords;
       if (tv < thinning) {
         thinning = tv;
@@ -216,7 +216,7 @@ public class VertexLoader {
       };
     } else {
       filter = new ThinningClassificationFilter(
-        classification, thinning, clipBounds);
+              classification, thinning, clipBounds);
     }
 
     return readLasFile(reader, filter, null);
@@ -229,18 +229,17 @@ public class VertexLoader {
    * are applied.
    *
    * @param file a valid file object
-   * @param vFilter a filter for selecting records from the LAS file, or a
-   * null to used the default (accept all records except those marked as
-   * "withheld").
+   * @param vFilter a filter for selecting records from the LAS file, or a null
+   * to used the default (accept all records except those marked as "withheld").
    * @param progressMonitor an optional implementation of an interface for
    * monitoring progress, or a null if not used
    * @return a valid, potentially empty list of vertices
-   * @throws IOException in the event of a non-recoverable I/O condition such
-   * as file-not-found.
+   * @throws IOException in the event of a non-recoverable I/O condition such as
+   * file-not-found.
    */
   public List<Vertex> readLasFile(File file,
-    ILasRecordFilter vFilter,
-    IMonitorWithCancellation progressMonitor) throws IOException {
+          ILasRecordFilter vFilter,
+          IMonitorWithCancellation progressMonitor) throws IOException {
     ILasRecordFilter filter = vFilter;
     if (filter == null) {
       filter = new ILasRecordFilter() {
@@ -261,25 +260,24 @@ public class VertexLoader {
   }
 
   /**
-   * Reads the vertices from the specified LAS file reader instance. The
-   * reader is not closed when the process is complete. Options specified via
-   * setter methods such as setMaximumNumberOfVertices() are and
-   * setPreSortEnabled() are applied.
+   * Reads the vertices from the specified LAS file reader instance. The reader
+   * is not closed when the process is complete. Options specified via setter
+   * methods such as setMaximumNumberOfVertices() are and setPreSortEnabled()
+   * are applied.
    *
    * @param reader a valid instance of the LAS file reader class.
-   * @param vFilter a filter for selecting records from the LAS file, or a
-   * null to used the default (accept all records except those marked as
-   * "withheld").
+   * @param vFilter a filter for selecting records from the LAS file, or a null
+   * to used the default (accept all records except those marked as "withheld").
    * @param progressMonitor an optional implementation of an interface for
    * monitoring progress, or a null if not used
    * @return a valid, potentially empty list of vertices
-   * @throws IOException in the event of a non-recoverable I/O condition such
-   * as file-not-found.
+   * @throws IOException in the event of a non-recoverable I/O condition such as
+   * file-not-found.
    */
   public List<Vertex> readLasFile(
-    LasFileReader reader,
-    ILasRecordFilter vFilter,
-    IMonitorWithCancellation progressMonitor) throws IOException {
+          LasFileReader reader,
+          ILasRecordFilter vFilter,
+          IMonitorWithCancellation progressMonitor) throws IOException {
     double x0 = reader.getMinX();
     double x1 = reader.getMaxX();
     double y0 = reader.getMinY();
@@ -292,7 +290,7 @@ public class VertexLoader {
     isSourceInGeographicCoordinates = reader.usesGeographicCoordinates();
 
     if (isSourceInGeographicCoordinates
-      && geoCoordOpt != TestOptions.GeoCoordinateOption.Degrees) {
+            && geoCoordOpt != TestOptions.GeoCoordinateOption.Degrees) {
       // compute simple scale for transforming x and y coordinates
       // from lat/lon to meters
       double r = eRadius;
@@ -308,7 +306,7 @@ public class VertexLoader {
         if (gtd != null && gtd.containsKey(GeoTiffData.ProjLinearUnitsGeoKey)) {
           int linUnits = gtd.getInteger(GeoTiffData.ProjLinearUnitsGeoKey);
           if (linUnits == GeoTiffData.LinearUnitCodeFeet
-            || linUnits == GeoTiffData.LinearUnitCodeFeetUS) {
+                  || linUnits == GeoTiffData.LinearUnitCodeFeetUS) {
             r = eRadius * 1.0936 * 3;
           }
         }
@@ -358,18 +356,18 @@ public class VertexLoader {
     File file = reader.getFile();
     if (isLazFile(file)) {
       VertexLoaderLaz loadLaz = new VertexLoaderLaz(
-        reader.getScaleAndOffset(),
-        geoOffsetX,
-        geoScaleX,
-        geoOffsetY,
-        geoScaleY,
-        maximumNumberOfVertices);
+              reader.getScaleAndOffset(),
+              geoOffsetX,
+              geoScaleX,
+              geoOffsetY,
+              geoScaleY,
+              maximumNumberOfVertices);
       list = loadLaz.loadVertices(
-        file,
-        nVertices ,
-        filter,
-        iProgressThreshold,
-        progressMonitor);
+              file,
+              nVertices,
+              filter,
+              iProgressThreshold,
+              progressMonitor);
     } else {
       LasPoint p = new LasPoint();
       for (long iRecord = 0; iRecord < nVertices; iRecord++) {
@@ -384,7 +382,7 @@ public class VertexLoader {
           double y = (p.y - geoOffsetY) * geoScaleY;
           double z = p.z;
           Vertex v = new VertexWithClassification( // NOPMD
-            x, y, z, (int) iRecord, p.classification);
+                  x, y, z, (int) iRecord, p.classification);
           //Vertex v = new Vertex(x, y, z, (int) iRecord);
           list.add(v);
           if (list.size() >= this.maximumNumberOfVertices) {
@@ -553,8 +551,8 @@ public class VertexLoader {
   /**
    * Indicates whether the source data was in geographic coordinates
    *
-   * @return true if the source data used geographic coordinates;
-   * otherwise, false.
+   * @return true if the source data used geographic coordinates; otherwise,
+   * false.
    */
   public boolean isSourceInGeographicCoordinates() {
     return isSourceInGeographicCoordinates;
@@ -577,140 +575,142 @@ public class VertexLoader {
   }
 
   public List<Vertex> readDelimitedFile(File file, char delimiter) throws IOException {
-    DelimitedReader dlim = new DelimitedReader(file, delimiter);
-    List<String> sList = dlim.readStrings();
+    try (DelimitedReader dlim = new DelimitedReader(file, delimiter)) {
+      List<String> sList = dlim.readStrings();
+      List<Vertex> vList = new ArrayList<>();
+      boolean headerRow = false;
+      int xColumn = 0;
+      int yColumn = 1;
+      int zColumn = 2;
+      boolean geoText = false;
+      int k = 0;
+      for (String s : sList) {
+        char c = s.charAt(0);
+        if (Character.isAlphabetic(c) || c == '_') {
+          headerRow = true;
+          if ("x".equalsIgnoreCase(s)) {
+            xColumn = k;
+          } else if ("y".equalsIgnoreCase(s)) {
+            yColumn = k;
+          } else if ("z".equalsIgnoreCase(s)) {
+            zColumn = k;
+          } else if (s.toLowerCase().startsWith("lon")) {
+            geoText = true;
+            xColumn = k;
+          } else if (s.toLowerCase().startsWith("lat")) {
+            geoText = true;
+            yColumn = k;
+          }
+        }
+        k++;
+      }
 
-    List<Vertex> vList = new ArrayList<>();
-    boolean headerRow = false;
-    int xColumn = 0;
-    int yColumn = 1;
-    int zColumn = 2;
-    boolean geoText = false;
-    int k = 0;
-    for (String s : sList) {
-      char c = s.charAt(0);
-      if (Character.isAlphabetic(c) || c == '_') {
-        headerRow = true;
-        if ("x".equalsIgnoreCase(s)) {
-          xColumn = k;
-        } else if ("y".equalsIgnoreCase(s)) {
-          yColumn = k;
-        } else if ("z".equalsIgnoreCase(s)) {
-          zColumn = k;
-        } else if (s.toLowerCase().startsWith("lon")) {
-          geoText = true;
-          xColumn = k;
-        } else if (s.toLowerCase().startsWith("lat")) {
-          geoText = true;
-          yColumn = k;
+      if (this.geoCoordOpt == TestOptions.GeoCoordinateOption.Degrees) {
+        isSourceInGeographicCoordinates = true;
+      } else if (headerRow && geoText) {
+        isSourceInGeographicCoordinates = true;
+      }
+      if (isSourceInGeographicCoordinates) {
+        // geographic coordinates get special treatment
+        geoScaleX = 1;
+        geoScaleY = 1;
+        sList = dlim.readStrings();
+        if (sList.isEmpty()) {
+          return vList; // failure to read file
+        }
+        double x = Double.parseDouble(sList.get(xColumn));
+        double y = Double.parseDouble(sList.get(yColumn));
+        double z = Double.parseDouble(sList.get(zColumn));
+        // adjust the earth radius according to latitude.
+        // if cenLat were zero, the adjusted radius would be the
+        // equatorial radius. If it were 90, it would be the polar radius.
+        double cenLat = y;
+        double phi = Math.toRadians(cenLat);
+        double sinPhi = Math.sin(phi);
+        double adjustment = (1 - eFlattening * sinPhi * sinPhi);
+        double adjRadius = adjustment * eRadius;
+
+        geoScaleX = adjRadius * Math.cos(phi) * (Math.PI / 180);
+        geoScaleY = adjRadius * (Math.PI / 180);
+        geoOffsetX = x;
+        geoOffsetY = y;
+
+        vList.add(new Vertex(0, 0, z, 0));
+        k = 1;
+        while (!(sList = dlim.readStrings()).isEmpty()) {
+          x = Double.parseDouble(sList.get(xColumn));
+          y = Double.parseDouble(sList.get(yColumn));
+          z = Double.parseDouble(sList.get(zColumn));
+          x = (x - geoOffsetX) * geoScaleX;
+          y = (y - geoOffsetY) * geoScaleY;
+          vList.add(new Vertex(x, y, z, k)); // NOPMD
+          k++;
+        }
+      } else {
+        k = 0;
+        if (!headerRow) {
+          double x = Double.parseDouble(sList.get(xColumn));
+          double y = Double.parseDouble(sList.get(yColumn));
+          double z = Double.parseDouble(sList.get(zColumn));
+          vList.add(new Vertex(x, y, z, k));
+          k++;
+        }
+        while (!(sList = dlim.readStrings()).isEmpty()) {
+          double x = Double.parseDouble(sList.get(xColumn));
+          double y = Double.parseDouble(sList.get(yColumn));
+          double z = Double.parseDouble(sList.get(zColumn));
+          vList.add(new Vertex(x, y, z, k)); // NOPMD
+          k++;
         }
       }
-      k++;
+      postProcessList(vList);
+
+      return vList;
     }
-
-    if(this.geoCoordOpt == TestOptions.GeoCoordinateOption.Degrees){
-       isSourceInGeographicCoordinates = true;
-    }else if(headerRow && geoText){
-       isSourceInGeographicCoordinates = true;
-    }
-    if (isSourceInGeographicCoordinates) {
-      // geographic coordinates get special treatment
-      geoScaleX = 1;
-      geoScaleY = 1;
-      sList = dlim.readStrings();
-      if (sList.isEmpty()) {
-        return vList; // failure to read file
-      }
-      double x = Double.parseDouble(sList.get(xColumn));
-      double y = Double.parseDouble(sList.get(yColumn));
-      double z = Double.parseDouble(sList.get(zColumn));
-      // adjust the earth radius according to latitude.
-      // if cenLat were zero, the adjusted radius would be the
-      // equatorial radius. If it were 90, it would be the polar radius.
-      double cenLat = y;
-      double phi = Math.toRadians(cenLat);
-      double sinPhi = Math.sin(phi);
-      double adjustment = (1 - eFlattening * sinPhi * sinPhi);
-      double adjRadius = adjustment * eRadius;
-
-      geoScaleX = adjRadius * Math.cos(phi) * (Math.PI / 180);
-      geoScaleY = adjRadius * (Math.PI / 180);
-      geoOffsetX = x;
-      geoOffsetY = y;
-
-      vList.add(new Vertex(0, 0, z, 0));
-      k = 1;
-      while (!(sList = dlim.readStrings()).isEmpty()) {
-        x = Double.parseDouble(sList.get(xColumn));
-        y = Double.parseDouble(sList.get(yColumn));
-        z = Double.parseDouble(sList.get(zColumn));
-        x = (x - geoOffsetX) * geoScaleX;
-        y = (y - geoOffsetY) * geoScaleY;
-        vList.add(new Vertex(x, y, z, k)); // NOPMD
-        k++;
-      }
-    } else {
-      k = 0;
-      if (!headerRow) {
-        double x = Double.parseDouble(sList.get(xColumn));
-        double y = Double.parseDouble(sList.get(yColumn));
-        double z = Double.parseDouble(sList.get(zColumn));
-        vList.add(new Vertex(x, y, z, k));
-        k++;
-      }
-      while (!(sList = dlim.readStrings()).isEmpty()) {
-        double x = Double.parseDouble(sList.get(xColumn));
-        double y = Double.parseDouble(sList.get(yColumn));
-        double z = Double.parseDouble(sList.get(zColumn));
-        vList.add(new Vertex(x, y, z, k)); // NOPMD
-        k++;
-      }
-    }
-    postProcessList(vList);
-
-    return vList;
   }
 
-   /**
+  /**
    * Read the records from the Shapefile and use them to populate vertices. For
-   * those Shapefile types that support z coordintes, the value of the z
+   * those Shapefile types that support z coordinates, the value of the z
    * coordinates will be used. Otherwise a zero value will be used for the z
    * coordinate.
    * <p>
-   * The index of the vertex is set to be the shapefile record number. Thus many
+   * The index of the vertex is set to be the Shapefile record number. Thus many
    * vertices may be assigned with the same record number, particularly if the
    * input is a polygon or line feature.
    *
+   * @param file a valid file reference for a Shapefile
    * @param dbfFieldForZ the name of the DBF field to use as a z value
    * @return a valid, potentially empty list of vertices
    * @throws IOException in the event of an unrecoverable I/O condition
    */
-   public List<Vertex> readShapefile(File file, String dbfFieldForZ) throws IOException {
-    VertexLoaderShapefile vls = new VertexLoaderShapefile(file);
-    List<Vertex> vList = vls.loadVertices(dbfFieldForZ);
-    vls.close();
-    if (vls.isSourceInGeographicCoordinates()) {
-      isSourceInGeographicCoordinates = true;
-      geoOffsetX = vls.geoOffsetX;
-      geoOffsetY = vls.geoOffsetY;
-      geoScaleX = vls.geoScaleX;
-      geoScaleY = vls.geoScaleY;
-    } else {
-      isSourceInGeographicCoordinates = false;
-      geoOffsetX = 0;
-      geoOffsetY = 0;
-      geoScaleX = 1;
-      geoScaleY = 1;
+  public List<Vertex> readShapefile(File file, String dbfFieldForZ)
+          throws IOException {
+    try (VertexLoaderShapefile vls = new VertexLoaderShapefile(file)) {
+      List<Vertex> vList = vls.loadVertices(dbfFieldForZ);
+      if (vls.isSourceInGeographicCoordinates()) {
+        isSourceInGeographicCoordinates = true;
+        geoOffsetX = vls.geoOffsetX;
+        geoOffsetY = vls.geoOffsetY;
+        geoScaleX = vls.geoScaleX;
+        geoScaleY = vls.geoScaleY;
+      } else {
+        isSourceInGeographicCoordinates = false;
+        geoOffsetX = 0;
+        geoOffsetY = 0;
+        geoScaleX = 1;
+        geoScaleY = 1;
+      }
+      postProcessList(vList);
+      return vList;
     }
-    postProcessList(vList);
-    return vList;
   }
-   
+
   /**
-   * Gets the linear units for the coordinate system used by the
-   * data. It is assumed that the vertical and horizontal coordinate
-   * systems will be in the same unit system, though assumption
-   * could change in a future implementation.
+   * Gets the linear units for the coordinate system used by the data. It is
+   * assumed that the vertical and horizontal coordinate systems will be in the
+   * same unit system, though assumption could change in a future
+   * implementation.
    *
    * @return a valid enumeration instance
    */

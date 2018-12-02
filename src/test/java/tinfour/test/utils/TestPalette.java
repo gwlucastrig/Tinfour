@@ -731,6 +731,9 @@ public class TestPalette {
    */
   public static Icon getIconByName(String name, int width, int height) {
     TestPalette p = getPaletteByName(name);
+    if(p==null){
+      return null;
+    }
     BufferedImage bImage = new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB);
     Graphics g = bImage.getGraphics();
     for (int i = 0; i < width; i++) {

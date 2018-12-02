@@ -150,7 +150,7 @@ public class BoundedVoronoiIntegrityCheck {
       if( areaTest> 1.0e-3){
         message = String.format(
                 "Sum of polygon area differs from bounds specification "
-                +"by more than %8.5 percent", areaTest*100);
+                +"by more than %5.3f percent", areaTest*100);
         return false;
       }
         return true;

@@ -31,6 +31,7 @@ package tinfour.test.viewer;
 
 import java.awt.Color;
 import java.awt.Component;
+import java.util.Arrays;
 import java.util.List;
 import javax.swing.DefaultComboBoxModel;
 import javax.swing.Icon;
@@ -78,11 +79,31 @@ import tinfour.test.viewer.backplane.ViewOptions.RasterInterpolationMethod;
     Icon[] icons = new Icon[paletteNames.size()];
     String[] names = new String[paletteNames.size()];
     Integer[] indices = new Integer[paletteNames.size()];
+    boolean readFailure = false;
     for (int i = 0; i < icons.length; i++) {
       String s = paletteNames.get(i);
       names[i] = s;
       icons[i] = TestPalette.getIconByName(s, 96, 20);
-      indices[i] = i;
+            indices[i] = i;
+      if(icons[i]==null){
+        readFailure = true;
+      }
+    }
+    if (readFailure) {
+      // this should not ever happen except for a coding or build
+      // failure because getPaletteNames() should already return valid names.
+      int k = 0;
+      for (int i = 0; i < icons.length; i++) {
+        if (icons[i] != null) {
+          names[k] = names[i];
+          icons[k] = icons[i];
+          indices[k] = indices[i];
+          k++;
+        }
+      }
+      names = Arrays.copyOf(names, k);
+      icons = Arrays.copyOf(icons, k);
+      indices = Arrays.copyOf(indices, k);
     }
 
     DefaultComboBoxModel<Integer> dcb = new DefaultComboBoxModel<>(indices);

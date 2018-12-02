@@ -136,11 +136,9 @@ public class GridSpecification {
       nC = j1 - j0;
     }
     if (nR == 0) {
-      i1++;
       nR = 1;
     }
     if (nC == 0) {
-      j1++;
       nC = 1;
     }
     nRows = nR;
@@ -235,7 +233,7 @@ public class GridSpecification {
           String noDataString) throws IOException {
     FileOutputStream fos = new FileOutputStream(file);
     BufferedOutputStream bos = new BufferedOutputStream(fos);
-    PrintStream output = new PrintStream(bos);
+    PrintStream output = new PrintStream(bos, false, "US-ASCII");
 
     output.format("NCOLS %d%n", nCols);
     output.format("NROWS %d%n", nRows);

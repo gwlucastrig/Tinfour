@@ -637,7 +637,13 @@ public class BoundedVoronoiDiagram {
     }
 
     if (pOptions.bounds == null) {
-      double avgLen = sumEdgeLength / nEdgeLength;
+      double avgLen;
+      if (nEdgeLength == 0) {
+        // should never happen
+        avgLen = 0;
+      } else {
+        avgLen = sumEdgeLength / nEdgeLength;
+      }
       xmin = sampleBounds.getMinX() - avgLen / 4;
       xmax = sampleBounds.getMaxX() + avgLen / 4;
       ymin = sampleBounds.getMinY() - avgLen / 4;

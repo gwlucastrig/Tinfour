@@ -200,7 +200,13 @@ public class BufferedRandomAccessReader implements  Closeable {
 
     if (readEnabled) {
       raFile.seek(raFilePos);
-      fileChannel.read(buffer);
+      int nBytesRead = fileChannel.read(buffer);
+      if(nBytesRead<=0){
+        throw new IOException("Failed to read "
+                +bytesNotRead
+                +" from file position "
+                +raFilePos);
+      }
       buffer.flip();
       bufferContainsData = true;
     }
