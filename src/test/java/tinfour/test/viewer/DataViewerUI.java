@@ -62,6 +62,7 @@ import javax.swing.JScrollPane;
 import javax.swing.JSeparator;
 import javax.swing.JSplitPane;
 import javax.swing.filechooser.FileFilter;
+import javax.swing.filechooser.FileNameExtensionFilter;
 import javax.swing.text.DefaultCaret;
 import tinfour.test.utils.TestPalette;
 import tinfour.test.viewer.backplane.IModel;
@@ -288,13 +289,22 @@ class DataViewerUI {
       public void actionPerformed(ActionEvent e) {
         if (fileChooser == null) {
           fileChooser = new JFileChooser();
+          FileNameExtensionFilter supported = new FileNameExtensionFilter(
+                  "Supported files",
+                  "csv",
+                  "txt",
+                  "las",
+                  "laz",
+                  "shp"
+          );
+          fileChooser.addChoosableFileFilter(supported);
           LasFileFilter lasFileFilter = new LasFileFilter();
           fileChooser.addChoosableFileFilter(lasFileFilter);
           TextFileFilter textFileFilter = new TextFileFilter();
           fileChooser.addChoosableFileFilter(textFileFilter);
           ShapeFileFilter shapeFilter = new ShapeFileFilter();
           fileChooser.addChoosableFileFilter(shapeFilter);
-          fileChooser.setFileFilter(lasFileFilter);
+          fileChooser.setFileFilter(supported);
           fileChooser.setDialogTitle("Select a data source for the model");
         }
 

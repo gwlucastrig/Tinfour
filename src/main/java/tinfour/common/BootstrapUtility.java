@@ -410,7 +410,7 @@ public class BootstrapUtility {
     Vertex vMax = c;
     int nTrial = computeNumberOfTrials(n);
     for (int iTrial = 0; iTrial < nTrial; iTrial++) {
-      int index = (int) (n * random.nextDouble());
+      int index = random.nextInt(n);
       Vertex v = input.get(index);
       area = Math.abs(geoOp.area(a, b, v));
       if (area > areaMax) {

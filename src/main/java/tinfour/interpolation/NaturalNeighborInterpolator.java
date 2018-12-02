@@ -586,6 +586,9 @@ public class NaturalNeighborInterpolator implements IInterpolatorOverTin {
     }
 
     double[] bwWeights = getBarycentricCoordinates(bwList, xQuery, yQuery);
+    if(bwWeights == null){
+      return new double[0];
+    }
     double xNormal = 0;
     double yNormal = 0;
     double zNormal = 0;
