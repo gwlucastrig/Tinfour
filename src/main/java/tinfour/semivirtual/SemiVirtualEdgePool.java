@@ -445,7 +445,7 @@ class SemiVirtualEdgePool implements Iterable<IQuadEdge> {
    * @param includeGhostEdgess indicates that ghost edges are included.
    * @return a valid instance of an iterator
    */
-  Iterator<IQuadEdge> getIterator(boolean includeGhostEdges) {
+  Iterator<IQuadEdge> getIterator(final boolean includeGhostEdges) {
     return new Iterator<IQuadEdge>() {
       boolean skipGhostEdges = !includeGhostEdges;
       SemiVirtualEdgePool pool;

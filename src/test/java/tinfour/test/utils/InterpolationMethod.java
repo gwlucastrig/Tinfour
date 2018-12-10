@@ -31,7 +31,7 @@
 package tinfour.test.utils;
 
 import tinfour.common.IIncrementalTin;
-import tinfour.interpolation.GwrTinInterpolator;
+import tinfour.gwr.GwrTinInterpolator;
 import tinfour.interpolation.IInterpolatorOverTin;
 import tinfour.interpolation.NaturalNeighborInterpolator;
 import tinfour.interpolation.TriangularFacetInterpolator;

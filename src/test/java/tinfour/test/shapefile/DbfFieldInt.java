@@ -21,7 +21,7 @@
  * Revision History:
  * Date     Name         Description
  * ------   ---------    -------------------------------------------------
- * 11/2018  G. Lucas     Created  
+ * 12/2018  G. Lucas     Created  
  *
  * Notes:
  *
@@ -33,19 +33,18 @@ import java.io.IOException;
 import tinfour.io.BufferedRandomAccessReader;
 
 /**
- * Extends DbfField with special handling for reading numeric values.
+ * Extends DbfField with special handling for reading integer values.
  */
-class DbfFieldDouble extends DbfField {
+class DbfFieldInt extends DbfField {
 
-  private final static double LOG10 = Math.log(10.0);
-  private double value;
+  private int value;
 
-  DbfFieldDouble(
+  DbfFieldInt(
           String name,
-          char fieldType, 
-          int dataAddress, 
+          char fieldType,
+          int dataAddress,
           int fieldLength,
-          int fieldDecimalCount, 
+          int fieldDecimalCount,
           int offset) {
     super(name, fieldType, dataAddress, fieldLength, fieldDecimalCount, offset);
   }
@@ -56,14 +55,14 @@ class DbfFieldDouble extends DbfField {
     builder.setLength(0);
 
     int i = 0;
-    double sign = 1;
-    long s = 0; // should these be longs?
-    long f = 0;
-    long d = 1;
+    int sign = 1;
+    long s = 0;  
+
     // find first non-space character
+    boolean foundDigit = false;
     while (i < fieldLength) {
       int b = brad.readUnsignedByte();
-      builder.append((char)b);
+      builder.append((char) b);
       if (b == 32) {
         i++;
       } else if (b == '-') {
@@ -76,119 +75,76 @@ class DbfFieldDouble extends DbfField {
       } else if (48 <= b && b <= 57) {
         s = b - 48;
         i++;
-        break;
-      }else if(b=='.' || b==','){
-        // assume this is a leading decimal point and defer processing
+        foundDigit = true;
         break;
       } else {
         // a non-whitespace character.  at this time,
         // the meaning of this is unknown.
-        value = Double.NaN;
-        return;
+        value = 0;
+        throw new IOException(
+                "Invalid integer value, unknown character "
+                +((char)b));
       }
     }
-    
-    if(i==fieldLength){
-      value = Double.NaN;
-      return;
-    }
 
+    if(!foundDigit){
+       throw new IOException("Invalid integer value, blank field");
+    }
+    
     // process the non-fractional part
     while (i < fieldLength) {
       int b = brad.readUnsignedByte();
-      builder.append((char)b);
-      if (b == '.' || b == ',') {
-        // transition to fractiional part
-        i++;
+      builder.append((char) b);
+      if (48 <= b && b <= 57) {
+        s = s * 10 + (b - 48);
+      } else if (s == 32) {
         break;
+      } else {
+        value = 0;
+         throw new IOException(
+                "Invalid integer value, unknown character "
+                +((char)b));
       }
-      s = s * 10 + (b - 48);
       i++;
     }
 
-    // process the fractional part
-    boolean engineeringNotation = false;
-    while (i < fieldLength) {
-      int b = brad.readUnsignedByte();
-      builder.append((char)b);
-      if (b == 32) {
-        break;
-      }else if(b=='e' || b=='E'){
-        engineeringNotation = true;
-        break;
-      }
-      d = d * 10;
-      f = f * 10 + (b - 48);
-      i++;
+    s *= sign;
+
+    if (s > Integer.MAX_VALUE) {
+      value = Integer.MAX_VALUE;
+      throw new IOException("Invalid integer value out of range "+s);
+    } else if (s < Integer.MIN_VALUE) {
+      value = Integer.MIN_VALUE;
+      throw new IOException("Invalid integer value out of range "+s);
     }
 
-    value = sign * ((double) s + (double) f / (double) d);
-    
-    if(engineeringNotation){
-      if(i>fieldLength-3){
-        value = Double.NaN;
-      }else{
-        s = 0;
-        i++;
-        int b = brad.readUnsignedByte();
-        builder.append((char)b);
-        if(b=='-'){
-          sign = -1;
-        }else{
-          sign = 1;
-        }
-        i++;
-        d = 0;
-        while(i<fieldLength){
-            b = brad.readUnsignedByte();
-            builder.append((char)b);
-           if(b==32){
-             break;
-           }
-           d = d*10+(b-48);
-           i++;
-        }
-        if(d!=0){
-          double e = sign*d;
-          value = value*Math.exp(LOG10*e);
-        }
-      }   
-    }
-   
+    value = (int) s;
+
   }
 
-     /**
-   * Gets the double value stored in the field
-   * during the most recent read operation, if any
+  /**
+   * Gets the double value stored in the field during the most recent read
+   * operation, if any
+   *
    * @return a valid double or a NaN if the file content was invalid
    */
   @Override
-  public double getDouble(){
+  public double getDouble() {
     return value;
   }
-  
-  
-    /**
+
+  /**
    * Gets the equivalent integer value of the field.
+   *
    * @return a valid integral value, or a zero if undefined.
    */
   @Override
-  public int getInteger(){
-    if(Double.isNaN(value)){
-      return 0;
-    }
-    if(value<Integer.MIN_VALUE){
-      return Integer.MIN_VALUE;
-    }else if(value>Integer.MAX_VALUE){
-      return Integer.MAX_VALUE;
-    }
-    return (int)value;
- 
+  public int getInteger() {
+    return value;
   }
-  
-    
+
   @Override
-  public Object getApplicationData(){
+  public Object getApplicationData() {
     return value;
   }
 

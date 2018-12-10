@@ -56,7 +56,7 @@ import tinfour.common.NeighborEdgeVertex;
 import tinfour.common.Vertex;
 import tinfour.gwr.BandwidthSelectionMethod;
 import tinfour.gwr.SurfaceModel;
-import tinfour.interpolation.GwrTinInterpolator;
+import tinfour.gwr.GwrTinInterpolator;
 import tinfour.interpolation.NaturalNeighborInterpolator;
 import tinfour.interpolation.TriangularFacetInterpolator;
 import tinfour.test.utils.TestPalette;
