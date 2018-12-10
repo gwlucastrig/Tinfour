@@ -76,5 +76,9 @@ import tinfour.io.BufferedRandomAccessReader;
     return value;
   }
   
+  
+  public Object getApplicationData(){
+    return value;
+  }
  
 }

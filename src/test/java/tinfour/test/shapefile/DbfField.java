@@ -102,6 +102,12 @@ public class DbfField {
               fieldLength, fieldDecimalCount,
               offset);
     }
+    if(fieldType == 'N' && fieldDecimalCount==0){
+     return new DbfFieldInt(
+              name, fieldType, dataAddress,
+              fieldLength, fieldDecimalCount,
+              offset);
+  }
 
     if (fieldType == 'L') {
       return new DbfFieldLogical(
@@ -251,6 +257,17 @@ public class DbfField {
 
   @Override
   public String toString() {
-    return "DbfField(" + fieldType + ") " + name;
+    return String.format("DbfField (%s %2d.%-2d) %s", 
+            fieldType, fieldLength, fieldDecimalCount, name);
+  }
+  
+  /**
+   * Gets the data for the field as an Object of the appropriate class.
+   * For the DbdField base class, the return value is a string.
+   * For others, the return type may vary.
+   * @return an object, potentially null if the record has not been read.
+   */
+  public Object getApplicationData(){
+    return builder.toString();
   }
 }

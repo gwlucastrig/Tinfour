@@ -34,7 +34,7 @@ import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.util.Arrays;
 import tinfour.common.IIncrementalTin;
-import tinfour.interpolation.GwrTinInterpolator;
+import tinfour.gwr.GwrTinInterpolator;
 import tinfour.interpolation.IInterpolatorOverTin;
 import tinfour.interpolation.NaturalNeighborInterpolator;
 import tinfour.interpolation.TriangularFacetInterpolator;

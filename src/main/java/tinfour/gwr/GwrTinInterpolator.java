@@ -29,16 +29,16 @@
  *
  * -----------------------------------------------------------------------
  */
-package tinfour.interpolation;
+package tinfour.gwr;
 
 import java.util.ArrayList;
 import java.util.List;
 import tinfour.common.IIncrementalTin;
 import tinfour.common.INeighborhoodPointsCollector;
 import tinfour.common.Vertex;
-import tinfour.gwr.BandwidthSelectionMethod;
-import tinfour.gwr.GwrInterpolator;
-import tinfour.gwr.SurfaceModel;
+import tinfour.interpolation.IInterpolatorOverTin;
+import tinfour.interpolation.IVertexValuator;
+import tinfour.interpolation.VertexValuatorDefault;
 
 /**
  * Provides methods and elements for performing interpolation over a

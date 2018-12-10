@@ -41,7 +41,7 @@ import tinfour.common.IIncrementalTin;
 import tinfour.common.Vertex;
 import tinfour.gwr.BandwidthSelectionMethod;
 import tinfour.gwr.SurfaceModel;
-import tinfour.interpolation.GwrTinInterpolator;
+import tinfour.gwr.GwrTinInterpolator;
 import tinfour.test.utils.IDevelopmentTest;
 import tinfour.test.utils.TestOptions;
 import tinfour.test.utils.VertexLoader;

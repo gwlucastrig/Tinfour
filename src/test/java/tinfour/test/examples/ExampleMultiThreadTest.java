@@ -42,7 +42,7 @@ import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import tinfour.common.IIncrementalTin;
 import tinfour.common.Vertex;
-import tinfour.interpolation.GwrTinInterpolator;
+import tinfour.gwr.GwrTinInterpolator;
 import tinfour.interpolation.IInterpolatorOverTin;
 import tinfour.semivirtual.SemiVirtualIncrementalTin;
 import tinfour.standard.IncrementalTin;
