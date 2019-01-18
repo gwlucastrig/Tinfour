@@ -2,7 +2,9 @@
 *.class
 build/
 pmd_results.html
-
+nb*.xml
+nbproject
+target
  
 
 # Package Files -- at this time, all of these are included in the distribution #
