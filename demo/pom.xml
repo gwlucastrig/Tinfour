@@ -5,7 +5,7 @@
 	<parent>
 		<groupId>org.tinfour</groupId>
 		<artifactId>tinfour</artifactId>
-		<version>1.1</version>
+		<version>2.0-SNAPSHOT</version>
 	</parent>
   
     <packaging>jar</packaging>
@@ -26,19 +26,19 @@
 		<dependency>
 			<groupId>org.tinfour</groupId>
 			<artifactId>TinfourCore</artifactId>
-			<version>1.1</version>
+			<version>2.0-SNAPSHOT</version>
 		</dependency>
 	  
 		<dependency>
 			<groupId>org.tinfour</groupId>
 			<artifactId>TinfourGis</artifactId>
-			<version>1.1</version>
+			<version>2.0-SNAPSHOT</version>
 		</dependency>
 	  
 		<dependency>
 			<groupId>org.tinfour</groupId>
-			<artifactId>TinfourGwr</artifactId>
-			<version>1.1</version>
+			<artifactId>TinfourAnalysis</artifactId>
+			<version>2.0-SNAPSHOT</version>
 		</dependency>
 	  
 		<!-- laszip4j is needed to support zipped Lidar files -->
