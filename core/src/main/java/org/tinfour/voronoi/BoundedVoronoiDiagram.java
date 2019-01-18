@@ -43,7 +43,7 @@
  *
  * -----------------------------------------------------------------------
  */
-package tinfour.voronoi;
+package org.tinfour.voronoi;
 
 import java.awt.geom.Rectangle2D;
 import java.io.PrintStream;
@@ -51,15 +51,15 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
-import tinfour.common.Circumcircle;
-import tinfour.common.IIncrementalTin;
-import tinfour.common.IQuadEdge;
-import tinfour.common.Vertex;
-import tinfour.edge.EdgePool;
-import tinfour.edge.QuadEdge;
-import tinfour.utils.TinInstantiationUtility;
-import tinfour.utils.Tincalc;
-import tinfour.utils.VertexColorizerKempe6;
+import org.tinfour.common.Circumcircle;
+import org.tinfour.common.IIncrementalTin;
+import org.tinfour.common.IQuadEdge;
+import org.tinfour.common.Vertex;
+import org.tinfour.edge.EdgePool;
+import org.tinfour.edge.QuadEdge;
+import org.tinfour.utils.TinInstantiationUtility;
+import org.tinfour.utils.Tincalc;
+import org.tinfour.utils.VertexColorizerKempe6;
 
 /**
  * Constructs a Voronoi Diagram structure from a set of sample points.

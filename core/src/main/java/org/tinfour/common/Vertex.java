@@ -84,7 +84,7 @@
  *
  *--------------------------------------------------------------------------
  */
-package tinfour.common;
+package org.tinfour.common;
 
 /**
  * Represents a point in a connected network on a planar surface.

@@ -28,19 +28,19 @@
  *
  * -----------------------------------------------------------------------
  */
-package tinfour.semivirtual;
+package org.tinfour.semivirtual;
 
 import java.io.PrintStream;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.Formatter;
 import java.util.List;
-import tinfour.common.GeometricOperations;
-import tinfour.common.IIntegrityCheck;
-import tinfour.common.IQuadEdge;
-import tinfour.common.Thresholds;
-import tinfour.common.Vertex;
-import tinfour.common.VertexMergerGroup;
+import org.tinfour.common.GeometricOperations;
+import org.tinfour.common.IIntegrityCheck;
+import org.tinfour.common.IQuadEdge;
+import org.tinfour.common.Thresholds;
+import org.tinfour.common.Vertex;
+import org.tinfour.common.VertexMergerGroup;
 
 /**
  * A tool for checking the correctness of a tin, in particular the relationship

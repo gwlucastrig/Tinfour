@@ -29,9 +29,9 @@
  */
  
 
-package tinfour.interpolation;
+package org.tinfour.interpolation;
 
-import tinfour.common.Vertex;
+import org.tinfour.common.Vertex;
 
 /**
  * An interface for specifying methods of accessing a value

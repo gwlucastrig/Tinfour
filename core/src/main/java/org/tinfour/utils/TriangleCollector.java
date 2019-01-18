@@ -52,18 +52,18 @@
  * the accept() method, Tinfour must screen for this condition.
  * -----------------------------------------------------------------------
  */
-package tinfour.utils;
+package org.tinfour.utils;
 
 import java.util.ArrayDeque;
 import java.util.Iterator;
-import tinfour.common.IIncrementalTin;
-import tinfour.common.IQuadEdge;
-import tinfour.common.Vertex;
+import org.tinfour.common.IIncrementalTin;
+import org.tinfour.common.IQuadEdge;
+import org.tinfour.common.Vertex;
 
 import java.util.List;
 import java.util.function.Consumer;
-import tinfour.common.IConstraint;
-import tinfour.common.SimpleTriangle;
+import org.tinfour.common.IConstraint;
+import org.tinfour.common.SimpleTriangle;
 
 /**
  * Provides a utility for collecting triangles from a TIN.

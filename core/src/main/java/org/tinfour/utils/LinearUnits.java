@@ -28,7 +28,7 @@
  * -----------------------------------------------------------------------
  */
 
-package tinfour.utils;
+package org.tinfour.utils;
 
 /**
  * An enumeration for specifying linear units of measure.
@@ -68,6 +68,17 @@ public enum LinearUnits {
     return value*metersConversion;
   }
 
+  /**
+   * Convert a value specified in meters to the unit system indicated
+   * by this enumeration instance.
+   * @param value a value in meters
+   * @return a value in the current unit system.
+   */
+  public double fromMeters(double value){
+    return value/metersConversion;
+  }
+  
+  
   /**
    * Gets the name of the units in a form suitable for user interface display.
    * @return a valid string.

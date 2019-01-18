@@ -34,16 +34,16 @@
  *
  * -----------------------------------------------------------------------
  */
-package tinfour.edge;
+package org.tinfour.edge;
 
-import tinfour.common.Vertex;
-import static tinfour.edge.QuadEdgeConstants.CONSTRAINT_EDGE_FLAG;
-import static tinfour.edge.QuadEdgeConstants.CONSTRAINT_INDEX_MASK;
-import static tinfour.edge.QuadEdgeConstants.CONSTRAINT_INDEX_MAX;
-import static tinfour.edge.QuadEdgeConstants.CONSTRAINT_REGION_INTERIOR_FLAG;
-import static tinfour.edge.QuadEdgeConstants.CONSTRAINT_REGION_MEMBER_FLAGS;
-import static tinfour.edge.QuadEdgeConstants.CONSTRAINT_REGION_BORDER_FLAG;
-import static tinfour.edge.QuadEdgeConstants.SYNTHETIC_EDGE_FLAG;
+import org.tinfour.common.Vertex;
+import static org.tinfour.edge.QuadEdgeConstants.CONSTRAINT_EDGE_FLAG;
+import static org.tinfour.edge.QuadEdgeConstants.CONSTRAINT_INDEX_MASK;
+import static org.tinfour.edge.QuadEdgeConstants.CONSTRAINT_INDEX_MAX;
+import static org.tinfour.edge.QuadEdgeConstants.CONSTRAINT_REGION_INTERIOR_FLAG;
+import static org.tinfour.edge.QuadEdgeConstants.CONSTRAINT_REGION_MEMBER_FLAGS;
+import static org.tinfour.edge.QuadEdgeConstants.CONSTRAINT_REGION_BORDER_FLAG;
+import static org.tinfour.edge.QuadEdgeConstants.SYNTHETIC_EDGE_FLAG;
 
 
 /**

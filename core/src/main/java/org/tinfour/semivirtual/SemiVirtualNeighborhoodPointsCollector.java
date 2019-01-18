@@ -33,14 +33,14 @@
  *
  * -----------------------------------------------------------------------
  */
-package tinfour.semivirtual;
+package org.tinfour.semivirtual;
 
 import java.util.ArrayList;
 import java.util.List;
-import tinfour.common.INeighborhoodPointsCollector;
-import tinfour.common.IProcessUsingTin;
-import tinfour.common.Thresholds;
-import tinfour.common.Vertex;
+import org.tinfour.common.INeighborhoodPointsCollector;
+import org.tinfour.common.IProcessUsingTin;
+import org.tinfour.common.Thresholds;
+import org.tinfour.common.Vertex;
 
 /**
  * Obtains vertices in the neighborhood of a specified set of coordinates

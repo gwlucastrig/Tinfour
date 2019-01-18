@@ -30,7 +30,7 @@
 
  
 
-package tinfour.utils;
+package org.tinfour.utils;
 
 /**
  * Provides simple calculations useful for various Tinfour operations.
@@ -65,7 +65,7 @@ public final class Tincalc {
               "Specified number of points must be greater than zero, "
               +"input n="+n);
     }
-    return Math.sqrt((area/n)/SIN60);
+    return Math.sqrt(Math.abs(area/n)/SIN60);
   }
   
   /**

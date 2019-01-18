@@ -27,10 +27,10 @@
  *
  * -----------------------------------------------------------------------
  */
-package tinfour.semivirtual;
+package org.tinfour.semivirtual;
 
-import tinfour.common.GeometricOperations;
-import tinfour.common.Vertex;
+import org.tinfour.common.GeometricOperations;
+import org.tinfour.common.Vertex;
 
 /**
  * A representation of a "ear" from Devillers' algorithm for vertex removal

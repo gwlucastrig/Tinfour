@@ -26,7 +26,7 @@
  *
  * -----------------------------------------------------------------------
  */
-package tinfour.io;
+package org.tinfour.io;
 
 import java.io.Closeable;
 import java.io.EOFException;

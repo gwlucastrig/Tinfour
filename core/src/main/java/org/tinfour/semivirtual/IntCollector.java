@@ -34,7 +34,7 @@
  * -----------------------------------------------------------------------
  */
 
-package tinfour.semivirtual;
+package org.tinfour.semivirtual;
 
 /**
  * A simple class for collecting an array of integers.  We use this custom

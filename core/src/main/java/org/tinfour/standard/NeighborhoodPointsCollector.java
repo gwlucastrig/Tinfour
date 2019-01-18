@@ -35,16 +35,16 @@
  *
  * -----------------------------------------------------------------------
  */
-package tinfour.standard;
+package org.tinfour.standard;
 
 import java.util.ArrayList;
 import java.util.List;
-import tinfour.common.GeometricOperations;
-import tinfour.common.INeighborhoodPointsCollector;
-import tinfour.common.IProcessUsingTin;
-import tinfour.edge.QuadEdge;
-import tinfour.common.Thresholds;
-import tinfour.common.Vertex;
+import org.tinfour.common.GeometricOperations;
+import org.tinfour.common.INeighborhoodPointsCollector;
+import org.tinfour.common.IProcessUsingTin;
+import org.tinfour.edge.QuadEdge;
+import org.tinfour.common.Thresholds;
+import org.tinfour.common.Vertex;
 
 /**
  * Obtains vertices in the neighborhood of a specified set of coordinates

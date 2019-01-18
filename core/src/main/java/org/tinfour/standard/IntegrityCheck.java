@@ -27,20 +27,20 @@
  *
  * -----------------------------------------------------------------------
  */
-package tinfour.standard;
+package org.tinfour.standard;
 
 import java.io.PrintStream;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.Formatter;
 import java.util.List;
-import tinfour.common.GeometricOperations;
-import tinfour.common.IIncrementalTin;
-import tinfour.common.IIntegrityCheck;
-import tinfour.common.IQuadEdge;
-import tinfour.common.Thresholds;
-import tinfour.common.Vertex;
-import tinfour.common.VertexMergerGroup;
+import org.tinfour.common.GeometricOperations;
+import org.tinfour.common.IIncrementalTin;
+import org.tinfour.common.IIntegrityCheck;
+import org.tinfour.common.IQuadEdge;
+import org.tinfour.common.Thresholds;
+import org.tinfour.common.Vertex;
+import org.tinfour.common.VertexMergerGroup;
 
 // In this class, comparing the references for vertices and edges directly
 // is exactly what we want to do.  The main motivation for doing so is

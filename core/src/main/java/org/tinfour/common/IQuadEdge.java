@@ -20,7 +20,7 @@
  * -----------------------------------------------------------------------
  */
 
-package tinfour.common;
+package org.tinfour.common;
 
 /**
  * Defines methods for accessing the data in a quad-edge

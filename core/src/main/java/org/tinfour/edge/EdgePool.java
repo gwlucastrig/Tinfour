@@ -60,15 +60,15 @@
  * by 2.
  *--------------------------------------------------------------------------
  */
-package tinfour.edge;
+package org.tinfour.edge;
 
 import java.io.PrintStream;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
-import tinfour.common.IQuadEdge;
-import tinfour.common.Vertex;
+import org.tinfour.common.IQuadEdge;
+import org.tinfour.common.Vertex;
 
 /**
  * Provides an object-pool implementation that the manages

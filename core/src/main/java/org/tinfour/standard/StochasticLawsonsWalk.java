@@ -35,13 +35,13 @@
  *
  * -----------------------------------------------------------------------
  */
-package tinfour.standard;
+package org.tinfour.standard;
 
 import java.io.PrintStream;
-import tinfour.common.GeometricOperations;
-import tinfour.edge.QuadEdge;
-import tinfour.common.Thresholds;
-import tinfour.common.Vertex;
+import org.tinfour.common.GeometricOperations;
+import org.tinfour.edge.QuadEdge;
+import org.tinfour.common.Thresholds;
+import org.tinfour.common.Vertex;
 
 /**
  * Methods and definitions to perform a stochastic Lawson's walk. The

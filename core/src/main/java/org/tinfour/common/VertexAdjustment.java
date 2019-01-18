@@ -26,7 +26,7 @@
  *
  *--------------------------------------------------------------------------
  */ 
-package tinfour.common;
+package org.tinfour.common;
  
 /**
  * Provides a wrapper class used to represent the adjusted position 

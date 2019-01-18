@@ -28,7 +28,7 @@
  * -----------------------------------------------------------------------
  */
 
-package tinfour.io;
+package org.tinfour.io;
 
 import java.io.BufferedInputStream;
 import java.io.Closeable;

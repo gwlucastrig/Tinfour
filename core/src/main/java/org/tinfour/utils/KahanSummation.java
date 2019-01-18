@@ -27,7 +27,7 @@
  *
  * -----------------------------------------------------------------------
  */ 
-package tinfour.utils;
+package org.tinfour.utils;
 
 /**
  * Provides methods and elements for Kahan's algorithm for 

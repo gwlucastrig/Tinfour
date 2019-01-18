@@ -27,11 +27,11 @@
  *
  * -----------------------------------------------------------------------
  */
-package tinfour.standard;
+package org.tinfour.standard;
 
-import tinfour.common.GeometricOperations;
-import tinfour.edge.QuadEdge;
-import tinfour.common.Vertex;
+import org.tinfour.common.GeometricOperations;
+import org.tinfour.edge.QuadEdge;
+import org.tinfour.common.Vertex;
 
 /**
  * A representation of a "ear" from Devillers' algorithm for vertex removal

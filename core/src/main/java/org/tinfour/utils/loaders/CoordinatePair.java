@@ -1,5 +1,5 @@
-/*
- * Copyright 2014 Gary W. Lucas.
+/* --------------------------------------------------------------------
+ * Copyright (C) 2019  Gary W. Lucas.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -12,34 +12,38 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
+ * ---------------------------------------------------------------------
  */
 
-/*
+ /*
  * -----------------------------------------------------------------------
  *
  * Revision History:
  * Date     Name         Description
  * ------   ---------    -------------------------------------------------
- * 06/2014  G. Lucas     Created
+ * 01/2019  G. Lucas     Created  
  *
  * Notes:
  *
  * -----------------------------------------------------------------------
  */
- 
-
-package org.tinfour.interpolation;
-
-import org.tinfour.common.Vertex;
+package org.tinfour.utils.loaders;
 
 /**
- * A valuator that returns the Z coordinate of a vertex.
+ * A simple container for holding the results of a coordinate transform. All
+ * elements have public access and can be written or read at will. This class
+ * provides no guarantees or safety or protection. It's sole purpose is to
+ * provide an efficient mechanism for transferring data.
  */
-public class VertexValuatorDefault implements IVertexValuator {
+public class CoordinatePair {
 
-    @Override
-    public double value(Vertex v) {
-       return v.getZ();
-    }
-    
+  /**
+   * The x horizontal coordinate for the pair
+   */
+  public double x;
+  /**
+   * The y horizontal coordinate for the pair
+   */
+  public double y;
+
 }

@@ -7,4 +7,4 @@
  * of edges is maintained as data primitives and only instantiated as objects
  * on a short-persistence, as-needed basis.
  */
-package tinfour.semivirtual;
+package org.tinfour.semivirtual;

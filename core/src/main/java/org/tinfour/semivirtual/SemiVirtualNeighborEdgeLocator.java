@@ -27,13 +27,13 @@
  *
  * -----------------------------------------------------------------------
  */
-package tinfour.semivirtual;
+package org.tinfour.semivirtual;
 
 
-import tinfour.common.INeighborEdgeLocator;
-import tinfour.common.IQuadEdge;
-import tinfour.common.NeighborEdgeVertex;
-import tinfour.common.Vertex;
+import org.tinfour.common.INeighborEdgeLocator;
+import org.tinfour.common.IQuadEdge;
+import org.tinfour.common.NeighborEdgeVertex;
+import org.tinfour.common.Vertex;
 
 /**
  * Provides a specific instance of the INeighborEdge interface tuned for

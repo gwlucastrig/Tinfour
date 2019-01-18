@@ -28,11 +28,11 @@
  *
  * -----------------------------------------------------------------------
  */
-package tinfour.common;
+package org.tinfour.common;
 
 import java.util.ArrayList;
 import java.util.List;
-import tinfour.utils.KahanSummation;
+import org.tinfour.utils.KahanSummation;
 
 /**
  * An implementation of the IConstraint interface intended to store

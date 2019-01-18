@@ -28,9 +28,9 @@
  * -----------------------------------------------------------------------
  */
 
-package tinfour.interpolation;
+package org.tinfour.interpolation;
 
-import tinfour.common.IProcessUsingTin;
+import org.tinfour.common.IProcessUsingTin;
 
 /**
  * Defines an interface for interpolating data over a Triangulated
