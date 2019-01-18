@@ -30,7 +30,7 @@
  * -----------------------------------------------------------------------
  */
 
-package tinfour.common;
+package org.tinfour.common;
 
 /**
  * An interface for classes that perform processing on a TIN.

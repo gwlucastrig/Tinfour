@@ -24,14 +24,14 @@
  * 02/2016  G. Lucas     Created
  * -----------------------------------------------------------------------
  */
-package tinfour.utils;
+package org.tinfour.utils;
 
 import java.io.PrintStream;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
-import tinfour.common.IIncrementalTin;
-import tinfour.semivirtual.SemiVirtualIncrementalTin;
-import tinfour.standard.IncrementalTin;
+import org.tinfour.common.IIncrementalTin;
+import org.tinfour.semivirtual.SemiVirtualIncrementalTin;
+import org.tinfour.standard.IncrementalTin;
 
 /**
  * Provides a utility for instantiating either the QuadEdge or virtual

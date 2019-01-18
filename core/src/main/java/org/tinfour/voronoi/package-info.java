@@ -1,4 +1,4 @@
 /**
  * An experimental package implementing Voronoi Diagram functionality
  */
-package tinfour.voronoi;
+package org.tinfour.voronoi;

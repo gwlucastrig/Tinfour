@@ -27,7 +27,7 @@
  *
  * -----------------------------------------------------------------------
  */
-package tinfour.voronoi;
+package org.tinfour.voronoi;
 
 import java.awt.BasicStroke;
 import java.awt.Color;
@@ -47,12 +47,12 @@ import java.awt.geom.Path2D;
 import java.awt.geom.Point2D;
 import java.awt.geom.Rectangle2D;
 import java.util.List;
-import tinfour.common.IIncrementalTin;
-import tinfour.common.IQuadEdge;
-import tinfour.common.Vertex;
-import tinfour.utils.TinInstantiationUtility;
-import tinfour.utils.Tincalc;
-import tinfour.utils.VertexColorizerKempe6;
+import org.tinfour.common.IIncrementalTin;
+import org.tinfour.common.IQuadEdge;
+import org.tinfour.common.Vertex;
+import org.tinfour.utils.TinInstantiationUtility;
+import org.tinfour.utils.Tincalc;
+import org.tinfour.utils.VertexColorizerKempe6;
 
 /**
  * Provides utilities for drawing graphical representations of a

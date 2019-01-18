@@ -2,4 +2,4 @@
  * Provides implementations of the IQuadEdge interface with supporting
  * data-management classes.
  */
-package tinfour.edge;
+package org.tinfour.edge;

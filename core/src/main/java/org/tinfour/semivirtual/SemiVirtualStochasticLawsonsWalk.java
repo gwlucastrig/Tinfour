@@ -27,12 +27,12 @@
  *
  * -----------------------------------------------------------------------
  */
-package tinfour.semivirtual;
+package org.tinfour.semivirtual;
 
 import java.io.PrintStream;
-import tinfour.common.GeometricOperations;
-import tinfour.common.Thresholds;
-import tinfour.common.Vertex;
+import org.tinfour.common.GeometricOperations;
+import org.tinfour.common.Thresholds;
+import org.tinfour.common.Vertex;
 
 /**
  * Methods and definitions to perform a stochastic Lawson's walk. The

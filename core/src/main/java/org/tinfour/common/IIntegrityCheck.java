@@ -11,7 +11,7 @@
  * -----------------------------------------------------------------------
  */
 
-package tinfour.common;
+package org.tinfour.common;
 
 import java.io.PrintStream;
 import java.util.List;

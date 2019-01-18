@@ -27,14 +27,14 @@
  * -----------------------------------------------------------------------
  */
 
-package tinfour.utils;
+package org.tinfour.utils;
 
 import java.awt.geom.Rectangle2D;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
-import tinfour.common.IPolyline;
-import tinfour.common.Vertex;
+import org.tinfour.common.IPolyline;
+import org.tinfour.common.Vertex;
 
 
 /**

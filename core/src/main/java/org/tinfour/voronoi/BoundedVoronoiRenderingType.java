@@ -27,7 +27,7 @@
  *
  * -----------------------------------------------------------------------
  */
-package tinfour.voronoi;
+package org.tinfour.voronoi;
 
 /**
  * Defines methods that supply style information for rendering.

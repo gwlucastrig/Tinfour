@@ -25,7 +25,7 @@
  *
  *--------------------------------------------------------------------------
  */
-package tinfour.common;
+package org.tinfour.common;
 
 /**
  * Defines a sample point interface to be used for spatial

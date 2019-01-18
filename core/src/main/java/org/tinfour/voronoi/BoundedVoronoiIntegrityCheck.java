@@ -27,12 +27,12 @@
  *
  * -----------------------------------------------------------------------
  */
-package tinfour.voronoi;
+package org.tinfour.voronoi;
 
 import java.awt.geom.Rectangle2D;
 import java.util.List;
-import tinfour.common.IQuadEdge;
-import tinfour.common.Vertex;
+import org.tinfour.common.IQuadEdge;
+import org.tinfour.common.Vertex;
 
 /**
  * Provides tools for checking the correctness of the construction of

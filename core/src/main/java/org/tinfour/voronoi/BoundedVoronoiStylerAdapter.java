@@ -28,7 +28,7 @@
  * -----------------------------------------------------------------------
  */
 
-package tinfour.voronoi;
+package org.tinfour.voronoi;
 
 import java.awt.AlphaComposite;
 import java.awt.Graphics2D;

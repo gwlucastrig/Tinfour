@@ -28,7 +28,7 @@
  *
  * -----------------------------------------------------------------------
  */
-package tinfour.common;
+package org.tinfour.common;
 
 import java.awt.geom.Rectangle2D;
 import java.util.ArrayList;

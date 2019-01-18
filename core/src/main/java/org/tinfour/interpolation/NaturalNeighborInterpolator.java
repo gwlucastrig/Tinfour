@@ -40,18 +40,18 @@
  * comparisons must be conducted by invoking the equals() method.
  * -----------------------------------------------------------------------
  */
-package tinfour.interpolation;
+package org.tinfour.interpolation;
 
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.List;
-import tinfour.common.Circumcircle;
-import tinfour.common.GeometricOperations;
-import tinfour.common.IIncrementalTin;
-import tinfour.common.INeighborEdgeLocator;
-import tinfour.common.IQuadEdge;
-import tinfour.common.Thresholds;
-import tinfour.common.Vertex;
+import org.tinfour.common.Circumcircle;
+import org.tinfour.common.GeometricOperations;
+import org.tinfour.common.IIncrementalTin;
+import org.tinfour.common.INeighborEdgeLocator;
+import org.tinfour.common.IQuadEdge;
+import org.tinfour.common.Thresholds;
+import org.tinfour.common.Vertex;
 
 /**
  * Provides interpolations based on Sibson&#039;s Natural Neighbor Interpolation

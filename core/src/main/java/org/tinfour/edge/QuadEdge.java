@@ -101,14 +101,14 @@
  * due to Java type casting resulted in a 20 percent degradation in performance.
  * -----------------------------------------------------------------------
  */
-package tinfour.edge;
+package org.tinfour.edge;
 
 import java.util.Formatter;
-import tinfour.common.IQuadEdge;
-import tinfour.common.Vertex;
-import static tinfour.edge.QuadEdgeConstants.CONSTRAINT_REGION_INTERIOR_FLAG;
-import static tinfour.edge.QuadEdgeConstants.CONSTRAINT_REGION_BORDER_FLAG;
-import static tinfour.edge.QuadEdgeConstants.SYNTHETIC_EDGE_FLAG;
+import org.tinfour.common.IQuadEdge;
+import org.tinfour.common.Vertex;
+import static org.tinfour.edge.QuadEdgeConstants.CONSTRAINT_REGION_INTERIOR_FLAG;
+import static org.tinfour.edge.QuadEdgeConstants.CONSTRAINT_REGION_BORDER_FLAG;
+import static org.tinfour.edge.QuadEdgeConstants.SYNTHETIC_EDGE_FLAG;
 
 /**
  * A representation of an edge with forward and reverse links on one

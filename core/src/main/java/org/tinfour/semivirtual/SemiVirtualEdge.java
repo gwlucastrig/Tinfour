@@ -42,18 +42,18 @@
  * -----------------------------------------------------------------------
  */
 
-package tinfour.semivirtual;
+package org.tinfour.semivirtual;
 
-import tinfour.common.IQuadEdge;
-import tinfour.common.Vertex;
-import static tinfour.edge.QuadEdgeConstants.CONSTRAINT_EDGE_FLAG;
-import static tinfour.edge.QuadEdgeConstants.CONSTRAINT_INDEX_MASK;
-import static tinfour.edge.QuadEdgeConstants.CONSTRAINT_INDEX_MAX;
-import static tinfour.semivirtual.SemiVirtualEdgePage.INDEX_MASK;
-import static tinfour.semivirtual.SemiVirtualEdgePage.INDICES_PER_PAGE;
-import static tinfour.edge.QuadEdgeConstants.CONSTRAINT_REGION_INTERIOR_FLAG;
-import static tinfour.edge.QuadEdgeConstants.CONSTRAINT_REGION_BORDER_FLAG;
-import tinfour.edge.QuadEdgePinwheel;
+import org.tinfour.common.IQuadEdge;
+import org.tinfour.common.Vertex;
+import static org.tinfour.edge.QuadEdgeConstants.CONSTRAINT_EDGE_FLAG;
+import static org.tinfour.edge.QuadEdgeConstants.CONSTRAINT_INDEX_MASK;
+import static org.tinfour.edge.QuadEdgeConstants.CONSTRAINT_INDEX_MAX;
+import static org.tinfour.semivirtual.SemiVirtualEdgePage.INDEX_MASK;
+import static org.tinfour.semivirtual.SemiVirtualEdgePage.INDICES_PER_PAGE;
+import static org.tinfour.edge.QuadEdgeConstants.CONSTRAINT_REGION_INTERIOR_FLAG;
+import static org.tinfour.edge.QuadEdgeConstants.CONSTRAINT_REGION_BORDER_FLAG;
+import org.tinfour.edge.QuadEdgePinwheel;
 
 /**
  * Provides methods and elements implementing the QuadEdge data structure

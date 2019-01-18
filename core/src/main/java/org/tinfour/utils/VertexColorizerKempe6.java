@@ -27,17 +27,17 @@
  *
  * -----------------------------------------------------------------------
  */
-package tinfour.utils;
+package org.tinfour.utils;
 
 import java.io.PrintStream;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import tinfour.common.IIncrementalTin;
-import tinfour.common.INeighborEdgeLocator;
-import tinfour.common.IQuadEdge;
-import tinfour.common.Vertex;
+import org.tinfour.common.IIncrementalTin;
+import org.tinfour.common.INeighborEdgeLocator;
+import org.tinfour.common.IQuadEdge;
+import org.tinfour.common.Vertex;
 
 /**
  * Assign vertices color index values so that no two connected vertices have the

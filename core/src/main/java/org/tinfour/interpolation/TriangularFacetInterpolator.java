@@ -28,13 +28,13 @@
  *
  * -----------------------------------------------------------------------
  */
-package tinfour.interpolation;
+package org.tinfour.interpolation;
 
-import tinfour.common.IIncrementalTin;
-import tinfour.common.INeighborEdgeLocator;
-import tinfour.common.IQuadEdge;
-import tinfour.common.Thresholds;
-import tinfour.common.Vertex;
+import org.tinfour.common.IIncrementalTin;
+import org.tinfour.common.INeighborEdgeLocator;
+import org.tinfour.common.IQuadEdge;
+import org.tinfour.common.Thresholds;
+import org.tinfour.common.Vertex;
 
 /**
  * Provides interpolation based on treating the surface as a collection

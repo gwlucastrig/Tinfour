@@ -29,9 +29,9 @@
  *
  * -----------------------------------------------------------------------
  */
-package tinfour.common;
+package org.tinfour.common;
 
-import tinfour.vividsolutions.jts.math.DD;
+import org.tinfour.vividsolutions.jts.math.DD;
 
 /**
  * Provides elements and methods to support geometric operations

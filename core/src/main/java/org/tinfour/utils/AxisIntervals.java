@@ -25,7 +25,7 @@
  *
  * Notes:
  */
-package tinfour.utils;
+package org.tinfour.utils;
 
 import java.util.Arrays;
 

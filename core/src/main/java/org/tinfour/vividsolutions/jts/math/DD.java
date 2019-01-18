@@ -30,7 +30,7 @@
  *     (250)385-6040
  *     www.vividsolutions.com
  */
-package tinfour.vividsolutions.jts.math;
+package org.tinfour.vividsolutions.jts.math;
 
 import java.io.Serializable;
 

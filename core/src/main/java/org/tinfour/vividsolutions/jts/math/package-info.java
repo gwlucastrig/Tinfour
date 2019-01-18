@@ -9,4 +9,4 @@
  * conflicts in applications that use the standard JTS API.
  */
 
-package tinfour.vividsolutions.jts.math;
+package org.tinfour.vividsolutions.jts.math;

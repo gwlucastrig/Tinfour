@@ -12,7 +12,7 @@
  * -----------------------------------------------------------------------
  */
 
-package tinfour.common;
+package org.tinfour.common;
 
 /**
  * Defines methods for a reusable instance of a class for  searching a TIN and

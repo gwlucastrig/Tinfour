@@ -27,10 +27,10 @@
  *
  * -----------------------------------------------------------------------
  */
-package tinfour.semivirtual;
+package org.tinfour.semivirtual;
 
 import java.util.Arrays;
-import tinfour.common.Vertex;
+import org.tinfour.common.Vertex;
 
 class SemiVirtualEdgePage {
 

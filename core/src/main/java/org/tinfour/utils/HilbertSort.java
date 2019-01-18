@@ -27,12 +27,12 @@
  *
  * -----------------------------------------------------------------------
  */
-package tinfour.utils;
+package org.tinfour.utils;
 
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
-import tinfour.common.Vertex;
+import org.tinfour.common.Vertex;
 
 /**
  * A utility that sorts points according to the Hilbert space-filling curve and

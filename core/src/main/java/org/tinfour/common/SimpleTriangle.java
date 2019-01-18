@@ -30,7 +30,7 @@
 
  
 
-package tinfour.common;
+package org.tinfour.common;
 
 /**
  * Provides methods and elements for a simple representation of a 

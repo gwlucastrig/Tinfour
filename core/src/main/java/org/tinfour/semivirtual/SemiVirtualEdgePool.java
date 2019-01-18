@@ -54,19 +54,19 @@
  * freed, it can modify the appropriate page.
  *--------------------------------------------------------------------------
  */
-package tinfour.semivirtual;
+package org.tinfour.semivirtual;
 
 import java.io.PrintStream;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
-import tinfour.common.IQuadEdge;
-import tinfour.common.Vertex;
-import static tinfour.semivirtual.SemiVirtualEdgePage.INDEX_MASK;
-import static tinfour.semivirtual.SemiVirtualEdgePage.INDICES_PER_PAGE;
-import static tinfour.semivirtual.SemiVirtualEdgePage.MASK_LOW_BIT_CLEAR;
-import static tinfour.semivirtual.SemiVirtualEdgePage.PAIRS_PER_PAGE;
+import org.tinfour.common.IQuadEdge;
+import org.tinfour.common.Vertex;
+import static org.tinfour.semivirtual.SemiVirtualEdgePage.INDEX_MASK;
+import static org.tinfour.semivirtual.SemiVirtualEdgePage.INDICES_PER_PAGE;
+import static org.tinfour.semivirtual.SemiVirtualEdgePage.MASK_LOW_BIT_CLEAR;
+import static org.tinfour.semivirtual.SemiVirtualEdgePage.PAIRS_PER_PAGE;
 
 /**
  * Provides an object-pool implementation that the manages

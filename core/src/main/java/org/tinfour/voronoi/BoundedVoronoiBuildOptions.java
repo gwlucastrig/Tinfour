@@ -27,7 +27,7 @@
  *
  * -----------------------------------------------------------------------
  */
-package tinfour.voronoi;
+package org.tinfour.voronoi;
 
 import java.awt.geom.Rectangle2D;
 

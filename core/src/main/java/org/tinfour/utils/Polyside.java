@@ -29,11 +29,11 @@
  *
  * -----------------------------------------------------------------------
  */
-package tinfour.utils;
+package org.tinfour.utils;
 
 import java.util.List;
-import tinfour.common.IQuadEdge;
-import tinfour.common.Vertex;
+import org.tinfour.common.IQuadEdge;
+import org.tinfour.common.Vertex;
 
 /**
  * A utility for determining whether a specified coordinate is inside a polygon

@@ -27,14 +27,14 @@
  *
  * -----------------------------------------------------------------------
  */
-package tinfour.voronoi;
+package org.tinfour.voronoi;
 
 import java.awt.geom.Rectangle2D;
 import java.util.Arrays;
 import java.util.List;
-import tinfour.common.IQuadEdge;
-import tinfour.common.Vertex;
-import tinfour.utils.Polyside;
+import org.tinfour.common.IQuadEdge;
+import org.tinfour.common.Vertex;
+import org.tinfour.utils.Polyside;
 
 /**
  * Provides elements and methods for representing a Thiessen Polygon created by

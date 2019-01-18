@@ -51,7 +51,7 @@
  *
  * -----------------------------------------------------------------------
  */
-package tinfour.standard;
+package org.tinfour.standard;
 
 import java.awt.geom.Rectangle2D;
 import java.io.PrintStream;
@@ -60,22 +60,22 @@ import java.util.ArrayList;
 import java.util.BitSet;
 import java.util.Iterator;
 import java.util.List;
-import tinfour.common.BootstrapUtility;
-import tinfour.common.GeometricOperations;
-import tinfour.common.IConstraint;
-import tinfour.common.IIncrementalTin;
-import tinfour.common.IIntegrityCheck;
-import tinfour.common.IMonitorWithCancellation;
-import tinfour.common.INeighborEdgeLocator;
-import tinfour.common.INeighborhoodPointsCollector;
-import tinfour.common.IQuadEdge;
-import tinfour.common.Thresholds;
-import tinfour.common.TriangleCount;
-import tinfour.common.Vertex;
-import tinfour.common.VertexMergerGroup;
-import tinfour.edge.EdgePool;
-import tinfour.edge.QuadEdge;
-import tinfour.edge.QuadEdgeConstants;
+import org.tinfour.common.BootstrapUtility;
+import org.tinfour.common.GeometricOperations;
+import org.tinfour.common.IConstraint;
+import org.tinfour.common.IIncrementalTin;
+import org.tinfour.common.IIntegrityCheck;
+import org.tinfour.common.IMonitorWithCancellation;
+import org.tinfour.common.INeighborEdgeLocator;
+import org.tinfour.common.INeighborhoodPointsCollector;
+import org.tinfour.common.IQuadEdge;
+import org.tinfour.common.Thresholds;
+import org.tinfour.common.TriangleCount;
+import org.tinfour.common.Vertex;
+import org.tinfour.common.VertexMergerGroup;
+import org.tinfour.edge.EdgePool;
+import org.tinfour.edge.QuadEdge;
+import org.tinfour.edge.QuadEdgeConstants;
 
 /**
  * Provides methods and data elements for building and maintaining a

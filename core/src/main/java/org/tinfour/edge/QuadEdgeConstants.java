@@ -27,7 +27,7 @@
  *
  * -----------------------------------------------------------------------
  */
-package tinfour.edge;
+package org.tinfour.edge;
 
 /**
  * Defines constants for use in QuadEdge related operations.

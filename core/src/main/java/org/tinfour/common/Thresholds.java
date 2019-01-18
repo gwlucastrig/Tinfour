@@ -28,7 +28,7 @@
  *
  * -----------------------------------------------------------------------
  */
-package tinfour.common;
+package org.tinfour.common;
 
 /**
  * Provides a standard calculation of threshold values appropriate for use in an

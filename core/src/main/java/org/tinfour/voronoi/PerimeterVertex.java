@@ -27,9 +27,9 @@
  *
  * -----------------------------------------------------------------------
  */
-package tinfour.voronoi;
+package org.tinfour.voronoi;
 
-import tinfour.common.Vertex;
+import org.tinfour.common.Vertex;
 
 /**
  *  Extends the Vertex class to add perimeter parameter.

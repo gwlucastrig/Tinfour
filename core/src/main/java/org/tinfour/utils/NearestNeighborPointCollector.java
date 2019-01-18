@@ -27,13 +27,13 @@
  *
  * -----------------------------------------------------------------------
  */
-package tinfour.utils;
+package org.tinfour.utils;
 
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import tinfour.common.Vertex;
-import tinfour.common.VertexMergerGroup;
+import org.tinfour.common.Vertex;
+import org.tinfour.common.VertexMergerGroup;
 
 /**
  * Provides a utility for the efficient identification of the

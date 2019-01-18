@@ -27,7 +27,7 @@
  *
  * -----------------------------------------------------------------------
  */
-package tinfour.common;
+package org.tinfour.common;
 
 /**
  * Provides a minimal set of data elements for the result of a neighbor-edge

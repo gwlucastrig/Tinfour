@@ -28,7 +28,7 @@
  *
  * -----------------------------------------------------------------------
  */
-package tinfour.common;
+package org.tinfour.common;
 
 import java.util.BitSet;
 import java.util.Iterator;
