@@ -5,7 +5,10 @@ pmd_results.html
 nb*.xml
 nbproject
 target
- 
+core/doc
+analysis/doc
+gis/doc
+demo/doc
 
 # Package Files -- at this time, all of these are included in the distribution #
 # *.jar

@@ -366,6 +366,7 @@ public class BathymetryData {
   /**
    * Get a reduced list of the soundings.
    *
+   * @param nTarget the target number of soundings for the list
    * @return the soundings
    */
   public List<Vertex> getReducedListOfSoundings(int nTarget) {

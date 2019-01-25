@@ -62,11 +62,20 @@ public class VertexReaderLaz {
           File file,
           long nVertices,
           ILasRecordFilter filter,
-          int iProgressThreshold,
-          IMonitorWithCancellation progressMonitor) throws IOException {
+          IMonitorWithCancellation monitor) throws IOException {
     List<Vertex> list = new ArrayList<>();
 
+    int iProgressThreshold = Integer.MAX_VALUE;
     int pProgressThreshold = 0;
+    if (monitor != null) {
+      int iPercent = monitor.getReportingIntervalInPercent();
+      int iTemp = (int) (nVertices * (iPercent / 100.0) + 0.5);
+      if (iTemp > 1) {
+        iProgressThreshold = iTemp;
+      }
+      monitor.reportProgress(0);
+    }
+
     LASReader reader = new LASReader(file);
 
     LasScaleAndOffset so = lasScaleAndOffset;
@@ -74,16 +83,20 @@ public class VertexReaderLaz {
     int iRecord = 0;
     CoordinatePair scratch = new CoordinatePair();
     for (LASPoint p : reader.getPoints()) {
+      if (pProgressThreshold == iProgressThreshold) {
+        pProgressThreshold = 0;
+        monitor.reportProgress((int) (0.1 + (100.0 * (iRecord + 1)) / nVertices));
+        if (monitor.isCanceled()) {
+          break;
+        }
+      } else {
+        pProgressThreshold++;
+      }
       if (list.size() >= this.maximumNumberOfVertices) {
         break;
       }
-      if (pProgressThreshold == iProgressThreshold && progressMonitor != null) {
-        pProgressThreshold = 0;
-        progressMonitor.reportProgress(
-                (int) (0.1 + (100.0 * (iRecord + 1)) / nVertices));
-      }
+
       iRecord++;
-      pProgressThreshold++;
 
       // TO DO:  LASPoint does not yet have an accessor for "withheld" status.
       // to support the use of a Tinfour filter, the LASPoint is

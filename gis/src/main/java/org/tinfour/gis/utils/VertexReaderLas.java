@@ -148,18 +148,37 @@ public class VertexReaderLas implements IVertexReader, Closeable {
               reader.getFile(),
               nVertices,
               filter,
-              1000000,
-              null);
+              monitor);
       postProcessList(list);
       return list;
     }
     List<Vertex> list = new ArrayList<>();
     long time0 = System.nanoTime();
 
-    CoordinatePair scratch = new CoordinatePair();
+    int iProgressThreshold = Integer.MAX_VALUE;
+    int pProgressThreshold = 0;
+    if (monitor != null) {
+      int iPercent = monitor.getReportingIntervalInPercent();
+      int iTemp = (int) (nVertices * (iPercent / 100.0) + 0.5);
+      if (iTemp > 1) {
+        iProgressThreshold = iTemp;
+      }
+      monitor.reportProgress(0);
+    }
 
+    CoordinatePair scratch = new CoordinatePair();
     LasPoint p = new LasPoint();
     for (long iRecord = 0; iRecord < nVertices; iRecord++) {
+      if (pProgressThreshold == iProgressThreshold) {
+        pProgressThreshold = 0;
+        monitor.reportProgress((int) (0.1 + (100.0 * (iRecord + 1)) / nVertices));
+        if (monitor.isCanceled()) {
+          break;
+        }
+      } else {
+        pProgressThreshold++;
+      }
+
       if (list.size() >= this.maximumNumberOfVertices) {
         break;
       }
@@ -191,21 +210,20 @@ public class VertexReaderLas implements IVertexReader, Closeable {
     postProcessList(list);
     return list;
   }
-  
-  private void postProcessList(List<Vertex>list){
-    if(list.isEmpty()){
+
+  private void postProcessList(List<Vertex> list) {
+    if (list.isEmpty()) {
       return; // nothing to do.
     }
-    
-      Vertex a = list.get(0);
-      xMin = a.getX();
-      xMax = a.getX();
-      yMin = a.getY();
-      yMax = a.getY();
-      zMin = a.getZ();
-      zMax = a.getZ();
-   
-    
+
+    Vertex a = list.get(0);
+    xMin = a.getX();
+    xMax = a.getX();
+    yMin = a.getY();
+    yMax = a.getY();
+    zMin = a.getZ();
+    zMax = a.getZ();
+
     for (Vertex v : list) {
       double x = v.getX();
       double y = v.getY();
@@ -220,9 +238,9 @@ public class VertexReaderLas implements IVertexReader, Closeable {
       } else if (y > yMax) {
         yMax = y;
       }
-      if(z<zMin){
+      if (z < zMin) {
         zMin = z;
-      }else if(z>zMax){
+      } else if (z > zMax) {
         zMax = z;
       }
     }
@@ -360,12 +378,13 @@ public class VertexReaderLas implements IVertexReader, Closeable {
     return n > 4
             && ".LAZ".equalsIgnoreCase(name.substring(n - 4, n));
   }
-  
+
   /**
    * Gets the number of vertices in the source file
+   *
    * @return a positive integer value
    */
-  public long getNumberOfVerticesInSource(){
+  public long getNumberOfVerticesInSource() {
     return this.numberOfVerticesInSource;
   }
 }

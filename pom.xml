@@ -5,12 +5,41 @@
   <modelVersion>4.0.0</modelVersion>
 
   <groupId>org.tinfour</groupId>
-  <artifactId>tinfour</artifactId>
+  <artifactId>Tinfour</artifactId>
   <version>2.0-SNAPSHOT</version>
   
   <packaging>pom</packaging>
   <name>Tinfour</name>
+  <description>Java library for Constrained Delaunay Triangulation, Voronoi Diagram,
+  and related Triangular Irregular Network (TIN) applications</description>
   <url>http://www.tinfour.org</url>
+  
+  
+	<licenses>
+	  <license>
+		<name>Apache License, Version 2.0</name>
+		<url>https://www.apache.org/licenses/LICENSE-2.0.txt</url>
+		<distribution>repo</distribution>
+		<comments>A business-friendly OSS license</comments>
+	  </license>
+	</licenses>
+
+    <developers>
+        <developer>
+            <name>G.W. Lucas</name>
+            <email>contact.tinfour@gmail.com</email>
+            <organization>tinfour.org</organization>
+            <organizationUrl>http://tinfour.org</organizationUrl>
+			<timezone>America/New_York</timezone>
+        </developer>
+    </developers>
+
+    <scm>
+        <connection>scm:git:https://github.com/gwlucastrig/Tinfour.git</connection>
+        <developerConnection>scm:git:git@github.com:gwlucastrig/Tinfour.git</developerConnection>
+        <url>https://github.com/gwlucastrig/Tinfour/tree/master</url>
+    </scm>
+ 
   
 	<properties>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
@@ -93,8 +122,37 @@
           <artifactId>maven-project-info-reports-plugin</artifactId>
           <version>3.0.0</version>
         </plugin>
+		
+		<plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-javadoc-plugin</artifactId>
+        <version>3.0.1</version>
+        <configuration>
+				<!-- Specific configuration for the aggregate report -->
+				<reportOutputDirectory>doc</reportOutputDirectory>
+				<destDir>javadoc</destDir>
+        </configuration>
+        <executions>
+          <execution>
+            <id>aggregate</id>
+            <goals>
+              <goal>aggregate</goal>
+            </goals>
+            <phase>site</phase>
+            <configuration>
+				<!-- Specific configuration for the aggregate report -->
+				<reportOutputDirectory>doc</reportOutputDirectory>
+				<destDir>javadoc</destDir>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
+	 
+		
       </plugins>
     </pluginManagement>
   </build>
+  
+    
  
 </project>

@@ -44,13 +44,13 @@ import org.tinfour.common.IConstraint;
 import org.tinfour.common.IIncrementalTin;
 import org.tinfour.common.Vertex;
 import org.tinfour.interpolation.IInterpolatorOverTin;
-import org.tinfour.gis.gridAscii.GridFileAscii;
 import org.tinfour.demo.utils.IDevelopmentTest;
 import org.tinfour.demo.utils.InterpolationMethod;
 import org.tinfour.demo.utils.TestOptions;
 import org.tinfour.demo.utils.TestPalette;
 import org.tinfour.demo.utils.VertexLoader;
 import org.tinfour.demo.utils.cdt.ConstraintLoader;
+import org.tinfour.utils.GridSpecification;
 import org.tinfour.utils.TinInstantiationUtility;
 import org.tinfour.utils.Tincalc;
 import org.tinfour.utils.loaders.CoordinatePair;
@@ -189,8 +189,8 @@ public class ExampleGridAndHillshade implements IDevelopmentTest {
       ps.format("Frame y values:     %12.3f, %12.3f, (%f)%n", y0, y1, (y1 - y0));
     }
 
-    GridFileAscii grid = new GridFileAscii(
-      GridFileAscii.CellPosition.CenterOfCell,
+    GridSpecification grid = new GridSpecification(
+      GridSpecification.CellPosition.CenterOfCell,
       cellSize,
       x0, x1, y0, y1 );
     ps.format("Output grid%n");
@@ -397,7 +397,7 @@ public class ExampleGridAndHillshade implements IDevelopmentTest {
   float[][] buildElevationGrid(
     IIncrementalTin tin,
     InterpolationMethod method,
-    GridFileAscii grid
+    GridSpecification grid
   ) {
 
     // for brevity, copy out values.
@@ -448,7 +448,7 @@ public class ExampleGridAndHillshade implements IDevelopmentTest {
     PrintStream ps,
     IIncrementalTin tin,
     InterpolationMethod method,
-    GridFileAscii grid
+    GridSpecification grid
   ) {
 
     IInterpolatorOverTin interpolator = method.getInterpolator(tin);

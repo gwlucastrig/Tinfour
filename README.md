@@ -3,6 +3,26 @@ Tinfour
 
 High-Performance 2D Delaunay Triangulation and Related Utilities Written in Java
 
+** Important Notice**
+
+The Tinfour project is currently migrating to the Maven build environment.
+This change will make Tinfour more compatible with the Github software distribution
+and project management procedures and will facilitate the use of Tinfour in
+a number of major software systems. 
+ 
+Unfortunately, making the Tinfour code base compliant with the Maven standards
+involved a one significant and unavoidable change to the Tinfour code base.
+All Java packages that were formerly named "tinfour" are now named "org.tinfour".
+While the names of the Java classes themselves will not change, the containing packages
+will. For example, classes in the package "tinfour.common" will now be stored
+under the package "org.tinfour.common".  In order to use the new version of the software
+libraries, applications code will need to modify their Java import statements.
+
+During the next few weeks things will be a bit unsettled. The code will always be in a working state.
+But some of the documentation and a few web-based links may be temporarily out-of-sync.
+
+Expect the transition to be complete by mid February, 2019.
+
 
 ### Delaunay Triangulation ###
 The Delaunay Triangulation defines an optimal form for organizing unstructured or semi-random

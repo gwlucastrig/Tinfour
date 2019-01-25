@@ -2,19 +2,30 @@
   <description>
     preliminary build file for Tinfour
   </description>
-  <!-- set global properties for this build -->
-  <property name="src.dir"     location="src/main/java"/>
-  <property name="testsrc.dir" location="src/test/java"/>
-  <property name="javadoc.dir" location="doc/javadoc"/>
-  <property name="build" location="build"/>
-  <property name="dist" location="dist"/>
+  
+	<!-- set global properties for this build -->
+	<property name="core.dir"     location="core/src/main/java"/>
+	<property name="gis.dir"     location="gid/src/main/java"/>
+	<property name="analysis.dir"     location="analysis/src/main/java"/>
+	<property name="demo.dir"     location="demo/src/main/java"/>
+	<property name="javadoc.dir" location="doc/javadoc"/>
+	<property name="build" location="build"/>
+	<property name="dist" location="dist"/>
 
   <target name="init">
     <!-- Create the time stamp -->
     <tstamp/>
     <!-- Create the build directory structure used by compile -->
     <mkdir dir="${build}" />
-	<mkdir dir="${dist}" />
+	<mkdir dir="${build}/core" />
+	<mkdir dir="${build}/gis" />
+	<mkdir dir="${build}/analysis" />
+	<mkdir dir="${build}/demo" />
+    <mkdir dir="${build}" />
+	<mkdir dir="${dist}/core" />
+	<mkdir dir="${dist}/gis" />
+	<mkdir dir="${dist}/analysis" />
+	<mkdir dir="${dist}/demo" />
   </target>
 
 	<path id="build.classpath">
@@ -25,30 +36,43 @@
   
   <target name="compile" depends="init" description="compile the source">
     <!-- Compile the java code from ${src.dir} into ${build} -->
-    <javac includeantruntime="false"   destdir="${build}"  debug="on">
-	    <src path="${src.dir}" />
-		<src path="${testsrc.dir}" />
+    <javac includeantruntime="false"   destdir="${build}/core"  debug="on">
+	    <src path="${core.dir}" />
 		<classpath refid="build.classpath" />
+	</javac>
+	
+	<javac includeantruntime="false"   destdir="${build}/gis"  debug="on">
+		<src path="${gis.dir}" />
+		<classpath refid="build.classpath" />
+		<classpath refid="${build}/core" />
 	</javac>
   </target>
  
   
-  <target name="dist" depends="compile"
-        description="generate the distribution">	
-	<!--Build a jar of just the Tinfour classes (without the test classes) -->
-	<jar jarfile="dist/Tinfour-1.0.jar" basedir="${build}" excludes="tinfour/test/**" >
+  <target name="dist" depends="compile" description="generate the distribution">	
+	<!--Build a jar of just the Tinfour core classes  -->
+	<jar jarfile="dist/TinfourCore-2.0.jar" basedir="${build}/core"  >
 		<manifest>
 			<attribute name="Built-By" value="${user.name}" />
 			<attribute name="Specification-Title" value="Tinfour Library Classes" />
-			<attribute name="Specification-Version" value="1.0" />
+			<attribute name="Specification-Version" value="2.0" />
 		</manifest>
 	</jar>
 	
+	 	<!--Build a jar of just the Tinfour core classes  -->
+	<jar jarfile="dist/TinfourGis-2.0.jar" basedir="${build}/gis"  >
+		<manifest>
+			<attribute name="Built-By" value="${user.name}" />
+			<attribute name="Specification-Title" value="Tinfour GIS Classes" />
+			<attribute name="Specification-Version" value="2.0" />
+		</manifest>
+	</jar>
+	 
 	 
 
     <!-- Build a jar of the test classes, with the Tinfour Viewer configured as the
 	     main class.  Set up the class path so the viewer (or individual test applications) 
-		 can be run. -->
+		 can be run. 
 	<jar jarfile="dist/TinfourViewer-1.0.jar" basedir="${build}">
 		<fileset dir="src/test/java" includes="tinfour/test/viewer/resources/**" />
 		<manifest>
@@ -59,6 +83,7 @@
 		</manifest>
 	</jar>	
   </target>
+  -->
 
   <target name="clean"  description="clean up">
     <!-- Delete the ${build} and ${dist} directory trees -->

@@ -372,8 +372,8 @@ public class ShapefileReader implements Closeable {
    * While there are other possible capitalization configurations, writing code
    * to support them seems silly and is not implemented at this time.
    *
-   * @param extension
-   * @return
+   * @param extension a string giving the target extension (do not include period)
+   * @return if found, a valid instance; otherwise, a null
    */
   public File getCoFile(String extension) {
     if (extension == null || extension.length() != 3) {
@@ -442,5 +442,29 @@ public class ShapefileReader implements Closeable {
    */
   public File getFile(){
     return file;
+  }
+  
+  /**
+   * Gets the current size of the main Shapefile in bytes.
+   *
+   * @return A long integer giving file size in bytes.
+   */
+  public long getFileSize(){
+    if(raf==null){
+      return  0;
+    }
+    return raf.getFileSize();
+  }
+  
+   /**
+   * Provides the current position within the main Shapefile.
+   *
+   * @return a long integer value giving offset in bytes from beginning of file.
+   */
+  public long getFilePosition(){
+    if(raf==null){
+      return 0;
+    }
+    return raf.getFilePosition();
   }
 }
