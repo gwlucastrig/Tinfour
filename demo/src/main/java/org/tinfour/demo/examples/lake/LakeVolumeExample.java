@@ -192,8 +192,8 @@ public class LakeVolumeExample {
    * Performs the main process, printing the results to the specified print
    * stream.
    *
-   * @param ps
-   * @param data
+   * @param ps a valid print stream instance for reporting output
+   * @param data a valid data instance for processing
    */
   public void processVolume(PrintStream ps, BathymetryData data) {
     List<Vertex> soundings = data.getSoundings();

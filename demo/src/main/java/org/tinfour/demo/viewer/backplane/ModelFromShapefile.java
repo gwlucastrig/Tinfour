@@ -53,6 +53,8 @@ public class ModelFromShapefile extends ModelAdapter implements IModel {
    *
    *
    * @param file a valid text or comma-separated value file
+   * @param dbfFieldOption an optional string indicating that a field from the DBF
+   * file is to be used as a source of z coordinates
    *
    */
   public ModelFromShapefile(File file, String dbfFieldOption) {

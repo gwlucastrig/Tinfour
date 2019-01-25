@@ -104,7 +104,7 @@ public class DbfFileReader implements Closeable {
 
   /**
    * Get the number of records in the DBF file
-   * @return 
+   * @return a positive integer
    */
   public int getRecordCount() {
     return nRecords;

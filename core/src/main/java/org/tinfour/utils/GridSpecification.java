@@ -22,12 +22,13 @@
  * Date     Name         Description
  * ------   ---------    -------------------------------------------------
  * 10/2015  G. Lucas     Created
+ * 01/2018  G. Lucas     Refactored for Tinfour 2.0 migration
  *
  * Notes:
  *
  * -----------------------------------------------------------------------
  */
-package org.tinfour.demo.utils;
+package org.tinfour.utils;
 
 import java.awt.geom.Point2D;
 import java.io.BufferedOutputStream;
@@ -37,7 +38,8 @@ import java.io.IOException;
 import java.io.PrintStream;
 
 /**
- * Provides metadata for describing a grid with convenience routines for writing
+ * Provides metadata for describing a grid and mapping Cartesian coordinates 
+ * to and from grid coordinates. Also provides convenience routines for writing
  * data to Esri's ASCII raster format (&#46;asc files).
  */
 public class GridSpecification {
@@ -83,11 +85,14 @@ public class GridSpecification {
    * treated according to the specified CellPosition. The number of rows and
    * columns will be computed based on the bounds and cell size.
    * <p>
-   * <strong>A caution regarding the interpretation of grid coordinates</strong>
+   * <strong>Caution: Interpretation of grid coordinates for
+   * Esri ASCII grid file form</strong>
    * <p>
-   * The available documentation regarding how Esri specifies the coordinates
-   * for an ASCII grid are not available. Thus this class makes the following
-   * assumption based on the available information regarding the positioning of
+   * If you use this class to write files in Esri's ASCII format, the following
+   * cautions apply. The available documentation regarding how Esri
+   * specifies the coordinates for an ASCII grid are not publically available.
+   * Thus this class makes the following assumption based
+   * on the available information regarding the positioning of
    * cells. If CenterOfCell is specified, then the coordinates for the
    * lower-left corner and upper-right corners of the rectangular domain would
    * lie in the lie in the center of the cell. If the CornerOfCell argument was
@@ -181,28 +186,16 @@ public class GridSpecification {
    *
    * @param x the x coordinate for computation
    * @param y the y coordinate for computation
-   * @param can array to store the row and column values; row will be stored at
+   * @param c an array to store the row and column values; row will be stored at
    * the specified offset, column will be stored at offset+1.
-   * @param offset
+   * @param offset the starting position within array c for storing data
    */
   public void mapXyToRowColumn(double x, double y, double[] c, int offset) {
     c[offset] = (yUpperRight - y) / cellSize;
     c[offset + 1] = (x - xLowerLeft) / cellSize;
   }
 
-  /**
-   * Maps the specified x and y coordinates to integral row and column values.
-   *
-   * @param x the x coordinate for computation
-   * @param y the y coordinate for computation
-   * @param can array to store the row and column values; row will be stored at
-   * the specified offset, column will be stored at offset+1.
-   * @param offset
-   */
-  public void mapXyToRowColumn(double x, double y, int[] c, int offset) {
-    c[offset] = (int) ((yUpperRight-y) / cellSize+0.5);
-    c[offset + 1] = (int) ((x - xLowerLeft) / cellSize+0.5);
-  }
+ 
 
   /**
    * Writes a two dimensional array of values to a file in a form compatible

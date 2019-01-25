@@ -213,6 +213,10 @@ public class VertexReaderShapefile implements IVertexReader, Closeable {
   @SuppressWarnings("PMD.AvoidDeeplyNestedIfStmts")
   @Override
   public List<Vertex> read(IMonitorWithCancellation monitor) throws IOException {
+    double mainFileSize = 0;
+    if(monitor!=null ){
+      mainFileSize = reader.getFileSize();
+    }
     DbfFileReader dbfReader = null;
     DbfField zField = null;
     boolean useShapefileZ = true;
@@ -251,7 +255,12 @@ public class VertexReaderShapefile implements IVertexReader, Closeable {
     xMax = Double.NEGATIVE_INFINITY;
     yMax = Double.NEGATIVE_INFINITY;
     zMax = Double.NEGATIVE_INFINITY;
+    int nRecordsRead = 0;
     while (reader.hasNext()) {
+      if( monitor!=null && mainFileSize>0 && (nRecordsRead%1000)==0 ){
+        double filePos = reader.getFilePosition();
+        monitor.reportProgress((int) (100.0 * filePos/mainFileSize)); 
+      }
       record = reader.readNextRecord(record);
       int recNo = record.recordNumber;
       double[] xyz = record.xyz;
@@ -406,7 +415,7 @@ public class VertexReaderShapefile implements IVertexReader, Closeable {
    * Gets the linear units for the horizontal coordinate system from 
    * the Shapefile. This value is typically obtained from the 
    * PRJ file associated with the Shapefile.
-   * @return 
+   * @return a valid enumeration instance
    */
   public LinearUnits getLinearUnits(){
     return linearUnits;
