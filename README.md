@@ -21,6 +21,9 @@ libraries, applications code will need to modify their Java import statements.
 During the next few weeks things will be a bit unsettled. The code will always be in a working state.
 But some of the documentation and a few web-based links may be temporarily out-of-sync.
 
+The build.xml file used for ant builds has been temporarily removed. Developers who prefer 
+to not use Maven may still process code using standard IDEs such as Eclipse and Netbeans.
+
 Expect the transition to be complete by mid February, 2019.
 
 
