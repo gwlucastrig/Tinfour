@@ -3,7 +3,7 @@ Tinfour
 
 High-Performance 2D Delaunay Triangulation and Related Utilities Written in Java
 
-** Important Notice**
+**Important Notice**
 
 The Tinfour project is currently migrating to the Maven build environment.
 This change will make Tinfour more compatible with the Github software distribution
@@ -20,6 +20,9 @@ libraries, applications code will need to modify their Java import statements.
 
 During the next few weeks things will be a bit unsettled. The code will always be in a working state.
 But some of the documentation and a few web-based links may be temporarily out-of-sync.
+It will also require a few weeks before the Tinfour compiled binary files (Jar files)
+are available at Maven Central.  Also, it is likely that the Maven pom.xml file will not
+be specified quite correctly.
 
 The build.xml file used for ant builds has been temporarily removed. Developers who prefer 
 to not use Maven may still process code using standard IDEs such as Eclipse and Netbeans.
