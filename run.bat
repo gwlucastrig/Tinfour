@@ -1,1 +1,1 @@
-java -Xmx2000m -jar  dist/TinfourViewer-1.0.jar
+java -Xmx2000m -jar  TinfourDemo-1.0.jar
