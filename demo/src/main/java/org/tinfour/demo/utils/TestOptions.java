@@ -52,10 +52,10 @@ import org.tinfour.standard.IncrementalTin;
 public class TestOptions {
 
   private static final String virtualClassName
-    = "tinfour.semivirtual.SemiVirtualIncrementalTin";
+    = "org.tinfour.semivirtual.SemiVirtualIncrementalTin";
 
   private static final String standardClassName
-    = "tinfour.standard.IncrementalTin";
+    = "org.tinfour.standard.IncrementalTin";
 
   /**
    * An enumeration giving options for how an input LAS file
