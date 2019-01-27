@@ -114,6 +114,7 @@ public class LakeVolumeExample {
       System.out.println(
               "Exception processing lake volume files, "
               + ioex.getMessage());
+      ioex.printStackTrace(System.out);
     }
   }
 
@@ -148,23 +149,29 @@ public class LakeVolumeExample {
 
     @Override
     public void accept(SimpleTriangle t) {
-      IQuadEdge a = t.getEdgeA();
-      IQuadEdge b = t.getEdgeB();
-      IQuadEdge c = t.getEdgeC();
-      if (isWater(a) || isWater(b) || isWater(c)) {
-        Vertex vA = a.getA();
-        Vertex vB = b.getA();
-        Vertex vC = c.getA();
-        double zA = vA.getZ();
-        double zB = vB.getZ();
-        double zC = vC.getZ();
-        double zMean = (zA + zB + zC) / 3;
-        double area = geoOp.area(vA, vB, vC);
 
-        nTriangles++;
-        volumeSum.add(zMean * area);
-        areaSum.add(area);
+   
+      IConstraint constraint = t.getContainingRegion();
+      if (constraint instanceof PolygonConstraint) {
+        Boolean appData = (Boolean)constraint.getApplicationData();
+        if (appData) {
+          IQuadEdge a = t.getEdgeA();
+          IQuadEdge b = t.getEdgeB();
+          IQuadEdge c = t.getEdgeC();
+          Vertex vA = a.getA();
+          Vertex vB = b.getA();
+          Vertex vC = c.getA();
+          double zA = vA.getZ();
+          double zB = vB.getZ();
+          double zC = vC.getZ();
+          double zMean = (zA + zB + zC) / 3;
+          double area = geoOp.area(vA, vB, vC);
 
+          nTriangles++;
+          volumeSum.add(zMean * area);
+          areaSum.add(area);
+
+        }
       }
     }
 

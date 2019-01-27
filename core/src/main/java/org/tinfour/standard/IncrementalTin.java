@@ -2605,6 +2605,14 @@ public class IncrementalTin implements IIncrementalTin {
   }
 
   @Override
+  public IConstraint getConstraint(int index) {
+    if (index < 0 || index >= constraintList.size()) {
+      return null;
+    }
+    return constraintList.get(index);
+  }
+  
+  @Override
   public int getSyntheticVertexCount() {
     return nSyntheticVertices;
   }
