@@ -2482,6 +2482,15 @@ public class SemiVirtualIncrementalTin implements IIncrementalTin {
     result.addAll(constraintList);
     return result;
   }
+  
+  
+  @Override
+  public IConstraint getConstraint(int index){
+    if(index<0 || index>=constraintList.size()){
+      return null;
+    }
+    return constraintList.get(index);
+  }
 
   @Override
   public int getSyntheticVertexCount() {

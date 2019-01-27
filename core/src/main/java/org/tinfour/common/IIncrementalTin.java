@@ -387,6 +387,17 @@ public interface IIncrementalTin {
    * @return a valid, potentially empty list of constraint instances.
    */
   public List<IConstraint> getConstraints();
+  
+ 
+  /**
+   * Gets the constraint associated with the index, or a null if 
+   * no such constraint exists. Note that there is no out-of-bounds
+   * range for the input index. An invalid index simply yields a null
+   * reference.
+   * @param index an arbitrary integer index
+   * @return if found, a valid constraint; otherwise a null.
+   */
+  public IConstraint getConstraint(int index);
 
   /**
    * Gets the number of synthetic vertices added to the TIN.

@@ -361,7 +361,7 @@ public final class TriangleCollector {
         setMarkBit(map, ef);
         setMarkBit(map, er);
         if (ef.getB() != null) {
-          consumer.accept(new SimpleTriangle(e, ef, er)); //NOPMD
+          consumer.accept(new SimpleTriangle(tin, e, ef, er)); //NOPMD
         }
       }
 
@@ -372,7 +372,7 @@ public final class TriangleCollector {
         setMarkBit(map, df);
         setMarkBit(map, dr);
         if (df.getB() != null) {
-          consumer.accept(new SimpleTriangle(d, df, dr)); //NOPMD
+          consumer.accept(new SimpleTriangle(tin, d, df, dr)); //NOPMD
         }
       }
     }

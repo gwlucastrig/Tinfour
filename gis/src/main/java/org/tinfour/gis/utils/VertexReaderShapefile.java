@@ -318,9 +318,8 @@ public class VertexReaderShapefile implements IVertexReader, Closeable {
   private ShapefileReader openFile(File file)
           throws IOException, IllegalArgumentException {
     File target = file;
-    ShapefileReader reader = null;
+    ShapefileReader reader =  new ShapefileReader(target);
     try {
-      reader = new ShapefileReader(target);
       checkForGeographicCoordinates(reader);
     } catch (IOException ioex) {
       try {
@@ -328,6 +327,7 @@ public class VertexReaderShapefile implements IVertexReader, Closeable {
           reader.close();
           reader = null;
         }
+        throw ioex;
       } catch (IOException dontCare) {
         // no action required
       }
