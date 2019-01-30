@@ -9,10 +9,9 @@
 	</parent>
   
     <packaging>jar</packaging>
-	<name>GIS</name>
+	<name>Gis</name>
     <artifactId>TinfourGis</artifactId>
-	
-	 <description>Classes for accessing data from GIS sources including Shapefiles and airborne Lidar</description>
+	<description>Classes for accessing data from GIS sources including Shapefiles and airborne Lidar</description>
  
  
   <properties>
