@@ -9,6 +9,10 @@ core/doc
 analysis/doc
 gis/doc
 demo/doc
+core/javadoc
+analysis/javadoc
+gis/javadoc
+demo/javadoc
 
 # Package Files -- at this time, all of these are included in the distribution #
 # *.jar

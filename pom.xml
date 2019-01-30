@@ -43,14 +43,15 @@
   
 	<properties>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+		<project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
 		<maven.compiler.source>1.8</maven.compiler.source>
 		<maven.compiler.target>1.8</maven.compiler.target>
 	</properties>
 
 	<modules>
+		<module>core</module>
 		<module>gis</module>
 		<module>analysis</module>
-		<module>core</module>
 		<module>demo</module>
 	</modules>
   
@@ -79,7 +80,14 @@
     </dependency>
 	
   </dependencies>
-  
+
+	<distributionManagement>
+		<snapshotRepository>
+			<id>ossrh</id>
+			<url>https://oss.sonatype.org/content/repositories/snapshots</url>
+		</snapshotRepository>
+	</distributionManagement>
+
   <build>
     <pluginManagement><!-- lock down plugins versions to avoid using Maven defaults (may be moved to parent pom) -->
       <plugins>
@@ -122,37 +130,87 @@
           <artifactId>maven-project-info-reports-plugin</artifactId>
           <version>3.0.0</version>
         </plugin>
-		
-		<plugin>
-        <groupId>org.apache.maven.plugins</groupId>
-        <artifactId>maven-javadoc-plugin</artifactId>
-        <version>3.0.1</version>
-        <configuration>
-				<!-- Specific configuration for the aggregate report -->
-				<reportOutputDirectory>doc</reportOutputDirectory>
-				<destDir>javadoc</destDir>
-        </configuration>
-        <executions>
-          <execution>
-            <id>aggregate</id>
-            <goals>
-              <goal>aggregate</goal>
-            </goals>
-            <phase>site</phase>
-            <configuration>
-				<!-- Specific configuration for the aggregate report -->
-				<reportOutputDirectory>doc</reportOutputDirectory>
-				<destDir>javadoc</destDir>
-            </configuration>
-          </execution>
-        </executions>
-      </plugin>
-	 
-		
       </plugins>
     </pluginManagement>
   </build>
   
-    
+
+	<!-- The "release" profile is mainly used when preparing a release for 
+	     Tinfour, but it can be applied any time you are running a maven package phase.
+		 It's main purpose is to enable to construction of
+		 the sources and javadoc jars required for deployment.  Normally,
+		 most developers won't want to waste the time generating the javadoc
+		 and sources while working on code.  But if they do, they can activate them
+         by supplying the -P release option on the maven command line.
+
+		 Note: this setup may change a bit in the near futre when digital signing is
+		       added to the pom.
+		 -->		 
+	<profiles>
+		<profile>
+			<id>release</id>
+			<build>
+				<plugins>
+					<plugin>
+						<groupId>org.apache.maven.plugins</groupId>
+						<artifactId>maven-javadoc-plugin</artifactId>
+						<version>3.0.1</version>
+						<executions>
+						<execution>
+							<id>attach-javadocs</id>
+							<phase>package</phase>
+							<goals>
+								<goal>jar</goal>
+							</goals>
+							</execution>
+						</executions>
+					</plugin>
+
+					<plugin>
+						<groupId>org.apache.maven.plugins</groupId>
+						<artifactId>maven-source-plugin</artifactId>
+						<version>3.0.1</version>
+						<executions>
+							<execution>
+							<id>attach-sources</id>
+							<phase>package</phase> 
+							<goals>
+								<goal>jar-no-fork</goal>
+							</goals>
+							</execution>
+						</executions>
+					</plugin>
+
+					<plugin>
+						<groupId>org.apache.maven.plugins</groupId>
+						<artifactId>maven-gpg-plugin</artifactId>
+						<version>1.5</version>
+						<executions>
+							<execution>
+							<id>sign-artifacts</id>
+							<phase>verify</phase>
+							<goals>
+								<goal>sign</goal>
+							</goals>
+							</execution>
+						</executions>
+					</plugin>
+
+					<plugin>
+						<groupId>org.sonatype.plugins</groupId>
+						<artifactId>nexus-staging-maven-plugin</artifactId>
+						<version>1.6.7</version>
+						<extensions>true</extensions>
+						<configuration>
+						<serverId>ossrh</serverId>
+						<nexusUrl>https://oss.sonatype.org/</nexusUrl>
+						<autoReleaseAfterClose>true</autoReleaseAfterClose>
+						</configuration>
+					</plugin>
+					
+				</plugins>
+			</build>
+		</profile>
+	</profiles>
  
 </project>
