@@ -13,6 +13,7 @@ core/javadoc
 analysis/javadoc
 gis/javadoc
 demo/javadoc
+pom.xml.versionsBackup
 
 # Package Files -- at this time, all of these are included in the distribution #
 # *.jar
