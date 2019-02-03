@@ -112,7 +112,7 @@ that I decided to include one of my own.
 ### Does Tinfour require external project dependencies? ###
 The core Tinfour module has no external dependencies. All it requires
 is the standard Java API. Thus, you can integrate the core classes
-into your own applications without add unnecessary object code to
+into your own applications without adding unnecessary object code to
 your software.
 
 The associated, extended-functionality modules do depend on object code from external projects.
