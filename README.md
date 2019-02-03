@@ -103,7 +103,7 @@ that I decided to include one of my own.
   public static void main(String []args) throws Exception {
       IncrementalTin tin = new IncrementalTin(1.0);
       List<Vertex>vertexList = TestVertices.makeRandomVertices(100, 0);
-      tin.add(vertexList);
+      tin.add(vertexList, null);
       TinRenderingUtility.drawTin(tin, 500, 500, new File("tin.png"));
   }
 ``` 
