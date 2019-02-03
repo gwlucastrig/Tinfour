@@ -20,9 +20,8 @@ High-Performance 2D Delaunay Triangulation and Related Utilities Written in Java
 > 
 > During the next few weeks things will be a bit unsettled. The code will always be in a working state.
 > But some of the documentation and a few web-based links may be temporarily out-of-sync.
-> It will also require a few weeks before the Tinfour compiled binary files (Jar files)
-> are available at Maven Central.  Also, it is likely that the Maven pom.xml file will not
-> be specified quite correctly.
+>
+> The Tinfour compiled binary files (Jar files) are now available at Maven Central.
 > 
 > The build.xml file used for ant builds has been temporarily removed. Developers who prefer 
 > to not use Maven may still process code using standard IDEs such as Eclipse and Netbeans.
@@ -110,25 +109,18 @@ that I decided to include one of my own.
 ``` 
 
 
-### Why are there external project dependencies? ###
-The Tinfour package has two external dependencies. The first is on the 
-laszip4j package, which allows the test and demonstration applications
-to read Lidar products in the highly specialized LAZ data compression
-format.  This dependency is not part of the core functions, but
-is necessary for access to these data products.
+### Does Tinfour require external project dependencies? ###
+The core Tinfour module has no external dependencies. All it requires
+is the standard Java API. Thus, you can integrate the core classes
+into your own applications without add unnecessary object code to
+your software.
 
-The second dependency is the [Apache Commons Math Library](https://commons.apache.org/proper/commons-math/).
-This dependency is required by the linear algebra and statistics functions
-needed by the Geographically Weighted Regression classes which
-are part of the core functionality. If you have
-an alternate linear algebra library in your own software, it would be
-possible to refactor the Tinfour code to perform the core regression
-functions using the alternative. You would, however, have to remove
-those functions that specifically require statistics elements
-(such as the T-Distribution) or provide your own alternative
+The associated, extended-functionality modules do depend on object code from external projects.
+These include modules that can read data from Geographic Information System (GIS) sources
+(Shapefiles and airborne Lidar LAS files) and those that preform advance mathematical
+and statistical analysis. These modules and dependencies are described in the Tinfour wiki page
+[Tinfour Project, Organization, and Builds](https://github.com/gwlucastrig/Tinfour/wiki/Tinfour-Project-Organization-Builds-and-Dependencies).
 
-For your convenience, a copy of both the laszip4j and the Commons math
-packages are included with the Tinfour download.
 
 ### What version of Java is required for Tinfour? ###
 Tinfour is compiled under Java 8.   
@@ -144,7 +136,7 @@ Configuring Tinfour in an IDE is pretty simple:
  * Set up a jar reference to (installed path)/Tinfour/lib/commons-math-3.3.6.1.jar
  * Set up a jar reference to (installed path)/Tinfour/lib/laszip4j.jar
  * Configure the IDE to run TinfourViewerMain.  If you are working with very
-   large datasets, you may include the Java runtime option -Xmx1500m or larger
+   large datasets, you may include the Java runtime option -Xmx2000m or larger
    to increase the heap size.  However, in recent versions of Java the specification
    of this option is not as critical as it once was.
  
