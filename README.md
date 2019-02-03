@@ -117,7 +117,7 @@ your software.
 
 The associated, extended-functionality modules do depend on object code from external projects.
 These include modules that can read data from Geographic Information System (GIS) sources
-(Shapefiles and airborne Lidar LAS files) and those that preform advance mathematical
+(Shapefiles and airborne Lidar LAS files) and those that perform advanced mathematical
 and statistical analysis. These modules and dependencies are described in the Tinfour wiki page
 [Tinfour Project, Organization, and Builds](https://github.com/gwlucastrig/Tinfour/wiki/Tinfour-Project-Organization-Builds-and-Dependencies).
 
