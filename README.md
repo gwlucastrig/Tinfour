@@ -114,19 +114,12 @@ and statistical analysis. These modules and dependencies are described in the Ti
 Tinfour is compiled under Java 8.   
 
 ### Configuring Tinfour in an IDE ###
-Configuring Tinfour in an IDE is pretty simple:
- * Create a Java project
- * Set up a source reference to (installed path)Tinfour/src/main/java
-   so that your IDE picks up the packages tinfour.*
- * If you wish to include the test and example applications, 
-   set up a source reference to (installed path)/Tinfour/src/test/java
-   so your IDE picks up the packages tinfour.test.*
- * Set up a jar reference to (installed path)/Tinfour/lib/commons-math-3.3.6.1.jar
- * Set up a jar reference to (installed path)/Tinfour/lib/laszip4j.jar
- * Configure the IDE to run TinfourViewerMain.  If you are working with very
-   large datasets, you may include the Java runtime option -Xmx2000m or larger
-   to increase the heap size.  However, in recent versions of Java the specification
-   of this option is not as critical as it once was.
+In terms of its software and package organization, Tinfour has a relatively simple structure, so opening
+it in an Integrated Development Environment (IDE) is straight forward.
+The major Java IDEs (Netbeans, Eclipse, and IntelliJ) all support direct access to Maven projects.
+If you have one of these IDE's you can simply load the Tinfour project and run with it. All work fine.
+More hints and background information on configuring Tinfour for use in an IDE are included in the Tinfour wiki page
+[Tinfour Builds and Dependencies](https://github.com/gwlucastrig/Tinfour/wiki/Tinfour-Builds-and-Dependencies).
  
 ### Current Work ###
 Early in the Tinfour project, I made the mistake of including
