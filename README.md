@@ -62,14 +62,13 @@ on your system.  If you do not have Java installed on your computer, you may
 download an installer for free from 
 [Oracle Corporation, Java Downloads](https://java.com/en/download/ "Java downloads from Oracle")
 
-Depending on your setup, you may be able to invoke the viewer
-by simply navigating to your copy of the Tinfour "dist" folder and double clicking
-the TinfourViewer jar ("Java Archive") file.  For Windows users, there is also a 
-run.bat script in the main software distribution. On all systems, you can invoke the viewer
-from a command window by using the following:
-```
-     java -Xmx1500m -jar TinfourViewer-1.0.jar
-```
+Instructions for setting up and running the Tinfour Viewer application
+are provided at the wiki page [Tinfour Execution from the Command Line](https://github.com/gwlucastrig/Tinfour/wiki/Tinfour-Execution-from-the-Command-Line).
+Unfortnately, the procedure for running the Viewer became more complicated
+when the Tinfour project adopted the Maven build process. But the wiki page
+attempts to simplify the process as much as possible and to
+provide all the details you will need to do so.
+ 
 The demonstrator is intended to show how the Tinfour library could be integrated
 into a full-featured GIS application or other analysis tool. It's a simple
 implementation with a minimum of features. 
