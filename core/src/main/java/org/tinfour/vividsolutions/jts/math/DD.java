@@ -63,7 +63,7 @@ import java.io.Serializable;
  * A JVM implementation may choose to use the non-standard extended-precision
  * as its default arithmetic mode.
  * To prevent this from happening, this code uses the
- * Java <tt>strictfp</tt> modifier,
+ * Java {@code strictfp} modifier,
  * which forces all operations to take place in the standard IEEE-754 rounding model.
  * <p>
  * The API provides both a set of value-oriented operations
@@ -105,7 +105,7 @@ import java.io.Serializable;
  * <i>Quad-Double Arithmetic: Algorithms, Implementation, and Application</i>,
  * manuscript, Oct 2000; Lawrence Berkeley National Laboratory Report BNL-46996.
  * <li>David Bailey, <i>High Precision Software Directory</i>;
- * <tt>http://crd.lbl.gov/~dhbailey/mpdist/index.html</tt>
+ * {@code http://crd.lbl.gov/~dhbailey/mpdist/index.html}
  * </ul>
  *
  *
@@ -166,7 +166,7 @@ public strictfp final class DD
    *
    * @param str a string containing a representation of a numeric value
    * @return the extended precision version of the value
-   * @throws NumberFormatException if <tt>s</tt> is not a valid representation of a number
+   * @throws NumberFormatException if {@code s} is not a valid representation of a number
    */
   public static DD valueOf(String str)
   throws NumberFormatException
@@ -175,7 +175,7 @@ public strictfp final class DD
     }
 
   /**
-   * Converts the <tt>double</tt> argument to a DoubleDouble number.
+   * Converts the {@code double} argument to a DoubleDouble number.
    *
    * @param x a numeric value
    * @return the extended precision version of the value
@@ -240,7 +240,7 @@ public strictfp final class DD
    * Creates a new DoubleDouble with value equal to the argument.
    *
    * @param str the value to initialize by
-   * @throws NumberFormatException if <tt>str</tt> is not a valid representation of a number
+   * @throws NumberFormatException if {@code str} is not a valid representation of a number
    */
   public DD(String str)
     throws NumberFormatException
@@ -334,10 +334,10 @@ public strictfp final class DD
 
 
   /**
-   * Returns a new DoubleDouble whose value is <tt>(this + y)</tt>.
+   * Returns a new DoubleDouble whose value is {@code (this + y)}.
    *
    * @param y the addend
-   * @return <tt>(this + y)</tt>
+   * @return {@code (this + y)}
    */
   public final DD add(DD y)
   {
@@ -345,10 +345,10 @@ public strictfp final class DD
   }
 
   /**
-   * Returns a new DoubleDouble whose value is <tt>(this + y)</tt>.
+   * Returns a new DoubleDouble whose value is {@code (this + y)}.
    *
    * @param y the addend
-   * @return <tt>(this + y)</tt>
+   * @return {@code (this + y)}
    */
   public final DD add(double y)
   {
@@ -356,7 +356,7 @@ public strictfp final class DD
   }
 
   /**
-   * Adds the argument to the value of <tt>this</tt>.
+   * Adds the argument to the value of {@code this}.
    * To prevent altering constants,
    * this method <b>must only</b> be used on values known to
    * be newly created.
@@ -370,7 +370,7 @@ public strictfp final class DD
   }
 
   /**
-   * Adds the argument to the value of <tt>this</tt>.
+   * Adds the argument to the value of {@code this}.
    * To prevent altering constants,
    * this method <b>must only</b> be used on values known to
    * be newly created.
@@ -415,10 +415,10 @@ public strictfp final class DD
   }
 
   /**
-   * Computes a new DoubleDouble object whose value is <tt>(this - y)</tt>.
+   * Computes a new DoubleDouble object whose value is {@code (this - y)}.
    *
    * @param y the subtrahend
-   * @return <tt>(this - y)</tt>
+   * @return {@code (this - y)}
    */
   public final DD subtract(DD y)
   {
@@ -426,10 +426,10 @@ public strictfp final class DD
   }
 
   /**
-   * Computes a new DoubleDouble object whose value is <tt>(this - y)</tt>.
+   * Computes a new DoubleDouble object whose value is {@code (this - y)}.
    *
    * @param y the subtrahend
-   * @return <tt>(this - y)</tt>
+   * @return {@code (this - y)}
    */
   public final DD subtract(double y)
   {
@@ -438,7 +438,7 @@ public strictfp final class DD
 
 
   /**
-   * Subtracts the argument from the value of <tt>this</tt>.
+   * Subtracts the argument from the value of {@code this}.
    * To prevent altering constants,
    * this method <b>must only</b> be used on values known to
    * be newly created.
@@ -453,7 +453,7 @@ public strictfp final class DD
   }
 
   /**
-   * Subtracts the argument from the value of <tt>this</tt>.
+   * Subtracts the argument from the value of {@code this}.
    * To prevent altering constants,
    * this method <b>must only</b> be used on values known to
    * be newly created.
@@ -468,9 +468,9 @@ public strictfp final class DD
   }
 
   /**
-   * Returns a new DoubleDouble whose value is <tt>-this</tt>.
+   * Returns a new DoubleDouble whose value is {@code -this}.
    *
-   * @return <tt>-this</tt>
+   * @return {@code -this}
    */
   public final DD negate()
   {
@@ -479,10 +479,10 @@ public strictfp final class DD
   }
 
   /**
-   * Returns a new DoubleDouble whose value is <tt>(this * y)</tt>.
+   * Returns a new DoubleDouble whose value is {@code (this * y)}.
    *
    * @param y the multiplicand
-   * @return <tt>(this * y)</tt>
+   * @return {@code (this * y)}
    */
   public final DD multiply(DD y)
   {
@@ -491,10 +491,10 @@ public strictfp final class DD
   }
 
   /**
-   * Returns a new DoubleDouble whose value is <tt>(this * y)</tt>.
+   * Returns a new DoubleDouble whose value is {@code (this * y)}.
    *
    * @param y the multiplicand
-   * @return <tt>(this * y)</tt>
+   * @return {@code (this * y)}
    */
   public final DD multiply(double y)
   {
@@ -503,7 +503,7 @@ public strictfp final class DD
   }
 
   /**
-   * Multiplies this object by the argument, returning <tt>this</tt>.
+   * Multiplies this object by the argument, returning {@code this}.
    * To prevent altering constants,
    * this method <b>must only</b> be used on values known to
    * be newly created.
@@ -517,7 +517,7 @@ public strictfp final class DD
   }
 
   /**
-   * Multiplies this object by the argument, returning <tt>this</tt>.
+   * Multiplies this object by the argument, returning {@code this}.
    * To prevent altering constants,
    * this method <b>must only</b> be used on values known to
    * be newly created.
@@ -545,10 +545,10 @@ public strictfp final class DD
   }
 
   /**
-   * Computes a new DoubleDouble whose value is <tt>(this / y)</tt>.
+   * Computes a new DoubleDouble whose value is {@code (this / y)}.
    *
    * @param y the divisor
-   * @return a new object with the value <tt>(this / y)</tt>
+   * @return a new object with the value {@code (this / y)}
    */
   public final DD divide(DD y)
   {
@@ -565,10 +565,10 @@ public strictfp final class DD
   }
 
   /**
-   * Computes a new DoubleDouble whose value is <tt>(this / y)</tt>.
+   * Computes a new DoubleDouble whose value is {@code (this / y)}.
    *
    * @param y the divisor
-   * @return a new object with the value <tt>(this / y)</tt>
+   * @return a new object with the value {@code (this / y)}
    */
   public final DD divide(double y)
   {
@@ -577,7 +577,7 @@ public strictfp final class DD
   }
 
   /**
-   * Divides this object by the argument, returning <tt>this</tt>.
+   * Divides this object by the argument, returning {@code this}.
    * To prevent altering constants,
    * this method <b>must only</b> be used on values known to
    * be newly created.
@@ -591,7 +591,7 @@ public strictfp final class DD
   }
 
   /**
-   * Divides this object by the argument, returning <tt>this</tt>.
+   * Divides this object by the argument, returning {@code this}.
    * To prevent altering constants,
    * this method <b>must only</b> be used on values known to
    * be newly created.
@@ -619,7 +619,7 @@ public strictfp final class DD
   }
 
   /**
-   * Returns a DoubleDouble whose value is  <tt>1 / this</tt>.
+   * Returns a DoubleDouble whose value is  {@code 1 / this}.
    *
    * @return the reciprocal of this value
    */
@@ -977,7 +977,7 @@ public strictfp final class DD
   public boolean isNaN() { return Double.isNaN(hi); }
 
   /**
-   * Tests whether this value is equal to another <tt>DoubleDouble</tt> value.
+   * Tests whether this value is equal to another {@code DoubleDouble} value.
    *
    * @param y a DoubleDouble value
    * @return true if this value = y
@@ -988,7 +988,7 @@ public strictfp final class DD
   }
 
   /**
-   * Tests whether this value is greater than another <tt>DoubleDouble</tt> value.
+   * Tests whether this value is greater than another {@code DoubleDouble} value.
    * @param y a DoubleDouble value
    * @return true if this value &gt; y
    */
@@ -997,7 +997,7 @@ public strictfp final class DD
     return (hi > y.hi) || (hi == y.hi && lo > y.lo);
   }
   /**
-   * Tests whether this value is greater than or equals to another <tt>DoubleDouble</tt> value.
+   * Tests whether this value is greater than or equals to another {@code DoubleDouble} value.
    * @param y a DoubleDouble value
    * @return true if this value &ge; y
    */
@@ -1006,7 +1006,7 @@ public strictfp final class DD
     return (hi > y.hi) || (hi == y.hi && lo >= y.lo);
   }
   /**
-   * Tests whether this value is less than another <tt>DoubleDouble</tt> value.
+   * Tests whether this value is less than another {@code DoubleDouble} value.
    * @param y a DoubleDouble value
    * @return true if this value &lt; y
    */
@@ -1015,7 +1015,7 @@ public strictfp final class DD
     return (hi < y.hi) || (hi == y.hi && lo < y.lo);
   }
   /**
-   * Tests whether this value is less than or equal to another <tt>DoubleDouble</tt> value.
+   * Tests whether this value is less than or equal to another {@code DoubleDouble} value.
    * @param y a DoubleDouble value
    * @return true if this value &le; y
    */
@@ -1029,7 +1029,7 @@ public strictfp final class DD
    *
    * @param other a valid instance of a DD object
    * @return -1,0 or 1 depending on whether this value is less than, equal to
-   * or greater than the value of <tt>o</tt>
+   * or greater than the value of {@code o}
    */
   @Override
   public int compareTo(DD other)
@@ -1317,12 +1317,12 @@ public strictfp final class DD
    * The format accepted is similar to the standard Java real number syntax.
    * It is defined by the following regular expression:
    * <pre>
-   * [<tt>+</tt>|<tt>-</tt>] {<i>digit</i>} [ <tt>.</tt> {<i>digit</i>} ] [ ( <tt>e</tt> | <tt>E</tt> ) [<tt>+</tt>|<tt>-</tt>] {<i>digit</i>}+
+   * [{@code +}|{@code -}] {<i>digit</i>} [ {@code .} {<i>digit</i>} ] [ ( {@code e} | {@code E} ) [{@code +}|{@code -}] {<i>digit</i>}+
    * </pre>
    *
    * @param str the string to parse
    * @return the value of the parsed number
-   * @throws NumberFormatException if <tt>str</tt> is not a valid representation of a number
+   * @throws NumberFormatException if {@code str} is not a valid representation of a number
    */
   public static DD parse(String str)
     throws NumberFormatException
