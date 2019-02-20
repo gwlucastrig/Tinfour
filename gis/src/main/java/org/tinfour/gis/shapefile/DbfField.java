@@ -30,6 +30,9 @@
 package org.tinfour.gis.shapefile;
 
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
 import org.tinfour.io.BufferedRandomAccessReader;
 
 /**
@@ -189,7 +192,8 @@ public class DbfField {
     }
     return Double.NaN;
   }
-
+  
+  
   /**
    * Gets the string value stored in the field during the most recent read
    * operation.
@@ -270,4 +274,66 @@ public class DbfField {
   public Object getApplicationData(){
     return builder.toString();
   }
+  
+  
+   /**
+   * Indicates whether the value in the field was encoded
+   * using engineering notation (e.g. scientific notation).
+   * The return value will be false for all field types except
+   * floating-point types.
+   * @return true if engineering notation was used; otherwise false.
+   */
+  public boolean usesEngineeringNotation(){
+    return false;
+  }
+  
+  
+  /**
+   * Gets the unique values for this field as a list of strings.
+   * @param dbf the DBF with which this field is associated
+   * @return if successful, a valid list of unique values
+   * @throws IOException in the event of an unrecoverable IO condition.
+   */
+   public List<String> getUniqueValues(DbfFileReader dbf) throws IOException {
+    int nRecords = dbf.getRecordCount();
+    List<String> list = new ArrayList<String>(nRecords);
+    if (nRecords == 0) {
+      return list;
+    }
+
+    // Investigate:  Because we are going to sort these strings anyway,
+    // perhaps this logic would be better served by a Java tree rather
+    // than a map.
+    int k = 0;
+    HashMap<String, String> map = new HashMap();
+    String sMin = "";
+    String sMax = "";
+    for (int i = 1; i <= nRecords; i++) {
+      dbf.readField(i, this);
+      String s = getString();
+      if (i == 1) {
+        map.put(s, s);
+        list.add(s);
+        sMin = s;
+        sMax = s;
+      } else if (!map.containsKey(s)) {
+        map.put(s, s);
+        list.add(s);
+        if (s.compareTo(sMin) < 0) {
+          sMin = s;
+        }
+        if (s.compareTo(sMax) > 0) {
+          sMax = s;
+        }
+        if (sMin.length() > 20) {
+          sMin = sMin.substring(0, 17) + "...";
+        }
+        if (sMax.length() > 20) {
+          sMax = sMax.substring(0, 17) + "...";
+        }
+      }
+    }
+    return list;
+  }
+
 }

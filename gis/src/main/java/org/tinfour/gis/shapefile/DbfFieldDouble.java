@@ -30,15 +30,17 @@
 package org.tinfour.gis.shapefile;
 
 import java.io.IOException;
+import java.util.Arrays;
 import org.tinfour.io.BufferedRandomAccessReader;
 
 /**
  * Extends DbfField with special handling for reading numeric values.
  */
-class DbfFieldDouble extends DbfField {
+public class DbfFieldDouble extends DbfField {
 
   private final static double LOG10 = Math.log(10.0);
   private double value;
+  private boolean engineeringNotation;
 
   DbfFieldDouble(
           String name,
@@ -54,6 +56,7 @@ class DbfFieldDouble extends DbfField {
   void read(BufferedRandomAccessReader brad, long recordFilePos) throws IOException {
     brad.seek(recordFilePos + offset);
     builder.setLength(0);
+    engineeringNotation = false;
 
     int i = 0;
     double sign = 1;
@@ -107,7 +110,7 @@ class DbfFieldDouble extends DbfField {
     }
 
     // process the fractional part
-    boolean engineeringNotation = false;
+    engineeringNotation = false;
     while (i < fieldLength) {
       int b = brad.readUnsignedByte();
       builder.append((char)b);
@@ -167,9 +170,18 @@ class DbfFieldDouble extends DbfField {
     return value;
   }
   
+  /**
+   * Indicates whether the value in the field was encoded
+   * using engineering notation (e.g. scientific notation)
+   * @return true if engineering notation was used; otherwise false.
+   */
+  public boolean usesEngineeringNotation(){
+    return engineeringNotation;
+  }
   
-    /**
+  /**
    * Gets the equivalent integer value of the field.
+   *
    * @return a valid integral value, or a zero if undefined.
    */
   @Override
@@ -192,4 +204,48 @@ class DbfFieldDouble extends DbfField {
     return value;
   }
 
+  
+  /**
+   * Gets an array of unique values for this field.
+   * @param dbf a valid instance
+   * @return if successful an array of zero or more elements.
+   * @throws IOException in the event of an unrecoverable I/O condition.
+   */
+  public double [] getUniqueValueArray(DbfFileReader dbf) throws IOException {
+     Double vMin = Double.POSITIVE_INFINITY;
+    Double vMax = Double.NEGATIVE_INFINITY;
+    int nRecords = dbf.getRecordCount();
+    double[] vArray = new double[nRecords];
+    if (nRecords == 0) {
+      return new double[0];
+    }
+
+    
+    int k = 0;
+    for (int i = 1; i <= nRecords; i++) {
+      dbf.readField(i, this);
+      double v = getDouble();
+      if (v < vMin) {
+        vMin = v;
+      }
+      if (v > vMax) {
+        vMax = v;
+      }
+      vArray[k++] = v;
+    }
+    
+
+    Arrays.sort(vArray);
+    int nUniqueValues = 1;
+    double prior = vArray[0];
+    for (int i = 1; i < nRecords; i++) {
+      if (vArray[i] != prior) {
+        prior = vArray[i];
+        vArray[nUniqueValues] = vArray[i];
+        nUniqueValues++;
+      }
+    }
+    return Arrays.copyOf(vArray, nUniqueValues);
+     
+  }
 }

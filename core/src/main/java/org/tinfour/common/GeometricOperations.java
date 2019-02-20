@@ -402,13 +402,14 @@ public class GeometricOperations {
   }
 
   /**
-   * Determines the signed area of triangle ABC
+   * Determines the signed area of triangle ABC. If necessary, uses extended
+   * arithmetic to compute the area of a nearly degenerate triangle.
    *
    * @param a the initial vertex
    * @param b the second vertex
    * @param c the third vertex
-   * @return an area calculation signed positive or negative according to the
-   * order of the vertices
+   * @return a positive value if the triangle is oriented counterclockwise,
+   * negative if it is oriented clockwise, or zero if it is degenerate.
    */
   public double area(Vertex a, Vertex b, Vertex c) {
     // the computation used here and the one used in the
@@ -416,13 +417,44 @@ public class GeometricOperations {
     // in the halfPlane() calculation, we swap a couple of variables
     // so as to avoid a subtraction.  So the h calculation could be written
     // double h = (c.x - a.x) * (a.y - b.y) + (c.y - a.y) * (b.x - a.x);
-    double h =  (c.y - a.y) * (b.x - a.x) - (c.x - a.x) * (b.y - a.y );
+    double h = (c.y - a.y) * (b.x - a.x) - (c.x - a.x) * (b.y - a.y);
     if (-inCircleThreshold < h && h < inCircleThreshold) {
       h = halfPlane(a.x, a.y, b.x, b.y, c.x, c.y);
     }
     return h / 2.0;
   }
 
+  /**
+   * Determines the signed area of triangle ABC. If necessary, uses extended
+   * arithmetic to compute the area of a nearly degenerate triangle.
+   *
+   * @param ax the x coordinate of the first vertex in the triangle
+   * @param ay the y coordinate of the first vertex in the triangle
+   * @param bx the x coordinate of the second vertex in the triangle
+   * @param by the y coordinate of the second vertex in the triangle
+   * @param cx the x coordinate of the third vertex in the triangle
+   * @param cy the y coordinate of the point vertex in the triangle
+   * @return a positive value if the triangle is oriented counterclockwise,
+   * negative if it is oriented clockwise, or zero if it is degenerate.
+   */
+  public double area(
+          double ax, double ay, 
+          double bx, double by, 
+          double cx, double cy)
+  {
+    // the computation used here and the one used in the
+    // halfPlane() method are the same.  However, to save operations
+    // in the halfPlane() calculation, we swap a couple of variables
+    // so as to avoid a subtraction.  So the h calculation could be written
+    // double h = (cx - ax) * (ay - by) + (cy - ay) * (bx - ax);
+    double h = (cy - ay) * (bx - ax) - (cx - ax) * (by - ay);
+    if (-inCircleThreshold < h && h < inCircleThreshold) {
+      h = halfPlane(ax, ay, bx, by, cx, cy);
+    }
+    return h / 2.0;
+  }
+
+  
   /**
    * Clear the diagnostic operation counts maintained by this class.
    */

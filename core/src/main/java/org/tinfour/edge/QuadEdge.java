@@ -53,20 +53,28 @@
  *
  *  So this class contains the following fundamental member elements
  *  all of which are 4 bytes in JVMs where references are compressed:
- *
+ *      
  *      reference to the class        (4)
  *      reference to the dual         (4)
  *      reference to the vertex       (4)
  *      reference to the forward edge (4)
  *      reference to the reverse edge (4)
- *           total                    20
+ *         subtotal                    20
  *
  *  Since the size of the class must be a multiple of 8, that leaves 4
  *  bytes which will be allocated in memory no matter what.  So we
  *  put that to use by defining an integer application data element
  *
- *      integer index                (4)
- *          total                     24
+ *       integer index                (4)
+ *         subtotal                    24
+ *
+ *  Flags and book-keeping elements used by Java for memory management
+ *  In the Windows/Hotspot JVM where I've inspected this using the Unsafe API,
+ *  I observed 8 bytes of memory use.
+ *
+ *      flags                        (8)
+ *         total                      32
+ *      
  *
  * The index element of this class is used to assign a unique integer value
  * to each edge created in the TIN-building process or other applications.

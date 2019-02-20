@@ -587,12 +587,24 @@ public class DataViewingPanel extends JPanel {
       return;
     }
 
+    String ext = getFileExtension(file);
+    
+
+    
+    
     IModel model = mvComposite.getModel();
     CompositeImageScale ccs = this.getImageScaleForContinuity();
     // if the application failed to queue the constraints
     // if could return a null.  This should be rare.
+    if ("shp".equalsIgnoreCase(ext)) {
+      this.raiseShapefileOptionsForConstraint(model, file, ccs);
+      return;
+    }
+
+    
+    
     MvComposite mvc
-      = backplaneManager.queueConstraintLoadingTask(model, file, ccs);
+      = backplaneManager.queueConstraintLoadingTask(model, file, ccs, null);
     if (mvc != null) {
       mvComposite = mvc;
       model = mvc.getModel();
@@ -1195,4 +1207,70 @@ public class DataViewingPanel extends JPanel {
     shapefileDialog.setVisible(true);
 
   }
+    
+  void raiseShapefileOptionsForConstraint(IModel model, File file, CompositeImageScale ccs) {
+    JFrame frame = null;
+    Component c = this.getParent();
+    while (c != null) {
+      if (c instanceof JFrame) {
+        frame = (JFrame) c;
+        break;
+      }
+      c = c.getParent();
+    }
+    if (frame == null) {
+      return;
+    }
+
+    ShapefileReader reader;
+    try {
+      reader = new ShapefileReader(file);
+    } catch (IOException ioex) {
+      return;
+    }
+
+    final ShapefileOptionsPanel shapefilePanel = new ShapefileOptionsPanel();
+    shapefilePanel.applyShapefile(reader);
+    try {
+      reader.close();
+    } catch (IOException ioex) {
+      return;
+    }
+
+    final DataViewingPanel self = this;
+    ActionListener okActionListener = new ActionListener() {
+      @Override
+      public void actionPerformed(ActionEvent ae) {
+        String s = shapefilePanel.getMetadataSelection();
+        MvComposite mvc
+                = backplaneManager.queueConstraintLoadingTask(model, file, ccs, s);
+        if (mvc != null) {
+          mvComposite = mvc;
+        }
+        self.repaint();
+      }
+    };
+
+    shapefilePanel.setOkActionListener(okActionListener);
+
+    JDialog shapefileDialog = new JDialog(frame,
+            "Shapefile Options",
+            false);
+    shapefileDialog.setContentPane(shapefilePanel);
+    shapefileDialog.setDefaultCloseOperation(
+            JDialog.HIDE_ON_CLOSE);
+    //shapefileDialog.addWindowListener(new WindowAdapter() {
+    //  @Override
+    //  public void windowClosing(WindowEvent we) {
+    //
+    //  }
+    //
+    //});
+
+    shapefileDialog.pack();
+    shapefileDialog.setLocationRelativeTo(frame);
+    shapefileDialog.setVisible(true);
+
+  }
+
 }
