@@ -144,6 +144,7 @@ public class ConstraintReaderShapefile implements Closeable {
           case PolyLineZ:
           case PolygonZ:
           case Polygon:
+          case PolyLine:
             nPointsTotal += record.nPoints;
             int k = 0;
             for (int iPart = 0; iPart < record.nParts; iPart++) {

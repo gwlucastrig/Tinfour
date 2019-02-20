@@ -35,6 +35,7 @@ import java.util.List;
 import org.tinfour.common.IConstraint;
 import org.tinfour.common.IMonitorWithCancellation;
 import org.tinfour.demo.utils.cdt.ConstraintLoader;
+import org.tinfour.gis.utils.ConstraintReaderShapefile;
 
 class MvTaskLoadConstraints implements IModelViewTask {
 
@@ -43,17 +44,19 @@ class MvTaskLoadConstraints implements IModelViewTask {
   private final File constraintsFile;
   private final int taskIndex;
   private boolean isCancelled;
+  private final String optionString;
 
   MvTaskLoadConstraints(
     BackplaneManager backplaneManager,
     File file,
     MvComposite mvComposite,
-    int taskIndex) {
+    int taskIndex,
+    String optionString) {
     this.mvComposite = mvComposite;
     this.constraintsFile = file;
     this.taskIndex = taskIndex;
     this.backplaneManager = backplaneManager;
-
+    this.optionString = optionString;
   }
 
   @Override
@@ -74,13 +77,23 @@ class MvTaskLoadConstraints implements IModelViewTask {
     IModel model = mvComposite.getModel();
     try {
       IMonitorWithCancellation monitor
-        = backplaneManager.getProgressMonitor(taskIndex);
+              = backplaneManager.getProgressMonitor(taskIndex);
       monitor.postMessage("Loading constraints from " + constraintsFile.getName());
-      ConstraintLoader loader = new ConstraintLoader();
- 
-      loader.setCoordinateTransform(model.getCoordinateTransform());
+      List<IConstraint> constraints = null;
 
-      List<IConstraint> constraints = loader.readConstraintsFile(constraintsFile);
+      if ("shp".equalsIgnoreCase(getFileExtension(constraintsFile))) {
+        ConstraintReaderShapefile reader
+                = new ConstraintReaderShapefile(constraintsFile);
+        if (this.optionString != null) {
+          reader.setDbfFieldForZ(optionString);
+        }
+        reader.setCoordinateTransform(model.getCoordinateTransform());
+        constraints = reader.read();
+      } else {
+        ConstraintLoader loader = new ConstraintLoader();
+        loader.setCoordinateTransform(model.getCoordinateTransform());
+        constraints = loader.readConstraintsFile(constraintsFile);
+      }
       model.addConstraints(constraintsFile, constraints);
       monitor.reportDone();
       backplaneManager.postModelRefreshCompleted(this, mvComposite);
@@ -103,4 +116,14 @@ class MvTaskLoadConstraints implements IModelViewTask {
     return  false;
   }
 
+    String getFileExtension(File file) {
+    if (file != null) {
+      String name = file.getName();
+      int i = name.lastIndexOf('.');
+      if (i > 0 && i < name.length() - 1) {
+        return name.substring(i + 1, name.length());
+      }
+    }
+    return null;
+  }
 }

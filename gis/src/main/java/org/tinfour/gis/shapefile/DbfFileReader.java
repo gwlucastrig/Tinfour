@@ -155,6 +155,10 @@ public class DbfFileReader implements Closeable {
     field.read(brad, recordOffset);
   }
 
+  
+  
+  
+  
   @Override
   public void close() throws IOException {
     if (brad != null) {

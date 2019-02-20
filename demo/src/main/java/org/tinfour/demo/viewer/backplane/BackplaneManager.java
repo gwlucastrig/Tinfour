@@ -182,7 +182,7 @@ public class BackplaneManager {
   }
 
   public MvComposite queueConstraintLoadingTask(
-    IModel model, File file, CompositeImageScale ccs) {
+    IModel model, File file, CompositeImageScale ccs, String optionString) {
     cancelRenderingTasks();
     int width = ccs.getWidth();
     int height = ccs.getHeight();
@@ -205,7 +205,7 @@ public class BackplaneManager {
     }
 
     MvTaskLoadConstraints task
-      = new MvTaskLoadConstraints(this, file, mvComposite, taskIndex);
+      = new MvTaskLoadConstraints(this, file, mvComposite, taskIndex, optionString);
     loaderQueue.queueTask(task);
     return mvComposite;
   }

@@ -63,7 +63,8 @@
  *    double y                            8 bytes
  *    float  z                            4 bytes
  *    byte   status                       1 byte
- *    padding (reserved by Java)          3 bytes (not committed at this time)
+ *    byte   colorIndex                   1 byte
+ *    padding (reserved by Java)          2 bytes (not committed at this time)
  *    --------------------------        ---------
  *    Total                              40 bytes
  *

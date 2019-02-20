@@ -30,12 +30,13 @@
 package org.tinfour.gis.shapefile;
 
 import java.io.IOException;
+import java.util.Arrays;
 import org.tinfour.io.BufferedRandomAccessReader;
 
 /**
  * Extends DbfField with special handling for reading integer values.
  */
-class DbfFieldInt extends DbfField {
+public class DbfFieldInt extends DbfField {
 
   private int value;
 
@@ -56,7 +57,7 @@ class DbfFieldInt extends DbfField {
 
     int i = 0;
     int sign = 1;
-    long s = 0;  
+    long s = 0;
 
     // find first non-space character
     boolean foundDigit = false;
@@ -83,14 +84,14 @@ class DbfFieldInt extends DbfField {
         value = 0;
         throw new IOException(
                 "Invalid integer value, unknown character "
-                +((char)b));
+                + ((char) b));
       }
     }
 
-    if(!foundDigit){
-       throw new IOException("Invalid integer value, blank field");
+    if (!foundDigit) {
+      throw new IOException("Invalid integer value, blank field");
     }
-    
+
     // process the non-fractional part
     while (i < fieldLength) {
       int b = brad.readUnsignedByte();
@@ -101,9 +102,9 @@ class DbfFieldInt extends DbfField {
         break;
       } else {
         value = 0;
-         throw new IOException(
+        throw new IOException(
                 "Invalid integer value, unknown character "
-                +((char)b));
+                + ((char) b));
       }
       i++;
     }
@@ -112,10 +113,10 @@ class DbfFieldInt extends DbfField {
 
     if (s > Integer.MAX_VALUE) {
       value = Integer.MAX_VALUE;
-      throw new IOException("Invalid integer value out of range "+s);
+      throw new IOException("Invalid integer value out of range " + s);
     } else if (s < Integer.MIN_VALUE) {
       value = Integer.MIN_VALUE;
-      throw new IOException("Invalid integer value out of range "+s);
+      throw new IOException("Invalid integer value out of range " + s);
     }
 
     value = (int) s;
@@ -148,4 +149,45 @@ class DbfFieldInt extends DbfField {
     return value;
   }
 
+  /**
+   * Gets an array of unique values for this field.
+   *
+   * @param dbf a valid instance
+   * @return if successful an array of zero or more elements.
+   * @throws IOException in the event of an unrecoverable I/O condition.
+   */
+  public int[] getUniqueValueArray(DbfFileReader dbf) throws IOException {
+    int vMin = Integer.MAX_VALUE;
+    int vMax = Integer.MIN_VALUE;
+    int nRecords = dbf.getRecordCount();
+    int[] vArray = new int[nRecords];
+    if (nRecords == 0) {
+      return new int[0];
+    }
+
+    int k = 0;
+    for (int i = 1; i <= nRecords; i++) {
+      dbf.readField(i, this);
+      int v = getInteger();
+      if (v < vMin) {
+        vMin = v;
+      }
+      if (v > vMax) {
+        vMax = v;
+      }
+      vArray[k++] = v;
+    }
+
+    Arrays.sort(vArray);
+    int nUniqueValues = 1;
+    int prior = vArray[0];
+    for (int i = 1; i < nRecords; i++) {
+      if (vArray[i] != prior) {
+        prior = vArray[i];
+        vArray[nUniqueValues] = vArray[i];
+        nUniqueValues++;
+      }
+    }
+    return Arrays.copyOf(vArray, nUniqueValues);
+  }
 }

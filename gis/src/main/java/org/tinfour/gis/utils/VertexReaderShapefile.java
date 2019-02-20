@@ -269,11 +269,13 @@ public class VertexReaderShapefile implements IVertexReader, Closeable {
         dbfReader.readField(recNo, zField);
         z = zField.getDouble();
       }
+      
       for (int i = 0; i < record.nPoints; i++) {
-        double x = xyz[0];
-        double y = xyz[1];
+        int index =i*3;
+        double x = xyz[index];
+        double y = xyz[index+1];
         if (useShapefileZ) {
-          z = xyz[2];
+          z = xyz[index+2];
         }
 
         if (coordinateTransform != null) {
