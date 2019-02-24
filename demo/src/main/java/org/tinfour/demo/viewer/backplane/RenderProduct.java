@@ -30,6 +30,7 @@
 
 package org.tinfour.demo.viewer.backplane;
 
+import java.awt.Shape;
 import java.awt.geom.AffineTransform;
 import java.awt.image.BufferedImage;
 
@@ -38,12 +39,17 @@ public class RenderProduct {
     public MvComposite composite;
     public AffineTransform compatibilityTransform;
     public BufferedImage image;
+    public Shape clip;
 
     RenderProduct(
       RenderProductType layerType,
-      MvComposite composite, BufferedImage image){
+      MvComposite composite, 
+      BufferedImage image, 
+      Shape clip)
+    {
       this.layerType = layerType;
       this.composite = composite;
       this.image = image;
+      this.clip = clip;
     }
 }

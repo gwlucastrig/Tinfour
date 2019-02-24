@@ -52,14 +52,14 @@ class MvTaskBuildRasterBlock implements IModelViewTask {
   private final AtomicInteger blockCounter;
 
   MvTaskBuildRasterBlock(
-    BackplaneManager backplaneManager,
-    MvComposite composite,
-    AtomicInteger blockCounter,
-    int nBlocks,
-    int row0,
-    int nRow,
-    int taskIndex,
-    IMonitorWithCancellation monitor) {
+          BackplaneManager backplaneManager,
+          MvComposite composite,
+          AtomicInteger blockCounter,
+          int nBlocks,
+          int row0,
+          int nRow,
+          int taskIndex,
+          IMonitorWithCancellation monitor) {
     this.blockCounter = blockCounter;
     this.backplaneManager = backplaneManager;
     this.composite = composite;
@@ -88,7 +88,7 @@ class MvTaskBuildRasterBlock implements IModelViewTask {
     }
 
     composite.buildGrid(row0, nRow, hillshade, this);
-    if(isCancelled){
+    if (isCancelled) {
       return;
     }
     int test = blockCounter.decrementAndGet();
@@ -99,9 +99,10 @@ class MvTaskBuildRasterBlock implements IModelViewTask {
       backplaneManager.statusPanel.postMessage(taskIndex, "Rendering raster image");
       composite.transferGridToRasterImage();
       RenderProduct product = new RenderProduct(
-        RenderProductType.Raster,
-        composite,
-        composite.rasterImage);
+              RenderProductType.Raster,
+              composite,
+              composite.rasterImage,
+              null);
       monitor.reportDone();
       backplaneManager.postImageUpdate(this, product);
     }
@@ -112,9 +113,8 @@ class MvTaskBuildRasterBlock implements IModelViewTask {
     return taskIndex;
   }
 
-
   @Override
-  public boolean isRenderingTask(){
-    return  true;
+  public boolean isRenderingTask() {
+    return true;
   }
 }
