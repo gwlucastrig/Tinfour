@@ -68,6 +68,8 @@ public class ViewOptions {
 
   private SampleThinning wireframeSampleThinning = SampleThinning.Medium;
   private LidarPointSelection lidarPointSelection = LidarPointSelection.GroundPoints;
+  
+  private boolean isClipOnConstraintsSelected;
 
   /**
    * An enumeration definitng states for Wireframe sample thinning
@@ -117,6 +119,7 @@ public class ViewOptions {
     hillshadeElevation = v.hillshadeElevation;
     hillshadeAmbient = v.hillshadeAmbient;
     isFullResolutionGridSelected = v.isFullResolutionGridSelected;
+    isClipOnConstraintsSelected = v.isClipOnConstraintsSelected;
 
     lidarPointSelection = v.lidarPointSelection;
     rasterInterpolationMethod = v.rasterInterpolationMethod;
@@ -440,6 +443,15 @@ public class ViewOptions {
     isFullResolutionGridSelected = status;
   }
 
+    public boolean isClipOnConstraintsSelected() {
+    return isClipOnConstraintsSelected;
+  }
+
+  public void setClipOnConstraintsSelected(boolean status) {
+    isClipOnConstraintsSelected = status;
+  }
+  
+  
   /**
    * Gets the option for selecting lidar sample points
    *

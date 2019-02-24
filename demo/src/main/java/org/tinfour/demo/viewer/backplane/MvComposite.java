@@ -35,6 +35,7 @@ import java.awt.Font;
 import java.awt.GradientPaint;
 import java.awt.Graphics2D;
 import java.awt.RenderingHints;
+import java.awt.Shape;
 import java.awt.font.FontRenderContext;
 import java.awt.font.TextLayout;
 import java.awt.geom.AffineTransform;
@@ -53,6 +54,7 @@ import org.tinfour.common.IIncrementalTin;
 import org.tinfour.common.INeighborEdgeLocator;
 import org.tinfour.common.IQuadEdge;
 import org.tinfour.common.NeighborEdgeVertex;
+import org.tinfour.common.PolygonConstraint;
 import org.tinfour.common.Vertex;
 import org.tinfour.gwr.BandwidthSelectionMethod;
 import org.tinfour.gwr.SurfaceModel;
@@ -65,14 +67,14 @@ import org.tinfour.utils.AxisIntervals;
 import org.tinfour.utils.LinearUnits;
 
 /**
- * Provides elements and method for managing the imagery associated with
- * a model and a set of view options.
+ * Provides elements and method for managing the imagery associated with a model
+ * and a set of view options.
  */
 public class MvComposite {
 
   /**
-   * An arbitrary setting for how much of the available application
-   * memory the application is willing to allocate to the TIN.
+   * An arbitrary setting for how much of the available application memory the
+   * application is willing to allocate to the TIN.
    */
   static final double tinMemoryUseFraction = 0.1;
 
@@ -115,11 +117,10 @@ public class MvComposite {
   double zVisMin = Double.POSITIVE_INFINITY;
   double zVisMax = Double.NEGATIVE_INFINITY;
   /**
-   * A buffered image that will be returned to calling
-   * application via a synchronized method. This image
-   * s modified only in synchronized blocks and only using processes
-   * that can be completed with sufficient speed to allow it to be
-   * accessed from the event-dispatch thread.
+   * A buffered image that will be returned to calling application via a
+   * synchronized method. This image s modified only in synchronized blocks and
+   * only using processes that can be completed with sufficient speed to allow
+   * it to be accessed from the event-dispatch thread.
    */
   BufferedImage rasterImage;
 
@@ -137,8 +138,8 @@ public class MvComposite {
   private String modelAndRenderingReport;
 
   /**
-   * A private constructor to deter other classes from instantiating
-   * this class without a proper model.
+   * A private constructor to deter other classes from instantiating this class
+   * without a proper model.
    */
   private MvComposite() {
     taskIndex = 0;
@@ -151,27 +152,27 @@ public class MvComposite {
   }
 
   /**
-   * Construct an instance with the specified rendering elements.
-   * Note that once instantiated, the model and view must never be changed.
+   * Construct an instance with the specified rendering elements. Note that once
+   * instantiated, the model and view must never be changed.
    *
    * @param model a valid instance giving a data source
-   * @param view a valid specification giving instructions on how the
-   * data is to be rendered
+   * @param view a valid specification giving instructions on how the data is to
+   * be rendered
    * @param width the width of the panel rendering surface
    * @param height the height of the panel rendering surface
-   * @param m2c the model to composite transformation; specify a null
-   * for first time initialization
-   * @param c2m the composite to model transformation; specify a null for
-   * first time initialization
-   * @param taskIndex the index of the task used during the initialization
-   * of this instance
+   * @param m2c the model to composite transformation; specify a null for first
+   * time initialization
+   * @param c2m the composite to model transformation; specify a null for first
+   * time initialization
+   * @param taskIndex the index of the task used during the initialization of
+   * this instance
    */
   public MvComposite(
-    IModel model,
-    ViewOptions view,
-    int width, int height,
-    AffineTransform m2c, AffineTransform c2m,
-    int taskIndex) {
+          IModel model,
+          ViewOptions view,
+          int width, int height,
+          AffineTransform m2c, AffineTransform c2m,
+          int taskIndex) {
     if (model == null) {
       throw new IllegalArgumentException("Null model not allowed");
     }
@@ -216,10 +217,9 @@ public class MvComposite {
 
   /**
    * Construct a new composite transferring data products from the older
-   * composite so that they may be reused without additional processing.
-   * These elements may include TINs and grids as well as transformations.
-   * Generally, this method is used when the styling has changed, but the
-   * geometry has not.
+   * composite so that they may be reused without additional processing. These
+   * elements may include TINs and grids as well as transformations. Generally,
+   * this method is used when the styling has changed, but the geometry has not.
    *
    * @param mvComposite the older composite
    * @param view a valid set of view parameters
@@ -227,10 +227,10 @@ public class MvComposite {
    * @param taskIndex the index for the task associated with the composite
    */
   public MvComposite(
-    MvComposite mvComposite,
-    ViewOptions view,
-    boolean preserveTins,
-    int taskIndex) {
+          MvComposite mvComposite,
+          ViewOptions view,
+          boolean preserveTins,
+          int taskIndex) {
     this.taskIndex = taskIndex;
     this.width = mvComposite.width;
     this.height = mvComposite.height;
@@ -303,9 +303,8 @@ public class MvComposite {
   }
 
   /**
-   * Get the view options associated with the composite.
-   * It is important that application code not alter the content
-   * of the options object/
+   * Get the view options associated with the composite. It is important that
+   * application code not alter the content of the options object/
    *
    * @return a valid view object.
    */
@@ -378,10 +377,10 @@ public class MvComposite {
   }
 
   /**
-   * Given a vertex list, determine which vertices are within the
-   * visible bounds and establish min and max values accordingly.
-   * If extrema have already been established, the specified list will be
-   * applied incrementally to the existing bounds.
+   * Given a vertex list, determine which vertices are within the visible bounds
+   * and establish min and max values accordingly. If extrema have already been
+   * established, the specified list will be applied incrementally to the
+   * existing bounds.
    *
    * @param vList a valid list of vertices.
    */
@@ -428,9 +427,9 @@ public class MvComposite {
   }
 
   /**
-   * Submit a TIN as a candidate for serving as the interpolating TIN.
-   * The TIN will be selected if its reduction factor is less than that
-   * of the current TIN.
+   * Submit a TIN as a candidate for serving as the interpolating TIN. The TIN
+   * will be selected if its reduction factor is less than that of the current
+   * TIN.
    *
    * @param tin a valid candidate TIN
    * @param the reduction factor of the candidate TIN
@@ -468,9 +467,9 @@ public class MvComposite {
   }
 
   /**
-   * Render sample points only. Used when the user has deselected the
-   * edge rendering. Since a TIN is not required, the rendering is
-   * conducted strictly on the basis of the selected list.
+   * Render sample points only. Used when the user has deselected the edge
+   * rendering. Since a TIN is not required, the rendering is conducted strictly
+   * on the basis of the selected list.
    *
    * @param vList a list of vertices
    * @return a buffered image containing the rendering result.
@@ -481,14 +480,14 @@ public class MvComposite {
 
     timeForRenderWireframe0 = System.currentTimeMillis();
     BufferedImage bImage
-      = new BufferedImage(width, height, BufferedImage.TYPE_4BYTE_ABGR);
+            = new BufferedImage(width, height, BufferedImage.TYPE_4BYTE_ABGR);
     Graphics2D g2d = bImage.createGraphics();
     g2d.setRenderingHint(
-      RenderingHints.KEY_ANTIALIASING,
-      RenderingHints.VALUE_ANTIALIAS_ON);
+            RenderingHints.KEY_ANTIALIASING,
+            RenderingHints.VALUE_ANTIALIAS_ON);
     g2d.setRenderingHint(
-      RenderingHints.KEY_TEXT_ANTIALIASING,
-      RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
+            RenderingHints.KEY_TEXT_ANTIALIASING,
+            RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
     g2d.setColor(view.getForeground());
     double c[] = new double[8];
 
@@ -554,14 +553,14 @@ public class MvComposite {
 
     timeForRenderWireframe0 = System.currentTimeMillis();
     BufferedImage bImage
-      = new BufferedImage(width, height, BufferedImage.TYPE_4BYTE_ABGR);
+            = new BufferedImage(width, height, BufferedImage.TYPE_4BYTE_ABGR);
     Graphics2D g2d = bImage.createGraphics();
     g2d.setRenderingHint(
-      RenderingHints.KEY_ANTIALIASING,
-      RenderingHints.VALUE_ANTIALIAS_ON);
+            RenderingHints.KEY_ANTIALIASING,
+            RenderingHints.VALUE_ANTIALIAS_ON);
     g2d.setRenderingHint(
-      RenderingHints.KEY_TEXT_ANTIALIASING,
-      RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
+            RenderingHints.KEY_TEXT_ANTIALIASING,
+            RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
     g2d.setColor(view.getForeground());
     double c[] = new double[8];
 
@@ -650,8 +649,8 @@ public class MvComposite {
           Color c0 = palette.getColor(z0, zMin, zMax);
           Color c1 = palette.getColor(z1, zMin, zMax);
           GradientPaint paint = new GradientPaint( //NOPMD
-            (float) a.getX(), (float) b.getY(), c0,
-            (float) a.getX(), (float) b.getY(), c1);
+                  (float) a.getX(), (float) b.getY(), c0,
+                  (float) a.getX(), (float) b.getY(), c1);
           g2d.setPaint(paint);
         }
         c[0] = a.getX();
@@ -794,14 +793,14 @@ public class MvComposite {
     }
 
     BufferedImage bImage
-      = new BufferedImage(width, height, BufferedImage.TYPE_4BYTE_ABGR);
+            = new BufferedImage(width, height, BufferedImage.TYPE_4BYTE_ABGR);
     Graphics2D g2d = bImage.createGraphics();
     g2d.setRenderingHint(
-      RenderingHints.KEY_ANTIALIASING,
-      RenderingHints.VALUE_ANTIALIAS_ON);
+            RenderingHints.KEY_ANTIALIASING,
+            RenderingHints.VALUE_ANTIALIAS_ON);
     g2d.setRenderingHint(
-      RenderingHints.KEY_TEXT_ANTIALIASING,
-      RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
+            RenderingHints.KEY_TEXT_ANTIALIASING,
+            RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
     g2d.setColor(view.getForeground());
     double c[] = new double[8];
 
@@ -851,8 +850,8 @@ public class MvComposite {
 
   /**
    * Map the specified composite coordinates to the model and get a string
-   * indicating the data at that point. Typically called to support
-   * mouse move events.
+   * indicating the data at that point. Typically called to support mouse move
+   * events.
    *
    * @param x a coordinate in the composite coordinate system
    * @param y a coordinate in the composite coordinate system
@@ -875,9 +874,9 @@ public class MvComposite {
       // but will tend to reveal the triangular nature of the underlying TIN
       // in areas of particularly severe gradient.
       double z = interpolator.interpolate(
-        SurfaceModel.QuadraticWithCrossTerms,
-        BandwidthSelectionMethod.FixedProportionalBandwidth, 1.0,
-        mx, my, null);
+              SurfaceModel.QuadraticWithCrossTerms,
+              BandwidthSelectionMethod.FixedProportionalBandwidth, 1.0,
+              mx, my, null);
       if (Double.isNaN(z)) {
         s += " : N/A"; //NOPMD
       } else {
@@ -889,9 +888,8 @@ public class MvComposite {
   }
 
   /**
-   * Maps the specified composite coordinates to the model,
-   * performs a data query, and gets an HTML-formatted string
-   * indicating the data at that point.
+   * Maps the specified composite coordinates to the model, performs a data
+   * query, and gets an HTML-formatted string indicating the data at that point.
    *
    * @param x a coordinate in the composite coordinate system
    * @param y a coordinate in the composite coordinate system
@@ -909,9 +907,9 @@ public class MvComposite {
     Point2D modelPoint = new Point2D.Double(mx, my);
     if (interpolator == null) {
       new MvQueryResult(
-        compositePoint,
-        modelPoint,
-        "<html>Data not available. Model not loaded</html>");
+              compositePoint,
+              modelPoint,
+              "<html>Data not available. Model not loaded</html>");
     }
 
     String units;
@@ -936,8 +934,8 @@ public class MvComposite {
     Formatter fmt = new Formatter(sb);
     fmt.format("<html><strong>Query/Regression Results</strong><br><pre><small>");
     double z = interpolator.interpolate(SurfaceModel.QuadraticWithCrossTerms,
-      BandwidthSelectionMethod.OptimalAICc, 1.0,
-      mx, my, null);
+            BandwidthSelectionMethod.OptimalAICc, 1.0,
+            mx, my, null);
     fmt.format("X:     %s%n", model.getFormattedX(mx));
     fmt.format("Y:     %s%n", model.getFormattedY(my));
     if (queryIsOutside) {
@@ -1041,9 +1039,9 @@ public class MvComposite {
    *
    * @param row0 the initial row
    * @param nRows the number of rows to process
-   * @param hillshade indicates whether the operations should produce
-   * first derivative information needed to compute surface normals for
-   * hillshade operations.
+   * @param hillshade indicates whether the operations should produce first
+   * derivative information needed to compute surface normals for hillshade
+   * operations.
    * @param task the task associated with the rendering.
    */
   @SuppressWarnings("PMD.SwitchDensity")
@@ -1162,10 +1160,10 @@ public class MvComposite {
                 // have valid data.   We can't shade it if we don't have
                 // a complete set of information.
                 if (Double.isNaN(z)
-                  || Double.isNaN(pa.z)
-                  || Double.isNaN(pb.z)
-                  || Double.isNaN(pc.z)
-                  || Double.isNaN(pd.z)) {
+                        || Double.isNaN(pa.z)
+                        || Double.isNaN(pb.z)
+                        || Double.isNaN(pc.z)
+                        || Double.isNaN(pd.z)) {
                   zGrid[index] = Float.NaN;
                 } else {
                   zGrid[index] = (float) z;
@@ -1258,9 +1256,9 @@ public class MvComposite {
             double x = (iCol + 0.5) * dx + x0;
             if (minX <= x && x <= maxX) {
               double z = gwr.interpolate(
-                SurfaceModel.QuadraticWithCrossTerms,
-                BandwidthSelectionMethod.FixedProportionalBandwidth, 1.0,
-                x, y, null);
+                      SurfaceModel.QuadraticWithCrossTerms,
+                      BandwidthSelectionMethod.FixedProportionalBandwidth, 1.0,
+                      x, y, null);
 
               if (gwr.wasTargetExteriorToTin()) {
                 zGrid[index] = Float.NaN;
@@ -1330,8 +1328,8 @@ public class MvComposite {
   }
 
   /**
-   * Transfer the grid to a raster image using the view options
-   * specified when this instance was constructed.
+   * Transfer the grid to a raster image using the view options specified when
+   * this instance was constructed.
    */
   void transferGridToRasterImage() {
     double minZ = model.getMinZ();
@@ -1408,8 +1406,8 @@ public class MvComposite {
   }
 
   /**
-   * Called when the last grid-building task completes so that the
-   * timing data for grid-building can be recorded.
+   * Called when the last grid-building task completes so that the timing data
+   * for grid-building can be recorded.
    */
   void stopGridBuildTimer() {
     double zMin = Double.POSITIVE_INFINITY;
@@ -1433,12 +1431,12 @@ public class MvComposite {
   }
 
   /**
-   * Indicates whether a change in view options would require
-   * reloading the existing model.
+   * Indicates whether a change in view options would require reloading the
+   * existing model.
    *
    * @param v a set of view options for comparison
-   * @return true if the comparison options are incompatible and
-   * require a reloading of the model.
+   * @return true if the comparison options are incompatible and require a
+   * reloading of the model.
    */
   public boolean isModelReloadRequired(ViewOptions v) {
     if (model instanceof ModelFromLas) {
@@ -1474,7 +1472,7 @@ public class MvComposite {
     }
     units = linearUnits.toString();
     units = units.substring(0, 1).toUpperCase()
-      + units.substring(1, units.length()).toLowerCase();
+            + units.substring(1, units.length()).toLowerCase();
     fmt.format("<html><strong>Model</strong><br><pre><small>");
     fmt.format("  Name: %s%n", model.getName());
     fmt.format("  Type: %s%n", model.getDescription());
@@ -1566,9 +1564,9 @@ public class MvComposite {
   }
 
   /**
-   * Render a legend for the current model and view. The width and height
-   * are the dimensions of the color bar, but the actual legend will extend
-   * larger to accommodate labels.
+   * Render a legend for the current model and view. The width and height are
+   * the dimensions of the color bar, but the actual legend will extend larger
+   * to accommodate labels.
    *
    * @param vx a valid view
    * @param mx a valid model
@@ -1576,12 +1574,12 @@ public class MvComposite {
    * @param height the height of the color bar
    * @param margin the margin around the overall legend
    * @param font the font to be used for labeling (if enabled)
-   * @param frame indicates that a framing rectangle is to be drawn
-   * around the legend
+   * @param frame indicates that a framing rectangle is to be drawn around the
+   * legend
    * @return if successful, a valid buffered image; otherwise, a null
    */
   public BufferedImage renderLegend(
-    ViewOptions vx, IModel mx, int width, int height, int margin, Font font, boolean frame) {
+          ViewOptions vx, IModel mx, int width, int height, int margin, Font font, boolean frame) {
 
     int priSpace = 20;
     int secSpace = 5;
@@ -1599,7 +1597,7 @@ public class MvComposite {
     }
 
     AxisIntervals lx = AxisIntervals.computeIntervals(
-      v0, v1, priSpace, secSpace, height);
+            v0, v1, priSpace, secSpace, height);
     if (lx == null) {
       return null;
     }
@@ -1627,13 +1625,13 @@ public class MvComposite {
     int iWidth = (int) (width + 2 * margin + wLabel + ticLength + wZero / 2);
     int iHeight = height + 2 * margin;
     BufferedImage bImage = new BufferedImage(
-      iWidth,
-      iHeight,
-      BufferedImage.TYPE_INT_ARGB);
+            iWidth,
+            iHeight,
+            BufferedImage.TYPE_INT_ARGB);
     Graphics2D g2d = bImage.createGraphics();
     g2d.setRenderingHint(
-      RenderingHints.KEY_ANTIALIASING,
-      RenderingHints.VALUE_ANTIALIAS_ON);
+            RenderingHints.KEY_ANTIALIASING,
+            RenderingHints.VALUE_ANTIALIAS_ON);
     g2d.setColor(vx.getBackground());
     g2d.fillRect(0, 0, iWidth + 1, iHeight + 1);
 
@@ -1722,6 +1720,51 @@ public class MvComposite {
     synchronized (this) {
       return constraintsForRender;
     }
+  }
+
+  Shape makeClipMask() {
+
+    Path2D clip = new Path2D.Double();
+    boolean clipHasData = false;
+    for (IConstraint con : constraintsForRender) {
+      if (con.isValid()
+              && con.definesConstrainedRegion()
+              && con instanceof PolygonConstraint) {
+
+        Path2D path = new Path2D.Double();
+        boolean foundStuff = false;
+        List<Vertex> vList = con.getVertices();
+        double[] c = new double[4];
+        boolean moveFlag = true;
+
+        double x0 = 0;
+        double y0 = 0;
+        for (Vertex v : vList) {
+          c[0] = v.getX();
+          c[1] = v.getY();
+          m2c.transform(c, 0, c, 2, 1);
+          if (moveFlag) {
+            moveFlag = false;
+            path.moveTo(c[2], c[3]);
+            x0 = c[2];
+            y0 = c[3];
+          } else {
+            foundStuff = true;
+            path.lineTo(c[2], c[3]);
+          }
+        }
+
+        path.closePath();
+        if (foundStuff) {
+          clip.append(path, true);
+          clipHasData = true;
+        }
+      }
+    }
+    if (clipHasData) {
+      return clip;
+    }
+    return null;
   }
 
 }

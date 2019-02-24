@@ -15,7 +15,7 @@
  * ---------------------------------------------------------------------
  */
 
-/*
+ /*
  * -----------------------------------------------------------------------
  *
  * Revision History:
@@ -49,9 +49,10 @@ import org.tinfour.demo.viewer.backplane.ViewOptions.RasterInterpolationMethod;
 /**
  * Provides UI for showing viewing options
  */
- @SuppressWarnings("PMD")  // due to non-compliant, automatically generated code
- class ViewOptionsPanel extends javax.swing.JPanel {
-  private  static final long serialVersionUID=1L;
+@SuppressWarnings("PMD")  // due to non-compliant, automatically generated code
+class ViewOptionsPanel extends javax.swing.JPanel {
+
+  private static final long serialVersionUID = 1L;
   private DataViewingPanel dvPanel;
   private ViewOptions view;
   private List<String> paletteNames;
@@ -59,17 +60,17 @@ import org.tinfour.demo.viewer.backplane.ViewOptions.RasterInterpolationMethod;
   /**
    * Creates new form ViewOptions
    */
-   ViewOptionsPanel() {
+  ViewOptionsPanel() {
     this.view = new ViewOptions(); // defaults.
     initComponents();
     initializePalette();
   }
 
-   void setDataViewingPanel(DataViewingPanel dvPanel) {
+  void setDataViewingPanel(DataViewingPanel dvPanel) {
     this.dvPanel = dvPanel;
   }
 
-   void setViewOptions(ViewOptions view) {
+  void setViewOptions(ViewOptions view) {
     this.view = new ViewOptions(view);
     transcribeViewToComponents();
   }
@@ -84,8 +85,8 @@ import org.tinfour.demo.viewer.backplane.ViewOptions.RasterInterpolationMethod;
       String s = paletteNames.get(i);
       names[i] = s;
       icons[i] = TestPalette.getIconByName(s, 96, 20);
-            indices[i] = i;
-      if(icons[i]==null){
+      indices[i] = i;
+      if (icons[i] == null) {
         readFailure = true;
       }
     }
@@ -179,17 +180,18 @@ import org.tinfour.demo.viewer.backplane.ViewOptions.RasterInterpolationMethod;
 
     constraintsCheckBox.setSelected(view.isConstraintRenderingSelected());
     constraintsColorButton.setColor(view.getConstraintColor());
-
+    constraintsClippingCheckbox.setSelected(view.isClipOnConstraintsSelected());
+    
     rasterCheckBox.setSelected(view.isRasterSelected());
     hillshadeCheckBox.setSelected(view.isHillshadeSelected());
     setDouble(azimuthTextField, "%3.1f", view.getHillshadeAzimuth());
     setDouble(elevationTextField, "%3.1f", view.getHillshadeElevation());
     setDouble(ambientTextField, "%3.1f", view.getHillshadeAmbient());
     fullResolutionGridCheckbox.setSelected(view.isFullResolutionGridSelected());
-            lidarGroundPointsButton.setSelected(false);
-        lidarFirstReturnButton.setSelected(false);
-        lidarAllPointsButton.setSelected(false);
-    switch(view.getLidarPointSelection()){
+    lidarGroundPointsButton.setSelected(false);
+    lidarFirstReturnButton.setSelected(false);
+    lidarAllPointsButton.setSelected(false);
+    switch (view.getLidarPointSelection()) {
       case GroundPoints:
         lidarGroundPointsButton.setSelected(true);
         break;
@@ -266,7 +268,7 @@ import org.tinfour.demo.viewer.backplane.ViewOptions.RasterInterpolationMethod;
         JOptionPane.showMessageDialog(paletteAssignFixedRange, "Invalid entry for specified palette range", "Bad Numeric Entry", JOptionPane.ERROR_MESSAGE);
         useRangeOfValues = false;
         badInput = true;
-      } else if (Math.abs(a-b)<Math.abs(a+b)/1.0e+6) {
+      } else if (Math.abs(a - b) < Math.abs(a + b) / 1.0e+6) {
         JOptionPane.showMessageDialog(paletteAssignFixedRange, "Palette range entries must be distinct", "Values not distinct", JOptionPane.ERROR_MESSAGE);
         useRangeOfValues = false;
         badInput = true;
@@ -284,7 +286,7 @@ import org.tinfour.demo.viewer.backplane.ViewOptions.RasterInterpolationMethod;
         view.setWireframeSampleThinning(ViewOptions.SampleThinning.Fine);
         break;
       case 2:
-         view.setWireframeSampleThinning(ViewOptions.SampleThinning.ExtraFine);
+        view.setWireframeSampleThinning(ViewOptions.SampleThinning.ExtraFine);
         break;
       default:
         view.setWireframeSampleThinning(ViewOptions.SampleThinning.Medium);
@@ -301,7 +303,7 @@ import org.tinfour.demo.viewer.backplane.ViewOptions.RasterInterpolationMethod;
 
     view.setConstraintRenderingSelected(constraintsCheckBox.isSelected());
     view.setConstraintColor(constraintsColorButton.colorChoice);
-
+    view.setClipOnConstraintsSelected(constraintsClippingCheckbox.isSelected());
 
     view.setRasterSelected(rasterCheckBox.isSelected());
     view.setHillshadeSelected(hillshadeCheckBox.isSelected());
@@ -311,21 +313,19 @@ import org.tinfour.demo.viewer.backplane.ViewOptions.RasterInterpolationMethod;
     view.setHillshadeAmbient(extractField(ambientTextField, 135));
 
     view.setFullResolutionGridSelected(fullResolutionGridCheckbox.isSelected());
-    if(lidarGroundPointsButton.isSelected()){
+    if (lidarGroundPointsButton.isSelected()) {
       view.setLidarPointSelection(LidarPointSelection.GroundPoints);
-    }else if(lidarFirstReturnButton.isSelected()){
+    } else if (lidarFirstReturnButton.isSelected()) {
       view.setLidarPointSelection(LidarPointSelection.FirstReturn);
-    }else if(lidarLastReturnButton.isSelected()){
+    } else if (lidarLastReturnButton.isSelected()) {
       view.setLidarPointSelection(LidarPointSelection.LastReturn);
-    }else{
+    } else {
       view.setLidarPointSelection(LidarPointSelection.AllPoints);
     }
 
-
-
-      index = rasterMethodComboBox.getSelectedIndex();
-      RasterInterpolationMethod rim = RasterInterpolationMethod.values()[index];
-      view.setRasterInterpolationMethod(rim);
+    index = rasterMethodComboBox.getSelectedIndex();
+    RasterInterpolationMethod rim = RasterInterpolationMethod.values()[index];
+    view.setRasterInterpolationMethod(rim);
 
     //transcribeViewToComponents(); // just a diagnostic
     return badInput;
@@ -342,10 +342,9 @@ import org.tinfour.demo.viewer.backplane.ViewOptions.RasterInterpolationMethod;
   }
 
   /**
-   * This method is called from within the constructor to
-   * initialize the form.
-   * WARNING: Do NOT modify this code. The content of this method is
-   * always regenerated by the Form Editor.
+   * This method is called from within the constructor to initialize the form.
+   * WARNING: Do NOT modify this code. The content of this method is always
+   * regenerated by the Form Editor.
    */
   @SuppressWarnings("unchecked")
   // <editor-fold defaultstate="collapsed" desc="Generated Code">//GEN-BEGIN:initComponents
@@ -394,6 +393,7 @@ import org.tinfour.demo.viewer.backplane.ViewOptions.RasterInterpolationMethod;
     lidarLastReturnButton = new javax.swing.JRadioButton();
     constraintsCheckBox = new javax.swing.JCheckBox();
     constraintsColorButton = new org.tinfour.demo.viewer.ColorButton();
+    constraintsClippingCheckbox = new javax.swing.JCheckBox();
     actionsPanel = new javax.swing.JPanel();
     applyButton = new javax.swing.JButton();
     cancelButton = new javax.swing.JButton();
@@ -541,6 +541,9 @@ import org.tinfour.demo.viewer.backplane.ViewOptions.RasterInterpolationMethod;
     constraintsColorButton.setMinimumSize(new java.awt.Dimension(20, 20));
     constraintsColorButton.setPreferredSize(new java.awt.Dimension(20, 20));
 
+    constraintsClippingCheckbox.setText("Clip to Constraints");
+    constraintsClippingCheckbox.setToolTipText("Check to clip depiction using polygon constraints (if supplied)");
+
     javax.swing.GroupLayout optionsPanelLayout = new javax.swing.GroupLayout(optionsPanel);
     optionsPanel.setLayout(optionsPanelLayout);
     optionsPanelLayout.setHorizontalGroup(
@@ -548,6 +551,7 @@ import org.tinfour.demo.viewer.backplane.ViewOptions.RasterInterpolationMethod;
       .addGroup(optionsPanelLayout.createSequentialGroup()
         .addContainerGap()
         .addGroup(optionsPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+          .addComponent(constraintsClippingCheckbox)
           .addGroup(optionsPanelLayout.createSequentialGroup()
             .addComponent(constraintsCheckBox)
             .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
@@ -587,14 +591,6 @@ import org.tinfour.demo.viewer.backplane.ViewOptions.RasterInterpolationMethod;
                 .addComponent(jLabel3)
                 .addGap(18, 18, 18)
                 .addComponent(wireframeSampleThinningComboBox, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))))
-          .addComponent(jLabel9)
-          .addGroup(optionsPanelLayout.createSequentialGroup()
-            .addGap(10, 10, 10)
-            .addGroup(optionsPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-              .addComponent(lidarAllPointsButton)
-              .addComponent(lidarGroundPointsButton)
-              .addComponent(lidarFirstReturnButton)
-              .addComponent(lidarLastReturnButton)))
           .addGroup(optionsPanelLayout.createSequentialGroup()
             .addGap(10, 10, 10)
             .addGroup(optionsPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
@@ -622,7 +618,18 @@ import org.tinfour.demo.viewer.backplane.ViewOptions.RasterInterpolationMethod;
                         .addComponent(paletteAssignMaxRange, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))))))
               .addComponent(jLabel2)
               .addComponent(blackOnWhiteRadioButton)
-              .addComponent(whiteOnBlackRadioButton))))
+              .addComponent(whiteOnBlackRadioButton)))
+          .addGroup(optionsPanelLayout.createSequentialGroup()
+            .addGap(8, 8, 8)
+            .addGroup(optionsPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+              .addComponent(jLabel9)
+              .addGroup(optionsPanelLayout.createSequentialGroup()
+                .addGap(10, 10, 10)
+                .addGroup(optionsPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                  .addComponent(lidarAllPointsButton)
+                  .addComponent(lidarGroundPointsButton)
+                  .addComponent(lidarFirstReturnButton)
+                  .addComponent(lidarLastReturnButton))))))
         .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
     );
     optionsPanelLayout.setVerticalGroup(
@@ -648,13 +655,15 @@ import org.tinfour.demo.viewer.backplane.ViewOptions.RasterInterpolationMethod;
           .addComponent(paletteAssignMinRange, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
           .addComponent(jLabel5)
           .addComponent(paletteAssignMaxRange, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
-        .addGap(3, 3, 3)
+        .addGap(12, 12, 12)
         .addGroup(optionsPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.CENTER)
           .addComponent(constraintsCheckBox)
           .addComponent(constraintsColorButton, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
+        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+        .addComponent(constraintsClippingCheckbox)
         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
         .addComponent(wireframeCheckBox)
-        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
+        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
         .addGroup(optionsPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING)
           .addGroup(optionsPanelLayout.createSequentialGroup()
             .addComponent(jLabel10)
@@ -698,7 +707,7 @@ import org.tinfour.demo.viewer.backplane.ViewOptions.RasterInterpolationMethod;
         .addComponent(lidarLastReturnButton)
         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
         .addComponent(lidarAllPointsButton)
-        .addContainerGap(17, Short.MAX_VALUE))
+        .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
     );
 
     applyButton.setText("Apply");
@@ -802,55 +811,56 @@ import org.tinfour.demo.viewer.backplane.ViewOptions.RasterInterpolationMethod;
     }
   }//GEN-LAST:event_applyButtonActionPerformed
 
-  private void whiteOnBlackRadioButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_whiteOnBlackRadioButtonActionPerformed
+  private void lidarFirstReturnButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_lidarFirstReturnButtonActionPerformed
     // TODO add your handling code here:
-  }//GEN-LAST:event_whiteOnBlackRadioButtonActionPerformed
+  }//GEN-LAST:event_lidarFirstReturnButtonActionPerformed
 
   private void fullResolutionGridCheckboxActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_fullResolutionGridCheckboxActionPerformed
     // TODO add your handling code here:
   }//GEN-LAST:event_fullResolutionGridCheckboxActionPerformed
 
-  private void lidarFirstReturnButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_lidarFirstReturnButtonActionPerformed
+  private void whiteOnBlackRadioButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_whiteOnBlackRadioButtonActionPerformed
     // TODO add your handling code here:
-  }//GEN-LAST:event_lidarFirstReturnButtonActionPerformed
+  }//GEN-LAST:event_whiteOnBlackRadioButtonActionPerformed
 
-  class PaletteRenderer extends JLabel implements ListCellRenderer<Integer> {
-    private  static final long serialVersionUID=1L;
-    String[] names;
-    Icon[] icons;
+   class PaletteRenderer extends JLabel implements ListCellRenderer<Integer> {
 
-    PaletteRenderer(String[] names, Icon[] icons) {
-      this.names = names;
-      this.icons = icons;
-    }
+     private static final long serialVersionUID = 1L;
+     String[] names;
+     Icon[] icons;
 
-    @Override
-    public Component getListCellRendererComponent(JList<? extends Integer> list, Integer value, int index, boolean isSelected, boolean cellHasFocus) {
-      //Get the selected index. (The index param isn't
-      //always valid, so just use the value.)
-      int selectedIndex = (value).intValue();
+     PaletteRenderer(String[] names, Icon[] icons) {
+       this.names = names;
+       this.icons = icons;
+     }
 
-      if (isSelected) {
-        setBackground(list.getSelectionBackground());
-        setForeground(list.getSelectionForeground());
-      } else {
-        setBackground(list.getBackground());
-        setForeground(list.getForeground());
-      }
+     @Override
+     public Component getListCellRendererComponent(JList<? extends Integer> list, Integer value, int index, boolean isSelected, boolean cellHasFocus) {
+       //Get the selected index. (The index param isn't
+       //always valid, so just use the value.)
+       int selectedIndex = (value).intValue();
 
-      //Set the icon and text.  If icon was null, say so.
-      Icon icon = icons[selectedIndex];
-      String name = names[selectedIndex];
-      setIcon(icon);
-      if (icon != null) {
-        setText(null);
-        setToolTipText("Select the palette " + name);
-        setFont(list.getFont());
-      }
-      return this;
-    }
+       if (isSelected) {
+         setBackground(list.getSelectionBackground());
+         setForeground(list.getSelectionForeground());
+       } else {
+         setBackground(list.getBackground());
+         setForeground(list.getForeground());
+       }
 
-  }
+       //Set the icon and text.  If icon was null, say so.
+       Icon icon = icons[selectedIndex];
+       String name = names[selectedIndex];
+       setIcon(icon);
+       if (icon != null) {
+         setText(null);
+         setToolTipText("Select the palette " + name);
+         setFont(list.getFont());
+       }
+       return this;
+     }
+
+   }
 
   // Variables declaration - do not modify//GEN-BEGIN:variables
   private javax.swing.JPanel actionsPanel;
@@ -860,6 +870,7 @@ import org.tinfour.demo.viewer.backplane.ViewOptions.RasterInterpolationMethod;
   private javax.swing.JRadioButton blackOnWhiteRadioButton;
   private javax.swing.JButton cancelButton;
   private javax.swing.JCheckBox constraintsCheckBox;
+  private javax.swing.JCheckBox constraintsClippingCheckbox;
   private org.tinfour.demo.viewer.ColorButton constraintsColorButton;
   private javax.swing.JCheckBox edgesCheckBox;
   private javax.swing.JTextField elevationTextField;

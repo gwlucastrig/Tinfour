@@ -48,6 +48,7 @@ import java.awt.Font;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.RenderingHints;
+import java.awt.Shape;
 import java.awt.dnd.DnDConstants;
 import java.awt.dnd.DropTarget;
 import java.awt.event.ActionEvent;
@@ -91,8 +92,8 @@ import org.tinfour.demo.viewer.backplane.ViewOptions;
 import org.tinfour.demo.viewer.backplane.ViewOptions.RasterInterpolationMethod;
 
 /**
- * A test panel to demonstrate mouse events and coordinate transformation
- * when viewing images.
+ * A test panel to demonstrate mouse events and coordinate transformation when
+ * viewing images.
  */
 @SuppressWarnings("PMD.AvoidDeeplyNestedIfStmts")
 public class DataViewingPanel extends JPanel {
@@ -122,8 +123,8 @@ public class DataViewingPanel extends JPanel {
   boolean firstDraw = true;
 
   /**
-   * The point at which the mouse was most recently pressed; used
-   * for click-and-drag operations.
+   * The point at which the mouse was most recently pressed; used for
+   * click-and-drag operations.
    */
   Point2D imagePressPoint;
 
@@ -188,18 +189,16 @@ public class DataViewingPanel extends JPanel {
 
     /**
      * Ideally, the logic for model and the view would be strictly separated,
-     * but
-     * for memory management there is a special case where the two are conflated
-     * in the case of the Lidar point selection. The view options point
-     * selection controls which samples from the LAS/LAZ file are displayed.
-     * To reduce memory consumption and expedite processing, the viewer only
-     * loads
-     * those vertices from the Lidar file that are to be rendered.
-     * So if the user selects a different selection option, the model
-     * needs to be reloaded.
-     * While this approach is acceptable for this demonstrator implementation,
-     * the model and view concepts should not be allowed to become confused
-     * in a fully realized implementation of a data analysis application.
+     * but for memory management there is a special case where the two are
+     * conflated in the case of the Lidar point selection. The view options
+     * point selection controls which samples from the LAS/LAZ file are
+     * displayed. To reduce memory consumption and expedite processing, the
+     * viewer only loads those vertices from the Lidar file that are to be
+     * rendered. So if the user selects a different selection option, the model
+     * needs to be reloaded. While this approach is acceptable for this
+     * demonstrator implementation, the model and view concepts should not be
+     * allowed to become confused in a fully realized implementation of a data
+     * analysis application.
      */
     if (mvComposite != null && mvComposite.getModel() instanceof ModelFromLas) {
       IModel model = mvComposite.getModel();
@@ -208,8 +207,8 @@ public class DataViewingPanel extends JPanel {
       LidarPointSelection newPointSelection = view.getLidarPointSelection();
       if (!oldPointSelection.equals(newPointSelection)) {
         model = new ModelFromLas(
-          lasModel.getFile(),
-          newPointSelection);
+                lasModel.getFile(),
+                newPointSelection);
 
         CompositeImageScale ccs = this.getImageScaleForContinuity();
 
@@ -248,13 +247,13 @@ public class DataViewingPanel extends JPanel {
 
     backplaneManager = new BackplaneManager(this, statusPanel);
     DataDropTargetListener dropTargetListener
-      = new DataDropTargetListener(this);
+            = new DataDropTargetListener(this);
 
     DropTarget dropTarget = new DropTarget(
-      this,
-      DnDConstants.ACTION_COPY,
-      dropTargetListener,
-      true);
+            this,
+            DnDConstants.ACTION_COPY,
+            dropTargetListener,
+            true);
 
     dropTarget.setDefaultActions(DnDConstants.ACTION_COPY);
 
@@ -424,8 +423,8 @@ public class DataViewingPanel extends JPanel {
     super.paintComponent(g);
     Graphics2D g2d = (Graphics2D) g;
     g2d.setRenderingHint(
-      RenderingHints.KEY_ANTIALIASING,
-      RenderingHints.VALUE_ANTIALIAS_ON);
+            RenderingHints.KEY_ANTIALIASING,
+            RenderingHints.VALUE_ANTIALIAS_ON);
 
     priorWidth = getWidth();
     priorHeight = getHeight();
@@ -504,27 +503,26 @@ public class DataViewingPanel extends JPanel {
   }
 
   /**
-   * Load the model from the specified file and display in panel.
-   * This method must be called from the Event Dispatch Thread
+   * Load the model from the specified file and display in panel. This method
+   * must be called from the Event Dispatch Thread
    *
    * @param file A valid file
    */
   void loadModel(File file) {
     clearState();
     String ext = getFileExtension(file);
-    if("shp".equalsIgnoreCase(ext)){
-       raiseShapefileOptions(file);
-    }else{
+    if ("shp".equalsIgnoreCase(ext)) {
+      raiseShapefileOptions(file);
+    } else {
       IModel model = backplaneManager.loadModel(file, null);
       postModelName(model); // will handle null case
       repaint();
     }
   }
 
-  
   /**
-   * Load the specified model. This method must be called from the
-   * Event Dispatch Thread
+   * Load the specified model. This method must be called from the Event
+   * Dispatch Thread
    *
    * @param model a valid model instance.
    */
@@ -580,18 +578,15 @@ public class DataViewingPanel extends JPanel {
   void loadConstraintsAndAddToModel(File file) {
     if (mvComposite == null) {
       JOptionPane.showMessageDialog(
-        this,
-        "Cannot add constraints when no model is loaded",
-        "Error adding constraints",
-        JOptionPane.ERROR_MESSAGE);
+              this,
+              "Cannot add constraints when no model is loaded",
+              "Error adding constraints",
+              JOptionPane.ERROR_MESSAGE);
       return;
     }
 
     String ext = getFileExtension(file);
-    
 
-    
-    
     IModel model = mvComposite.getModel();
     CompositeImageScale ccs = this.getImageScaleForContinuity();
     // if the application failed to queue the constraints
@@ -601,10 +596,8 @@ public class DataViewingPanel extends JPanel {
       return;
     }
 
-    
-    
     MvComposite mvc
-      = backplaneManager.queueConstraintLoadingTask(model, file, ccs, null);
+            = backplaneManager.queueConstraintLoadingTask(model, file, ccs, null);
     if (mvc != null) {
       mvComposite = mvc;
       model = mvc.getModel();
@@ -613,20 +606,19 @@ public class DataViewingPanel extends JPanel {
   }
 
   /**
-   * Center the image in the display panel, zooming to the
-   * largest scale that permits the entire image to be seen on
-   * the display.
+   * Center the image in the display panel, zooming to the largest scale that
+   * permits the entire image to be seen on the display.
    */
   void zoomToSource() {
     if (mvComposite != null && mvComposite.isReady()) {
 
       IModel model = mvComposite.getModel();
       CompositeImageScale ccs
-        = getImageScaleToCenterModelInPanel(model);
+              = getImageScaleToCenterModelInPanel(model);
       MvComposite newComposite = backplaneManager.queueHeavyweightRenderTask(
-        model,
-        viewOptions,
-        ccs);
+              model,
+              viewOptions,
+              ccs);
       setMvComposite(newComposite);
     }
   }
@@ -679,28 +671,43 @@ public class DataViewingPanel extends JPanel {
       return;
     }
     compositeImage = new BufferedImage(
-      mvComposite.getWidth(),
-      mvComposite.getHeight(),
-      BufferedImage.TYPE_INT_ARGB);
+            mvComposite.getWidth(),
+            mvComposite.getHeight(),
+            BufferedImage.TYPE_INT_ARGB);
     Graphics2D g = compositeImage.createGraphics();
+    //specialClip(mvComposite, (Graphics2D)g);
+    Shape clip = null;
+    for (int i = 0; i < renderProducts.length; i++) {
+      if (renderProducts[i] != null) {
+        clip = renderProducts[i].clip;
+        if (clip != null) {
+          break;
+        }
+      }
+    }
+
     for (int i = renderProducts.length - 1; i >= 0; i--) {
       if (renderProducts[i] != null) {
+        if (clip != null && renderProducts[i].layerType != RenderProductType.Constraints) {
+          g.setClip(clip);
+        }
         if (renderProducts[i].compatibilityTransform == null) {
           g.drawImage(renderProducts[i].image, 0, 0, null);
         } else {
           g.drawImage(
-            renderProducts[i].image,
-            renderProducts[i].compatibilityTransform,
-            null);
+                  renderProducts[i].image,
+                  renderProducts[i].compatibilityTransform,
+                  null);
         }
+        g.setClip(null);
       }
     }
   }
 
   /**
    * Build an affine transform that will map the pixel coordinates (px, py) to
-   * image coordinates (mx, my) applying the scale factor s where s scales
-   * image points to pixels. For example s*(mx1-mx0) = pixel_width.
+   * image coordinates (mx, my) applying the scale factor s where s scales image
+   * points to pixels. For example s*(mx1-mx0) = pixel_width.
    *
    * @param pX Pixel coordinate for transformation
    * @param pY Pixel coordinate for transformation
@@ -806,7 +813,7 @@ public class DataViewingPanel extends JPanel {
         for (int i = 0; i < renderProducts.length; i++) {
           if (renderProducts[i] != null) {
             AffineTransform compatibility
-              = AffineTransform.getTranslateInstance(pad, pad);
+                    = AffineTransform.getTranslateInstance(pad, pad);
             compatibility.concatenate(c2p);
             if (renderProducts[i].compatibilityTransform == null) {
               renderProducts[i].compatibilityTransform = compatibility;
@@ -818,9 +825,9 @@ public class DataViewingPanel extends JPanel {
 
         CompositeImageScale ccs = getImageScaleForContinuity();
         mvComposite = backplaneManager.queueHeavyweightRenderTask(
-          mvComposite.getModel(),
-          mvComposite.getView(),
-          ccs);
+                mvComposite.getModel(),
+                mvComposite.getView(),
+                ccs);
         assembleLegend();
         setMvComposite(mvComposite);
         for (int i = 0; i < renderProducts.length; i++) {
@@ -861,7 +868,7 @@ public class DataViewingPanel extends JPanel {
     //       is when the wireframe switches to a dense sampling or when the
     //       raster drawing is required.
     if (view.isWireframeSelected()
-      && oldView.getWireframeSampleThinning() != view.getWireframeSampleThinning()) {
+            && oldView.getWireframeSampleThinning() != view.getWireframeSampleThinning()) {
       heavyweightRedrawRequired = true;
     }
 
@@ -877,9 +884,9 @@ public class DataViewingPanel extends JPanel {
         // if the previous view was GWR, it would have build the hillshade
         // data anyway.
         boolean hillshadeBuilt
-          = oldView.isHillshadeSelected()
-          || oldView.getRasterInterpolationMethod()
-          == RasterInterpolationMethod.GeographicallyWeightedRegression;
+                = oldView.isHillshadeSelected()
+                || oldView.getRasterInterpolationMethod()
+                == RasterInterpolationMethod.GeographicallyWeightedRegression;
         if (!hillshadeBuilt) {
           heavyweightRedrawRequired = true;
         }
@@ -895,15 +902,15 @@ public class DataViewingPanel extends JPanel {
     if (heavyweightRedrawRequired) {
       // perform a heavy-weight render, building up new TINs as necessary
       MvComposite newComposite = backplaneManager.queueHeavyweightRenderTask(
-        model, view, ccs);
+              model, view, ccs);
       mvComposite = newComposite;
       assembleLegend();
       mvQueryResult = null;
     } else {
       // perform a light-weight render reusing existing TINs
       MvComposite newComposite
-        = backplaneManager.queueLightweightRenderTask(
-          mvComposite, view);
+              = backplaneManager.queueLightweightRenderTask(
+                      mvComposite, view);
       mvComposite = newComposite;
       assembleLegend();
       mvQueryResult = null;
@@ -932,10 +939,10 @@ public class DataViewingPanel extends JPanel {
 
     // compute model to composite transform
     AffineTransform m2c
-      = new AffineTransform(
-        pixelPerUnit, 0, 0, -pixelPerUnit,
-        (w / 2 + pad) - pixelPerUnit * x,
-        (h / 2 + pad) + pixelPerUnit * y);
+            = new AffineTransform(
+                    pixelPerUnit, 0, 0, -pixelPerUnit,
+                    (w / 2 + pad) - pixelPerUnit * x,
+                    (h / 2 + pad) + pixelPerUnit * y);
 
     // verify that transform is invertible... it should always be so.
     AffineTransform c2m;
@@ -947,10 +954,10 @@ public class DataViewingPanel extends JPanel {
     }
 
     CompositeImageScale ccs
-      = new CompositeImageScale(
-        getWidth() + 2 * pad,
-        getHeight() + 2 * pad,
-        m2c, c2m);
+            = new CompositeImageScale(
+                    getWidth() + 2 * pad,
+                    getHeight() + 2 * pad,
+                    m2c, c2m);
 
     renderProducts[0] = null;
     renderProducts[1] = null;
@@ -968,8 +975,8 @@ public class DataViewingPanel extends JPanel {
     p2c = AffineTransform.getTranslateInstance(pad, pad);
     // perform a heavy-weight render, building up new TINs as necessary
     MvComposite newComposite
-      = backplaneManager.queueHeavyweightRenderTask(
-        model, viewOptions, ccs);
+            = backplaneManager.queueHeavyweightRenderTask(
+                    model, viewOptions, ccs);
 
     // call setMvComposite... this will also set up the proper
     // panel-to-model transforms
@@ -993,18 +1000,17 @@ public class DataViewingPanel extends JPanel {
     if (showLegend && mvComposite != null) {
       Font font = new Font("Arial", Font.BOLD, 10);
       this.legendImage = mvComposite.renderLegend(
-        mvComposite.getView(),
-        mvComposite.getModel(),
-        50, 100, 10, font, true);
+              mvComposite.getView(),
+              mvComposite.getModel(),
+              50, 100, 10, font, true);
     } else {
       legendImage = null;
     }
   }
 
   /**
-   * Gets the current model-view composite (note that there is no
-   * guarantee that the model is loaded and ready when this
-   * method is called).
+   * Gets the current model-view composite (note that there is no guarantee that
+   * the model is loaded and ready when this method is called).
    *
    * @return if populated, a valid instance; otherwise, a null.
    */
@@ -1040,8 +1046,8 @@ public class DataViewingPanel extends JPanel {
   }
 
   /**
-   * Gets an instance of the current model, if any.
-   * The model may not yet be loaded.
+   * Gets an instance of the current model, if any. The model may not yet be
+   * loaded.
    *
    * @return if available, a valid model; otherwise, a null.
    */
@@ -1053,8 +1059,8 @@ public class DataViewingPanel extends JPanel {
   }
 
   /**
-   * Gets a composite image scale to center the model in the panel with
-   * the amount of padding specified by the current view.
+   * Gets a composite image scale to center the model in the panel with the
+   * amount of padding specified by the current view.
    *
    * @param model a valid model
    * @return a valid, fully populated instance.
@@ -1095,10 +1101,10 @@ public class DataViewingPanel extends JPanel {
 
     int pad = viewOptions.getPadding();
     AffineTransform m2c
-      = new AffineTransform(
-        uPerPixel, 0, 0, -uPerPixel,
-        xOffset + pad - uPerPixel * mx0,
-        yOffset + pad + uPerPixel * my1);
+            = new AffineTransform(
+                    uPerPixel, 0, 0, -uPerPixel,
+                    xOffset + pad - uPerPixel * mx0,
+                    yOffset + pad + uPerPixel * my1);
 
     // verify that transform is invertible... it should always be so.
     AffineTransform c2m;
@@ -1109,8 +1115,8 @@ public class DataViewingPanel extends JPanel {
     }
 
     CompositeImageScale ccs
-      = new CompositeImageScale(
-        width + 2 * pad, height + 2 * pad, m2c, c2m);
+            = new CompositeImageScale(
+                    width + 2 * pad, height + 2 * pad, m2c, c2m);
 
     return ccs;
   }
@@ -1129,13 +1135,12 @@ public class DataViewingPanel extends JPanel {
     }
 
     return new CompositeImageScale(
-      getWidth() + 2 * pad,
-      getHeight() + 2 * pad,
-      a, aInv
+            getWidth() + 2 * pad,
+            getHeight() + 2 * pad,
+            a, aInv
     );
   }
 
-  
   String getFileExtension(File file) {
     if (file != null) {
       String name = file.getName();
@@ -1146,8 +1151,8 @@ public class DataViewingPanel extends JPanel {
     }
     return null;
   }
-     
-   private void raiseShapefileOptions(final File file) {
+
+  private void raiseShapefileOptions(final File file) {
     JFrame frame = null;
     Component c = this.getParent();
     while (c != null) {
@@ -1168,26 +1173,26 @@ public class DataViewingPanel extends JPanel {
       return;
     }
 
-     final ShapefileOptionsPanel shapefilePanel = new ShapefileOptionsPanel();
-     shapefilePanel.applyShapefile(reader);
-     try {
-       reader.close();
-     } catch (IOException ioex) {
-       return;
-     }
+    final ShapefileOptionsPanel shapefilePanel = new ShapefileOptionsPanel();
+    shapefilePanel.applyShapefile(reader);
+    try {
+      reader.close();
+    } catch (IOException ioex) {
+      return;
+    }
 
-     ActionListener okActionListener = new ActionListener() {
-       @Override
-       public void actionPerformed(ActionEvent ae) {
-         String s = shapefilePanel.getMetadataSelection();
-         IModel model = backplaneManager.loadModel(file, s);
-         postModelName(model); // will handle null case
-         repaint();
-       }
-     };
-    
+    ActionListener okActionListener = new ActionListener() {
+      @Override
+      public void actionPerformed(ActionEvent ae) {
+        String s = shapefilePanel.getMetadataSelection();
+        IModel model = backplaneManager.loadModel(file, s);
+        postModelName(model); // will handle null case
+        repaint();
+      }
+    };
+
     shapefilePanel.setOkActionListener(okActionListener);
-    
+
     JDialog shapefileDialog = new JDialog(frame,
             "Shapefile Options",
             false);
@@ -1207,7 +1212,7 @@ public class DataViewingPanel extends JPanel {
     shapefileDialog.setVisible(true);
 
   }
-    
+
   void raiseShapefileOptionsForConstraint(IModel model, File file, CompositeImageScale ccs) {
     JFrame frame = null;
     Component c = this.getParent();

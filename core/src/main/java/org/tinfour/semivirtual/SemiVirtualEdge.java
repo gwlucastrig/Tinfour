@@ -25,19 +25,6 @@
  *
  * Notes:
  *
- *  TO DO:  Recently found a need to add the update method for cases
- *          where the geometry of an edge is changed by the flip or
- *          the split operation which were introduced for performing
- *          constraint restorations.  However, I wonder if this could
- *          be avoided by simple changing the code for getA() and getB()
- *          to always consult the state data in the edge pool rather than
- *          maintaining local copies of a,b.  This would be less error
- *          vulnerable to coding errors.  But we must check to see how
- *          often getA() and getB() are called.  If its more than a
- *          couple, we probably should keep local copies.  If it's less
- *          than an average of 2, we would probably gain performance by
- *          not maintaining local copies and would benefit by being able
- *          to get rid of the update() method.
  *
  * -----------------------------------------------------------------------
  */

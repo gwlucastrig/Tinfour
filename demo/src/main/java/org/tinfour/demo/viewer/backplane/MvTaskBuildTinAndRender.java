@@ -29,6 +29,7 @@
  */
 package org.tinfour.demo.viewer.backplane;
 
+import java.awt.Shape;
 import java.awt.geom.AffineTransform;
 import java.awt.geom.Rectangle2D;
 import java.awt.image.BufferedImage;
@@ -47,15 +48,15 @@ import org.tinfour.utils.TinInstantiationUtility;
 import org.tinfour.utils.Tincalc;
 
 /**
- * Provides a runnable for rendering in cases where a new model or
- * changed view options require the processing of new TIN or grid elements.
+ * Provides a runnable for rendering in cases where a new model or changed view
+ * options require the processing of new TIN or grid elements.
  */
 @SuppressWarnings("PMD.AvoidDeeplyNestedIfStmts")
 class MvTaskBuildTinAndRender implements IModelViewTask {
 
   /**
-   * An arbitrary setting for how many pixels (on average) we require
-   * between vertices when computing thinning for raster
+   * An arbitrary setting for how many pixels (on average) we require between
+   * vertices when computing thinning for raster
    */
   private static final int spaceInPixelsRaster = 2;
 
@@ -73,9 +74,9 @@ class MvTaskBuildTinAndRender implements IModelViewTask {
   private boolean isCancelled;
 
   MvTaskBuildTinAndRender(
-    BackplaneManager backplaneManager,
-    MvComposite composite,
-    int taskIndex) {
+          BackplaneManager backplaneManager,
+          MvComposite composite,
+          int taskIndex) {
     this.backplaneManager = backplaneManager;
     this.composite = composite;
     this.model = this.composite.getModel();
@@ -113,11 +114,11 @@ class MvTaskBuildTinAndRender implements IModelViewTask {
     double mx1 = model.getMaxX();
     double my1 = model.getMaxY();
     double area = (mx1 - mx0) * (my1 - my0);
-    double nominalPointSpacing = Tincalc.sampleSpacing(area ,nVertices );
+    double nominalPointSpacing = Tincalc.sampleSpacing(area, nVertices);
 
     IIncrementalTin wireframeTin = composite.getWireframeTin();
     int reductionForWireframeTin = composite.getReductionForWireframe();
-    List<IConstraint>constraintsForRender = composite.getConstraintsForRender();
+    List<IConstraint> constraintsForRender = composite.getConstraintsForRender();
 
     // in the logic below, there are blocks where we obtain a "result"
     // giving the vertex selection and constraints for rendering (if constraints
@@ -128,13 +129,13 @@ class MvTaskBuildTinAndRender implements IModelViewTask {
     SelectionResult result = null;
     if (view.isWireframeSelected()) {
       if (wireframeTin == null) {
-         result = selectVerticesForProcessing(
-          true,
-          view.getWireframeSampleSpacing(),
-          MAX_VERTICES_FOR_TIN,
-          true);
-          constraintsForRender = result.constraintList;
-          composite.setConstraintsForRender(constraintsForRender);
+        result = selectVerticesForProcessing(
+                true,
+                view.getWireframeSampleSpacing(),
+                MAX_VERTICES_FOR_TIN,
+                true);
+        constraintsForRender = result.constraintList;
+        composite.setConstraintsForRender(constraintsForRender);
         List<Vertex> vList = result.list;
 
         if (isCancelled) {
@@ -144,9 +145,9 @@ class MvTaskBuildTinAndRender implements IModelViewTask {
         reductionForWireframeTin = result.reduction;
         int n = vList.size();
         backplaneManager.postStatusMessage(taskIndex,
-          "Building wireframe TIN from " + n + " vertices");
+                "Building wireframe TIN from " + n + " vertices");
         TinInstantiationUtility tinOven
-          = new TinInstantiationUtility(MvComposite.tinMemoryUseFraction, n);
+                = new TinInstantiationUtility(MvComposite.tinMemoryUseFraction, n);
         wireframeTin = tinOven.constructInstance(nominalPointSpacing);
         boolean isBootstrapped = wireframeTin.add(vList, null);
         if (result.constraintList != null) {
@@ -172,13 +173,14 @@ class MvTaskBuildTinAndRender implements IModelViewTask {
       backplaneManager.postStatusMessage(taskIndex, "Rendering wireframe image");
       BufferedImage bImage = composite.renderWireframe();
       RenderProduct product = new RenderProduct(
-        RenderProductType.Wireframe,
-        composite,
-        bImage);
+              RenderProductType.Wireframe,
+              composite,
+              bImage,
+              null);
       backplaneManager.postImageUpdate(this, product);
     }
 
-        if (isCancelled) {
+    if (isCancelled) {
       return;
     }
 
@@ -188,32 +190,37 @@ class MvTaskBuildTinAndRender implements IModelViewTask {
       if (constraintsForRender == null) {
         if (result == null) {
           result = selectVerticesForProcessing(
-            true,
-            view.getWireframeSampleSpacing(),
-            MAX_VERTICES_FOR_TIN,
-            true);
+                  true,
+                  view.getWireframeSampleSpacing(),
+                  MAX_VERTICES_FOR_TIN,
+                  true);
         }
-          constraintsForRender = result.constraintList;
-          composite.setConstraintsForRender(constraintsForRender);
+        constraintsForRender = result.constraintList;
+        composite.setConstraintsForRender(constraintsForRender);
       }
       if (constraintsForRender != null) {
+        Shape clip = null;
         BufferedImage bImage = composite.renderConstraints();
+        if (view.isClipOnConstraintsSelected()) {
+          clip = composite.makeClipMask();
+        }
         RenderProduct product = new RenderProduct(
-          RenderProductType.Constraints,
-          composite,
-          bImage);
+                RenderProductType.Constraints,
+                composite,
+                bImage,
+                clip);
         backplaneManager.postImageUpdate(this, product);
         backplaneManager.postStatusMessage(taskIndex, "");
+
       }
     }
-
 
     if (isCancelled) {
       return;
     }
     if (!isCancelled && (view.isRasterSelected() || view.isHillshadeSelected())) {
       launchRasterProcessing(
-        nominalPointSpacing, wireframeTin, reductionForWireframeTin);
+              nominalPointSpacing, wireframeTin, reductionForWireframeTin);
     }
 
   }
@@ -238,25 +245,25 @@ class MvTaskBuildTinAndRender implements IModelViewTask {
       boolean thinning = !view.isFullResolutionGridSelected();
 
       SelectionResult result = selectVerticesForProcessing(
-        thinning, spaceInPixelsRaster, MAX_VERTICES_FOR_TIN * 2,
-        false);
+              thinning, spaceInPixelsRaster, MAX_VERTICES_FOR_TIN * 2,
+              false);
       reductionForRasterTin = result.reduction;
 
       List<Vertex> vList = result.list;
       int n = vList.size();
       backplaneManager.postStatusMessage(
-        taskIndex, "Building TIN for raster processing from " + n + " vertices");
+              taskIndex, "Building TIN for raster processing from " + n + " vertices");
       TinInstantiationUtility tinOven
-        = new TinInstantiationUtility(
-          MvComposite.tinMemoryUseFraction,
-          n);
-      rasterTin =  tinOven.constructInstance(nominalPointSpacing);
+              = new TinInstantiationUtility(
+                      MvComposite.tinMemoryUseFraction,
+                      n);
+      rasterTin = tinOven.constructInstance(nominalPointSpacing);
 
       boolean isBootstrapped = rasterTin.add(vList, monitor);
       if (!isBootstrapped) {
         monitor.reportDone();
         backplaneManager.postStatusMessage(
-          taskIndex, "Failed build TIN, insufficient data");
+                taskIndex, "Failed build TIN, insufficient data");
         return;
       }
       if (isCancelled) {
@@ -294,15 +301,15 @@ class MvTaskBuildTinAndRender implements IModelViewTask {
 
       int nRow = row1 - row0;
       MvTaskBuildRasterBlock blockBuilder
-        = new MvTaskBuildRasterBlock( //NOPMD
-          backplaneManager,
-          composite,
-          blockCounter,
-          nBlock,
-          row0,
-          nRow,
-          taskIndex,
-          monitor);
+              = new MvTaskBuildRasterBlock( //NOPMD
+                      backplaneManager,
+                      composite,
+                      blockCounter,
+                      nBlock,
+                      row0,
+                      nRow,
+                      taskIndex,
+                      monitor);
       backplaneManager.renderPool.queueTask(blockBuilder);
 
     }
@@ -328,10 +335,10 @@ class MvTaskBuildTinAndRender implements IModelViewTask {
    * @return
    */
   private SelectionResult selectVerticesForProcessing(
-    boolean thinningSelected,
-    double pixelSpacing,
-    int nVertexLimit,
-    boolean factorOfTwoSteps) {
+          boolean thinningSelected,
+          double pixelSpacing,
+          int nVertexLimit,
+          boolean factorOfTwoSteps) {
     AffineTransform c2m = composite.c2m;
     int nVertices = model.getVertexCount();
     double mx0 = model.getMinX();
@@ -386,7 +393,7 @@ class MvTaskBuildTinAndRender implements IModelViewTask {
         vList = thinList;
         reduction = iSkip;
         if (constraintList != null) {
-          double areaThreshold = 0.4* uSpacing*uSpacing;
+          double areaThreshold = 0.4 * uSpacing * uSpacing;
           List<IPolyline> thinConList = new ArrayList<>(constraintList.size());
           for (IConstraint con : constraintList) {
             Rectangle2D r2dCon = con.getBounds();
@@ -401,7 +408,7 @@ class MvTaskBuildTinAndRender implements IModelViewTask {
           constraintList = new ArrayList<>(thinConList.size());
           for (int iP = 0; iP < thinConList.size(); iP++) {
             IPolyline p = thinConList.get(iP);
-            IPolyline test = pThinner.thinPoints(p, thinConList,  areaThreshold);
+            IPolyline test = pThinner.thinPoints(p, thinConList, areaThreshold);
             if (test == null) {
               // the thinner did not alter the geometry of the constraint
               constraintList.add((IConstraint) p);
@@ -528,7 +535,7 @@ class MvTaskBuildTinAndRender implements IModelViewTask {
     @Override
     public String toString() {
       return "SelectionResult " + list.size() + " vertices, "
-        + reduction + ":1 reduction";
+              + reduction + ":1 reduction";
     }
 
   }

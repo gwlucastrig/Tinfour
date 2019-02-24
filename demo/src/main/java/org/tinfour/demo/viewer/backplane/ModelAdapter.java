@@ -35,6 +35,7 @@
  */
 package org.tinfour.demo.viewer.backplane;
 
+import java.awt.geom.Rectangle2D;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -566,6 +567,22 @@ public class ModelAdapter implements IModel {
     }
     constraintList = new ArrayList<>(constraints.size());
     constraintList.addAll(constraints);
+    for(IConstraint c: constraintList){
+      Rectangle2D r2d = c.getBounds();
+      if (r2d.getMinX() < xMin) {
+        xMin = r2d.getMinX();
+      }
+      if (r2d.getMaxX() > xMax) {
+        xMax = r2d.getMaxX();
+      }
+      if (r2d.getMinY() < yMin) {
+        yMin = r2d.getMinY();
+      }
+      if (r2d.getMaxY() > yMax) {
+        yMax = r2d.getMaxY();
+      }
+    }
+
     prepareReferenceTin(vertexList, constraints, null);
   }
 
