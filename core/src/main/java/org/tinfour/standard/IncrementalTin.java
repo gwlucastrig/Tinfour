@@ -2558,7 +2558,7 @@ public class IncrementalTin implements IIncrementalTin {
     // it would overflow any reasonably sized stack.  So we use as
     // explicitly coded stack instead.
     //    There is special logic here for the case where an alternate constraint
-    // occurs inside the floor-fill area. For example, a linear constraint
+    // occurs inside the flood-fill area. For example, a linear constraint
     // might occur inside a polygon (a road might pass through a town).
     // The logic needs to preserve the constraint index of thecontained
     // edge from the alternate constraint. In that case, the flood fill
