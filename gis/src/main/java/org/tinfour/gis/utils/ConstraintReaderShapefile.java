@@ -169,7 +169,7 @@ public class ConstraintReaderShapefile implements Closeable {
                     x = scratch.x;
                     y = scratch.y;
                   }
-                  Vertex v = new Vertex(x, y, z, vertexID++); //NOPMD
+                  Vertex v = new ConstraintVertex(x, y, z, vertexID++); //NOPMD
                   con.add(v);
                 }
               } else {
@@ -190,7 +190,7 @@ public class ConstraintReaderShapefile implements Closeable {
                     x = scratch.x;
                     y = scratch.y;
                   }
-                  Vertex v = new Vertex(x, y, z, vertexID++); //NOPMD
+                  Vertex v = new ConstraintVertex(x, y, z, vertexID++); //NOPMD
                   con.add(v);
                 }
               }

@@ -56,7 +56,7 @@ public class TextCoordCartesian {
    * @throws java.text.ParseException in response to invalid input
    */
   public double[] parse(String text) throws ParseException {
-    StringBuilder numStr = new StringBuilder(32);
+    StringBuilder numStr = new StringBuilder(256);
     if (text == null) {
       throw new ParseException("Null input", 0);
     }
@@ -76,7 +76,7 @@ public class TextCoordCartesian {
     double[] v = new double[2];
     for (int i = i0; i < text.length(); i++) {
       char c = text.charAt(i);
-      if (Character.isWhitespace(c)) { //NOPMD
+      if (Character.isWhitespace(c) || c==',') { //NOPMD
         if (numStr.length() > 0) { //NOPMD
           try {
             double test = Double.parseDouble(numStr.toString());
@@ -84,12 +84,27 @@ public class TextCoordCartesian {
               throw new ParseException("Too many values", i);
             }
             v[nV++] = test;
+            numStr.setLength(0);
           } catch (NumberFormatException nex) {
             throw new ParseException("Invalid numeric " + numStr.toString(), i); //NOPMD
           }
         }
+      }else{
+        numStr.append(c);
       }
     }
+    if (numStr.length() > 0 && nV < 2) { //NOPMD
+      try {
+        double test = Double.parseDouble(numStr.toString());
+        v[nV++] = test;
+        numStr.setLength(0);
+      } catch (NumberFormatException nex) {
+        throw new ParseException("Invalid numeric " + numStr.toString(),
+                text.length() - 1);  //NOPMD
+      }
+    }
+
+
     if (nV < 2) {
       throw new ParseException("Incomplete specification", text.length());
     }
