@@ -1860,7 +1860,7 @@ public class IncrementalTin implements IIncrementalTin {
     }
 
     int maxIndex = getMaximumEdgeAllocationIndex();
-    BitSet visited = new BitSet(maxIndex/2+1);
+    BitSet visited = new BitSet(maxIndex+1);
     for (int i = 0; i < constraintList.size(); i++) {
       IConstraint c = constraintList.get(i);
       if (c.definesConstrainedRegion()) {
