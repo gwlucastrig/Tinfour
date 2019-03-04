@@ -2011,7 +2011,7 @@ public class SemiVirtualIncrementalTin implements IIncrementalTin {
             cvList.add(iSegment + 1, b);
             nSegments++;
             e0 = e.getReverse(); // will be (b, v0), set up for next iSegment
-            setConstrained(e, constraint, intCollector);
+            setConstrained(e0.getDual(), constraint, intCollector);
             continue segmentLoop;
           }
         }

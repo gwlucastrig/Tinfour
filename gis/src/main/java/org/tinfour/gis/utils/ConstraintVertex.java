@@ -36,16 +36,36 @@ import org.tinfour.common.Vertex;
  * vertices that were contributed by a constraint
  */
 public class ConstraintVertex extends Vertex {
-
-  
-  public ConstraintVertex(double x, double y, double z) {
-    super(x, y, z);
-  }
-
+ 
+    /**
+   * Construct a vertex with the specified coordinates and ID value. If the z
+   * value is NaN then the vertex will be treated as a "null data value".
+   *
+   * @param x the coordinate on the surface on which the vertex is defined
+   * @param y the coordinate on the surface on which the vertex is defined
+   * @param z the data value (z coordinate of the surface)
+   * @param index the ID of the vertex (intended as a diagnostic)
+   */
   public ConstraintVertex(double x, double y, double z, int index) {
     super(x, y, z, index);
   }
 
+  /**
+   * Gets a string intended for labeling the vertex in images or
+   * reports. The default label is the index of the vertex preceeded
+   * by the letter C if the vertex is synthetic. Note that the
+   * index of a vertex is not necessarily unique.  If constraints are
+   * loaded from multiple sources, some of their vertices will have the
+   * same indices.
+   *
+   * @return a valid, non-empty string.
+   */
+  @Override
+  public String getLabel() {
+    return "C"+ Integer.toString(getIndex());
+  }
+  
+  
   @Override
   public String toString() {
     return "C" + super.toString();
