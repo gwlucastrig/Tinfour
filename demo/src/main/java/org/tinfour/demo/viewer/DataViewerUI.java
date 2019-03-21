@@ -261,6 +261,8 @@ class DataViewerUI {
       }
 
     });
+    
+    JMenuItem exportControl = new ExportControl(fileMenu, dvPanel);
 
     JMenuItem openItem = this.makeLoadModelFromFile(fileMenu);
     JMenuItem exitItem = new JMenuItem("Exit");
@@ -276,6 +278,8 @@ class DataViewerUI {
     fileMenu.add(newItem);
     fileMenu.add(openItem);
     fileMenu.add(new JSeparator(JSeparator.HORIZONTAL));
+    fileMenu.add(exportControl);
+     fileMenu.add(new JSeparator(JSeparator.HORIZONTAL));
     fileMenu.add(exitItem);
     return fileMenu;
   }
