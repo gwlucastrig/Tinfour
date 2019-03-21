@@ -487,6 +487,63 @@ public class DataViewingPanel extends JPanel {
       }
     }
   }
+  
+  ExportImage getRenderedImage(boolean transparentBackground, boolean addFrame) {
+
+    int iW = getWidth();
+    int iH = getHeight();
+    BufferedImage bImage = new BufferedImage(iW, iH, BufferedImage.TYPE_INT_ARGB);
+    Graphics2D g2d = bImage.createGraphics();
+    g2d.setRenderingHint(
+            RenderingHints.KEY_ANTIALIASING,
+            RenderingHints.VALUE_ANTIALIAS_ON);
+    
+    if (!transparentBackground) {
+      Color c = viewOptions.getBackground();
+      g2d.setColor(c);
+      g2d.fillRect(0, 0, iW + 1, iH + 1);
+    }
+ 
+
+
+    if (compositeImage == null) {
+      return null;
+    }
+    g2d.drawImage(compositeImage, c2p, null);
+
+    if (mvComposite != null && mvComposite.isReady()) {
+      if (showScale) {
+        // draw a scale bar, but suppress it if the user has engaged
+        // a zoom action
+        double p2cScale = Math.abs(p2c.getDeterminant());
+        if (Math.abs(p2cScale - 1) < 1.0e-6) {
+          double s = Math.sqrt(Math.abs(p2m.getDeterminant()));
+          int x0 = getWidth() - 240;
+          int y0 = getHeight() - 25;
+          ScaleIntervals si = ScaleIntervals.computeIntervals(200, 10, s);
+          Font f = getFont();
+          String family = f.getFamily();
+          f = new Font(family, Font.BOLD, 14);
+          si.render(g2d, x0, y0, f, Color.white, Color.black);
+        }
+      }
+      if (showLegend && legendImage != null) {
+        int h = legendImage.getHeight();
+        int y0 = getHeight() - h - 5;
+        if (y0 < 5) {
+          y0 = 5;
+        }
+        g2d.drawImage(legendImage, 5, y0, this);
+      }
+    }
+
+    if (addFrame) {
+      g2d.setColor(Color.darkGray);
+      g2d.drawRect(0, 0, iW, iH);
+    }
+    return new ExportImage(bImage, p2m);
+
+  }
 
   private void triggerModelRemoved() {
     if (mvComposite != null) {
@@ -670,6 +727,7 @@ public class DataViewingPanel extends JPanel {
       compositeImage = null;
       return;
     }
+ 
     compositeImage = new BufferedImage(
             mvComposite.getWidth(),
             mvComposite.getHeight(),
