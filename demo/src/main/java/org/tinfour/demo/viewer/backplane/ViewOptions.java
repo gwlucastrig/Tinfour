@@ -443,7 +443,7 @@ public class ViewOptions {
     isFullResolutionGridSelected = status;
   }
 
-    public boolean isClipOnConstraintsSelected() {
+  public boolean isClipOnConstraintsSelected() {
     return isClipOnConstraintsSelected;
   }
 

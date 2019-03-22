@@ -136,6 +136,8 @@ public class MvComposite {
   private float[] zGrid;
 
   private String modelAndRenderingReport;
+  
+  private Shape clipMask;
 
   /**
    * A private constructor to deter other classes from instantiating this class
@@ -1722,8 +1724,22 @@ public class MvComposite {
     }
   }
 
-  Shape makeClipMask() {
+  void prepareClipMask() {
+    if (clipMask == null) {
+      // the following may return a null.
+      clipMask = makeClipMask();
+    }
+  }
 
+  Shape getClipMask() {
+    return clipMask;
+  }
+
+  
+  private Shape makeClipMask() {
+    if(constraintsForRender==null || constraintsForRender.isEmpty()){
+      return null;
+    }
     Path2D clip = new Path2D.Double();
     boolean clipHasData = false;
     for (IConstraint con : constraintsForRender) {

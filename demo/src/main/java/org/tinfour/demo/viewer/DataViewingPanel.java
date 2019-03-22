@@ -48,7 +48,6 @@ import java.awt.Font;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.RenderingHints;
-import java.awt.Shape;
 import java.awt.dnd.DnDConstants;
 import java.awt.dnd.DropTarget;
 import java.awt.event.ActionEvent;
@@ -733,22 +732,8 @@ public class DataViewingPanel extends JPanel {
             mvComposite.getHeight(),
             BufferedImage.TYPE_INT_ARGB);
     Graphics2D g = compositeImage.createGraphics();
-    //specialClip(mvComposite, (Graphics2D)g);
-    Shape clip = null;
-    for (int i = 0; i < renderProducts.length; i++) {
-      if (renderProducts[i] != null) {
-        clip = renderProducts[i].clip;
-        if (clip != null) {
-          break;
-        }
-      }
-    }
-
     for (int i = renderProducts.length - 1; i >= 0; i--) {
       if (renderProducts[i] != null) {
-        if (clip != null && renderProducts[i].layerType != RenderProductType.Constraints) {
-          g.setClip(clip);
-        }
         if (renderProducts[i].compatibilityTransform == null) {
           g.drawImage(renderProducts[i].image, 0, 0, null);
         } else {
@@ -757,7 +742,6 @@ public class DataViewingPanel extends JPanel {
                   renderProducts[i].compatibilityTransform,
                   null);
         }
-        g.setClip(null);
       }
     }
   }
