@@ -491,7 +491,8 @@ public class DataViewingPanel extends JPanel {
 
     int iW = getWidth();
     int iH = getHeight();
-    BufferedImage bImage = new BufferedImage(iW, iH, BufferedImage.TYPE_INT_ARGB);
+    BufferedImage bImage = 
+            new BufferedImage(iW, iH, BufferedImage.TYPE_INT_ARGB);
     Graphics2D g2d = bImage.createGraphics();
     g2d.setRenderingHint(
             RenderingHints.KEY_ANTIALIASING,
@@ -538,7 +539,7 @@ public class DataViewingPanel extends JPanel {
 
     if (addFrame) {
       g2d.setColor(Color.darkGray);
-      g2d.drawRect(0, 0, iW, iH);
+      g2d.drawRect(0, 0, iW-1, iH-1);
     }
     return new ExportImage(bImage, p2m);
 

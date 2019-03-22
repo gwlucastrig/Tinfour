@@ -149,6 +149,8 @@ class MvTaskBuildTinAndRender implements IModelViewTask {
       //
       // Also, this same logic is performed in the selectVerticesForProcessing.
       // We should consolidate them into a single method call.
+      backplaneManager.postStatusMessage(taskIndex,
+              "Preparing clip mask from constraints");
       double pixelSpacing = 50;
       double uPerPixel = Math.sqrt(Math.abs(composite.c2m.getDeterminant()));
       double uSpacing = pixelSpacing / uPerPixel;
@@ -198,6 +200,7 @@ class MvTaskBuildTinAndRender implements IModelViewTask {
         composite.setConstraintsForRender(clipList);
         composite.prepareClipMask();
       }
+      backplaneManager.postStatusMessage(taskIndex, "");
     }
 
     // in the logic below, there are blocks where we obtain a "result"
