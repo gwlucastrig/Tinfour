@@ -30,6 +30,7 @@
 
 package org.tinfour.demo.viewer.backplane;
 
+import java.awt.Graphics2D;
 import java.awt.Shape;
 import java.awt.geom.AffineTransform;
 import java.awt.image.BufferedImage;
@@ -39,17 +40,27 @@ public class RenderProduct {
     public MvComposite composite;
     public AffineTransform compatibilityTransform;
     public BufferedImage image;
-    public Shape clip;
+  
 
     RenderProduct(
       RenderProductType layerType,
       MvComposite composite, 
-      BufferedImage image, 
-      Shape clip)
+      BufferedImage image)
     {
       this.layerType = layerType;
       this.composite = composite;
-      this.image = image;
-      this.clip = clip;
+      Shape clipMask = composite.getClipMask();
+      if(clipMask==null || layerType==RenderProductType.Constraints){
+        this.image = image;
+      }else{
+        BufferedImage b = new BufferedImage(
+                image.getWidth(), 
+                image.getHeight(), 
+                BufferedImage.TYPE_INT_ARGB);
+        Graphics2D g2d = b.createGraphics();
+        g2d.setClip(clipMask);
+        g2d.drawImage(image, 0, 0, null);
+        this.image = b;
+      }
     }
 }

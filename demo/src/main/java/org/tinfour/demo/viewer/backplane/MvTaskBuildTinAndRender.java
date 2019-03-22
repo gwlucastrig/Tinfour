@@ -29,7 +29,6 @@
  */
 package org.tinfour.demo.viewer.backplane;
 
-import java.awt.Shape;
 import java.awt.geom.AffineTransform;
 import java.awt.geom.Rectangle2D;
 import java.awt.image.BufferedImage;
@@ -42,6 +41,7 @@ import org.tinfour.common.IMonitorWithCancellation;
 import org.tinfour.common.INeighborEdgeLocator;
 import org.tinfour.common.IPolyline;
 import org.tinfour.common.NeighborEdgeVertex;
+import org.tinfour.common.PolygonConstraint;
 import org.tinfour.common.Vertex;
 import org.tinfour.utils.PolylineThinner;
 import org.tinfour.utils.TinInstantiationUtility;
@@ -118,7 +118,87 @@ class MvTaskBuildTinAndRender implements IModelViewTask {
 
     IIncrementalTin wireframeTin = composite.getWireframeTin();
     int reductionForWireframeTin = composite.getReductionForWireframe();
-    List<IConstraint> constraintsForRender = composite.getConstraintsForRender();
+    List<IConstraint> constraintsForRender = null;
+
+
+    if (view.isClipOnConstraintsSelected()) {
+      // Originally, this logic just used all the polygon constraints
+      // taken from the mode.  Unfortunately, we encountered some data
+      // that caused the simple approach to leave behind artifacts when
+      // performing clipping.  Thus we implemented this code to clean up
+      // and reduce the polygons used for clipping.
+      //   The PolylineThinner operates by removing features that are
+      // smaller than a specified area value.  We compute that 
+      // area value by starting with a nominal pixel spacing and finding its
+      // equivalent scale in the model coordinate system (the constraints
+      // are all in the model coordinate system).  The PolylineThinner 
+      // class also has a couple of other considerations.  For example,
+      // it operates on objects of type IPolyline, so we have to deal with
+      // that.  One of the other things it does is make sure that when
+      // it simplifies a polyline's geometry, the result doesn't overlap
+      // with other polylines.  So it needs a list of polylines to test 
+      // against.  So we maintain a list called testList of poylines.
+      // Initially, this list is all the polylines that get through the
+      // initial screening (before we start thinning).  But as some of
+      // the polylines are changed by the thinning processes, the newly
+      // thinned object takes the place of the original in the testList.
+      // 
+      // Possible refinements:  we can probably exclude any polygons that
+      // are outside the bounding rectangle of the composite images we
+      // are building here.
+      //
+      // Also, this same logic is performed in the selectVerticesForProcessing.
+      // We should consolidate them into a single method call.
+      double pixelSpacing = 50;
+      double uPerPixel = Math.sqrt(Math.abs(composite.c2m.getDeterminant()));
+      double uSpacing = pixelSpacing / uPerPixel;
+      double areaThreshold = 0.4 * uSpacing * uSpacing;
+
+      List<IConstraint> rawList = model.getConstraints();
+      List<PolygonConstraint> polyList = new ArrayList<>();
+      List<IPolyline> testList = new ArrayList<>(rawList.size());
+      for (IConstraint c : rawList) {
+        // This next block tests for polygons that are too small
+        // and removes them from consideration.
+        // TO DO: The constraints list could potentially be reduced
+        //        by testing whether the constraints actually overlap the
+        //        drawing area.
+        if (c instanceof PolygonConstraint && c.isValid()) {
+          Rectangle2D r2dCon = c.getBounds();
+          double w = r2dCon.getWidth() / uPerPixel;
+          double h = r2dCon.getHeight() / uPerPixel;
+          double diag = Math.sqrt(w * w + h * h);
+          if (diag > pixelSpacing) {
+            polyList.add((PolygonConstraint) c);
+            testList.add(c);
+          }
+        }
+      }
+      List<IConstraint> clipList = new ArrayList<>(rawList.size());
+
+      PolylineThinner thinner = new PolylineThinner();
+      for (int iC = 0; iC < testList.size(); iC++) {
+        IPolyline p = testList.get(iC);
+        IPolyline test = thinner.thinPoints(p, testList, areaThreshold);
+        if (test == null) {
+          // the thinPoints operation did not alter the
+          // geometry of the input line, so we just use it
+          clipList.add(polyList.get(iC));
+        } else {
+          // the thinPoints operation changed the geometry of the polyline
+          // replace it in the master list, and also add it to
+          // the constraint list
+          testList.set(iC, test);
+          if (test.isValid()) {
+            clipList.add((PolygonConstraint) test);
+          }
+        }
+      }
+      if (!clipList.isEmpty()) {
+        composite.setConstraintsForRender(clipList);
+        composite.prepareClipMask();
+      }
+    }
 
     // in the logic below, there are blocks where we obtain a "result"
     // giving the vertex selection and constraints for rendering (if constraints
@@ -134,6 +214,10 @@ class MvTaskBuildTinAndRender implements IModelViewTask {
                 view.getWireframeSampleSpacing(),
                 MAX_VERTICES_FOR_TIN,
                 true);
+        // The select vertices method has the potential
+        // of adjusting thje constraints.  It may be a good idea
+        // to retire this feature and just handle the constraints
+        // above at the start of this routine.
         constraintsForRender = result.constraintList;
         composite.setConstraintsForRender(constraintsForRender);
         List<Vertex> vList = result.list;
@@ -141,7 +225,7 @@ class MvTaskBuildTinAndRender implements IModelViewTask {
         if (isCancelled) {
           return;
         }
-
+ 
         reductionForWireframeTin = result.reduction;
         int n = vList.size();
         backplaneManager.postStatusMessage(taskIndex,
@@ -175,8 +259,7 @@ class MvTaskBuildTinAndRender implements IModelViewTask {
       RenderProduct product = new RenderProduct(
               RenderProductType.Wireframe,
               composite,
-              bImage,
-              null);
+              bImage );
       backplaneManager.postImageUpdate(this, product);
     }
 
@@ -199,16 +282,11 @@ class MvTaskBuildTinAndRender implements IModelViewTask {
         composite.setConstraintsForRender(constraintsForRender);
       }
       if (constraintsForRender != null) {
-        Shape clip = null;
         BufferedImage bImage = composite.renderConstraints();
-        if (view.isClipOnConstraintsSelected()) {
-          clip = composite.makeClipMask();
-        }
         RenderProduct product = new RenderProduct(
                 RenderProductType.Constraints,
                 composite,
-                bImage,
-                clip);
+                bImage );
         backplaneManager.postImageUpdate(this, product);
         backplaneManager.postStatusMessage(taskIndex, "");
 

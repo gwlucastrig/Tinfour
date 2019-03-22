@@ -101,8 +101,7 @@ class MvTaskBuildRasterBlock implements IModelViewTask {
       RenderProduct product = new RenderProduct(
               RenderProductType.Raster,
               composite,
-              composite.rasterImage,
-              null);
+              composite.rasterImage);
       monitor.reportDone();
       backplaneManager.postImageUpdate(this, product);
     }
