@@ -29,9 +29,11 @@
  */
 package org.tinfour.demo.viewer;
 
+import java.awt.Graphics;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.geom.AffineTransform;
+import java.awt.image.BufferedImage;
 import java.io.BufferedOutputStream;
 import java.io.File;
 import java.io.FileOutputStream;
@@ -148,14 +150,34 @@ public class ExportControl extends JMenuItem {
                 = exportImageOptions.isImageFrameEnabled();
         boolean writeWorldFile
                 = exportImageOptions.isWorldFileEnabled();
+        
+        // JPEGs will not support a transparent background
+        boolean jpegFlag = false;
+        if("jpg".equalsIgnoreCase(ext) || "jpeg".equalsIgnoreCase(ext)){
+          jpegFlag = true;
+          transparentBackground = false;
+        }
         ExportImage eImage = dvPanel.getRenderedImage(
                 transparentBackground, frameImage);
         if (eImage == null) {
           return;
         }
+        
+        BufferedImage bImage = eImage.bImage;
+        if (jpegFlag) {
+          // The Java ImageIO class has a problem with 4-byte ARGB
+          // images if you try to write a JPEG.
+          bImage = new BufferedImage(
+                  bImage.getWidth(),
+                  bImage.getHeight(),
+                  BufferedImage.TYPE_INT_RGB);
+          Graphics g = bImage.getGraphics();
+          g.drawImage(eImage.bImage, 0, 0, null);
+          g.dispose();
+        }
 
         try {
-          ImageIO.write(eImage.bImage, ext, file);
+          ImageIO.write(bImage, ext, file);
         } catch (IOException ioex) {
           ioex.printStackTrace(System.out);
         }
@@ -171,7 +193,7 @@ public class ExportControl extends JMenuItem {
           }
           String path = file.getPath();
           int i = path.lastIndexOf('.');
-          path = path.substring(0, i) + wExt;
+          path = path.substring(0, i+1) + wExt;
           file = new File(path);
           try (
                   FileOutputStream fos = new FileOutputStream(file)) {
