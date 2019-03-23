@@ -91,8 +91,7 @@ public class DbfField {
    * @throws IOException in the event of an unrecoverable I/O condition.
    */
   static DbfField load(BufferedRandomAccessReader brad, int offset)
-          throws IOException 
-  {
+          throws IOException {
     String name = brad.readAscii(11);
     char fieldType = (char) brad.readUnsignedByte();
     int dataAddress = brad.readInt();
@@ -105,15 +104,22 @@ public class DbfField {
               fieldLength, fieldDecimalCount,
               offset);
     }
-    if(fieldType == 'N' && fieldDecimalCount==0){
-     return new DbfFieldInt(
+    if (fieldType == 'N' && fieldDecimalCount == 0) {
+      return new DbfFieldInt(
               name, fieldType, dataAddress,
               fieldLength, fieldDecimalCount,
               offset);
-  }
+    }
 
     if (fieldType == 'L') {
       return new DbfFieldLogical(
+              name, fieldType, dataAddress,
+              fieldLength, fieldDecimalCount,
+              offset);
+    }
+
+    if (fieldType == 'D') {
+      return new DbfFieldDate(
               name, fieldType, dataAddress,
               fieldLength, fieldDecimalCount,
               offset);
@@ -192,8 +198,7 @@ public class DbfField {
     }
     return Double.NaN;
   }
-  
-  
+
   /**
    * Gets the string value stored in the field during the most recent read
    * operation.
@@ -261,40 +266,40 @@ public class DbfField {
 
   @Override
   public String toString() {
-    return String.format("DbfField (%s %2d.%-2d) %s", 
+    return String.format("DbfField (%s %2d.%-2d) %s",
             fieldType, fieldLength, fieldDecimalCount, name);
   }
-  
+
   /**
-   * Gets the data for the field as an Object of the appropriate class.
-   * For the DbdField base class, the return value is a string.
-   * For others, the return type may vary.
+   * Gets the data for the field as an Object of the appropriate class. For the
+   * DbdField base class, the return value is a string. For others, the return
+   * type may vary.
+   *
    * @return an object, potentially null if the record has not been read.
    */
-  public Object getApplicationData(){
+  public Object getApplicationData() {
     return builder.toString();
   }
-  
-  
-   /**
-   * Indicates whether the value in the field was encoded
-   * using engineering notation (e.g. scientific notation).
-   * The return value will be false for all field types except
-   * floating-point types.
+
+  /**
+   * Indicates whether the value in the field was encoded using engineering
+   * notation (e.g. scientific notation). The return value will be false for all
+   * field types except floating-point types.
+   *
    * @return true if engineering notation was used; otherwise false.
    */
-  public boolean usesEngineeringNotation(){
+  public boolean usesEngineeringNotation() {
     return false;
   }
-  
-  
+
   /**
    * Gets the unique values for this field as a list of strings.
+   *
    * @param dbf the DBF with which this field is associated
    * @return if successful, a valid list of unique values
    * @throws IOException in the event of an unrecoverable IO condition.
    */
-   public List<String> getUniqueValues(DbfFileReader dbf) throws IOException {
+  public List<String> getUniqueValues(DbfFileReader dbf) throws IOException {
     int nRecords = dbf.getRecordCount();
     List<String> list = new ArrayList<String>(nRecords);
     if (nRecords == 0) {

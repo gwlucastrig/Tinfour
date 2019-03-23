@@ -60,8 +60,9 @@ public class DbfFileReader implements Closeable {
 
   /**
    * Construct a DbfFileReader from the specified file
+   *
    * @param file a valid file reference to a .dbf file
-   * @throws IOException  in the event of an unrecoverable I/O condition
+   * @throws IOException in the event of an unrecoverable I/O condition
    */
   public DbfFileReader(File file) throws IOException {
     this.file = file;
@@ -104,6 +105,7 @@ public class DbfFileReader implements Closeable {
 
   /**
    * Get the number of records in the DBF file
+   *
    * @return a positive integer
    */
   public int getRecordCount() {
@@ -112,6 +114,7 @@ public class DbfFileReader implements Closeable {
 
   /**
    * Get a safe copy of a list of the fields specified in the DBF file.
+   *
    * @return a valid list.
    */
   public List<DbfField> getFields() {
@@ -122,6 +125,7 @@ public class DbfFileReader implements Closeable {
 
   /**
    * Get the field matching the specified name
+   *
    * @param name a valid string
    * @return if found, a valid instance; otherwise, a null.
    */
@@ -141,6 +145,7 @@ public class DbfFileReader implements Closeable {
 
   /**
    * Read the content of the file into the field object
+   *
    * @param recordNumber a valid record in the range 1 to record-count.
    * @param field a valid field obtained from the DbfFileReader instance and
    * used to hold the data read from the file
@@ -155,10 +160,6 @@ public class DbfFileReader implements Closeable {
     field.read(brad, recordOffset);
   }
 
-  
-  
-  
-  
   @Override
   public void close() throws IOException {
     if (brad != null) {
