@@ -237,7 +237,7 @@ public class Vertex implements ISamplePoint {
    *
    * @param x coordinate of arbitrary point
    * @param y coordinate of arbitrary point
-   * @return a distance in units squared
+   * @return the distance in the applicable coordinate system
    */
   public double getDistance(final double x, final double y) {
     double dx = this.x - x;
