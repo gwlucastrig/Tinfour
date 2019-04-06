@@ -97,9 +97,11 @@ public class DelimitedReader implements Closeable {
    * a reusable list.  Each call to this routine clears any content
    * that may already be in the list before extracting it from the file.
    * @param sList a list in which the strings will be stored
+   * @return the number of strings that were stored in the list;
+   * zero at the end of the file.
    * @throws IOException in the event of an unsuccessful I/O operation.
    */
-  public void readStrings(final List<String>sList) throws IOException {
+  public int readStrings(final List<String>sList) throws IOException {
     int c;
     final StringBuilder sb= new StringBuilder();
     sList.clear();
@@ -143,6 +145,7 @@ public class DelimitedReader implements Closeable {
         sb.append((char)c);
       }
     }
+    return sList.size();
   }
 
 

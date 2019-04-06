@@ -90,6 +90,12 @@ import org.tinfour.utils.LinearUnits;
  *      42.5,     73.33,   2001
  * </code></pre>
  * <p>
+ * Note, however that if both geographic and Cartesian coordinates are
+ * provided, the Cartesian coordinates will take precedence.  The rationale,
+ * for this design decision is that specifications of this type are usually
+ * encountered in cases where data from geographic sources have be projected
+ * to a planar coordinate system.  
+ * <p>
  * <strong>Linear Units: </strong> Although a specification of units for the
  * values in the source file is not supported by the text format, applications
  * can specify linear units through the use of the setLinearUnits() method. The
@@ -195,6 +201,8 @@ public class VertexReaderText implements Closeable, IVertexReader {
       int zColumn = 2;
       int nColumnsRequired = 3;
       boolean geoText = false;
+      boolean xFound = false;
+      boolean yFound = false;
       int k = 0;
       for (String s : sList) {
         char c = s.charAt(0);
@@ -237,6 +245,12 @@ public class VertexReaderText implements Closeable, IVertexReader {
       // The first row gets special processing.  If there was a header
       // row, we still haven't read any data (just the header)
       if (headerRow) {
+        if(xFound && yFound && geoText){
+          // if both  cartesian specifications and geographic coordinates
+          // were provided, we assume that the (x,y) gives data in a projected
+          // coordinate system and takes precedence.
+          geoText = false;
+        }
         sList = dlim.readStrings();
         if (sList.size() < nColumnsRequired) {
           throw new IOException("Insufficient columns in line "
