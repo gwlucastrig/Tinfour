@@ -62,7 +62,7 @@ public class SimpleTriangle {
   }
 
   /**
-   * Get edge A from the triangle
+   * Get edge a from the triangle
    *
    * @return a valid edge
    */
@@ -71,7 +71,7 @@ public class SimpleTriangle {
   }
 
   /**
-   * Get edge B from the triangle
+   * Get edge b from the triangle
    *
    * @return a valid edge
    */
@@ -80,7 +80,7 @@ public class SimpleTriangle {
   }
 
   /**
-   * Get edge C from the triangle
+   * Get edge c from the triangle
    *
    * @return a valid edge
    */
@@ -89,9 +89,49 @@ public class SimpleTriangle {
   }
 
   /**
-   * Gets the area of the triangle. This value is positive if the traingle is
+   * Gets vertex A of the triangle. The method names used in this class follow
+   * the conventions of trigonometry. Vertices are labeled so that vertex A
+   * is opposite edge a, vertex B is opposite edge b, etc. This approach
+   * is slightly different than that used in other parts of the
+   * Tinfour API.
+   *
+   * @return a valid vertex
+   */
+  public Vertex getVertexA() {
+    return edgeC.getA();
+  }
+
+  /**
+   * Gets vertex B of the triangle. The method names used in this class follow
+   * the conventions of trigonometry. Vertices are labeled so that vertex A
+   * is opposite edge a, vertex B is opposite edge b, etc.  This approach
+   * is slightly different than that used in other parts of the
+   * Tinfour API.
+   *
+   * @return a valid vertex
+   */
+  public Vertex getVertexB() {
+    return edgeA.getA();
+  }
+
+  /**
+   * Gets vertex A of the triangle. The method names used in this class follow
+   * the conventions of trigonometry. Vertices are labeled so that vertex A
+   * is opposite edge a, vertex B is opposite edge b, etc. This approach
+   * is slightly different than that used in other parts of the
+   * Tinfour API.
+   *
+   * @return a valid vertex
+   */
+  public Vertex getVertexC() {
+    return edgeB.getA();
+  }
+
+  
+  /**
+   * Gets the area of the triangle. This value is positive if the triangle is
    * given in counterclockwise order and negative if it is given in clockwise
-   * order. A value of zero indicates a degenerate triangle.
+   * order. A value of zero indicates a degenerate triangle. 
    *
    * @return a valid floating point number.
    */

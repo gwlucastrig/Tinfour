@@ -37,7 +37,7 @@ import java.util.Arrays;
 import org.tinfour.io.BufferedRandomAccessReader;
 
 /**
- * Extends DbfField with special handling for reading integer values.
+ * Extends DbfField with special handling for reading date values.
  */
 public class DbfFieldDate extends DbfField {
 
