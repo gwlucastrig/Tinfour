@@ -101,7 +101,7 @@ public class BoundedVoronoiStylerDefault implements IBoundedVoronoiStyler {
 
   @Override
   public void applyStylingForAreaFill(Graphics2D g, ThiessenPolygon polygon) {
-    int index = polygon.getVertex().getColorIndex() % palette.length;
+    int index = polygon.getVertex().getAuxiliaryIndex() % palette.length;
     g.setColor(palette[index]);
     g.setStroke(thinStroke);
   }

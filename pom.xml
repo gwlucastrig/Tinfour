@@ -58,6 +58,7 @@
     <module>core</module>
     <module>demo</module>
     <module>gis</module>
+	<module>svm</module>
   </modules>
 
   <distributionManagement>

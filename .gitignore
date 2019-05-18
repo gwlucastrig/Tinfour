@@ -5,14 +5,16 @@ pmd_results.html
 nb*.xml
 nbproject
 target
-core/doc
 analysis/doc
-gis/doc
-demo/doc
-core/javadoc
 analysis/javadoc
-gis/javadoc
+core/doc
+core/javadoc
+demo/doc
 demo/javadoc
+gis/doc
+gis/javadoc
+svm/doc
+svm/javadoc
 pom.xml.versionsBackup
 
 # Package Files -- at this time, all of these are included in the distribution #

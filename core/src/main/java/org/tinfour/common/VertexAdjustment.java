@@ -48,7 +48,7 @@ public class VertexAdjustment extends Vertex {
     this.vertex = vertex;
     // transcribe attributes and set status to synthetic
     this.status = (byte)(vertex.status | BIT_SYNTHETIC);
-    this.colorIndex = vertex.colorIndex;
+    this.auxiliary = vertex.auxiliary;
   }
   
   /**
