@@ -215,8 +215,8 @@ public class BoundedVoronoiDiagram {
     // The Cohen-Sutherland line-clipping algorithm allows us to 
     // trivially reject an edge that is completely outside the bounds
     // and one that is completely inside the bounds.
-    int outcode0 = v0.getColorIndex();
-    int outcode1 = v1.getColorIndex();
+    int outcode0 = v0.getAuxiliaryIndex();
+    int outcode1 = v1.getAuxiliaryIndex();
 
     if ((outcode0&outcode1)!=0) {
       return;
@@ -414,7 +414,7 @@ public class BoundedVoronoiDiagram {
     int nBuild = 0;
     double[] tBuild = new double[5];
     Vertex[] vBuild = new Vertex[5];
-    int outcode = vCenter.getColorIndex();
+    int outcode = vCenter.getAuxiliaryIndex();
     if (outcode == 0) {
       vBuild[0] = vCenter;
       tBuild[0] = 0;
@@ -526,7 +526,7 @@ public class BoundedVoronoiDiagram {
     } else if (y >= ymax) {
       code |= 0b1000;
     }
-    c.setColorIndex(code);
+    c.setAuxiliaryIndex(code);
   }
 
   private int mindex(IQuadEdge e, IQuadEdge f, IQuadEdge r) {

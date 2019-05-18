@@ -463,7 +463,7 @@ public class BoundedVoronoiDrawingUtility {
       path.closePath();
       Vertex v = poly.getVertex();
 
-      int k = v.getColorIndex();
+      int k = v.getAuxiliaryIndex();
 
       g2d.setPaint(paint[k]);
       g2d.fill(path);

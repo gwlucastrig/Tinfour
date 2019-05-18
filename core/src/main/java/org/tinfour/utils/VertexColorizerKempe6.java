@@ -78,7 +78,7 @@ public class VertexColorizerKempe6 {
     for (int i = 0; i < masterList.size(); i++) {
       Vertex v = masterList.get(i);
       masterIndex[i] = v.getIndex();
-      v.setColorIndex(6); // special code for unassigned
+      v.setAuxiliaryIndex(6); // special code for unassigned
     }
 
     List<Vertex> vertexList = new ArrayList<>();
@@ -135,14 +135,14 @@ public class VertexColorizerKempe6 {
       for (IQuadEdge p : e.pinwheel()) {
         Vertex B = p.getB();
         if (B != null) {
-          int colorIndex = B.getColorIndex();
+          int colorIndex = B.getAuxiliaryIndex();
           flag[colorIndex] = false;
         }
       }
       for (int i = 0; i < 6; i++) {
         int iTest = (i + iStart) % 6;
         if (flag[iTest]) {
-          v.setColorIndex(iTest);
+          v.setAuxiliaryIndex(iTest);
           break;
         }
       }
@@ -183,7 +183,7 @@ public class VertexColorizerKempe6 {
     for (IQuadEdge edge : tin.edges()) {
       if (!visited[edge.getIndex()]) {
         Vertex A = edge.getA();
-        int test = A.getColorIndex();
+        int test = A.getAuxiliaryIndex();
         if (test < 0 || test > 5) {
           if (ps != null) {
             ps.println("Unassigned color index for vertex " + A.getIndex());
@@ -193,7 +193,7 @@ public class VertexColorizerKempe6 {
         for (IQuadEdge e : edge.pinwheel()) {
           visited[e.getIndex()] = true;
           Vertex B = e.getB();
-          if (B != null && B.getColorIndex() == test) {
+          if (B != null && B.getAuxiliaryIndex() == test) {
             if (ps != null) {
               ps.println("Adjacent vertices share a common color index for vertices: "
                       + A.getIndex() + ", " + B.getIndex());
@@ -205,7 +205,7 @@ public class VertexColorizerKempe6 {
       IQuadEdge dual = edge.getDual();
       if (!visited[dual.getIndex()]) {
         Vertex A = dual.getA();
-        int test = A.getColorIndex();
+        int test = A.getAuxiliaryIndex();
         if (test < 0 || test > 5) {
           if (ps != null) {
             ps.println("Unassigned color index for vertex " + A.getIndex());
@@ -215,7 +215,7 @@ public class VertexColorizerKempe6 {
         for (IQuadEdge e : dual.pinwheel()) {
           visited[e.getIndex()] = true;
           Vertex B = e.getB();
-          if (B != null && B.getColorIndex() == test) {
+          if (B != null && B.getAuxiliaryIndex() == test) {
             if (ps != null) {
               ps.println("Adjacent vertices share a common color index for vertices: "
                       + A.getIndex() + ", " + B.getIndex());
@@ -248,7 +248,7 @@ public class VertexColorizerKempe6 {
         }
       }
       A.setIndex(n);
-      A.setColorIndex(0);
+      A.setAuxiliaryIndex(0);
     }
   }
 

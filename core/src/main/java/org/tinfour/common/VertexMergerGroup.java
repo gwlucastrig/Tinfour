@@ -242,13 +242,13 @@ public class VertexMergerGroup extends Vertex {
    * This method will set the color index for all vertices contain within the
    * merger group.
    *
-   * @param colorIndex a value in the range 0 to 255
+   * @param auxiliaryIndex a value in the range 0 to 255
    */
   @Override
-  public void setColorIndex(int colorIndex) {
-    super.setColorIndex(colorIndex);
+  public void setAuxiliaryIndex(int auxiliaryIndex) {
+    super.setAuxiliaryIndex(auxiliaryIndex);
     for (Vertex v : list) {
-      v.setColorIndex(colorIndex);
+      v.setAuxiliaryIndex(auxiliaryIndex);
     }
   }
 }

@@ -63,7 +63,7 @@
  *    double y                            8 bytes
  *    float  z                            4 bytes
  *    byte   status                       1 byte
- *    byte   colorIndex                   1 byte
+ *    byte   auxiliaryIndex               1 byte
  *    padding (reserved by Java)          2 bytes (not committed at this time)
  *    --------------------------        ---------
  *    Total                              40 bytes
@@ -142,9 +142,10 @@ public class Vertex implements ISamplePoint {
    */
   protected byte reserved1;
   /**
-   * The color index used for graph coloring algorithms
+   * The auxiliary index used for graph coloring algorithms
+   * and other applications.
    */
-  protected byte colorIndex;
+  protected byte auxiliary;
 
   /**
    * Construct a vertex with the specified coordinates and z value. Intended
@@ -395,26 +396,29 @@ public class Vertex implements ISamplePoint {
   }
 
   /**
-   * Gets the color index for the vertex. The color index field is provided
-   * in support of graph-coloring algorithms. 
+   * Gets the auxiliary index for the vertex. The auxiliary index 
+   * field is one byte in size and supports integer values in the
+   * range 0 to 255.  It is used to support graph-coloring algorithms
+   * but is available for other uses as well.
    * @return  an integer value in the range 0 to 255
    */
-  public int getColorIndex() {
-    return colorIndex;
+  public int getAuxiliaryIndex() {
+    return auxiliary;
   }
 
   /**
-   * Sets the color index for the vertex. The color index field is provided
-   * in support of graph-coloring algorithms.  Values in the range 
-   * 0 to 255 are supported. 
-   * @param colorIndex a value in the range 0 to 255
+   * Sets the auxiliary index for the vertex. The auxiliary index 
+   * field is one byte in size and supports integer values in the
+   * range 0 to 255.  It is used to support graph-coloring algorithms
+   * but is available for other uses as well. 
+   * @param auxiliaryIndex a value in the range 0 to 255
    */
-  public void setColorIndex(int colorIndex) {
-    if((colorIndex&0xffffff00)!=0){
+  public void setAuxiliaryIndex(int auxiliaryIndex) {
+    if((auxiliary&0xffffff00)!=0){
       throw new IllegalArgumentException(
               "Color index out of valid range [0..255]");
     }
-    this.colorIndex = (byte)(colorIndex&0xff);
+    this.auxiliary = (byte)(auxiliary&0xff);
   }
 
 }
