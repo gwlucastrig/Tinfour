@@ -24,7 +24,11 @@
  * 04/2019  G. Lucas     Created  
  *
  * Notes:
- *
+ *   At this time, the flat-fixer is not completely working.
+ *   Part of its action is to subdivide triangles creating a new
+ *   subset of non-flat triangles. Unfortunately, near the constraint
+ *   boundaries, it can produce a potentially unlimited number of  
+ *   "skinny" triangles.  I am investigating this problem.
  * -----------------------------------------------------------------------
  */
 package org.tinfour.svm;
@@ -45,15 +49,21 @@ import org.tinfour.svm.properties.SvmProperties;
  */
 class SvmFlatFixer {
 
+  private final IIncrementalTin tin;
+
   private int nRemediations;
   private double remediatedArea;
   private double remediatedVolume;
 
-  private boolean isEquiv(double a, double b){
-    return Math.abs(a-b)<1.0e-6;
+  private boolean isEquiv(double a, double b) {
+    return Math.abs(a - b) < 1.0e-6;
   }
-  
-  List<Vertex> fixFlats(PrintStream ps, IIncrementalTin tin, SvmProperties properties, SvmBathymetryData data) {
+
+  SvmFlatFixer(IIncrementalTin tin) {
+    this.tin = tin;
+  }
+
+  List<Vertex> fixFlats(PrintStream ps, SvmProperties properties, SvmBathymetryData data) {
     // Initialize the visited bit-set with the perimeter.
     // Doing so will prevent the perimeter from being included
     // in the computations of means as well as in the searches to follow
@@ -85,18 +95,18 @@ class SvmFlatFixer {
       }
       Vertex A = edge.getA();
       Vertex B = edge.getB();
-      if (isEquiv(A.getZ(), zShore) && isEquiv(B.getZ(),zShore)) {
+      if (isEquiv(A.getZ(), zShore) && isEquiv(B.getZ(), zShore)) {
         IQuadEdge dual = edge.getDual();
         Vertex C = edge.getForward().getB();
         Vertex D = dual.getForward().getB();
         if (C == null || D == null) {
           continue;  // not anticipated to happen
         }
-        if (isEquiv(C.getZ(),zShore)) {
-          if (!isEquiv(D.getZ(),zShore)) {
+        if (isEquiv(C.getZ(), zShore)) {
+          if (!isEquiv(D.getZ(), zShore)) {
             fixList.add(edge);
           }
-        } else if (isEquiv(D.getZ(),zShore)) {
+        } else if (isEquiv(D.getZ(), zShore)) {
           // we've already established that C.getZ() != zShore
           fixList.add(dual);
         }

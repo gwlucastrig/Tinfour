@@ -33,6 +33,7 @@ import java.io.BufferedOutputStream;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.PrintStream;
 import java.text.SimpleDateFormat;
 import java.util.Date;
@@ -47,10 +48,61 @@ import org.tinfour.svm.properties.SvmProperties;
  */
 public class SvmMain {
 
-  private SvmMain(){
+  private final static String[] usage = {
+    "Usage information for Simple Volumetric Model (SVM)",
+    "",
+    "  -properties  <file> Input properties file path",
+    "  -template           Prints an example properties file to the console",};
+
+  private static void printUsageAndExit() {
+    for (String s : usage) {
+      System.out.println(s);
+    }
+    System.exit(0);  //NOPMD
+  }
+
+  private static void checkForUsage(String[] args) {
+    if (args == null || args.length == 0) {
+      printUsageAndExit();
+    }
+    for (String arg : args) {
+      if ("-?".equals(arg) || "-help".equalsIgnoreCase(arg)) {
+        printUsageAndExit();
+      }
+    }
+  }
+
+  private static void printTemplateAndExit() {
+    try (
+            InputStream ins
+            = SvmMain.class.getResourceAsStream("SvmTemplate.properties");) {
+      int c;
+      while ((c = ins.read()) >= 0) {
+        System.out.append((char) c);
+      }
+      System.out.flush();
+    } catch (IOException dontCare) {
+      // no action required
+    }
+    System.exit(0); // NOPMD
+  }
+
+  private static void checkForTemplate(String[] args) {
+    if (args == null || args.length == 0) {
+      return;
+    }
+    for (String arg : args) {
+      if ("-template".equalsIgnoreCase(arg)) {
+        printTemplateAndExit();
+      }
+    }
+  }
+
+  private SvmMain() {
     // constructor scoped to private to deter application code
     // from creating instances of this class.
   }
+
   /**
    * The main method for running the Simple Volumetric Model (SVM).
    *
@@ -58,6 +110,8 @@ public class SvmMain {
    * @throws IOException in the event of an unrecoverable I/O condition.
    */
   public static void main(String[] args) throws IOException {
+    checkForUsage(args);
+    checkForTemplate(args);
 
     Date dateOfAnalysis = new Date(); // set to clock time
     writeIntroduction(System.out, dateOfAnalysis);
@@ -79,8 +133,6 @@ public class SvmMain {
       System.exit(-1);
     }
 
-    
-    
     // Load the input data ----------------------------------
     SvmBathymetryData data = new SvmBathymetryData();
 
