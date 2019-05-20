@@ -232,8 +232,8 @@ public class SvmComputation {
       for (int iFlat = 0; iFlat < 10; iFlat++) {
         // construct a new flat-fixer each time
         // so we can gather counts
-        SvmFlatFixer flatFixer = new SvmFlatFixer();
-        List<Vertex> fixList = flatFixer.fixFlats(ps, tin, properties, data);
+        SvmFlatFixer flatFixer = new SvmFlatFixer(tin);
+        List<Vertex> fixList = flatFixer.fixFlats(ps, properties, data);
         if (fixList.isEmpty()) {
           break;
         }
