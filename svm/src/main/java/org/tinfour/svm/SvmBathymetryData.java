@@ -66,7 +66,7 @@ public class SvmBathymetryData {
   double shoreReferenceElevation;
 
   private Rectangle2D soundingBounds;
-  private Rectangle2D bounds;
+  private Rectangle2D constraintBounds;
   private double nominalPointSpacing;
   private long timeToLoadData;
 
@@ -183,7 +183,6 @@ public class SvmBathymetryData {
 
   public void loadBoundaryConstraints(File target, String dbfFieldForZ) throws IOException {
     long time0 = System.nanoTime();
-
     try (ConstraintReaderShapefile reader = new ConstraintReaderShapefile(target)) {
       reader.setDbfFieldForZ(dbfFieldForZ);
       List<IConstraint> list = reader.read();
@@ -204,6 +203,11 @@ public class SvmBathymetryData {
           if (Double.isNaN(shoreReferenceElevation)) {
             Vertex v = vList.get(0);
             shoreReferenceElevation = v.getZ();
+          }
+          if(constraintBounds == null){
+            constraintBounds = p.getBounds();
+          }else{
+            constraintBounds.add(p.getBounds());
           }
         }
       }
@@ -324,11 +328,30 @@ public class SvmBathymetryData {
    * @return a safe copy of a valid, non-empty rectangle.
    */
   public Rectangle2D getBounds() {
-    return new Rectangle2D.Double(
-            bounds.getX(),
-            bounds.getY(),
-            bounds.getWidth(),
-            bounds.getHeight());
+    Rectangle2D bounds = null;
+    if (soundingBounds != null) {
+      bounds = new Rectangle2D.Double(
+              soundingBounds.getX(),
+              soundingBounds.getY(),
+              soundingBounds.getWidth(),
+              soundingBounds.getHeight());
+    }
+    if (constraintBounds != null) {
+      if (bounds == null) {
+        bounds = new Rectangle2D.Double(
+                constraintBounds.getX(),
+                constraintBounds.getY(),
+                constraintBounds.getWidth(),
+                constraintBounds.getHeight());
+      } else {
+        bounds.add(constraintBounds);
+      }
+    }
+    if(bounds==null){
+      return new Rectangle2D.Double(0,0,0,0);
+    }else{
+      return bounds;
+    }
   }
 
   /**

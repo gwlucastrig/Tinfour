@@ -29,6 +29,7 @@
  */
 package org.tinfour.svm;
 
+import java.awt.geom.Rectangle2D;
 import java.io.BufferedOutputStream;
 import java.io.File;
 import org.tinfour.utils.KahanSummation;
@@ -36,6 +37,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.PrintStream;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.function.Consumer;
 import org.tinfour.common.GeometricOperations;
@@ -203,8 +205,10 @@ public class SvmComputation {
     List<IConstraint> allConstraints = new ArrayList<>();
     allConstraints.addAll(boundaryConstraints);
 
-    long time0 = System.nanoTime();
     IIncrementalTin tin;
+
+    long time0 = System.nanoTime();
+
     if (soundings.size() < 500000) {
       tin = new IncrementalTin(1.0);
     } else {
@@ -295,6 +299,7 @@ public class SvmComputation {
     double islandPerimeter = getPerimeterSum(islandConstraints) / lengthFactor;
     double netArea = lakeArea - islandArea;
     double totalShore = lakePerimeter + islandPerimeter;
+    Rectangle2D bounds = data.getBounds();
     ps.format("%nData from Shapefiles%n");
     ps.format("  Lake area        %10.8e %,20.0f %s%n", lakeArea, lakeArea, areaUnits);
     ps.format("  Island area      %10.8e %,20.0f %s%n", islandArea, islandArea, areaUnits);
@@ -303,6 +308,44 @@ public class SvmComputation {
     ps.format("  Island shoreline %10.8e %,20.0f %s%n", islandPerimeter, islandPerimeter, lengthUnits);
     ps.format("  Total shoreline  %10.8e %,20.0f %s%n", totalShore, totalShore, lengthUnits);
     ps.format("  N Islands        %d%n", islandConstraints.size());
+    ps.format("  Bounds%n");
+    ps.format("     x:    %12.3f, %12.3f, (%5.3f)%n",
+            bounds.getMinX() / lengthFactor,
+            bounds.getMaxX() / lengthFactor,
+            bounds.getWidth() / lengthFactor);
+    ps.format("     y:    %12.3f, %12.3f, (%5.3f)%n",
+            bounds.getMinY() / lengthFactor,
+            bounds.getMaxY() / lengthFactor,
+            bounds.getHeight() / lengthFactor);
+    ps.format("     z:    %12.3f, %12.3f, (%5.3f)%n",
+            data.getMinZ() / lengthFactor,
+            data.getMaxZ() / lengthFactor,
+            (data.getMaxZ() - data.getMinZ()) / lengthFactor);
+
+    if (properties.isSoundingSpacingEnabled()) {
+      List<Vertex> originalSoundings = data.getSoundings();
+      double[] lenArray = new double[originalSoundings.size()];
+      double sumLen = 0;
+      int nLen = 0;
+      Vertex prior = null;
+      for (Vertex v : originalSoundings) {
+        if (prior != null) {
+          double len = v.getDistance(prior);
+          sumLen += len;
+          lenArray[nLen++] = len;
+        }
+        prior = v;
+      }
+
+      double meanLen = sumLen / nLen;
+      double medianLen = lenArray[nLen / 2];
+      Arrays.sort(lenArray, 0, nLen);
+      ps.format("  Mean sounding spacing:   %12.3f %s%n",
+              meanLen / lengthFactor, lengthUnits);
+      ps.format("  Median sounding spacing: %12.3f %s%n",
+              medianLen, lengthUnits);
+      ps.format("%n");
+    }
 
     double volume = lakeConsumer.getVolume() / volumeFactor;
     double surfArea = lakeConsumer.getSurfaceArea() / areaFactor;
