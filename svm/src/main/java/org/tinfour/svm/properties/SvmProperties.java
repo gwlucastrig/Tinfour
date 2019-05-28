@@ -52,6 +52,7 @@ public class SvmProperties {
   private final static String tableKey = "table";
   private final static String tableIntervalKey = "tableInterval";
   private final static String flatFixerKey = "remediateFlatTriangles";
+  private final static String soundingSpacingKey = "computeSoundingSpacing";
   private final static String inputFolderKey = "inputFolder";
   private final static String outputFolderKey = "outputFolder";
 
@@ -389,6 +390,18 @@ public class SvmProperties {
     boolean test = Boolean.parseBoolean(s.trim());
     return test;
   }
+  
+   /**
+   * Indicates whether the computation of sounding spacing is enabled.
+   *
+   * @return true if computation is to be performed; otherwise, false.
+   */
+  public boolean isSoundingSpacingEnabled() {
+    String s = properties.getProperty(soundingSpacingKey, "false");
+    boolean test = Boolean.parseBoolean(s.trim());
+    return test;
+  }
+
 
   private int findMaxNameLength(int m0, List<SvmFileSpecification> samples) {
     int m = m0;
