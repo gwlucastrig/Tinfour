@@ -40,6 +40,7 @@ import java.util.List;
 import org.tinfour.common.GeometricOperations;
 import org.tinfour.common.IIncrementalTin;
 import org.tinfour.common.IQuadEdge;
+import org.tinfour.common.PolygonConstraint;
 import org.tinfour.common.Thresholds;
 import org.tinfour.common.Vertex;
 import org.tinfour.svm.properties.SvmProperties;
@@ -50,6 +51,7 @@ import org.tinfour.svm.properties.SvmProperties;
 class SvmFlatFixer {
 
   private final IIncrementalTin tin;
+  private final List<PolygonConstraint> boundaryConstraints;
 
   private int nRemediations;
   private double remediatedArea;
@@ -59,8 +61,18 @@ class SvmFlatFixer {
     return Math.abs(a - b) < 1.0e-6;
   }
 
-  SvmFlatFixer(IIncrementalTin tin) {
+  SvmFlatFixer(IIncrementalTin tin, List<PolygonConstraint> boundaryConstraints) {
     this.tin = tin;
+    this.boundaryConstraints = boundaryConstraints;
+  }
+
+  boolean inBounds(double x, double y) {
+    for (PolygonConstraint p : boundaryConstraints) {
+      if (p.isPointInsideConstraint(x, y)) {
+        return true;
+      }
+    }
+    return false;
   }
 
   List<Vertex> fixFlats(PrintStream ps, SvmProperties properties, SvmBathymetryData data) {
@@ -113,7 +125,8 @@ class SvmFlatFixer {
       }
     }
 
-    nRemediations = fixList.size();
+    //Circumcircle circ = new Circumcircle();
+
     List<Vertex> fixVertices = new ArrayList<>(fixList.size());
     for (IQuadEdge edge : fixList) {
       Vertex A = edge.getA();
@@ -122,6 +135,16 @@ class SvmFlatFixer {
       Vertex D = edge.getForwardFromDual().getB();
       double mX = (A.getX() + B.getX()) / 2;
       double mY = (A.getY() + B.getY()) / 2;
+      // Experimental code using circumcircle instead of 
+      // midpoint
+      //boolean cStatus = circ.compute(A, B, C);
+      //if (cStatus && inBounds(circ.getX(), circ.getY())) {
+      //  mX = circ.getX();
+      //  mY = circ.getY();
+      //}else{
+      //  continue;
+      //}
+      nRemediations++;
       double sC = C.getDistance(mX, mY);
       double sD = D.getDistance(mX, mY);
       double mZ = (sC * D.getZ() + sD * C.getZ()) / (sC + sD);
@@ -129,6 +152,12 @@ class SvmFlatFixer {
         mZ = D.getZ();
       }
       double area = geoOp.area(A, B, C);
+      //  mean depth(A, M, C) is (0 + zShore-mZ + 0)/3
+      //  mean depth(M, B, C) is (zShore-mZ + 0 + 0)/3
+      //  so mean depth for both triangles is equal.
+      //  the area of both split triangles is equal and given by area/2
+      //  so volumes of both split triangles is equal
+      //  so the volume is  2 * (area/2)*(zShore-mZ)/3
       double meanDepth = (zShore - mZ) / 3.0;
       double volume = area * meanDepth;
       remediatedArea += area;

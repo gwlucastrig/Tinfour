@@ -184,9 +184,10 @@ public class SvmComputation {
    * @param properties a valid set of properties specification for processing
    * options.
    * @param data a valid instance giving data for processing
+   * @return the instance of the final TIN object created for the processing.
    * @throws java.io.IOException in the event of an unrecoverable I/O exception.
    */
-  public void processVolume(
+  public IIncrementalTin processVolume(
           PrintStream ps,
           SvmProperties properties,
           SvmBathymetryData data) throws IOException {
@@ -201,6 +202,7 @@ public class SvmComputation {
     double shoreReferenceElevation = data.getShoreReferenceElevation();
     List<Vertex> soundings = data.getSoundingsAndSupplements();
     List<PolygonConstraint> boundaryConstraints = data.getBoundaryConstraints();
+  
 
     List<IConstraint> allConstraints = new ArrayList<>();
     allConstraints.addAll(boundaryConstraints);
@@ -232,11 +234,11 @@ public class SvmComputation {
       long timeF0 = System.nanoTime();
       int nRemediationVertices = 0;
       ps.println("Remediating flat triangles");
-      ps.println("Pass   Remediated     Area        Volume     avg. depth");
+      ps.println("Pass   Remediated     Area     Volume Added  avg. depth");
       for (int iFlat = 0; iFlat < 10; iFlat++) {
         // construct a new flat-fixer each time
         // so we can gather counts
-        SvmFlatFixer flatFixer = new SvmFlatFixer(tin);
+        SvmFlatFixer flatFixer = new SvmFlatFixer(tin, boundaryConstraints);
         List<Vertex> fixList = flatFixer.fixFlats(ps, properties, data);
         if (fixList.isEmpty()) {
           break;
@@ -350,16 +352,16 @@ public class SvmComputation {
     double volume = lakeConsumer.getVolume() / volumeFactor;
     double surfArea = lakeConsumer.getSurfaceArea() / areaFactor;
     double avgDepth = volume / surfArea;
-    double sampleSpacing = estimateSampleSpacing(tin, lakeConsumer);
+    double vertexSpacing = estimateInteriorVertexSpacing(tin, lakeConsumer);
     double flatArea = lakeConsumer.getFlatAreaSum() / areaFactor;
     ps.format("%nComputations from Constrained Delaunay Triangulation%n");
-    ps.format("  Volume            %10.8e %,20.0f %s%n", volume, volume, volumeUnits);
-    ps.format("  Surface Area      %10.8e %,20.0f %s%n", surfArea, surfArea, areaUnits);
-    ps.format("  Flat Area         %10.8e %,20.0f %s%n", flatArea, flatArea, areaUnits);
-    ps.format("  Avg depth         %5.2f ft%n", avgDepth);
-    ps.format("  N Triangles       %d%n", lakeConsumer.nTriangles);
-    ps.format("  N Flat Triangles  %d%n", lakeConsumer.nFlatTriangles);
-    ps.format("  Sample Spacing    %8.2f%n", sampleSpacing);
+    ps.format("  Volume              %10.8e %,20.0f %s%n", volume, volume, volumeUnits);
+    ps.format("  Surface Area        %10.8e %,20.0f %s%n", surfArea, surfArea, areaUnits);
+    ps.format("  Flat Area           %10.8e %,20.0f %s%n", flatArea, flatArea, areaUnits);
+    ps.format("  Avg depth           %5.2f ft%n", avgDepth);
+    ps.format("  N Triangles         %d%n", lakeConsumer.nTriangles);
+    ps.format("  N Flat Triangles    %d%n", lakeConsumer.nFlatTriangles);
+    ps.format("  Mean Vertex Spacing %8.2f%n", vertexSpacing);
 
     ps.format("%n%n%n");
     ps.format("Time to load data              %7.1f ms%n", data.getTimeToLoadData() / 1.0e+6);
@@ -394,6 +396,8 @@ public class SvmComputation {
       tableOutputStream.close();
     }
 
+    return tin;
+    // testGrid(ps, tin, lakeConsumer.water, 2.0, areaFactor, shoreReferenceElevation);
   }
 
   private double getAreaSum(List<PolygonConstraint> constraints) {
@@ -412,7 +416,14 @@ public class SvmComputation {
     return perimeterSum.getSum();
   }
 
-  private double estimateSampleSpacing(IIncrementalTin tin, LakeData lakeData) {
+  /** 
+   * Estimates vertex spacing for TIN based exclusively on interior edges.
+   * Constraint edges and perimeter edges are not included.
+   * @param tin a valid TIN.
+   * @param lakeData a valid instance of input data
+   * @return an estimated vertex spacing
+   */
+  private double estimateInteriorVertexSpacing(IIncrementalTin tin, LakeData lakeData) {
     KahanSummation sumLength = new KahanSummation();
     int n = 0;
     for (IQuadEdge e : tin.edges()) {
@@ -430,79 +441,5 @@ public class SvmComputation {
     }
     return sumLength.getSum() / n;
   }
-
-//  private void processGrid(PrintStream ps,
-//          IIncrementalTin tin,
-//          double cellSize,
-//          File outputFolder ) {
-//    Rectangle2D r2d = tin.getBounds();
-//    double xMin = r2d.getMinX();
-//    double xMax = r2d.getMaxX();
-//    double yMin = r2d.getMinY();
-//    double yMax = r2d.getMaxY();
-//    GridSpecification grid = new GridSpecification(
-//            GridSpecification.CellPosition.CenterOfCell,
-//            cellSize,
-//            xMin, xMax, yMin, yMax);
-//
-//    int nCells = grid.getCellCount();
-//    int nRows = grid.getRowCount();
-//    int nCols = grid.getColumnCount();
-//    ps.println("\nProcessing grid, size " + nRows + " rows, " + nCols + " columns\n");
-//
-//    INeighborEdgeLocator locator = tin.getNeighborEdgeLocator();
-//    NaturalNeighborInterpolator interpolator = new NaturalNeighborInterpolator(tin);
-//
-//    long time0 = System.nanoTime();
-//    KahanSummation vSum = new KahanSummation();
-//    float results[][] = new float[nRows][nCols];
-//    double s2 = cellSize * cellSize;
-//    Point2D p2d = new Point2D.Double();
-//    for (int iRow = 0; iRow < nRows; iRow++) {
-//      Arrays.fill(results[iRow], Float.NaN);
-//      for (int iCol = 0; iCol < nCols; iCol++) {
-//        grid.mapRowColumnToXy(iRow, iCol, p2d);
-//        double x = p2d.getX();
-//        double y = p2d.getY();
-//        IQuadEdge a = locator.getNeigborEdge(x, y);
-//        IConstraint constraint = getContainingRegion(tin, a);
-//        if (constraint != null) {
-//          Object appData = constraint.getApplicationData();
-//          if (appData instanceof Boolean && (Boolean) appData) {
-//            // the point is inside a water constraint
-//            double zInterp = interpolator.interpolate(x, y, null);
-//            if (!Double.isNaN(zInterp)) {
-//              results[iRow][iCol] = (float) zInterp;
-//              vSum.add(zInterp * s2);
-//            }
-//          }
-//        }
-//      } // iCol
-//    } // iRow
-//    long time1 = System.nanoTime();
-//    double timeToProcess = (time1 - time0) / 1000000.0;
-//    int nValues = vSum.getSummandCount();
-//    double volume = vSum.getSum();
-//    double area = nValues * s2;
-//    double meanDepth = volume / area;
-//    ps.format("N Cells:               %10d%n", nCells);
-//    ps.format("N Depth Values:        %10d%n", nValues);
-//    ps.format("Area:        %,20.0f m2%n", area);
-//    ps.format("Volume:      %,20.0f m3%n", volume);
-//    ps.format("Mean Depth:             %9.3f m%n", meanDepth);
-//    ps.format("Time to process grid:   %9.3f ms%n", timeToProcess);
-//    ps.format("%n");
-//
-//    if (outputFolder != null) {
-//      String name = String.format("Grid_%04dx%04d.asc", nCols, nRows);
-//      File file = new File(outputFolder, name);
-//      ps.format("Writing output to %s%n", file.getPath());
-//      try {
-//        grid.writeAsciiFile(file, results, "%4.2f", "-99");
-//      } catch (IOException ioex) {
-//        ps.println("Write operation failed " + ioex.getMessage());
-//      }
-// 
-//    }
-//  }
+ 
 }
