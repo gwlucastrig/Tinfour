@@ -173,12 +173,6 @@ class SvmTriangleVolumeStore {
     currentPage.p[i + 8] = x2;
     currentPage.p[i + 9] = y2;
     currentPage.p[i + 10] = z2;
-
-    double testPartialMean = (2220.0 - z2) + zPartialMean;
-    double vtest = partialVolume + area * (2220.0 - z2);
-    if (Math.abs(vtest - test) > 1.0e-4) {
-      System.out.println("area error" + vtest + ", " + test + ", " + (2220.0 - testPartialMean));
-    }
   }
 
   /**
@@ -217,70 +211,74 @@ class SvmTriangleVolumeStore {
         // so z0 <= z1 <= z2.
         // if (z <= z0), we can trivially exclude the triangle
         // from the calculation because all vertices are above water level.
-        if (z > z0) {
-          if (z >= z2) {
-            // trivial accept
-            // double v = area*(z-z0 + z-z1 + z-z2)/3.0;
-            //          = partialVolume+area*(z-z2 + z-z2 + z-z2)/3
-            double v = partialVolume + area * (z - z2);
+        if (z <= z0) {
+          if (z == z0 && z0 == z1 && z1 == z0) {
+            // a flat triangle at the level z, does not contribute
+            // volume, but does contribute to the area calculation.
             areaSum.add(area);
+          }
+        } else if (z >= z2) {
+          // trivial accept
+          // double v = area*(z-z0 + z-z1 + z-z2)/3.0;
+          //          = partialVolume+area*(z-z2 + z-z2 + z-z2)/3
+          double v = partialVolume + area * (z - z2);
+          areaSum.add(area);
+          volumeSum.add(v);
+        } else {
+          // now we have to do some real work. 
+          // the 3D triangle intersects the level plane of the elevation.
+          double x0 = page.p[offset + 2];
+          double y0 = page.p[offset + 3];
+          double x1 = page.p[offset + 5];
+          double y1 = page.p[offset + 6];
+          double x2 = page.p[offset + 8];
+          double y2 = page.p[offset + 9];
+
+          // above we've established that z is not equal to either
+          // z0 or z2...  this fact restricts the cases we review
+          if (z > z1) {
+            // the upper part of the triangle is above water.
+            // it will have the form of a smaller triangle.
+            // the submerged part has the form of an irregular trapezoid.
+            // computing the volume of the lower part is messy,
+            // so we compute the volume of the upper part and subtract
+            // that from the overall partial-volume.  This dry volume is
+            // the sum of the dry triangle volume plus the volume of the
+            // adjacent part of the original (the irregular polygon) that
+            // is now above the water level.
+            //   Note also that we reach this code block only when tz2>z.
+            // And, because z>z1, we know that z2>z1 and z2>z0
+            // so there will be no divide-by-zero in the interpolation
+            //    This code calculation might actually be better implemented
+            // by solving the integral for the irregular area using
+            // a contour intergral and Green's theorem.
+            double aX = interp(z, z0, z2, x0, x2);
+            double aY = interp(z, z0, z2, y0, y2);
+            double bX = interp(z, z1, z2, x1, x2);
+            double bY = interp(z, z1, z2, y1, y2);
+            double dryTrigArea = Math.abs(geoOp.area(aX, aY, bX, bY, x2, y2));
+            // mean depth is (z2-z + z2-z + z2-z2 )/3
+            double dryTrigVolume = dryTrigArea * (2 * (z2 - z)) / 3;
+            double dryPolyArea = area - dryTrigArea;
+            double dryPolyVolume = dryPolyArea * (z2 - z);
+            double v = partialVolume - dryTrigVolume - dryPolyVolume;
+            areaSum.add(area - dryTrigArea);
             volumeSum.add(v);
           } else {
-            // now we have to do some real work. 
-            // the 3D triangle intersects the level plane of the elevation.
-            double x0 = page.p[offset + 2];
-            double y0 = page.p[offset + 3];
-            double x1 = page.p[offset + 5];
-            double y1 = page.p[offset + 6];
-            double x2 = page.p[offset + 8];
-            double y2 = page.p[offset + 9];
-
-            // above we've established that z is not equal to either
-            // z0 or z2...  this fact restricts the cases we review
-            if (z > z1) {
-              // the upper part of the triangle is above water.
-              // it will have the form of a smaller triangle.
-              // the submerged part has the form of an irregular trapezoid.
-              // computing the volume of the lower part is messy,
-              // so we compute the volume of the upper part and subtract
-              // that from the overall partial-volume.  This dry volume is
-              // the sum of the dry triangle volume plus the volume of the
-              // adjacent part of the original (the irregular polygon) that
-              // is now above the water level.
-              //   Note also that we reach this code block only when tz2>z.
-              // And, because z>z1, we know that z2>z1 and z2>z0
-              // so there will be no divide-by-zero in the interpolation
-              //    This code calculation might actually be better implemented
-              // by solving the integral for the irregular area using
-              // a contour intergral and Green's theorem.
-              double aX = interp(z, z0, z2, x0, x2);
-              double aY = interp(z, z0, z2, y0, y2);
-              double bX = interp(z, z1, z2, x1, x2);
-              double bY = interp(z, z1, z2, y1, y2);
-              double dryTrigArea = Math.abs(geoOp.area(aX, aY, bX, bY, x2, y2));
-              // mean depth is (z2-z + z2-z + z2-z2 )/3
-              double dryTrigVolume = dryTrigArea * (2 * (z2 - z)) / 3;
-              double dryPolyArea = area-dryTrigArea;
-              double dryPolyVolume = dryPolyArea*(z2-z);
-              double v = partialVolume - dryTrigVolume - dryPolyVolume;
-              areaSum.add(area - dryTrigArea);
-              volumeSum.add(v);
-            } else {
-              // z0 < z and z <= z1  
-              // the part of the triangle below water is a 
-              // smaller triangle.  we compute its volume directly
-              // the three vertices will be at (x0, y0, z0),
-              // (aX, aY, z) and (bX, bY, z).  So the average 
-              // depth contribution is AVG(z-z0, 0, 0), or (z-z0)/3
-              double aX = interp(z, z0, z1, x0, x1);
-              double aY = interp(z, z0, z1, y0, y1);
-              double bX = interp(z, z0, z2, x0, x2);
-              double bY = interp(z, z0, z2, y0, y2);
-              double a = Math.abs(geoOp.area(aX, aY, bX, bY, x0, y0));
-              double v = a * (z - z0) / 3;
-              areaSum.add(a);
-              volumeSum.add(v);
-            }
+            // z0 < z and z <= z1  
+            // the part of the triangle below water is a 
+            // smaller triangle.  we compute its volume directly
+            // the three vertices will be at (x0, y0, z0),
+            // (aX, aY, z) and (bX, bY, z).  So the average 
+            // depth contribution is AVG(z-z0, 0, 0), or (z-z0)/3
+            double aX = interp(z, z0, z1, x0, x1);
+            double aY = interp(z, z0, z1, y0, y1);
+            double bX = interp(z, z0, z2, x0, x2);
+            double bY = interp(z, z0, z2, y0, y2);
+            double a = Math.abs(geoOp.area(aX, aY, bX, bY, x0, y0));
+            double v = a * (z - z0) / 3;
+            areaSum.add(a);
+            volumeSum.add(v);
           }
         }
       }
