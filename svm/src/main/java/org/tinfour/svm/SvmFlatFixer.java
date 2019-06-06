@@ -143,16 +143,25 @@ class SvmFlatFixer {
       nRemediations++;
       double sC = C.getDistance(mX, mY);
       double sD = D.getDistance(mX, mY);
-      double mZ = (sC * D.getZ() + sD * C.getZ()) / (sC + sD);
+      double mZ;
       if (D.getAuxiliaryIndex() == 1) {
+        // since the earlier vertex was already interpolated
+        // the model just propagates its value inward.
         mZ = D.getZ();
+      } else {
+        // interpolate a new dept value combining an actual
+        // sample (D) and a shoreline vertex (C)
+        mZ = (sC * D.getZ() + sD * C.getZ()) / (sC + sD);
+        if (mZ > zShore - 1) {
+          mZ = zShore - 1;
+        }
       }
-      if(mZ>zShore-1){
-        mZ = zShore-1;
-      }
-      
-      tin.splitEdge(edge, mZ, false);
-      
+
+
+      Vertex M = tin.splitEdge(edge, mZ, false);
+      M.setSynthetic(true);
+      M.setAuxiliaryIndex(1);
+      fixVertices.add(M);
       
       //  mean depth(A, M, C) is (0 + zShore-mZ + 0)/3
       //  mean depth(M, B, C) is (zShore-mZ + 0 + 0)/3
@@ -164,10 +173,8 @@ class SvmFlatFixer {
       double volume = area * meanDepth;
       remediatedArea += area;
       remediatedVolume += volume;
-      Vertex M = new Vertex(mX, mY, mZ, fixList.size());
-      M.setSynthetic(true);
-      M.setAuxiliaryIndex(1);
-      fixVertices.add(M);
+ 
+   
     }
 
     return fixVertices;
