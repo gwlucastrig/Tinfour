@@ -124,8 +124,7 @@ class SvmFlatFixer {
         }
       }
     }
-
-    //Circumcircle circ = new Circumcircle();
+ 
 
     List<Vertex> fixVertices = new ArrayList<>(fixList.size());
     for (IQuadEdge edge : fixList) {
@@ -133,17 +132,14 @@ class SvmFlatFixer {
       Vertex B = edge.getB();
       Vertex C = edge.getForward().getB();
       Vertex D = edge.getForwardFromDual().getB();
+      
+      double area = geoOp.area(A, B, C);
+      if(area<1){
+        continue;
+      }
+      
       double mX = (A.getX() + B.getX()) / 2;
       double mY = (A.getY() + B.getY()) / 2;
-      // Experimental code using circumcircle instead of 
-      // midpoint
-      //boolean cStatus = circ.compute(A, B, C);
-      //if (cStatus && inBounds(circ.getX(), circ.getY())) {
-      //  mX = circ.getX();
-      //  mY = circ.getY();
-      //}else{
-      //  continue;
-      //}
       nRemediations++;
       double sC = C.getDistance(mX, mY);
       double sD = D.getDistance(mX, mY);
@@ -151,7 +147,13 @@ class SvmFlatFixer {
       if (D.getAuxiliaryIndex() == 1) {
         mZ = D.getZ();
       }
-      double area = geoOp.area(A, B, C);
+      if(mZ>zShore-1){
+        mZ = zShore-1;
+      }
+      
+      tin.splitEdge(edge, mZ, false);
+      
+      
       //  mean depth(A, M, C) is (0 + zShore-mZ + 0)/3
       //  mean depth(M, B, C) is (zShore-mZ + 0 + 0)/3
       //  so mean depth for both triangles is equal.

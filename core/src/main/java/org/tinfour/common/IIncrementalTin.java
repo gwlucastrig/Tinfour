@@ -409,4 +409,21 @@ public interface IIncrementalTin {
    */
   public int getSyntheticVertexCount();
 
+  
+  /**
+   * Split an existing edge into two at the midpoint, using the
+   * specified zSplit value as the z coordinate for the edge.
+   * <p>
+   * <strong>WARNING</strong> The restoreDelaunay feature is 
+   * not yet implemented.
+   * @param eInput a valid edge
+   * @param zSplit the z coordinate for the new vertex
+   * @param restoreConformity restore Delaunay conformance after 
+   * insertion <strong>NOT YET IMPLEMENTE</strong>
+   * @return the insertion vertex
+   */
+   public Vertex  splitEdge(
+           IQuadEdge eInput,
+           double zSplit, 
+           boolean restoreConformity);
 }

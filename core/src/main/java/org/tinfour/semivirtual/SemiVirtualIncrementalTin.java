@@ -2527,4 +2527,87 @@ public class SemiVirtualIncrementalTin implements IIncrementalTin {
     return null;
   }
 
+  @Override
+  public Vertex splitEdge(
+          IQuadEdge eInput, 
+          double zSplit, 
+          boolean restoreConformity)
+  {
+    if (restoreConformity) {
+      throw new UnsupportedOperationException(
+              "The restoreConformity option is not yet implemented");
+    }
+
+    int index = eInput.getIndex();
+    SemiVirtualEdge eTest = edgePool.getEdgeForIndex(index);
+    if (eTest == null
+            || eTest.getA() != eInput.getA()
+            || eTest.getB() != eInput.getB()) {
+      throw new IllegalArgumentException(
+              "Specified edge does not belong to this instance for edge index "
+              + index);
+    }
+
+    
+   SemiVirtualEdge ab = (SemiVirtualEdge) eInput;
+    // TO DO: implement a check to make sure that eInput
+    //        is a valid edge for this TIN instance.
+   
+    SemiVirtualEdge ba = ab.getDual();
+    SemiVirtualEdge bc = ab.getForward();
+    SemiVirtualEdge ad = ba.getForward();
+    Vertex a = ab.getA();
+    Vertex b = ab.getB();
+    Vertex c = bc.getB();
+    Vertex d = ad.getB();
+    
+    if (a == null || b == null) {
+      return null;
+    }
+
+    SemiVirtualEdge ca = ab.getReverse();
+    SemiVirtualEdge db = ba.getReverse();
+    // subdivide the constraint edge to restore conformity
+    double mx = (a.getX() + b.getX()) / 2.0;
+    double my = (a.getY() + b.getY()) / 2.0;
+    double mz = zSplit;
+    
+    Vertex m = new Vertex(mx, my, mz, nSyntheticVertices++);
+    if (ab.isConstrained()) {
+      m.setStatus(Vertex.BIT_SYNTHETIC | Vertex.BIT_CONSTRAINT);
+    } else {
+      m.setStatus(Vertex.BIT_SYNTHETIC);
+    }
+
+    // split ab by inserting midpoint m.  ab will become the second segment
+    // the newly allocated point will become the first.
+    // we assign variables to local references with descriptive names
+    // such as am, mb, etc. just to avoid confusion.
+    SemiVirtualEdge am = edgePool.splitEdge(ab, m);
+    SemiVirtualEdge mb = ab;
+    SemiVirtualEdge bm = ba;
+
+    // create new edges
+    SemiVirtualEdge cm = edgePool.allocateEdge(c, m);
+    SemiVirtualEdge dm = edgePool.allocateEdge(d, m);
+    SemiVirtualEdge ma = am.getDual();
+    SemiVirtualEdge mc = cm.getDual();
+    SemiVirtualEdge md = dm.getDual();
+    ma.setForward(ad);  // should already be set
+    ad.setForward(dm);
+    dm.setForward(ma);
+    mb.setForward(bc);
+    bc.setForward(cm);
+    cm.setForward(mb);
+    mc.setForward(ca);
+    ca.setForward(am); // should already be set
+    am.setForward(mc);
+    md.setForward(db);
+    db.setForward(bm);
+    bm.setForward(md);
+
+    return m;
+  
+  }
+
 }

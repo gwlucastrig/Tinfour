@@ -66,8 +66,6 @@ public class SvmComputation {
    * Constrained Delaunay Triangulation.
    */
   private static class LakeData implements Consumer<SimpleTriangle> {
-
-    PolygonConstraint pCon;
     double shoreReferenceElevation;
     boolean[] water;
     final GeometricOperations geoOp;
@@ -93,9 +91,6 @@ public class SvmComputation {
       water = new boolean[constraintsFromTin.size()];
       for (IConstraint con : constraintsFromTin) {
         water[con.getConstraintIndex()] = (Boolean) con.getApplicationData();
-        if ((Boolean) con.getApplicationData() && con instanceof PolygonConstraint) {
-          pCon = (PolygonConstraint) con;
-        }
       }
       Thresholds thresholds = tin.getThresholds();
       geoOp = new GeometricOperations(thresholds);
@@ -235,7 +230,7 @@ public class SvmComputation {
       int nRemediationVertices = 0;
       ps.println("Remediating flat triangles");
       ps.println("Pass   Remediated     Area     Volume Added  avg. depth");
-      for (int iFlat = 0; iFlat < 10; iFlat++) {
+      for (int iFlat = 0; iFlat < 200; iFlat++) {
         // construct a new flat-fixer each time
         // so we can gather counts
         SvmFlatFixer flatFixer = new SvmFlatFixer(tin, boundaryConstraints);
@@ -254,13 +249,7 @@ public class SvmComputation {
         );
         nRemediationVertices += fixList.size();
         soundings.addAll(fixList);
-        if (soundings.size() < 500000) {
-          tin = new IncrementalTin(1.0);
-        } else {
-          tin = new SemiVirtualIncrementalTin(1.0);
-        }
-        tin.add(soundings, null);
-        tin.addConstraints(allConstraints, true);
+        
       }
       long timeF1 = System.nanoTime();
       timeToFixFlats = timeF1 - timeF0;
