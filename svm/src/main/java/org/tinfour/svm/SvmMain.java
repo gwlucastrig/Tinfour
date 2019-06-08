@@ -32,6 +32,7 @@ package org.tinfour.svm;
 import java.io.BufferedOutputStream;
 import java.io.File;
 import java.io.FileOutputStream;
+import java.io.FilenameFilter;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.PrintStream;
@@ -40,6 +41,7 @@ import java.util.Date;
 import java.util.List;
 import java.util.Locale;
 import java.util.SimpleTimeZone;
+import org.tinfour.gis.utils.ShapefileMetadataReporter;
 import org.tinfour.svm.properties.SvmFileSpecification;
 import org.tinfour.svm.properties.SvmProperties;
 
@@ -52,7 +54,12 @@ public class SvmMain {
     "Usage information for Simple Volumetric Model (SVM)",
     "",
     "  -properties  <file> Input properties file path",
-    "  -template           Prints an example properties file to the console",};
+    "  -template           Prints an example properties file to the console",
+    "  -inspect     <file or directory>   Inspects and reports on the content",
+    "                      of the specified Shapefile and its associated",
+    "                      DBF file.  If a directory is specified, reports",
+    "                      on the content of every Shapefile in the directory"
+  };
 
   private static void printUsageAndExit() {
     for (String s : usage) {
@@ -61,43 +68,94 @@ public class SvmMain {
     System.exit(0);  //NOPMD
   }
 
+  private static boolean isSpecified(String[] args, String target) {
+    if (args != null && target != null) {
+      for (String arg : args) {
+        if (target.equalsIgnoreCase(arg)) {
+          return true;
+        }
+      }
+    }
+    return false;
+  }
+
   private static void checkForUsage(String[] args) {
     if (args == null || args.length == 0) {
       printUsageAndExit();
-    }
-    for (String arg : args) {
-      if ("-?".equals(arg) || "-help".equalsIgnoreCase(arg)) {
-        printUsageAndExit();
-      }
+    } else if (isSpecified(args, "-?") || isSpecified(args, "-help")) {
+      printUsageAndExit();
     }
   }
-
-  private static void printTemplateAndExit() {
-    try (
-            InputStream ins
-            = SvmMain.class.getResourceAsStream("SvmTemplate.properties");) {
-      int c;
-      while ((c = ins.read()) >= 0) {
-        System.out.append((char) c);
-      }
-      System.out.flush();
-    } catch (IOException dontCare) {
-      // no action required
-    }
-    System.exit(0); // NOPMD
-  }
-
+ 
   private static void checkForTemplate(String[] args) {
-    if (args == null || args.length == 0) {
+    if (isSpecified(args, "-template")) {
+      try (
+              InputStream ins
+              = SvmMain.class.getResourceAsStream("SvmTemplate.properties");) 
+      {
+        int c;
+        while ((c = ins.read()) >= 0) {
+          System.out.append((char) c);
+        }
+        System.out.flush();
+      } catch (IOException dontCare) {
+        // no action required
+      }
+      System.exit(0); // NOPMD
+    }
+  }
+
+  private static void checkForInspection(String []args) throws IOException {
+    int index = SvmProperties.indexArg(args, "-inspect", true);
+    if(index<0){
       return;
     }
-    for (String arg : args) {
-      if ("-template".equalsIgnoreCase(arg)) {
-        printTemplateAndExit();
+    File target = new File(args[index+1]);
+    if(!target.exists()){
+      throw new IllegalArgumentException("Inspection target does not exist "
+              +target.getPath());
+    }
+    performShapefileInspection(target, System.out);
+    System.exit(0); // NOPMD
+    
+  }
+  
+  private static void performShapefileInspection(
+          File target, PrintStream ps) throws IOException {
+    FilenameFilter filter = new FilenameFilter() {
+      @Override
+      public boolean accept(File file, String name) {
+        int n = name.length();
+        if (n >= 5) {
+          int i = name.lastIndexOf('.');
+          return (i > 0 && ".shp".equalsIgnoreCase(name.substring(i, n)));
+        }
+        return false;
       }
+    };
+
+    if (target.isDirectory()) {
+      String[] targets = target.list(filter);
+      for (String name : targets) {
+        System.out.println("\n------------------------------------------------");
+        File t = new File(target, name);
+        ShapefileMetadataReporter reporter
+                = new ShapefileMetadataReporter(t, true);
+        reporter.printReport(ps);
+      }
+    } else {
+      String name = target.getName();
+      if (!filter.accept(target, name)) {
+        throw new IllegalArgumentException(
+                "Invalid Shapefile specification " + target.getPath());
+      }
+      ShapefileMetadataReporter reporter
+              = new ShapefileMetadataReporter(target, true);
+      reporter.printReport(ps);
     }
   }
 
+  
   private SvmMain() {
     // constructor scoped to private to deter application code
     // from creating instances of this class.
@@ -112,6 +170,7 @@ public class SvmMain {
   public static void main(String[] args) throws IOException {
     checkForUsage(args);
     checkForTemplate(args);
+    checkForInspection(args);
 
     Date dateOfAnalysis = new Date(); // set to clock time
     writeIntroduction(System.out, dateOfAnalysis);

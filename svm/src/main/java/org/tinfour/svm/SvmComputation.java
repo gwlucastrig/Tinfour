@@ -347,7 +347,7 @@ public class SvmComputation {
     ps.format("  Volume              %10.8e %,20.0f %s%n", volume, volume, volumeUnits);
     ps.format("  Surface Area        %10.8e %,20.0f %s%n", surfArea, surfArea, areaUnits);
     ps.format("  Flat Area           %10.8e %,20.0f %s%n", flatArea, flatArea, areaUnits);
-    ps.format("  Avg depth           %5.2f ft%n", avgDepth);
+    ps.format("  Avg depth           %5.2f %s%n", avgDepth, lengthUnits);
     ps.format("  N Triangles         %d%n", lakeConsumer.nTriangles);
     ps.format("  N Flat Triangles    %d%n", lakeConsumer.nFlatTriangles);
     ps.format("  Mean Vertex Spacing %8.2f%n", vertexSpacing);
