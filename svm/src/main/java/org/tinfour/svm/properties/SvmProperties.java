@@ -72,7 +72,19 @@ public class SvmProperties {
     unitOfVolume = new SvmUnitSpecification("Volume", "m^3", 1.0);
   }
 
-  static private int indexArg(String[] args, String target, boolean valueRequired) {
+  /**
+   * Checks to see if an argument list includes the specified target and
+   * returns its index within the argument array.
+   * @param args a valid list of strings
+   * @param target the desired target string
+   * @param valueRequired indicates that the target argument requires
+   * a value specification.
+   * @return if found, a value of zero or greater; otherwise, -1.
+   */
+  static public int indexArg(String[] args, String target, boolean valueRequired) {
+    if(args == null || target==null || target.isEmpty()){
+      return -1;
+    }
     for (int i = 0; i < args.length; i++) {
       if (target.equalsIgnoreCase(args[i])) {
         if (valueRequired) {
@@ -94,7 +106,8 @@ public class SvmProperties {
     }
     return -1;
   }
-
+ 
+  
   private static String findArgString(String[] args, String target) {
     int index = indexArg(args, target, true);
     if (index >= 0) {
