@@ -66,6 +66,7 @@ public class SvmComputation {
    * Constrained Delaunay Triangulation.
    */
   private static class LakeData implements Consumer<SimpleTriangle> {
+
     double shoreReferenceElevation;
     boolean[] water;
     final GeometricOperations geoOp;
@@ -194,10 +195,16 @@ public class SvmComputation {
     String volumeUnits = properties.getUnitOfVolume().getLabel();
     double volumeFactor = properties.getUnitOfVolume().getScaleFactor();
 
-    double shoreReferenceElevation = data.getShoreReferenceElevation();
+    // shoreline reference elevation should come from the properties, but
+    // if it is not provided, use the value extractd from the data.
+    double shoreReferenceElevation
+            = properties.getShorelineReferenceElevation();
+    if (Double.isNaN(shoreReferenceElevation)) {
+      shoreReferenceElevation = data.getShoreReferenceElevation();
+    }
+
     List<Vertex> soundings = data.getSoundingsAndSupplements();
     List<PolygonConstraint> boundaryConstraints = data.getBoundaryConstraints();
-  
 
     List<IConstraint> allConstraints = new ArrayList<>();
     allConstraints.addAll(boundaryConstraints);
@@ -228,34 +235,40 @@ public class SvmComputation {
       // little added value.
       long timeF0 = System.nanoTime();
       int nRemediationVertices = 0;
+      ps.println("");
       ps.println("Remediating flat triangles");
       ps.println("Pass   Remediated     Area     Volume Added  avg. depth");
       for (int iFlat = 0; iFlat < 200; iFlat++) {
         // construct a new flat-fixer each time
         // so we can gather counts
-        SvmFlatFixer flatFixer = new SvmFlatFixer(tin, boundaryConstraints);
-        List<Vertex> fixList = flatFixer.fixFlats(ps, properties, data);
+        SvmFlatFixer flatFixer = new SvmFlatFixer(
+                tin,
+                properties,
+                shoreReferenceElevation);
+        List<Vertex> fixList = flatFixer.fixFlats(ps);
         if (fixList.isEmpty()) {
           break;
         }
-        double fixArea = flatFixer.getRemediatedArea();
-        double fixVolume = flatFixer.getRemediatedVolume();
-        ps.format("  %2d  %8d  %12.3f  %12.3f  %7.3f%n",
-                iFlat,
-                flatFixer.getRemediationCount(),
-                fixArea / areaFactor,
-                fixVolume / volumeFactor,
-                (fixVolume / fixArea) / lengthFactor
-        );
+        if ((iFlat % 10) == 0) {
+          double fixArea = flatFixer.getRemediatedArea();
+          double fixVolume = flatFixer.getRemediatedVolume();
+          ps.format("%4d  %8d  %12.3f  %12.3f  %7.3f%n",
+                  iFlat,
+                  flatFixer.getRemediationCount(),
+                  fixArea / areaFactor,
+                  fixVolume / volumeFactor,
+                  (fixVolume / fixArea) / lengthFactor
+          );
+        }
         nRemediationVertices += fixList.size();
         soundings.addAll(fixList);
-        
+
       }
       long timeF1 = System.nanoTime();
       timeToFixFlats = timeF1 - timeF0;
       ps.println("N remediation vertices added " + nRemediationVertices);
     }
-
+    ps.println("");
     ps.println("Processing data from Delaunay Triangulation");
     long time1 = System.nanoTime();
     LakeData lakeConsumer = new LakeData(tin, shoreReferenceElevation);
@@ -299,6 +312,8 @@ public class SvmComputation {
     ps.format("  Island shoreline %10.8e %,20.0f %s%n", islandPerimeter, islandPerimeter, lengthUnits);
     ps.format("  Total shoreline  %10.8e %,20.0f %s%n", totalShore, totalShore, lengthUnits);
     ps.format("  N Islands        %d%n", islandConstraints.size());
+    ps.format("  N Soundings      %d%n", data.getSoundings().size());
+    ps.format("  N Supplements    %d%n", data.getSupplements().size());
     ps.format("  Bounds%n");
     ps.format("     x:    %12.3f, %12.3f, (%5.3f)%n",
             bounds.getMinX() / lengthFactor,
@@ -405,9 +420,10 @@ public class SvmComputation {
     return perimeterSum.getSum();
   }
 
-  /** 
+  /**
    * Estimates vertex spacing for TIN based exclusively on interior edges.
    * Constraint edges and perimeter edges are not included.
+   *
    * @param tin a valid TIN.
    * @param lakeData a valid instance of input data
    * @return an estimated vertex spacing
@@ -430,5 +446,5 @@ public class SvmComputation {
     }
     return sumLength.getSum() / n;
   }
- 
+
 }

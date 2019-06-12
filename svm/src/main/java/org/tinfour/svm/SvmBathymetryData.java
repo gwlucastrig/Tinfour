@@ -39,6 +39,7 @@ import org.tinfour.common.IConstraint;
 import org.tinfour.common.PolygonConstraint;
 import org.tinfour.common.Vertex;
 import org.tinfour.gis.utils.ConstraintReaderShapefile;
+import org.tinfour.gis.utils.IVerticalCoordinateTransform;
 import org.tinfour.gis.utils.VertexReaderShapefile;
 import org.tinfour.utils.HilbertSort;
 import org.tinfour.utils.Tincalc;
@@ -59,10 +60,11 @@ public class SvmBathymetryData {
 
   private List<Vertex> soundings = new ArrayList<>();
   private List<Vertex> supplement = new ArrayList<>();
-  private  List<PolygonConstraint> boundaryConstraints = new ArrayList<>();;
+  private List<PolygonConstraint> boundaryConstraints = new ArrayList<>();
+  ;
   private List<PolygonConstraint> lakeConstraints = new ArrayList<>();
   private List<PolygonConstraint> islandConstraints = new ArrayList<>();
-  
+
   double shoreReferenceElevation;
 
   private Rectangle2D soundingBounds;
@@ -77,15 +79,20 @@ public class SvmBathymetryData {
 
   }
 
-  private List<Vertex>loadVertices(File vertexFile, String dbfBathymetryField) throws IOException {
-        String extension = this.getFileExtension(vertexFile); 
-    List<Vertex> list ;
+  private List<Vertex> loadVertices(
+          File vertexFile,
+          String dbfBathymetryField,
+          IVerticalCoordinateTransform verticalTransform)
+          throws IOException {
+    String extension = this.getFileExtension(vertexFile);
+    List<Vertex> list;
     if ("csv".equalsIgnoreCase(extension) || ".txt".equalsIgnoreCase(extension)) {
       VertexReaderText vertexReader = new VertexReaderText(vertexFile);
       list = vertexReader.read(null);
     } else if ("shp".equalsIgnoreCase(extension)) {
       VertexReaderShapefile vls = new VertexReaderShapefile(vertexFile);
       vls.setDbfFieldForZ(dbfBathymetryField);
+      vls.setVerticalCoordinateTransform(verticalTransform);
       list = vls.read(null);
     } else {
       throw new IllegalArgumentException("Unsupported file format "
@@ -94,25 +101,32 @@ public class SvmBathymetryData {
     }
     return list;
   }
-  
-  
-    /**
-   * Load main set of soundings from a file. This process is incremental
-   * and any new soundings will be added to the list of those already
-   * loaded.
+
+  /**
+   * Load main set of soundings from a file. This process is incremental and any
+   * new soundings will be added to the list of those already loaded.
+   *
    * @param inputSoundingsFile the input file giving soundings.
-   * @param dbfBathymetryField the optional string giving the name
-   * of the DBF field to be used to extracting data from the input file
-   * (used for Shapefiles).
+   * @param dbfBathymetryField the optional string giving the name of the DBF
+   * field to be used to extracting data from the input file (used for
+   * Shapefiles).
+   * @param verticalTransform the optional\transform used to map vertical
+   * coordinates to a new value; or null if no transform is to be applied.
    * @throws IOException in the event of an unrecoverable I/O condition
    */
-  public void loadSamples(File inputSoundingsFile, String dbfBathymetryField) throws IOException {
+  public void loadSamples(
+          File inputSoundingsFile,
+          String dbfBathymetryField,
+          IVerticalCoordinateTransform verticalTransform)
+          throws IOException {
 
     long time0 = System.nanoTime();
- 
- 
-    List<Vertex> list = this.loadVertices(inputSoundingsFile, dbfBathymetryField);
- 
+
+    List<Vertex> list = loadVertices(
+            inputSoundingsFile,
+            dbfBathymetryField,
+            verticalTransform);
+
     soundings.addAll(list);
 
     double z0 = Double.POSITIVE_INFINITY;
@@ -156,35 +170,59 @@ public class SvmBathymetryData {
 
     timeToLoadData += (time1 - time0);
   }
-  
+
   /**
-   * Load supplemental soundings from a file. This process is incremental
-   * and any new soundings will be added to the list of those already
-   * loaded.
-   * @param inputSoundingsFile the input file giving soundings.
-   * @param dbfBathymetryField the optional string giving the name
-   * of the DBF field to be used to extracting data.
+   * Load supplemental soundings from a file. This process is incremental and
+   * any new soundings will be added to the list of those already loaded.
+   *
+   * @param inputSupplementFile the input file giving soundings.
+   * @param dbfBathymetryField the optional string giving the name of the DBF
+   * field to be used to extracting data.
+   * @param verticalTransform the optional\transform used to map vertical
+   * coordinates to a new value; or null if no transform is to be applied.
    * @throws IOException in the event of an unrecoverable I/O condition
    */
-  public void loadSupplement(File inputSoundingsFile, String dbfBathymetryField) throws IOException {
+  public void loadSupplement(
+          File inputSupplementFile,
+          String dbfBathymetryField,
+          IVerticalCoordinateTransform verticalTransform)
+          throws IOException {
 
     long time0 = System.nanoTime();
- 
- 
-    List<Vertex> list = this.loadVertices(inputSoundingsFile, dbfBathymetryField);
- 
-    getSupplement().addAll(list);
- 
+
+    List<Vertex> list = this.loadVertices(
+            inputSupplementFile,
+            dbfBathymetryField,
+            verticalTransform);
+
+    getSupplements().addAll(list);
+
     long time1 = System.nanoTime();
     timeToLoadData += (time1 - time0);
   }
-  
-  
 
-  public void loadBoundaryConstraints(File target, String dbfFieldForZ) throws IOException {
+  /**
+   * Load main set of polygon contraints defining the boundary of the body of
+   * water. This process is incremental and any new constraints will be added to
+   * the list of those already loaded.
+   *
+   * @param inputBoundaryFile the input file giving constraints.
+   * @param dbfBathymetryField the optional string giving the name of the DBF
+   * field to be used to extracting data from the input file (used for
+   * Shapefiles).
+   * @param verticalTransform the optional\transform used to map vertical
+   * coordinates to a new value; or null if no transform is to be applied.
+   * @throws IOException in the event of an unrecoverable I/O condition
+   */
+  public void loadBoundaryConstraints(
+          File inputBoundaryFile,
+          String dbfFieldForZ,
+          IVerticalCoordinateTransform verticalTransform) throws IOException {
     long time0 = System.nanoTime();
-    try (ConstraintReaderShapefile reader = new ConstraintReaderShapefile(target)) {
+    try (ConstraintReaderShapefile reader
+            = new ConstraintReaderShapefile(inputBoundaryFile)) {
       reader.setDbfFieldForZ(dbfFieldForZ);
+      reader.setVerticalCoordinateTransform(verticalTransform);
       List<IConstraint> list = reader.read();
       shoreReferenceElevation = Double.NaN;
       for (IConstraint c : list) {
@@ -194,9 +232,9 @@ public class SvmBathymetryData {
           // the fills are oriented clockwise.
           p.setApplicationData(true);
           boundaryConstraints.add(p);
-          if(p.getArea()>0){
+          if (p.getArea() > 0) {
             lakeConstraints.add(p);
-          }else{
+          } else {
             islandConstraints.add(p);
           }
           List<Vertex> vList = p.getVertices();
@@ -204,9 +242,9 @@ public class SvmBathymetryData {
             Vertex v = vList.get(0);
             shoreReferenceElevation = v.getZ();
           }
-          if(constraintBounds == null){
+          if (constraintBounds == null) {
             constraintBounds = p.getBounds();
-          }else{
+          } else {
             constraintBounds.add(p.getBounds());
           }
         }
@@ -215,8 +253,6 @@ public class SvmBathymetryData {
     long time1 = System.nanoTime();
     timeToLoadData += (time1 - time0);
   }
-
-   
 
   /**
    * Get the minimum sounding value in the source data
@@ -255,9 +291,9 @@ public class SvmBathymetryData {
   }
 
   /**
-   * Get a list of the soundings. The result includes the main set
-   * of soundings, but does not include any supplementatal soundings
-   * that may have been loaded.
+   * Get a list of the soundings. The result includes the main set of soundings,
+   * but does not include any supplementatal soundings that may have been
+   * loaded.
    *
    * @return the soundings
    */
@@ -268,21 +304,23 @@ public class SvmBathymetryData {
   }
 
   /**
-   * Gets all bathymetry sounding data, including both the main
-   * soundings list and any supplemental data that was loaded.
+   * Gets all bathymetry sounding data, including both the main soundings list
+   * and any supplemental data that was loaded.
+   *
    * @return a valid list of vertices.
    */
-  public List<Vertex>getSoundingsAndSupplements(){
-    ArrayList<Vertex>result = new ArrayList<>(soundings.size()+supplement.size());
+  public List<Vertex> getSoundingsAndSupplements() {
+    ArrayList<Vertex> result = new ArrayList<>(soundings.size() + supplement.size());
     result.addAll(soundings);
     result.addAll(supplement);
-    
+
     return result;
   }
-  
+
   /**
-   * Get a reduced list of the soundings.  Intended for diagnostic 
-   * and rendering purposes.
+   * Get a reduced list of the soundings. Intended for diagnostic and rendering
+   * purposes.
+   *
    * @param nTarget the target number of soundings for the list
    * @return the soundings
    */
@@ -347,32 +385,33 @@ public class SvmBathymetryData {
         bounds.add(constraintBounds);
       }
     }
-    if(bounds==null){
-      return new Rectangle2D.Double(0,0,0,0);
-    }else{
+    if (bounds == null) {
+      return new Rectangle2D.Double(0, 0, 0, 0);
+    } else {
       return bounds;
     }
   }
 
   /**
-   * Get the reference elevation for the shoreline (conservation pool
-   * elevation)
-   * @return a valid floating point value greater than the vertical
-   * coordinate of the set of bathymetry samples to be used for analysis.
+   * Get the reference elevation for the shoreline (conservation pool elevation)
+   *
+   * @return a valid floating point value greater than the vertical coordinate
+   * of the set of bathymetry samples to be used for analysis.
    */
-    public double getShoreReferenceElevation() {
+  public double getShoreReferenceElevation() {
     return shoreReferenceElevation;
   }
-  
+
   /**
-   * Gets a list of constraints defining the boundary of the body of
-   * water to be analyzed.
+   * Gets a list of constraints defining the boundary of the body of water to be
+   * analyzed.
+   *
    * @return a valid, potentially empty list
    */
   public List<PolygonConstraint> getBoundaryConstraints() {
     return boundaryConstraints;
   }
-  
+
   /**
    * Gets the time required to load the input data
    *
@@ -414,18 +453,20 @@ public class SvmBathymetryData {
 
   /**
    * Gets a list of those constraints which enclose the data area
-   * @return A valid, potentially empty list of polygon constraints
-   * oriented in anticlockwise order.
+   *
+   * @return A valid, potentially empty list of polygon constraints oriented in
+   * anticlockwise order.
    */
   public List<PolygonConstraint> getLakeConstraints() {
     return lakeConstraints;
   }
 
-   /**
-   * Gets a list of those constraints which enclose island areas (non
-   * data areas)
-   * @return A valid, potentially empty list of polygon constraints
-   * oriented in clockwise order.
+  /**
+   * Gets a list of those constraints which enclose island areas (non data
+   * areas)
+   *
+   * @return A valid, potentially empty list of polygon constraints oriented in
+   * clockwise order.
    */
   public List<PolygonConstraint> getIslandConstraints() {
     return islandConstraints;
@@ -433,9 +474,10 @@ public class SvmBathymetryData {
 
   /**
    * Gets a list of supplementary samples.
+   *
    * @return A valid, potentially list
    */
-  public List<Vertex> getSupplement() {
+  public List<Vertex> getSupplements() {
     return supplement;
   }
 

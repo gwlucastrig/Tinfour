@@ -86,13 +86,12 @@ public class SvmMain {
       printUsageAndExit();
     }
   }
- 
+
   private static void checkForTemplate(String[] args) {
     if (isSpecified(args, "-template")) {
       try (
               InputStream ins
-              = SvmMain.class.getResourceAsStream("SvmTemplate.properties");) 
-      {
+              = SvmMain.class.getResourceAsStream("SvmTemplate.properties");) {
         int c;
         while ((c = ins.read()) >= 0) {
           System.out.append((char) c);
@@ -105,21 +104,21 @@ public class SvmMain {
     }
   }
 
-  private static void checkForInspection(String []args) throws IOException {
+  private static void checkForInspection(String[] args) throws IOException {
     int index = SvmProperties.indexArg(args, "-inspect", true);
-    if(index<0){
+    if (index < 0) {
       return;
     }
-    File target = new File(args[index+1]);
-    if(!target.exists()){
+    File target = new File(args[index + 1]);
+    if (!target.exists()) {
       throw new IllegalArgumentException("Inspection target does not exist "
-              +target.getPath());
+              + target.getPath());
     }
     performShapefileInspection(target, System.out);
     System.exit(0); // NOPMD
-    
+
   }
-  
+
   private static void performShapefileInspection(
           File target, PrintStream ps) throws IOException {
     FilenameFilter filter = new FilenameFilter() {
@@ -155,7 +154,6 @@ public class SvmMain {
     }
   }
 
-  
   private SvmMain() {
     // constructor scoped to private to deter application code
     // from creating instances of this class.
@@ -197,17 +195,26 @@ public class SvmMain {
 
     List<SvmFileSpecification> bathyFiles = prop.getSampleSpecifications();
     for (SvmFileSpecification bathyFile : bathyFiles) {
-      data.loadSamples(bathyFile.getFile(), bathyFile.getField());
+      data.loadSamples(
+              bathyFile.getFile(),
+              bathyFile.getField(),
+              bathyFile.getVerticalTransform());
     }
 
     List<SvmFileSpecification> supplementFiles = prop.getSupplementSpecifications();
     for (SvmFileSpecification supplementFile : supplementFiles) {
-      data.loadSupplement(supplementFile.getFile(), supplementFile.getField());
+      data.loadSupplement(
+              supplementFile.getFile(),
+              supplementFile.getField(),
+              supplementFile.getVerticalTransform());
     }
 
     List<SvmFileSpecification> boundaryFiles = prop.getBoundarySpecifications();
     for (SvmFileSpecification boundaryFile : boundaryFiles) {
-      data.loadBoundaryConstraints(boundaryFile.getFile(), boundaryFile.getField());
+      data.loadBoundaryConstraints(
+              boundaryFile.getFile(),
+              boundaryFile.getField(),
+              boundaryFile.getVerticalTransform());
     }
 
     PrintStream reportPrintStream = System.out; // the default

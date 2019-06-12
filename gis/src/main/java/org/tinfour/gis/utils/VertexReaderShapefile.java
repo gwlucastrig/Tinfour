@@ -68,6 +68,7 @@ public class VertexReaderShapefile implements IVertexReader, Closeable {
   boolean geographicCoordinates;
   LinearUnits linearUnits = LinearUnits.UNKNOWN;
   ICoordinateTransform coordinateTransform;
+  IVerticalCoordinateTransform verticalCoordinateTransform;
   String dbfFieldForZ;
 
   /**
@@ -112,6 +113,18 @@ public class VertexReaderShapefile implements IVertexReader, Closeable {
     }
   }
 
+  
+  /**
+   * Sets the vertical coordinate transform to be used when reading the
+   * file (if any).
+   * @param verticalTransform a valid instance if a transform is to be
+   * applies; a null reference if no transform is required.
+   */
+  public void setVerticalCoordinateTransform(IVerticalCoordinateTransform verticalTransform){
+    this.verticalCoordinateTransform = verticalTransform;
+  }
+  
+  
   /**
    * Gets the minimum x coordinate in the sample
    *
@@ -287,6 +300,10 @@ public class VertexReaderShapefile implements IVertexReader, Closeable {
           }
           x = scratch.x;
           y = scratch.y;
+        }
+        
+        if(verticalCoordinateTransform!=null){
+           z = verticalCoordinateTransform.transform(recNo, z);
         }
 
         vList.add(new Vertex(x, y, z, recNo));
