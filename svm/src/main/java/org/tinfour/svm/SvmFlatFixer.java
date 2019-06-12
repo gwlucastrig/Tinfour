@@ -40,7 +40,6 @@ import java.util.List;
 import org.tinfour.common.GeometricOperations;
 import org.tinfour.common.IIncrementalTin;
 import org.tinfour.common.IQuadEdge;
-import org.tinfour.common.PolygonConstraint;
 import org.tinfour.common.Thresholds;
 import org.tinfour.common.Vertex;
 import org.tinfour.svm.properties.SvmProperties;
@@ -51,7 +50,8 @@ import org.tinfour.svm.properties.SvmProperties;
 class SvmFlatFixer {
 
   private final IIncrementalTin tin;
-  private final List<PolygonConstraint> boundaryConstraints;
+  private final double zShore;
+  private final SvmProperties properties;
 
   private int nRemediations;
   private double remediatedArea;
@@ -61,21 +61,13 @@ class SvmFlatFixer {
     return Math.abs(a - b) < 1.0e-6;
   }
 
-  SvmFlatFixer(IIncrementalTin tin, List<PolygonConstraint> boundaryConstraints) {
+  SvmFlatFixer(IIncrementalTin tin, SvmProperties properties, double zShore) {
     this.tin = tin;
-    this.boundaryConstraints = boundaryConstraints;
+    this.properties = properties;
+    this.zShore = zShore;
   }
 
-  boolean inBounds(double x, double y) {
-    for (PolygonConstraint p : boundaryConstraints) {
-      if (p.isPointInsideConstraint(x, y)) {
-        return true;
-      }
-    }
-    return false;
-  }
-
-  List<Vertex> fixFlats(PrintStream ps, SvmProperties properties, SvmBathymetryData data) {
+  List<Vertex> fixFlats(PrintStream ps) {
     // Initialize the visited bit-set with the perimeter.
     // Doing so will prevent the perimeter from being included
     // in the computations of means as well as in the searches to follow
@@ -94,7 +86,6 @@ class SvmFlatFixer {
       visited.set(index ^ 1); // XOR to get the dual
     }
 
-    double zShore = data.getShoreReferenceElevation();
     for (IQuadEdge edge : tin.edges()) {
       int index = edge.getIndex();
       if (visited.get(index)) {
@@ -124,7 +115,6 @@ class SvmFlatFixer {
         }
       }
     }
- 
 
     List<Vertex> fixVertices = new ArrayList<>(fixList.size());
     for (IQuadEdge edge : fixList) {
@@ -132,12 +122,12 @@ class SvmFlatFixer {
       Vertex B = edge.getB();
       Vertex C = edge.getForward().getB();
       Vertex D = edge.getForwardFromDual().getB();
-      
+
       double area = geoOp.area(A, B, C);
-      if(area<1){
+      if (area < 1) {
         continue;
       }
-      
+
       double mX = (A.getX() + B.getX()) / 2;
       double mY = (A.getY() + B.getY()) / 2;
       nRemediations++;
@@ -152,17 +142,16 @@ class SvmFlatFixer {
         // interpolate a new dept value combining an actual
         // sample (D) and a shoreline vertex (C)
         mZ = (sC * D.getZ() + sD * C.getZ()) / (sC + sD);
-        if (mZ > zShore - 1) {
+        if (zShore - mZ < 1) {
           mZ = zShore - 1;
         }
       }
-
 
       Vertex M = tin.splitEdge(edge, mZ, false);
       M.setSynthetic(true);
       M.setAuxiliaryIndex(1);
       fixVertices.add(M);
-      
+
       //  mean depth(A, M, C) is (0 + zShore-mZ + 0)/3
       //  mean depth(M, B, C) is (zShore-mZ + 0 + 0)/3
       //  so mean depth for both triangles is equal.
@@ -173,8 +162,7 @@ class SvmFlatFixer {
       double volume = area * meanDepth;
       remediatedArea += area;
       remediatedVolume += volume;
- 
-   
+
     }
 
     return fixVertices;

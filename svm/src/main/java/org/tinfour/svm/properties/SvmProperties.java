@@ -49,6 +49,7 @@ public class SvmProperties {
   private final static String unitOfAreaKey = "unitOfArea";
   private final static String unitOfVolumeKey = "unitOfVolume";
   private final static String reportKey = "report";
+  private final static String shorelineReferenceElevationKey = "shorelineReferenceElevation";
   private final static String tableKey = "table";
   private final static String tableIntervalKey = "tableInterval";
   private final static String flatFixerKey = "remediateFlatTriangles";
@@ -495,12 +496,22 @@ public class SvmProperties {
     writeUnit(ps, "Volume:", getUnitOfVolume());
     ps.println("");
     String s = properties.getProperty(reportKey);
-    ps.format("Report:         %s%n", s == null || s.isEmpty() ? "None" : s);
+    ps.format("Report:                   %s%n", s == null || s.isEmpty() ? "None" : s);
     s = properties.getProperty(tableKey);
-    ps.format("Table output:   %s%n", s == null || s.isEmpty() ? "None" : s);
+    ps.format("Table output:             %s%n", s == null || s.isEmpty() ? "None" : s);
     if (s != null && !s.isEmpty()) {
-      ps.format("Table interval: %4.2f%n", getTableInterval());
+      ps.format("Table interval:           %4.2f%n", getTableInterval());
     }
+    s = properties.getProperty(shorelineReferenceElevationKey);
+    ps.format("Shoreline Elevation:      ");
+    if(s ==null || s.isEmpty()){
+      ps.format("To be obtained from boundary data");
+    }else{
+      ps.format("Explicitly specified as "+s);
+    }
+    ps.format("%n");
+    boolean fixFlats = isFlatFixerEnabled();
+    ps.format("Remediate Flat Triangles: %s%n", Boolean.toString(fixFlats));
   }
 
   /**
@@ -521,5 +532,34 @@ public class SvmProperties {
    */
   public SvmUnitSpecification getUnitOfVolume() {
     return unitOfVolume;
+  }
+  
+  
+  
+  /**
+   * Get the shoreline reference elevation, if provided.
+   * @return a valid floating point number or a NaN if undefined
+   */
+  public double getShorelineReferenceElevation( ) {
+    String s = properties.getProperty(shorelineReferenceElevationKey);
+    if (s == null) {
+      return Double.NaN;
+    }
+    s = s.trim();
+    if (s.isEmpty()) {
+      return Double.NaN;
+    }
+
+    try {
+      double d = Double.parseDouble(s);
+      if (d <= 0) {
+        throw new IllegalArgumentException(
+                "Invalid value for shoreline reference elevation: " + s);
+      }
+      return d;
+    } catch (NumberFormatException nex) {
+      throw new IllegalArgumentException(
+              "Invalid numeric for shoerline reference elevation: " + s);
+    }
   }
 }

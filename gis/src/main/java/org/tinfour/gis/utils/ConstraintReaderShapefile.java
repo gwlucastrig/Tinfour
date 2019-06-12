@@ -64,6 +64,7 @@ public class ConstraintReaderShapefile implements Closeable {
 
   boolean geographicCoordinates;
   ICoordinateTransform coordinateTransform;
+  IVerticalCoordinateTransform verticalCoordinateTransform;
   String dbfFieldForZ;
   String dbfFieldForAppData;
 
@@ -164,6 +165,10 @@ public class ConstraintReaderShapefile implements Closeable {
                   } else {
                     z = dbfZ;
                   }
+                  if(verticalCoordinateTransform!=null){
+                    z = verticalCoordinateTransform.transform(
+                            record.recordNumber, z);
+                  }
                   if (coordinateTransform != null) {
                     coordinateTransform.forward(x, y, scratch);
                     x = scratch.x;
@@ -184,6 +189,10 @@ public class ConstraintReaderShapefile implements Closeable {
                   } else {
                     z = dbfZ;
                     k++;
+                  }
+                  if (verticalCoordinateTransform != null) {
+                    z = verticalCoordinateTransform.transform(
+                            record.recordNumber, z);
                   }
                   if (coordinateTransform != null) {
                     coordinateTransform.forward(x, y, scratch);
@@ -267,15 +276,38 @@ public class ConstraintReaderShapefile implements Closeable {
     }
   }
 
+  /**
+   * Gets the coordinate transform associated with this instance. May be null if
+   * no coordinate transform was set.
+   *
+   * @return a valid transform or a null if none was set.
+   */
   public ICoordinateTransform getCoordinateTransform() {
     return coordinateTransform;
   }
 
+  /**
+   * Sets a coordinate transform to be used for mapping values from the source
+   * file to vertex coordinates.
+   *
+   * @param transform a valid transform or a null if none is to be applied.
+   */
   public void setCoordinateTransform(ICoordinateTransform transform) {
     coordinateTransform = transform;
     geographicCoordinates = transform instanceof SimpleGeographicTransform;
   }
 
+    /**
+   * Sets the vertical coordinate transform to be used when reading the
+   * file (if any).
+   * @param verticalTransform a valid instance if a transform is to be
+   * applies; a null reference if no transform is required.
+   */
+  public void setVerticalCoordinateTransform(IVerticalCoordinateTransform verticalTransform){
+    this.verticalCoordinateTransform = verticalTransform;
+  }
+  
+  
   /**
    * Sets the name of the field in the DBF file to use as a source for Z
    * coordinates for data.
