@@ -43,7 +43,11 @@ import org.tinfour.gis.las.LasScaleAndOffset;
 import org.tinfour.utils.loaders.CoordinatePair;
 import org.tinfour.utils.loaders.ICoordinateTransform;
 
-public class VertexReaderLaz {
+/**
+ * Provides methods and elements for reading a compressed LAS file 
+ * (a LAZ file).   Intended to be called from within VertexReaderLas.
+ */
+class VertexReaderLaz {
 
   LasScaleAndOffset lasScaleAndOffset;
   ICoordinateTransform coordinateTransform;
@@ -58,7 +62,8 @@ public class VertexReaderLaz {
     this.maximumNumberOfVertices = maximumNumberOfVertices;
   }
 
-  public List<Vertex> loadVertices(
+ 
+  List<Vertex> loadVertices(
           File file,
           long nVertices,
           ILasRecordFilter filter,
