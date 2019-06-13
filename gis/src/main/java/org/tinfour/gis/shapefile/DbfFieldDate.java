@@ -86,7 +86,11 @@ public class DbfFieldDate extends DbfField {
     int d1 = scan1(brad.readUnsignedByte(), builder);
     int d2 = scan1(brad.readUnsignedByte(), builder);
     int day = d1 * 10 + d2;
-    value = ZonedDateTime.of(year, month, day, 0, 0, 0, 0, zoneOffset);
+    if(year==0 || month==0 || day==0){
+      value = null;
+    }else{
+      value = ZonedDateTime.of(year, month, day, 0, 0, 0, 0, zoneOffset);
+    }
   }
 
   /**
@@ -171,6 +175,9 @@ public class DbfFieldDate extends DbfField {
     int k = 0;
     for (int i = 1; i <= nRecords; i++) {
       dbf.readField(i, this);
+      if(isNull()){
+        continue;
+      }
       long v = getLong();
       if (v < vMin) {
         vMin = v;
@@ -181,10 +188,10 @@ public class DbfFieldDate extends DbfField {
       vArray[k++] = v;
     }
 
-    Arrays.sort(vArray);
+    Arrays.sort(vArray, 0, k);
     int nUniqueValues = 1;
     long prior = vArray[0];
-    for (int i = 1; i < nRecords; i++) {
+    for (int i = 1; i < k; i++) {
       if (vArray[i] != prior) {
         prior = vArray[i];
         vArray[nUniqueValues] = vArray[i];
@@ -211,5 +218,10 @@ public class DbfFieldDate extends DbfField {
       throw new NullPointerException("Null zone-offset value not supported");
     }
     this.zoneOffset = zoneOffset;
+  }
+ 
+  @Override
+  public boolean isNull(){
+    return value==null;
   }
 }

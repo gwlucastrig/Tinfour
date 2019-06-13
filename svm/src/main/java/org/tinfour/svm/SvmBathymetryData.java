@@ -207,7 +207,7 @@ public class SvmBathymetryData {
    * the list of those already loaded.
    *
    * @param inputBoundaryFile the input file giving constraints.
-   * @param dbfBathymetryField the optional string giving the name of the DBF
+   * @param dbfFieldForZ the optional string giving the name of the DBF
    * field to be used to extracting data from the input file (used for
    * Shapefiles).
    * @param verticalTransform the optional\transform used to map vertical

@@ -341,4 +341,13 @@ public class DbfField {
     return list;
   }
 
+  /**
+   * Indicates whether the field contains a null value.
+   * Because the interpretation of null fields is not well defined by the
+   * DBF file specification, this method should be used with care.
+   * @return true if the field is empty, otherwise false.
+   */
+  public boolean isNull(){
+    return builder.length()==0;
+  }
 }

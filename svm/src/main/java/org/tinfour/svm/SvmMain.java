@@ -136,7 +136,7 @@ public class SvmMain {
     if (target.isDirectory()) {
       String[] targets = target.list(filter);
       for (String name : targets) {
-        System.out.println("\n------------------------------------------------");
+        ps.println("\n------------------------------------------------");
         File t = new File(target, name);
         ShapefileMetadataReporter reporter
                 = new ShapefileMetadataReporter(t, true);
