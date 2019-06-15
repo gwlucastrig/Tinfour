@@ -42,13 +42,13 @@ class SemiVirtualEdgePage {
   static final int PAIRS_PER_PAGE_SCALE = 10;
 
   /** The number of complete edge pairs per page */
-  static final int PAIRS_PER_PAGE = (1 << PAIRS_PER_PAGE_SCALE);
+  static final int PAIRS_PER_PAGE = 1 << PAIRS_PER_PAGE_SCALE;
 
   /** number of edge indicates per page (two per edge) */
   static final int INDICES_PER_PAGE = 2 * PAIRS_PER_PAGE;
 
   /** Bit mask to extract page index from absolute index. */
-  static final int INDEX_MASK = (INDICES_PER_PAGE - 1);
+  static final int INDEX_MASK = INDICES_PER_PAGE - 1;
 
   /** Bit mask to clear low-order bit */
   static final int MASK_LOW_BIT_CLEAR = ~1;

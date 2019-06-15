@@ -474,9 +474,9 @@ public class SvmProperties {
       ps.format("Properties file: %s%n", specificationFile.getPath());
     }
     File f = getInputFolder();
-    ps.format("Input folder:   %s%n", (f == null ? "Not specified" : f.getPath()));
+    ps.format("Input folder:   %s%n", f == null ? "Not specified" : f.getPath());
     f = getOutputFolder();
-    ps.format("Output folder:  %s%n", (f == null ? "Not specified" : f.getPath()));
+    ps.format("Output folder:  %s%n", f == null ? "Not specified" : f.getPath());
     ps.format("%n");
     List<SvmFileSpecification> samples = getSampleSpecifications();
     List<SvmFileSpecification> bounds = getBoundarySpecifications();

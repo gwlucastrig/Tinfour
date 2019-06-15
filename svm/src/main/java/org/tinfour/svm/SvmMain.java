@@ -98,7 +98,7 @@ public class SvmMain {
         }
         System.out.flush();
       } catch (IOException dontCare) {
-        // no action required
+        // NOPMD no action required
       }
       System.exit(0); // NOPMD
     }
@@ -127,7 +127,7 @@ public class SvmMain {
         int n = name.length();
         if (n >= 5) {
           int i = name.lastIndexOf('.');
-          return (i > 0 && ".shp".equalsIgnoreCase(name.substring(i, n)));
+          return i > 0 && ".shp".equalsIgnoreCase(name.substring(i, n));
         }
         return false;
       }

@@ -13,7 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 /**
  * -----------------------------------------------------------------------
  *
@@ -28,7 +27,6 @@
  *
  * -----------------------------------------------------------------------
  */
-
 package org.tinfour.demo.performance;
 
 import java.io.File;
@@ -54,8 +52,8 @@ import org.tinfour.demo.utils.VertexLoader;
 public class RepeatedDeleteTest implements IDevelopmentTest {
 
   /**
-   * Perform a simple test of the TIN building and vertex removal
-   * functions over a fixed number of repetitions collecting timing statistics.
+   * Perform a simple test of the TIN building and vertex removal functions over
+   * a fixed number of repetitions collecting timing statistics.
    *
    * @param args command line arguments providing specifications for test
    */
@@ -69,11 +67,11 @@ public class RepeatedDeleteTest implements IDevelopmentTest {
     }
   }
 
-static final String[] mandatoryOptions = {
+  static final String[] mandatoryOptions = {
     "-in"
-};
+  };
 
-static final String[] usage = {
+  static final String[] usage = {
     "Usage for Test Repeated Deletion and Reinsert",
     "   Mandatory Arguments:",
     "       -in <valid LAS, CSV, or TXT file>",
@@ -84,16 +82,15 @@ static final String[] usage = {
     "       -prealloc, -noPrealloc  boolean, default noPreAlloc",
     "       -preSort,  -noPreSort   boolean, dfault noPreSort",
     "       -tinClass <class>   path of class for testing, defaults to IncrementalTin"
-};
-
+  };
 
   @Override
   public void runTest(PrintStream ps, String args[]) throws IOException {
     if (args.length == 0) {
-        for(String s: usage){
-            ps.println(s);
-        }
-        return;
+      for (String s : usage) {
+        ps.println(s);
+      }
+      return;
     }
 
     TestOptions options = new TestOptions();
@@ -136,30 +133,34 @@ static final String[] usage = {
     ps.println("Number of vertices  " + vertexList.size());
 
     IIncrementalTin tin = options.getNewInstanceOfTestTin();
-    ps.println("run,        build,    avg_build,     total_mem,   alloc_time");
+    ps.println("run,        build,    avg_build,     total_mem,   delete test time");
 
     int iAvg = 3;  // minimum index to start collecting average
     for (int iTest = 0; iTest < nTests; iTest++) {
       String preallocTime = "       ~~~";
-      tin =  options.getNewInstanceOfTestTin();
+      tin = options.getNewInstanceOfTestTin();
       if (usePreAlloc) {
         time0 = System.nanoTime();
         tin.preAllocateEdges(nVertices);
         time1 = System.nanoTime();
         preallocTime = String.format("%12.3f", (time1 - time0) / 1000000.0);
-      }     
-      tin.add(vertexList, null);
-      List<Vertex>testList = tin.getVertices();
+      }
       time0 = System.nanoTime();
-      for(Vertex v: testList){
-        if(v instanceof VertexMergerGroup){
+      tin.add(vertexList, null);
+      time1 = System.nanoTime();
+      long deltaBuild = (time1 - time0);
+
+      List<Vertex> testList = tin.getVertices();
+      time0 = System.nanoTime();
+      for (Vertex v : testList) {
+        if (v instanceof VertexMergerGroup) {
           continue;
         }
         tin.remove(v);
         tin.add(v);
       }
       time1 = System.nanoTime();
-      long deltaBuild = (time1 - time0);
+      long deltaDelete = (time1 - time0);
 
       double avgTotal = 0;
       if (iTest >= iAvg) {
@@ -181,23 +182,23 @@ static final String[] usage = {
         tin.dispose();
       }
 
-      ps.format("%3d, %12.3f, %12.3f, %12.3f, %s%n",
-        iTest,
-        deltaBuild / 1000000.0,
-        avgTotal / 1000000.0,
-        memTotal / 1048576.0,
-        preallocTime);
+      ps.format("%3d, %12.3f, %12.3f, %12.3f, %12.3f%n",
+              iTest,
+              deltaBuild / 1000000.0,
+              avgTotal / 1000000.0,
+              memTotal / 1048576.0,
+              deltaDelete / 1.0e+6);
     }
     if (nTotal > 1) {
       double avgTotal = (sumTotal - maxTime) / (nTotal - 1);
-      ps.format("Avg max removed:   %12.3f%n",  avgTotal / 1000000.0);
+      ps.format("Avg max removed:   %12.3f%n", avgTotal / 1000000.0);
     }
     ps.println("");
     long deltaMemory = (mem2 - mem1);
     double bytesPerVertex = (double) (deltaMemory + vertexMemory) / (double) nVertices;
     double verticesOnly = (double) vertexMemory / (double) nVertices;
 
-	ps.println("");
+    ps.println("");
     ps.println("Stats for last run in series");
     ps.println("Vertices added to TIN:    " + nVertices);
     ps.println("Memory use (bytes/vertex) ");
@@ -205,7 +206,7 @@ static final String[] usage = {
     ps.format("   Vertices only:         %6.2f%n", verticesOnly);
     //tin.printDiagnostics(System.out);
 
-	ps.println("");
+    ps.println("");
     ps.println("Performing integrity check");
     IIntegrityCheck sane2 = tin.getIntegrityCheck();
     boolean status = sane2.inspect();

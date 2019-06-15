@@ -262,7 +262,7 @@ public class ConstraintLoader {
         try {
           reader.close();
         } catch (IOException dontCare) {
-          // no action required
+          // NOPMD no action required
         }
       }
     }

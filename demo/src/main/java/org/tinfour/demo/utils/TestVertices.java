@@ -65,7 +65,7 @@ public final class TestVertices {
     for (int i = 0; i < nVertices; i++) {
       double x = r.nextDouble();
       double y = r.nextDouble();
-      double z = x*x + y*y -(x+y) -0.5;  // (x-0.5)^2 + (y-0.5)^2
+      double z = x*x + y*y -(x+y) -0.5;  // NOPMD (x-0.5)^2 + (y-0.5)^2
       vList.add(new Vertex(x, y, z, i)); //NOPMD
     }
 

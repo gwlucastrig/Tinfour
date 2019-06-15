@@ -133,8 +133,8 @@ public class GridSpecification {
 
     int nR, nC;
     if (cellPosition == CellPosition.CornerOfCell) {
-      nR = (i1 - i0 + 1);
-      nC = (j1 - j0 + 1);
+      nR = i1 - i0 + 1;
+      nC = j1 - j0 + 1;
     } else {
       // center of cell
       nR = i1 - i0;

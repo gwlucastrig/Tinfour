@@ -433,11 +433,6 @@ public class DataViewingPanel extends JPanel {
       // time the paintComponent method is called.  So elements
       // that depend on size of the panel are initialized here.
       performAppInitialization();
-      if (backplaneManager == null) {
-        // this is not expected.  we could reach here if the
-        // panel is still not fully realized.  Hopefully, there
-        // will be another chance later on...
-      }
     }
 
     if (compositeImage != null) {
@@ -984,8 +979,8 @@ public class DataViewingPanel extends JPanel {
     AffineTransform m2c
             = new AffineTransform(
                     pixelPerUnit, 0, 0, -pixelPerUnit,
-                    (w / 2 + pad) - pixelPerUnit * x,
-                    (h / 2 + pad) + pixelPerUnit * y);
+                    w / 2 + pad - pixelPerUnit * x,
+                    h / 2 + pad + pixelPerUnit * y);
 
     // verify that transform is invertible... it should always be so.
     AffineTransform c2m;

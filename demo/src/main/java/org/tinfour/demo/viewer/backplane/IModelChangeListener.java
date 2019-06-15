@@ -51,12 +51,12 @@ public interface IModelChangeListener {
    * there will always be a period of time during which no model is
    * available.
    */
-  public void modelRemoved();
+  void modelRemoved();
 
 
   /**
    * Invoked whenever a model is added.
    * @param model a valid model
    */
-  public void modelAdded(IModel model);
+  void modelAdded(IModel model);
 }

@@ -103,14 +103,14 @@ public interface IModel {
    * @throws IOException If a non-recoverable IO condition is encountered
    * when reading the source file.
    */
-  public void load(IMonitorWithCancellation monitor) throws IOException;
+  void load(IMonitorWithCancellation monitor) throws IOException;
 
   /**
    * Gets the file associated with the model
    *
    * @return a valid file
    */
-  public File getFile();
+  File getFile();
 
   /**
    * Get the name or identification associated with the model. For
@@ -119,14 +119,14 @@ public interface IModel {
    *
    * @return a valid, potentially empty string.
    */
-  public String getName();
+  String getName();
 
   /**
    * Gets a <strong>short</strong>description of the model
    *
    * @return a valid string.
    */
-  public String getDescription();
+  String getDescription();
 
   /**
    * Gets the list of vertices currently stored in the model; for efficiency
@@ -135,7 +135,7 @@ public interface IModel {
    *
    * @return a valid list (empty if not properly loaded)
    */
-  public List<Vertex> getVertexList();
+  List<Vertex> getVertexList();
 
   /**
    * Get a string representation for the specified model coordinates.
@@ -146,7 +146,7 @@ public interface IModel {
    * @param y the y coordinate in the model coordinate system
    * @return a valid string (content left to the implementation).
    */
-  public String getFormattedCoordinates(double x, double y);
+  String getFormattedCoordinates(double x, double y);
 
   /**
    * Get a string representation of the specified model X coordinate.
@@ -157,7 +157,7 @@ public interface IModel {
    * @param x the x coordinate in the model coordinate system.
    * @return a valid string (content left to the implementation)/
    */
-  public String getFormattedX(double x);
+  String getFormattedX(double x);
 
   /**
    * Get a string representation of the specified model X coordinate.
@@ -168,7 +168,7 @@ public interface IModel {
    * @param y the y coordinate in the model coordinate system.
    * @return a valid string (content left to the implementation)/
    */
-  public String getFormattedY(double y);
+  String getFormattedY(double y);
 
   /**
    * Indicates whether the content of the model was already loaded.
@@ -177,7 +177,7 @@ public interface IModel {
    *
    * @return true if the model is loaded, otherwise false.
    */
-  public boolean isLoaded();
+  boolean isLoaded();
 
   /**
    * Gets the "reference" TIN that was created when the data was
@@ -188,14 +188,14 @@ public interface IModel {
    *
    * @return a valid TIN to be accessed on a read-only basis.
    */
-  public IIncrementalTin getReferenceTin();
+  IIncrementalTin getReferenceTin();
 
   /**
    * Gets the reduction factor for the reference TIN
    *
    * @return a positive value; the large the value the larger the reduction.
    */
-  public double getReferenceReductionFactor();
+  double getReferenceReductionFactor();
 
   /**
    * Gets the time required to load the model, in milliseconds.
@@ -203,7 +203,7 @@ public interface IModel {
    *
    * @return a positive long integer.
    */
-  public long getTimeToLoadInMillis();
+  long getTimeToLoadInMillis();
 
   /**
    * Gets the time required to perform the post-loading Hilbert sort
@@ -212,7 +212,7 @@ public interface IModel {
    *
    * @return a positive long integer.
    */
-  public long getTimeToSortInMillis();
+  long getTimeToSortInMillis();
 
   /**
    * Gets a list of the vertices that lie on the perimeter
@@ -220,7 +220,7 @@ public interface IModel {
    *
    * @return a list of vertices.
    */
-  public List<Vertex> getPerimeterVertices();
+  List<Vertex> getPerimeterVertices();
 
   /**
    * Gets the linear units for the coordinate system used by the
@@ -230,7 +230,7 @@ public interface IModel {
    *
    * @return a valid enumeration instance
    */
-  public LinearUnits getLinearUnits();
+  LinearUnits getLinearUnits();
 
   /**
    * Indicates whether the coordinates used by this instance are
@@ -238,7 +238,7 @@ public interface IModel {
    *
    * @return true if coordinates are geographic; otherwise, false.
    */
-  public boolean isCoordinateSystemGeographic();
+  boolean isCoordinateSystemGeographic();
 
   /**
    * Get the vertex with the specified vertex index.
@@ -246,7 +246,7 @@ public interface IModel {
    * @param index an arbitrary integer.
    * @return if matched, a valid vertex; otherwise, a null;
    */
-  public Vertex getVertexForIndex(int index);
+  Vertex getVertexForIndex(int index);
 
   /**
    * If defined, converts a pair of scaled Cartesian coordinates
@@ -258,7 +258,7 @@ public interface IModel {
    * (where geo[0]=latitude, geo[1]=longitude)
    *
    */
-  public void xy2geo(double x, double y, double[] geo);
+  void xy2geo(double x, double y, double[] geo);
 
   /**
    * If defined, converts a pair of geographic (latitude,longitude)
@@ -269,7 +269,7 @@ public interface IModel {
    * @param longitude the longitude
    * @param xy a array of dimension two to store the results.
    */
-  public void geo2xy(double latitude, double longitude, double[] xy);
+  void geo2xy(double latitude, double longitude, double[] xy);
 
   /**
    * Indicates whether the model has constraints and is thus a
@@ -277,7 +277,7 @@ public interface IModel {
    *
    * @return true if the model has constraints.
    */
-  public boolean hasConstraints();
+  boolean hasConstraints();
 
   /**
    * Adds constraints to the model
@@ -286,14 +286,14 @@ public interface IModel {
    * valid reference; otherwise, a null
    * @param constraints a valid list of constraints.
    */
-  public void addConstraints(File constraintsFile, List<IConstraint> constraints);
+  void addConstraints(File constraintsFile, List<IConstraint> constraints);
 
   /**
    * Gets the current list of constraints for the model/
    *
    * @return a valid, potentially empty list.
    */
-  public List<IConstraint> getConstraints();
+  List<IConstraint> getConstraints();
 
   /**
    * Indicates that the model has a definition for a vertex source.
@@ -304,7 +304,7 @@ public interface IModel {
    *
    * @return true if the model has a source of vertices; otherwise false.
    */
-  public boolean hasVertexSource();
+  boolean hasVertexSource();
 
   /**
    * Indicates if the vertex source for the model has been loaded
@@ -312,7 +312,7 @@ public interface IModel {
    * @return true if the vertices for the model have been loaded;
    * otherwise, false.
    */
-  public boolean areVerticesLoaded();
+  boolean areVerticesLoaded();
 
   /**
    * Indicates that the model has a definition for a constraint source.
@@ -323,7 +323,7 @@ public interface IModel {
    *
    * @return true if the model has a source of vertices; otherwise false.
    */
-  public boolean hasConstraintsSource();
+  boolean hasConstraintsSource();
 
   /**
    * Indicates if the constraint source for the model has been loaded
@@ -331,14 +331,14 @@ public interface IModel {
    * @return true if the vertices for the model have been loaded;
    * otherwise, false.
    */
-  public boolean areConstraintsLoaded();
+  boolean areConstraintsLoaded();
 
   /**
    * Gets the coordinate transform associated with the model.
    * If no transform is set, this method will return a null
    * @return if set, a valid transform; otherwise, a null.
    */
-  public ICoordinateTransform getCoordinateTransform();
+  ICoordinateTransform getCoordinateTransform();
 
 
 }

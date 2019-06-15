@@ -194,13 +194,13 @@ public class ShapefileMetadataReporter {
         }
         ps.format(fieldFmt, i, field.getName(), fieldType, lenStr);
         if (fieldType == 'F') {
-          reportFieldF(ps, dbf, nRecords, field);
+          reportFieldF(ps, dbf, field);
         } else if (fieldType == 'N') {
-          reportFieldN(ps, dbf, nRecords, field);
+          reportFieldN(ps, dbf, field);
         } else if (fieldType == 'C') {
-          reportFieldC(ps, dbf, nRecords, field);
+          reportFieldC(ps, dbf, field);
         } else if (fieldType == 'D') {
-          reportFieldD(ps, dbf, nRecords, field);
+          reportFieldD(ps, dbf, field);
         }
 
         ps.format("%n");
@@ -210,7 +210,7 @@ public class ShapefileMetadataReporter {
   }
 
   private void reportFieldF(
-          PrintStream ps, DbfFileReader dbf, int nRecords, DbfField field)
+          PrintStream ps, DbfFileReader dbf, DbfField field)
           throws IOException {
 
     if (!(field instanceof DbfFieldDouble)) {
@@ -249,7 +249,7 @@ public class ShapefileMetadataReporter {
   }
 
   private void reportFieldN(
-          PrintStream ps, DbfFileReader dbf, int nRecords, DbfField field)
+          PrintStream ps, DbfFileReader dbf, DbfField field)
           throws IOException {
     if (!(field instanceof DbfFieldInt)) {
       return;
@@ -268,7 +268,7 @@ public class ShapefileMetadataReporter {
   }
 
   private void reportFieldC(
-          PrintStream ps, DbfFileReader dbf, int nRecords, DbfField field)
+          PrintStream ps, DbfFileReader dbf, DbfField field)
           throws IOException {
 
     List<String> list = field.getUniqueValues(dbf);
@@ -285,7 +285,7 @@ public class ShapefileMetadataReporter {
   }
 
   private void reportFieldD(
-          PrintStream ps, DbfFileReader dbf, int nRecords, DbfField field)
+          PrintStream ps, DbfFileReader dbf, DbfField field)
           throws IOException {
 
     if (!(field instanceof DbfFieldDate)) {

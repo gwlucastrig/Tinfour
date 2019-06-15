@@ -46,25 +46,25 @@ interface IModelViewTask extends Runnable {
    * optional. A task should try to check the status when it can, but
    * not to the degree that it interferes with efficient processing.
    */
-  public void cancel();
+  void cancel();
 
   /**
    * Indicates whether a task is cancelled.
    *
    * @return true if task is cancelled, otherwise false.
    */
-  public boolean isCancelled();
+  boolean isCancelled();
 
   /**
    * Gets the sequentially assigned index for a task
    * @return a positive integer
    */
-  public int getTaskIndex();
+  int getTaskIndex();
 
   /**
    * Indicates whether the task performs a rendering operation.
    * @return true if the task performs a rendering operation; otherwise false.
    */
-  public boolean isRenderingTask();
+  boolean isRenderingTask();
 
 }

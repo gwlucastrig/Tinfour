@@ -59,4 +59,9 @@ public class SvmUnitSpecification {
   public double getScaleFactor() {
     return scaleFactor;
   }
+  
+  @Override
+  public String toString(){
+    return "SvmUnitSpecification: "+name+", "+label+", "+scaleFactor;
+  }
 }

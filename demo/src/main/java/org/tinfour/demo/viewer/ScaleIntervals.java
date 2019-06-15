@@ -297,7 +297,7 @@ class ScaleIntervals {
         double divMod
           = (int) Math.floor(divisions[n][0] / divisions[n][1] + 1.0e-7);
         for (int i = 0; i < nTic2; i++) {
-          if ((i % divMod) != 0) {
+          if (i % divMod != 0) {
             xTic[1][k++] = i * div2;
           }
         }

@@ -833,16 +833,16 @@ public class TestOptions {
    * Indicates whether the clip bounds was specified.
    * @return true if the bounds are specified; otherwise, false
    */
-  public boolean isClipSet(){
-    return (clipBounds != null && clipBounds.length==4);
+  public boolean isClipSet() {
+    return clipBounds != null && clipBounds.length == 4;
   }
 
     /**
    * Indicates whether the frame was specified.
    * @return true if the frame was specified; otherwise, false
    */
-  public boolean isFrameSet(){
-    return (frame != null && frame.length==4);
+  public boolean isFrameSet() {
+    return frame != null && frame.length == 4;
   }
 
    /**

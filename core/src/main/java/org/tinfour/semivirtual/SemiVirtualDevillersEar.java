@@ -121,9 +121,9 @@ class SemiVirtualDevillersEar {
     public String toString() {
         StringBuilder sb = new StringBuilder(48);
         sb.append("ear v[]=");
-        sb.append((v0 == null ? "null," : v0.getIndex() + ","));
-        sb.append((v1 == null ? "null," : v1.getIndex() + ","));
-        sb.append((v2 == null ? "null," : v2.getIndex() + " "));
+        sb.append(v0 == null ? "null," : v0.getIndex() + ",");
+        sb.append(v1 == null ? "null," : v1.getIndex() + ",");
+        sb.append(v2 == null ? "null," : v2.getIndex() + " ");
         sb.append("     ");
         sb.append("index=").append(Integer.toString(index));
         sb.append(",  score=");
@@ -135,7 +135,7 @@ class SemiVirtualDevillersEar {
   @Override
   public boolean equals(Object o) {
     if (o instanceof SemiVirtualDevillersEar) {
-      return (o == this);
+      return o == this;
     }
     return false;
   }

@@ -42,7 +42,6 @@ import org.tinfour.common.IIncrementalTin;
 import org.tinfour.common.IQuadEdge;
 import org.tinfour.common.Thresholds;
 import org.tinfour.common.Vertex;
-import org.tinfour.svm.properties.SvmProperties;
 
 /**
  * Implements logic for remediating flat triangles.
@@ -51,7 +50,6 @@ class SvmFlatFixer {
 
   private final IIncrementalTin tin;
   private final double zShore;
-  private final SvmProperties properties;
 
   private int nRemediations;
   private double remediatedArea;
@@ -61,9 +59,8 @@ class SvmFlatFixer {
     return Math.abs(a - b) < 1.0e-6;
   }
 
-  SvmFlatFixer(IIncrementalTin tin, SvmProperties properties, double zShore) {
+  SvmFlatFixer(IIncrementalTin tin, double zShore) {
     this.tin = tin;
-    this.properties = properties;
     this.zShore = zShore;
   }
 

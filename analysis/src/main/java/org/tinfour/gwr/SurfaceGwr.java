@@ -1407,7 +1407,7 @@ public class SurfaceGwr {
     }
     RealMatrix mILT = mIL.transpose().multiply(mIL);
     delta1 = mILT.getTrace();
-    delta2 = (mILT.multiply(mILT)).getTrace();
+    delta2 = mILT.multiply(mILT).getTrace();
 
   }
 
@@ -1614,7 +1614,7 @@ public class SurfaceGwr {
       return Double.NaN;
     }
 
-    double nLeungDOF = (delta1 * delta1 / delta2);
+    double nLeungDOF = delta1 * delta1 / delta2;
 
     for (int i = 0; i < nSamples; i++) {
       rW[i] = weights[i] * weights[i];
