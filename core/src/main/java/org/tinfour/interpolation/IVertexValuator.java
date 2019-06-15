@@ -54,5 +54,5 @@ public interface IVertexValuator {
      * @param v a vertex
      * @return a value interpreted from vertex v.
      */
-    public double value(Vertex v);
+    double value(Vertex v);
 }

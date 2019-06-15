@@ -51,7 +51,7 @@ public enum ShapefileType {
   private final int shapeTypeCode;
   private final boolean hasZ;
 
-  private ShapefileType(int shapeTypeCode, boolean hasZ) {
+  ShapefileType(int shapeTypeCode, boolean hasZ) {
     this.shapeTypeCode = shapeTypeCode;
     this.hasZ = hasZ;
   }

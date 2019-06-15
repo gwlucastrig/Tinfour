@@ -43,7 +43,7 @@ public enum LinearUnits {
   final double metersConversion;
   final String name;
 
-  private LinearUnits(String abbreviation, double metersConversion, String name){
+  LinearUnits(String abbreviation, double metersConversion, String name){
     this.abbreviation = abbreviation;
     this.metersConversion = metersConversion;
     this.name = name;

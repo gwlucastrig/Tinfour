@@ -42,5 +42,5 @@ public interface ILasRecordFilter {
      * @param record a valid record from an LAS file.
      * @return true if the record is accepted; otherwise, false.
      */
-    public boolean accept(LasPoint record);
+    boolean accept(LasPoint record);
 }

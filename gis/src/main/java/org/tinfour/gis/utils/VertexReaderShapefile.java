@@ -242,7 +242,7 @@ public class VertexReaderShapefile implements IVertexReader, Closeable {
         try {
           dbfReader.close();
         } catch (IOException dontCare) {
-          // no action required.
+          // NOPMD   no action required.
         }
         throw new IllegalArgumentException("The specified field "
                 + dbfFieldForZ + " was not found in " + dbfFile.getName());

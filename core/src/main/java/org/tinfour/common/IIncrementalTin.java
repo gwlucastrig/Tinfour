@@ -56,7 +56,7 @@ public interface IIncrementalTin {
    *
    * @return A valid instance of the TriangleCount class.
    */
-  public TriangleCount countTriangles();
+  TriangleCount countTriangles();
 
   /**
    * Nullifies all internal data and references, preparing the
@@ -111,7 +111,7 @@ public interface IIncrementalTin {
    *
    * @return a valid iterator.
    */
-  public Iterator<IQuadEdge> getEdgeIterator();
+  Iterator<IQuadEdge> getEdgeIterator();
   
   
   /**
@@ -132,7 +132,7 @@ public interface IIncrementalTin {
    * cautions regarding the use of this method.
    * @return a valid instance.
    */
-  public Iterable<IQuadEdge>edges();
+  Iterable<IQuadEdge>edges();
 
   /**
    * Gets the maximum index of the currently allocated edges. This
@@ -149,7 +149,7 @@ public interface IIncrementalTin {
    *
    * @return a positive value or zero if the TIN is not bootstrapped.
    */
-  public int getMaximumEdgeAllocationIndex();
+  int getMaximumEdgeAllocationIndex();
 
   /**
    * Gets the nominal point spacing used to determine numerical thresholds
@@ -173,7 +173,7 @@ public interface IIncrementalTin {
    * it can be shared safely between multiple threads or other classes.
    * @return a valid instance
    */
-  public Thresholds getThresholds();
+  Thresholds getThresholds();
 
   /**
    * Gets a list of edges currently defining the perimeter of the TIN.
@@ -207,7 +207,7 @@ public interface IIncrementalTin {
    *
    * @return an points collector tied to this TIN.
    */
-  public INeighborhoodPointsCollector getNeighborhoodPointsCollector();
+  INeighborhoodPointsCollector getNeighborhoodPointsCollector();
 
   /**
    * Gets an implementation of the integrity check interface suitable for
@@ -215,7 +215,7 @@ public interface IIncrementalTin {
    *
    * @return a valid integrity check implementation.
    */
-  public IIntegrityCheck getIntegrityCheck();
+  IIntegrityCheck getIntegrityCheck();
 
   /**
    * Insert a vertex into the collection of vertices managed by
@@ -290,7 +290,7 @@ public interface IIncrementalTin {
    * @return a valid list of vertices, potentially empty if the TIN has
    * not been initialized.
    */
-  public List<Vertex> getVertices();
+  List<Vertex> getVertices();
 
   /**
    * Indicates whether the instance contains sufficient information
@@ -319,7 +319,7 @@ public interface IIncrementalTin {
    *
    * @param ps A valid print stream.
    */
-  public void printEdges(final PrintStream ps);
+  void printEdges(final PrintStream ps);
 
   /**
    * Removes the specified vertex from the TIN. If the vertex is part of
@@ -329,7 +329,7 @@ public interface IIncrementalTin {
    * @param vRemove the vertex to be removed
    * @return true if the vertex was found in the TIN and removed.
    */
-  public boolean remove(final Vertex vRemove);
+  boolean remove(final Vertex vRemove);
 
   /**
    * Specifies a rule for interpreting the Z value of a group of vertices that
@@ -337,7 +337,7 @@ public interface IIncrementalTin {
    *
    * @param resolutionRule The rule to be used for interpreting merged vertices.
    */
-  public void setResolutionRuleForMergedVertices(
+  void setResolutionRuleForMergedVertices(
     final VertexMergerGroup.ResolutionRule resolutionRule);
 
   /**
@@ -377,7 +377,7 @@ public interface IIncrementalTin {
    * @param constraints a valid, potentially empty list.
    * @param restoreConformity restores conformity
    */
-  public void addConstraints(
+  void addConstraints(
     List<IConstraint> constraints, boolean restoreConformity);
 
   /**
@@ -386,7 +386,7 @@ public interface IIncrementalTin {
    *
    * @return a valid, potentially empty list of constraint instances.
    */
-  public List<IConstraint> getConstraints();
+  List<IConstraint> getConstraints();
   
  
   /**
@@ -397,7 +397,7 @@ public interface IIncrementalTin {
    * @param index an arbitrary integer index
    * @return if found, a valid constraint; otherwise a null.
    */
-  public IConstraint getConstraint(int index);
+  IConstraint getConstraint(int index);
 
   /**
    * Gets the number of synthetic vertices added to the TIN.
@@ -407,7 +407,7 @@ public interface IIncrementalTin {
    *
    * @return a positive integer, potentially zero.
    */
-  public int getSyntheticVertexCount();
+  int getSyntheticVertexCount();
 
   
   /**
@@ -422,7 +422,7 @@ public interface IIncrementalTin {
    * insertion <strong>NOT YET IMPLEMENTE</strong>
    * @return the insertion vertex
    */
-   public Vertex  splitEdge(
+   Vertex  splitEdge(
            IQuadEdge eInput,
            double zSplit, 
            boolean restoreConformity);

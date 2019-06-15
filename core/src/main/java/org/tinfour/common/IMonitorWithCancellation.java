@@ -72,7 +72,7 @@ public interface IMonitorWithCancellation {
      * not recommended.
      * @return a value between 1 and 100.
      */
-    public int getReportingIntervalInPercent();
+    int getReportingIntervalInPercent();
 
     /**
      * Report progress to monitoring implementation.  Note that in many
@@ -83,7 +83,7 @@ public interface IMonitorWithCancellation {
      * issues correctly.
      * @param progressValueInPercent the estimated degree of completion, in percent
      */
-    public void reportProgress(int progressValueInPercent);
+    void reportProgress(int progressValueInPercent);
 
     /**
      * Called when the progress is done.  Within the Tinfour package
@@ -92,7 +92,7 @@ public interface IMonitorWithCancellation {
      * Tinfour methods reusing the progress monitor for each and reporting
      * done according to their own custom logic.
      */
-    public void reportDone();
+    void reportDone();
 
 
     /**
@@ -103,7 +103,7 @@ public interface IMonitorWithCancellation {
      * for use in user interfaces and logs.
      * @param message a valid string
      */
-    public void postMessage(String message);
+    void postMessage(String message);
 
     /**
      * Indicates whether the calling application would like this
@@ -114,5 +114,5 @@ public interface IMonitorWithCancellation {
      * @return true if the process is canceled and should be voluntarily
      * interrupted; false if the process is not canceled.
      */
-    public boolean isCanceled();
+    boolean isCanceled();
 }

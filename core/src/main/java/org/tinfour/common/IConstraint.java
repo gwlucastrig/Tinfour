@@ -92,7 +92,7 @@ public interface IConstraint extends IPolyline {
    * @return true if the constraint is a data-region definition; otherwise
    * false.
    */
-  public boolean definesConstrainedRegion();
+  boolean definesConstrainedRegion();
 
   /**
    * Permits an application to add data elements to the constraint for
@@ -102,7 +102,7 @@ public interface IConstraint extends IPolyline {
    * @param object an object or null according to the needs of the
    * calling application.
    */
-  public void setApplicationData(Object object);
+  void setApplicationData(Object object);
 
   /**
    * Gets the application data (if any) stored in the constraint.
@@ -112,7 +112,7 @@ public interface IConstraint extends IPolyline {
    * @return an object or null according to the needs of the
    * calling application.
    */
-  public Object getApplicationData();
+  Object getApplicationData();
 
 
   /**
@@ -127,9 +127,9 @@ public interface IConstraint extends IPolyline {
    * undefined if the edge is not constrained or an interior member
    * of a constrained region.
    */
-  public int getConstraintIndex();
+  int getConstraintIndex();
 
-  public IQuadEdge getConstraintLinkingEdge();
+  IQuadEdge getConstraintLinkingEdge();
 
   /**
    * Gets a new constraint that has the attributes of this constraint
@@ -139,7 +139,7 @@ public interface IConstraint extends IPolyline {
    * @param geometry a valid set of vertices.
    * @return a new constraint.
    */
-  public IConstraint getConstraintWithNewGeometry(List<Vertex> geometry);
+  IConstraint getConstraintWithNewGeometry(List<Vertex> geometry);
 
   /**
    * Sets an index value used for internal bookkeeping by Tinfour code;
@@ -151,7 +151,7 @@ public interface IConstraint extends IPolyline {
    * added (or null if not applicable).
    * @param index a positive integer.
    */
-  public void setConstraintIndex(IIncrementalTin tin, int index);
+  void setConstraintIndex(IIncrementalTin tin, int index);
 
     /**
    * Sets a reference to an arbitrarily selected edge that was produced
@@ -166,7 +166,7 @@ public interface IConstraint extends IPolyline {
    *
    * @param  linkingEdge a valid edge reference
    */
-  public void setConstraintLinkingEdge(IQuadEdge linkingEdge);
+  void setConstraintLinkingEdge(IQuadEdge linkingEdge);
 
 
   /**
@@ -174,7 +174,7 @@ public interface IConstraint extends IPolyline {
    * is managing this constraint, if any.
    * @return if under management, a valid instance; otherwise, a null.
    */
-  public IIncrementalTin getManagingTin();
+  IIncrementalTin getManagingTin();
 
   
   /**
@@ -188,6 +188,6 @@ public interface IConstraint extends IPolyline {
    * @param y the Cartesian coordinate for the point
    * @return true if the point is in the interior of the constraint.
    */
-  public boolean isPointInsideConstraint(double x, double y);
+  boolean isPointInsideConstraint(double x, double y);
 
 }

@@ -438,10 +438,10 @@ public class QuadEdge implements IQuadEdge {
     try (Formatter fmt = new Formatter(sb)) {
       fmt.format("%9s  %9s <-- (%9s,%9s) --> %9s",
         getName(),
-        (r == null ? "null" : r.getName()),
-        (a == null ? "gv" : a.getLabel()),
-        (b == null ? "gv" : b.getLabel()),
-        (f == null ? "null" : f.getName())
+        r == null ? "null" : r.getName(),
+        a == null ? "gv" : a.getLabel(),
+        b == null ? "gv" : b.getLabel(),
+        f == null ? "null" : f.getName()
       );
 
       fmt.flush();
@@ -528,7 +528,7 @@ public class QuadEdge implements IQuadEdge {
 
   @Override
   public void setConstrainedRegionBorderFlag() {
-    dual.index |= (CONSTRAINT_REGION_BORDER_FLAG);
+    dual.index |= CONSTRAINT_REGION_BORDER_FLAG;
   }
 
   @Override
