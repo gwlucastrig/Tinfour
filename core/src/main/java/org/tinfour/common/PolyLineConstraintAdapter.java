@@ -165,13 +165,13 @@ public abstract class PolyLineConstraintAdapter
       v0 = v1;
 
       double yDelta = y0 - y1;
-      if ((y1 > y) != (y0 > y)) {
+      if (y1 > y != y0 > y) {
         double xTest = (x1 * y0 - x0 * y1 + y * (x0 - x1)) / yDelta;
         if (xTest > x) {
           rCross++;
         }
       }
-      if ((y1 < y) != (y0 < y)) {
+      if (y1 < y != y0 < y) {
         double xTest = (x1 * y0 - x0 * y1 + y * (x0 - x1)) / yDelta;
         if (xTest < x) {
           lCross++;

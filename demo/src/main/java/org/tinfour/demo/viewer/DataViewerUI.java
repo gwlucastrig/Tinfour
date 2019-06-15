@@ -118,7 +118,7 @@ class DataViewerUI {
         ins.close();
         ins = null;
       } catch (IOException dontCare) {
-
+          // NOPMD  no action required
       }
     }
 
@@ -130,7 +130,7 @@ class DataViewerUI {
         ins.close();
         ins = null;
       } catch (IOException dontCare) {
-
+          //NOPMD  no action required
       }
     }
 
@@ -554,7 +554,7 @@ class DataViewerUI {
           sb.append((char) c);
         }
       } catch (IOException dontCare) {
-        // no expected
+        // NOPMD not expected
       }
       sb.append("</html>");
       text = sb.toString();
@@ -640,7 +640,7 @@ class DataViewerUI {
         return true;
       }
       String ext = getFileExtension(f);
-      return ("shp".equalsIgnoreCase(ext));
+      return "shp".equalsIgnoreCase(ext);
     }
 
   }

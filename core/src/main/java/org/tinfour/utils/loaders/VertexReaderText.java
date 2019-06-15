@@ -400,11 +400,9 @@ public class VertexReaderText implements Closeable, IVertexReader {
             }
           }
 
-          if (c == '#') {
-            if (!textFound) {
+          if (c == '#' && !textFound) {
               commentLine = true;
               continue;
-            }
           }
           textFound = true;
           if (c == '\\') {

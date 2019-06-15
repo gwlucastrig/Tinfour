@@ -56,6 +56,6 @@ public interface IDevelopmentTest {
    * @throws java.io.IOException in the event of an unrecoverable
    * I/O error.
    */
-  public void runTest(PrintStream ps, String[] args) throws IOException;
+  void runTest(PrintStream ps, String[] args) throws IOException;
 
 }

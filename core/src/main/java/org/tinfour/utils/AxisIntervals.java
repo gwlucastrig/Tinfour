@@ -302,7 +302,7 @@ public final class AxisIntervals {
       i1 = (int) Math.ceil(v1 / secondInterval);
       int k = 0;
       for (int i = i0 + 1; i <= i1; i++) {
-        if ((i % m) != 0) {
+        if (i % m != 0) {
           double v = i * secondInterval;
           if (v > v0 && v < v1) {
             xTic[1][k++] = v+vOffset;

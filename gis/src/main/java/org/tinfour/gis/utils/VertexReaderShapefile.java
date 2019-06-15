@@ -251,7 +251,7 @@ public class VertexReaderShapefile implements IVertexReader, Closeable {
         try {
           dbfReader.close();
         } catch (IOException dontCare) {
-          // no action required.
+          // NOPMD no action required.
         }
         throw new IllegalArgumentException(
                 "The specified field " + dbfFieldForZ + " is not numeric in"
@@ -348,7 +348,7 @@ public class VertexReaderShapefile implements IVertexReader, Closeable {
         }
         throw ioex;
       } catch (IOException dontCare) {
-        // no action required
+        // NOPMD no action required
       }
     }
     return reader;
@@ -386,7 +386,7 @@ public class VertexReaderShapefile implements IVertexReader, Closeable {
         }
 
       } catch (IOException ioex) {
-        // no action required
+        // NOPMD no action required
       }
     }
 
@@ -397,9 +397,9 @@ public class VertexReaderShapefile implements IVertexReader, Closeable {
     double dx = x1 - x0;
     double dy = y1 - y0;
     geographicCoordinates
-            = (dx <= 360 && dy < 90
+            = dx <= 360 && dy < 90
             && -180 <= x0 && x1 < 180
-            && -90 <= y0 && y1 <= 90);
+            && -90 <= y0 && y1 <= 90;
 
     if (geographicCoordinates) {
       double xCenter = (x0 + x1) / 2.0;

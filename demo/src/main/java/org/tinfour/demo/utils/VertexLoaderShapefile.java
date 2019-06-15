@@ -213,7 +213,7 @@ public class VertexLoaderShapefile implements Closeable {
         try {
           dbfReader.close();
         } catch (IOException dontCare) {
-          // no action required.
+          // NOPMD no action required.
         }
         throw new IllegalArgumentException("The specified field "
                 + dbfFieldForZ + " was not found in " + dbfFile.getName());
@@ -222,7 +222,7 @@ public class VertexLoaderShapefile implements Closeable {
         try {
           dbfReader.close();
         } catch (IOException dontCare) {
-          // no action required.
+          // NOPMD no action required.
         }
         throw new IllegalArgumentException(
                 "The specified field " + dbfFieldForZ + " is not numeric in"
@@ -300,7 +300,7 @@ public class VertexLoaderShapefile implements Closeable {
           reader = null;
         }
       } catch (IOException dontCare) {
-        // no action required
+        // NOPMD no action required
       }
     }
     return reader;
@@ -331,7 +331,7 @@ public class VertexLoaderShapefile implements Closeable {
         }
 
       } catch (IOException ioex) {
-        // no action required
+        // NOPMD no action required
       }
     }
 
@@ -342,9 +342,9 @@ public class VertexLoaderShapefile implements Closeable {
     double dx = x1 - x0;
     double dy = y1 - y0;
     geographicCoordinates
-            = (dx <= 360 && dy < 90
+            = dx <= 360 && dy < 90
             && -180 <= x0 && x1 < 180
-            && -90 <= y0 && y1 <= 90);
+            && -90 <= y0 && y1 <= 90;
 
     if (geographicCoordinates) {
       // adjust the earth radius according to latitude.
@@ -353,7 +353,7 @@ public class VertexLoaderShapefile implements Closeable {
       double cenLat = (y0 + y1) / 2.0;
       double phi = Math.toRadians(cenLat);
       double sinPhi = Math.sin(phi);
-      double adjustment = (1 - eFlattening * sinPhi * sinPhi);
+      double adjustment = 1 - eFlattening * sinPhi * sinPhi;
       double adjRadius = adjustment * eRadius;
 
       geoScaleX = adjRadius * Math.cos(phi) * (Math.PI / 180);

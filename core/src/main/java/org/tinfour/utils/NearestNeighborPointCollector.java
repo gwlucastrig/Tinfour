@@ -402,7 +402,7 @@ public class NearestNeighborPointCollector {
     int bIndex = iRow * nCol + iCol;
     int n = this.gather(0, k, x, y, d, v, bins[bIndex]);
     for (int iTier = 1; iTier < nTier; iTier++) {
-      boolean searched = (n < k);
+      boolean searched = n < k;
       int i0 = limitedIndex(iRow - iTier, nRow);
       int i1 = limitedIndex(iRow + iTier, nRow);
       int j0 = limitedIndex(iCol - iTier, nCol);

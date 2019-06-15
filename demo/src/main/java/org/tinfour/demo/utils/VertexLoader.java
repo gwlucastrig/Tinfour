@@ -75,12 +75,12 @@ public class VertexLoader {
     maximumNumberOfVertices = maxN;
   }
 
-  private boolean isLazFile(File file) {
-    String name = file.getName();
-    int n = name.length();
-    return n > 4
-            && ".LAZ".equalsIgnoreCase(name.substring(n - 4, n));
-  }
+  //private boolean isLazFile(File file) {
+  //  String name = file.getName();
+  //  int n = name.length();
+  //  return n > 4
+  //          && ".LAZ".equalsIgnoreCase(name.substring(n - 4, n));
+  //}
 
   /**
    * Set the loader to pre-sort the vertices to improve their spatial locality

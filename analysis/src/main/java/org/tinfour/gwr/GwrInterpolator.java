@@ -971,8 +971,8 @@ public class GwrInterpolator {
       if (beta == null || Double.isNaN(beta[0])) {
         continue;
       }
-      jSum += beta[0];
-      j2Sum += (beta[0] * beta[0]);
+      jSum  += beta[0];
+      j2Sum += beta[0] * beta[0];
       n++;
     }
     double jMean = jSum / n;

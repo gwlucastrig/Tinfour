@@ -168,7 +168,7 @@ public class SvmBathymetryData {
     nominalPointSpacing = Tincalc.sampleSpacing(area, n);
     long time1 = System.nanoTime();
 
-    timeToLoadData += (time1 - time0);
+    timeToLoadData += time1 - time0;
   }
 
   /**
@@ -198,7 +198,7 @@ public class SvmBathymetryData {
     getSupplements().addAll(list);
 
     long time1 = System.nanoTime();
-    timeToLoadData += (time1 - time0);
+    timeToLoadData += time1 - time0;
   }
 
   /**
@@ -251,7 +251,7 @@ public class SvmBathymetryData {
       }
     }
     long time1 = System.nanoTime();
-    timeToLoadData += (time1 - time0);
+    timeToLoadData += time1 - time0;
   }
 
   /**

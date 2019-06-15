@@ -137,7 +137,7 @@ public class SimpleGeographicTransform implements ICoordinateTransform {
 
     double phi = Math.toRadians(centerLatitude);
     double sinPhi = Math.sin(phi);
-    double adjustment = (1 - earthFlattening * sinPhi * sinPhi);
+    double adjustment = 1 - earthFlattening * sinPhi * sinPhi;
     double adjRadius = adjustment * a;
 
     xScale = (Math.PI / 180) * adjRadius * Math.cos(phi);

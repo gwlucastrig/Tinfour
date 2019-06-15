@@ -653,7 +653,7 @@ public class IncrementalTin implements IIncrementalTin {
    * @return if successful, true; otherwise, false.
    */
   private boolean bootstrap(final List<Vertex> list) {
-    Vertex[] v = (new BootstrapUtility(thresholds)).bootstrap(list);
+    Vertex[] v = new BootstrapUtility(thresholds).bootstrap(list);
     if (v == null) {
       return false;
     }

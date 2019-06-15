@@ -130,7 +130,7 @@ public final class TriangleCollector {
     //int mapIndex = index >> DIV_BY_32;
     //int bitIndex = index & MOD_BY_32;
     //map[mapIndex] |= (BIT1<<bitIndex);
-    map[index >> DIV_BY_32] |= (BIT1 << (index & MOD_BY_32));
+    map[index >> DIV_BY_32] |= BIT1 << (index & MOD_BY_32);
   }
 
   /**

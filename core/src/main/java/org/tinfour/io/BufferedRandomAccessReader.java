@@ -231,7 +231,7 @@ public class BufferedRandomAccessReader implements  Closeable {
       return "";
     }
     StringBuilder builder = new StringBuilder(maximumLength);
-    BufferedRandomAccessReader.this.readAscii(builder, maximumLength);
+    readAscii(builder, maximumLength);
     return builder.toString();
   }
 

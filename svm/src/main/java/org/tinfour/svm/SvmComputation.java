@@ -243,7 +243,6 @@ public class SvmComputation {
         // so we can gather counts
         SvmFlatFixer flatFixer = new SvmFlatFixer(
                 tin,
-                properties,
                 shoreReferenceElevation);
         List<Vertex> fixList = flatFixer.fixFlats(ps);
         if (fixList.isEmpty()) {

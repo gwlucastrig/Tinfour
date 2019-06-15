@@ -244,7 +244,7 @@ public class StochasticLawsonsWalk {
         vY1 = y - v1.y;
         pX1 = v1.y - v2.y;  // the perpendicular, use -y for x
         pY1 = v2.x - v1.x;
-        h1 = (vX1 * pX1 + vY1 * pY1);
+        h1 = vX1 * pX1 + vY1 * pY1;
         if (h1 < halfPlaneThresholdNeg) {
           edge = edge.getForward().getDual();
           v0 = edge.getA(); // should also be v1
@@ -266,7 +266,7 @@ public class StochasticLawsonsWalk {
         vY2 = y - v2.y;
         pX2 = v2.y - v0.y;  // the perpendicular, use -y for x
         pY2 = v0.x - v2.x;
-        h2 = (vX2 * pX2 + vY2 * pY2);
+        h2 = vX2 * pX2 + vY2 * pY2;
         if (h2 < halfPlaneThresholdNeg) {
           edge = edge.getReverse().getDual();
           v0 = edge.getA();
@@ -288,7 +288,7 @@ public class StochasticLawsonsWalk {
         vY2 = y - v2.y;
         pX2 = v2.y - v0.y;  // the perpendicular, use -y for x
         pY2 = v0.x - v2.x;
-        h2 = (vX2 * pX2 + vY2 * pY2);
+        h2 = vX2 * pX2 + vY2 * pY2;
         if (h2 < halfPlaneThresholdNeg) {
           edge = edge.getReverse().getDual();
           v0 = edge.getA();
@@ -310,7 +310,7 @@ public class StochasticLawsonsWalk {
         vY1 = y - v1.y;
         pX1 = v1.y - v2.y;  // the perpendicular
         pY1 = v2.x - v1.x;
-        h1 = (vX1 * pX1 + vY1 * pY1);
+        h1 = vX1 * pX1 + vY1 * pY1;
         if (h1 < halfPlaneThresholdNeg) {
           edge = edge.getForward().getDual();
           v0 = edge.getA();
@@ -523,9 +523,9 @@ public class StochasticLawsonsWalk {
   }
 
   private long randomNext() {
-    seed ^= (seed << 21);
-    seed ^= (seed >>> 35);
-    seed ^= (seed << 4);
+    seed ^= seed << 21;
+    seed ^= seed >>> 35;
+    seed ^= seed << 4;
     return seed;
   }
 

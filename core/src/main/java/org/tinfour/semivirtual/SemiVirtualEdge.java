@@ -233,7 +233,7 @@ public final class SemiVirtualEdge implements IQuadEdge {
     final int forwardIndex = page.links[indexOnPage * 2];
     final SemiVirtualEdgePage fpage = pool.pages[forwardIndex / INDICES_PER_PAGE];
     final int forwardIndexOnPage = forwardIndex & INDEX_MASK;
-    return (fpage.vertices[forwardIndexOnPage | LOW_BIT] == null);
+    return fpage.vertices[forwardIndexOnPage | LOW_BIT] == null;
   }
 
   /**
@@ -462,10 +462,10 @@ public final class SemiVirtualEdge implements IQuadEdge {
     int f = page.links[indexOnPage * 2];
     String s = String.format("%9d  %9s <-- (%9s,%9s) --> %9s",
       index,
-      (r == 0 ? "null" : Integer.toString(r)),
-      (a == null ? "gv" : a.getLabel()),
-      (b == null ? "gv" : b.getLabel()),
-      (f == 0 ? "null" : Integer.toString(f))
+      r == 0 ? "null" : Integer.toString(r),
+      a == null ? "gv" : a.getLabel(),
+      b == null ? "gv" : b.getLabel(),
+      f == 0 ? "null" : Integer.toString(f)
     );
     return s;
   }
@@ -508,7 +508,7 @@ public final class SemiVirtualEdge implements IQuadEdge {
     // it is not a constrained edge.
     int ix = indexOnPage / 2;
     int c[] = page.readyConstraints();
-    c[ix] = ((c[ix] & ~CONSTRAINT_INDEX_MASK) | constraintIndex);
+    c[ix] = (c[ix] & ~CONSTRAINT_INDEX_MASK) | constraintIndex;
   }
 
   @Override
@@ -521,7 +521,9 @@ public final class SemiVirtualEdge implements IQuadEdge {
 
     int ix = indexOnPage / 2; // both sides of the edge are constrained.
     int c[] = page.readyConstraints();
-    c[ix] = (CONSTRAINT_EDGE_FLAG | (c[ix] & ~CONSTRAINT_INDEX_MASK) | constraintIndex);
+    c[ix] = CONSTRAINT_EDGE_FLAG 
+            | (c[ix] & ~CONSTRAINT_INDEX_MASK) 
+            | constraintIndex;
 
   }
 
@@ -575,7 +577,7 @@ public final class SemiVirtualEdge implements IQuadEdge {
   public void setConstrainedRegionBorderFlag() {
     int ix = indexOnPage / 2;
     int c[] = page.readyConstraints();
-    c[ix] |= (CONSTRAINT_REGION_BORDER_FLAG);
+    c[ix] |= CONSTRAINT_REGION_BORDER_FLAG;
   }
 
 
@@ -598,7 +600,7 @@ public final class SemiVirtualEdge implements IQuadEdge {
     int c[] = page.readySynthetic();
     int cIndex = ix / 32;
     int cBit = ix & 0x1F;
-    int cMask = (1 << cBit);
+    int cMask = 1 << cBit;
     if (status) {
       c[cIndex] |= cMask;
     } else {
@@ -612,7 +614,7 @@ public final class SemiVirtualEdge implements IQuadEdge {
     int c[] = page.readySynthetic();
     int cIndex = ix / 32;
     int cBit = ix & 0x1F;
-    int cMask = (1 << cBit);
+    int cMask = 1 << cBit;
     return (c[cIndex] & cMask) != 0;
   }
 
