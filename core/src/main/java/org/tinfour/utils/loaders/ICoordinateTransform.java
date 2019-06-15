@@ -51,7 +51,7 @@ public interface ICoordinateTransform {
    * the computation, the transformed coordinates for (xSource, ySource).
    * @return true if the transform is successful; otherwise, false
    */
-  public boolean forward(
+  boolean forward(
           double xSource,
           double ySource,
           CoordinatePair transformedCoordinates);
@@ -73,7 +73,7 @@ public interface ICoordinateTransform {
    * computation, the transformed coordinates for (xSource, ySource).
    * @return true if the inverse transform is successful; otherwise, false
    */
-  public boolean inverse(
+  boolean inverse(
           double xTransformed,
           double yTransformed,
           CoordinatePair sourceCoordinates);

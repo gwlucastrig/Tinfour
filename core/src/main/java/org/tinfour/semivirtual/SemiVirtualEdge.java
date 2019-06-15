@@ -47,6 +47,7 @@ import org.tinfour.edge.QuadEdgePinwheel;
  * using a virtual representation of the links based on integer arrays
  * rather than direct class instances.
  */
+@SuppressWarnings("PMD.TooManyStaticImports")
 public final class SemiVirtualEdge implements IQuadEdge {
 
   private static final int LOW_BIT = 1;

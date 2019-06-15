@@ -36,6 +36,8 @@
  */
 package org.tinfour.edge;
 
+
+
 import org.tinfour.common.Vertex;
 import static org.tinfour.edge.QuadEdgeConstants.CONSTRAINT_EDGE_FLAG;
 import static org.tinfour.edge.QuadEdgeConstants.CONSTRAINT_INDEX_MASK;
@@ -49,6 +51,7 @@ import static org.tinfour.edge.QuadEdgeConstants.SYNTHETIC_EDGE_FLAG;
 /**
  * Used to define the dual (and side 1) of a pair of edge objects.
  */
+@SuppressWarnings("PMD.TooManyStaticImports")
 class QuadEdgePartner extends QuadEdge {
 
   /**
@@ -115,7 +118,7 @@ class QuadEdgePartner extends QuadEdge {
    */
   @Override
   public int getConstraintIndex() {
-    return (index & CONSTRAINT_INDEX_MASK);
+    return index & CONSTRAINT_INDEX_MASK;
   }
 
   /**
@@ -139,7 +142,7 @@ class QuadEdgePartner extends QuadEdge {
     // whether the edge is constrained or not.  An edge that is
     // a constraint-area member may have a constraint index even if
     // it is not a constrained edge.
-    index = ((index & ~CONSTRAINT_INDEX_MASK) | constraintIndex);
+    index = (index & ~CONSTRAINT_INDEX_MASK) | constraintIndex;
   }
 
 

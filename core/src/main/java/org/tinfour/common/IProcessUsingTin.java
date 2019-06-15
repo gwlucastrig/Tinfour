@@ -55,5 +55,5 @@ public interface IProcessUsingTin {
      * but is otherwise harmless.  Implementations are expected to be able
      * to run properly after a reset is called.
      */
-    public void resetForChangeToTin();
+    void resetForChangeToTin();
 }

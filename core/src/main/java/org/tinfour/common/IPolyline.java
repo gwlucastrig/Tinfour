@@ -91,7 +91,7 @@ public interface IPolyline extends Iterable<Vertex> {
    * the polyline to establish a valid geometry.
    * @return true if the polyline has a valid geometry; otherwise, false.
    */
-  public boolean isValid();
+  boolean isValid();
 
   /**
    * Indicates whether the instance represents a polygon.

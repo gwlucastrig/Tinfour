@@ -62,7 +62,7 @@ public interface IInterpolatorOverTin extends IProcessUsingTin {
      * @return if the interpolation is successful, a valid floating point
      * value; otherwise, a NaN.
      */
-    public double interpolate(double x, double y, IVertexValuator valuator) ;
+    double interpolate(double x, double y, IVertexValuator valuator) ;
 
 
     /**
@@ -71,7 +71,7 @@ public interface IInterpolatorOverTin extends IProcessUsingTin {
      * @return true if the class implements the ability to compute
      * surface normals; otherwise, false.
      */
-    public boolean isSurfaceNormalSupported();
+    boolean isSurfaceNormalSupported();
 
 
   /**
@@ -85,7 +85,7 @@ public interface IInterpolatorOverTin extends IProcessUsingTin {
    * the x, y, and z components of the unit normal, respectively; otherwise,
    * a zero-sized array.
    */
-  public double[] getSurfaceNormal();
+  double[] getSurfaceNormal();
 
     /**
      * Gets a string describing the interpolation method
@@ -94,5 +94,5 @@ public interface IInterpolatorOverTin extends IProcessUsingTin {
      * its length should be kept short.
      * @return A valid string
      */
-    public String getMethod();
+    String getMethod();
 }

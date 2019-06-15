@@ -46,7 +46,7 @@ public final class QuadEdgeConstants {
    * In practice this value is larger than the available
    * memory on many contemporary computers would allow.
    */
-  public static final int CONSTRAINT_INDEX_MAX = ((1 << 24) - 4); // 16777215
+  public static final int CONSTRAINT_INDEX_MAX = (1 << 24) - 4; // 16777215
 
   /**
    * A mask that can be anded with the QuadEdgePartner's
@@ -60,26 +60,26 @@ public final class QuadEdgeConstants {
    * to be the sign bit, a feature that is exploited by the isConstrained()
    * method.
    */
-  public static final int CONSTRAINT_EDGE_FLAG = (1 << 31);
+  public static final int CONSTRAINT_EDGE_FLAG = 1 << 31;
 
   /**
    * A bit indicating that the edge is the border of a constrained region
    */
-  public static final int CONSTRAINT_REGION_BORDER_FLAG = (1 << 30);
+  public static final int CONSTRAINT_REGION_BORDER_FLAG = 1 << 30;
 
   /**
    * A bit indicating that an edge is in the interior of a constrained region.
    */
-  public static final int CONSTRAINT_REGION_INTERIOR_FLAG = (1 << 29);
+  public static final int CONSTRAINT_REGION_INTERIOR_FLAG = 1 << 29;
   
   /**
    * A set of bits combining the constraint region interior and border flags.
    */
   public static final int CONSTRAINT_REGION_MEMBER_FLAGS 
-           = (CONSTRAINT_REGION_BORDER_FLAG | CONSTRAINT_REGION_INTERIOR_FLAG);
+           = CONSTRAINT_REGION_BORDER_FLAG | CONSTRAINT_REGION_INTERIOR_FLAG;
   
   /**
    * A bit indicating that an edge has been marked as synthetic.
    */
-  public static final int SYNTHETIC_EDGE_FLAG = (1<<28);
+  public static final int SYNTHETIC_EDGE_FLAG = 1<<28;
 }

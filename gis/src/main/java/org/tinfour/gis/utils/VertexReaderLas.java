@@ -153,7 +153,6 @@ public class VertexReaderLas implements IVertexReader, Closeable {
       return list;
     }
     List<Vertex> list = new ArrayList<>();
-    long time0 = System.nanoTime();
 
     int iProgressThreshold = Integer.MAX_VALUE;
     int pProgressThreshold = 0;

@@ -98,7 +98,7 @@ public class DbfField {
     int fieldLength = brad.readUnsignedByte();
     int fieldDecimalCount = brad.readUnsignedByte();
 
-    if (fieldType == 'F' || (fieldType == 'N' && fieldDecimalCount > 0)) {
+    if (fieldType == 'F' || fieldType == 'N' && fieldDecimalCount > 0) {
       return new DbfFieldDouble(
               name, fieldType, dataAddress,
               fieldLength, fieldDecimalCount,
@@ -309,7 +309,6 @@ public class DbfField {
     // Investigate:  Because we are going to sort these strings anyway,
     // perhaps this logic would be better served by a Java tree rather
     // than a map.
-    int k = 0;
     HashMap<String, String> map = new HashMap();
     String sMin = "";
     String sMax = "";

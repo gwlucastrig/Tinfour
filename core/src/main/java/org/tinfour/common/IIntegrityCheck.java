@@ -53,7 +53,7 @@ public interface IIntegrityCheck {
   * Prints a summary of data collected during inspection of a TIN.
   * @param ps a print stream to receive the output.
   */
-  public void printSummary(PrintStream ps);
+  void printSummary(PrintStream ps);
 
   /**
    * Compares the list of vertices from the getVertices() method
@@ -76,7 +76,7 @@ public interface IIntegrityCheck {
    * criterion
    * @return a positive integer.
    */
-   public int getConstrainedViolationCount();
+   int getConstrainedViolationCount();
 
   /**
    * Get the maximum calculated in-circle score for constrained
@@ -84,7 +84,7 @@ public interface IIntegrityCheck {
    *
    * @return a positive number, or zero if no violations occurred.
    */
-  public double getConstrainedViolationMaximum();
+  double getConstrainedViolationMaximum();
 
   /**
    * Get the average calculated in-circle score for constrained
@@ -92,5 +92,5 @@ public interface IIntegrityCheck {
    *
    * @return a positive number, or zero if no violations occurred.
    */
-  public double getContrainedViolationAverage();
+  double getContrainedViolationAverage();
 }

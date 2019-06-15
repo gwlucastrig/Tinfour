@@ -58,7 +58,7 @@ public interface IBoundedVoronoiStyler {
    * @param type a valid instance of a feature type enumeration
    * @return true if the type is enabled for rendering; otherwise, false.
    */
-  public boolean isFeatureTypeEnabled(BoundedVoronoiRenderingType type);
+  boolean isFeatureTypeEnabled(BoundedVoronoiRenderingType type);
 
   /**
    * Indicates whether the specified type of rendering is enabled for the
@@ -74,7 +74,7 @@ public interface IBoundedVoronoiStyler {
    * @return true if the polygon is enabled for the specified rendering type;
    * otherwise, false.
    */
-  public boolean isRenderingEnabled(
+  boolean isRenderingEnabled(
           ThiessenPolygon polygon,
           BoundedVoronoiRenderingType type);
  
@@ -89,7 +89,7 @@ public interface IBoundedVoronoiStyler {
    * @return if rendering is enabled, a valid symbol instance; otherwise,
    * a null.
    */
-  public IBoundedVoronoiVertexSymbol getVertexSymbol(ThiessenPolygon polygon);
+  IBoundedVoronoiVertexSymbol getVertexSymbol(ThiessenPolygon polygon);
 
   /**
    * Called once at the beginning of rendering to set up the Graphics2D surface
@@ -98,7 +98,7 @@ public interface IBoundedVoronoiStyler {
    *
    * @param g2d the graphics surface for rendering
    */
-  public void initializeRendering(Graphics2D g2d);
+  void initializeRendering(Graphics2D g2d);
 
   /**
    * Applies styling for area fill operations. Styling may include setting a
@@ -107,7 +107,7 @@ public interface IBoundedVoronoiStyler {
    * @param g2d the graphics surface for rendering
    * @param polygon a valid polygon instance
    */
-  public void applyStylingForAreaFill(Graphics2D g2d, ThiessenPolygon polygon);
+  void applyStylingForAreaFill(Graphics2D g2d, ThiessenPolygon polygon);
 
   /**
    * Applies styling for line drawing operations. Styling may include setting a
@@ -116,7 +116,7 @@ public interface IBoundedVoronoiStyler {
    * @param g2d the graphics surface for rendering
    * @param polygon a valid polygon instance
    */
-  public void applyStylingForLineDrawing(Graphics2D g2d, ThiessenPolygon polygon);
+  void applyStylingForLineDrawing(Graphics2D g2d, ThiessenPolygon polygon);
 
  
 

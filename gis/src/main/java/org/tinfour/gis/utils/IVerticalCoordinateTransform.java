@@ -54,5 +54,5 @@ public interface IVerticalCoordinateTransform {
    * @return a floating point value to be assigned to the feature
    * according to the needs of the application.
    */
-  public double transform(int recordIndex, double z);
+  double transform(int recordIndex, double z);
 }

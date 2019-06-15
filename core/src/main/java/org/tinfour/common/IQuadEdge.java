@@ -99,7 +99,7 @@ public interface IQuadEdge {
      *
      * @return a value of 0 or 1.
      */
-  public int getSide();
+  int getSide();
 
   /**
    * Gets the length of the edge.
@@ -130,7 +130,7 @@ public interface IQuadEdge {
    *
    * @return a positive value; may be zero if not specified.
    */
-  public int getConstraintIndex();
+  int getConstraintIndex();
 
 
    /**
@@ -146,14 +146,14 @@ public interface IQuadEdge {
    * @param constraintIndex a positive number indicating which constraint
    * a particular edge is associated with.
    */
-  public void setConstraintIndex(int constraintIndex);
+  void setConstraintIndex(int constraintIndex);
 
   /**
    * Indicates whether an edge is constrained.
    *
    * @return true if the edge is constrained; otherwise, false.
    */
-  public boolean isConstrained();
+  boolean isConstrained();
 
 
   /**
@@ -166,7 +166,7 @@ public interface IQuadEdge {
    * @param  constraintIndex positive number indicating which constraint
    * a particular edge is associated with.
    */
-  public void setConstrained(int constraintIndex);
+  void setConstrained(int constraintIndex);
 
   /**
    * Indicates whether the edge is a member of a constrained region
@@ -174,7 +174,7 @@ public interface IQuadEdge {
    * A constrained region member is not necessarily a constrained edge.
    * @return true if the edge is a member of an region; otherwise false.
    */
-  public boolean isConstrainedRegionMember();
+  boolean isConstrainedRegionMember();
 
     /**
    * Indicates whether the edge is in the interior of a constrained region.
@@ -186,7 +186,7 @@ public interface IQuadEdge {
    * as "member" edges of a constrained region.
    * @return true if the edge is in the interior of an region; otherwise false.
    */
-  public boolean isConstrainedRegionInterior();
+  boolean isConstrainedRegionInterior();
  
   /**
    * Indicates whether an edge represents the border of a constrained
@@ -195,17 +195,17 @@ public interface IQuadEdge {
    * @return true if the edge is the border of the constrained region;
    * otherwise, false.
    */
-  public boolean isConstrainedRegionBorder();
+  boolean isConstrainedRegionBorder();
 
   /**
    * Sets a flag indicating that the edge is an edge of a constrained region.
    */
-  public void setConstrainedRegionBorderFlag();
+  void setConstrainedRegionBorderFlag();
 
   /**
    * Sets the constrained region membership flag for the edge to true.
    */
-  public void setConstrainedRegionInteriorFlag( );
+  void setConstrainedRegionInteriorFlag( );
   
   /**
    * Sets the synthetic flag for the edge. Synthetic edges are
@@ -213,13 +213,13 @@ public interface IQuadEdge {
    * are created by special operations.
    * @param status true if the edge is synthetic; otherwise, false.
    */
-  public void setSynthetic(boolean status);
+  void setSynthetic(boolean status);
   
   /**
    * Indicates whether the synthetic flag is set for the edge.
    * @return true if the edge is synthetic; otherwise, false.
    */
-  public boolean isSynthetic();
+  boolean isSynthetic();
 
   /**
    * Gets an instance of an iterable that performs a pinwheel operation.
@@ -230,5 +230,5 @@ public interface IQuadEdge {
    * </pre>
    * @return a valid Iterable.
    */
-  public Iterable<IQuadEdge>pinwheel();
+  Iterable<IQuadEdge>pinwheel();
 }

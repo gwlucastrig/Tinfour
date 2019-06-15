@@ -750,7 +750,7 @@ public class NaturalNeighborInterpolator implements IInterpolatorOverTin {
     double y1 = v1.getY() - y;
     double r0 = Math.sqrt(x0 * x0 + y0 * y0);
     double r1 = Math.sqrt(x1 * x1 + y1 * y1);
-    double t1 = (r0 * r1 - (x0 * x1 + y0 * y1)) / (x0 * y1 - x1 * y0);
+    double t1 = (r0 * r1 - (x0 * x1 + y0 * y1)) / (x0 * y1 - x1 * y0); //NOPMD
     for (IQuadEdge e1 : polygon) {
       double t0 = t1;
       x0 = x1;
@@ -764,7 +764,7 @@ public class NaturalNeighborInterpolator implements IInterpolatorOverTin {
       x1 = v1.getX() - x;
       y1 = v1.getY() - y;
       r1 = Math.sqrt(x1 * x1 + y1 * y1);
-      t1 = (r0 * r1 - (x0 * x1 + y0 * y1)) / (x0 * y1 - x1 * y0);
+      t1 = (r0 * r1 - (x0 * x1 + y0 * y1)) / (x0 * y1 - x1 * y0); //NOPMD
       double w = (t0 + t1) / r0;
       xSum += w * x0;
       ySum += w * y0;
