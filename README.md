@@ -5,8 +5,8 @@ High-Performance 2D Delaunay Triangulation and Related Utilities Written in Java
 
 **Notice**
 
-> Effective with software release 2.1 (June 2019), Tinfour has been included
-> to include a "fat jar" with bundled dependencies that greatly simplifies
+> Effective with software release 2.1 (June 2019), Tinfour includes
+> a "fat jar" with bundled dependencies that greatly simplifies
 > the execution of the demonstration TinfourViewer application.
 > See [Tinfour Execution](https://github.com/gwlucastrig/Tinfour/wiki/Tinfour-Execution-from-the-Command-Line) for more details.
 >
@@ -17,7 +17,7 @@ High-Performance 2D Delaunay Triangulation and Related Utilities Written in Java
 >
 > The Tinfour compiled binary files (Jar files) are available at
 > [Sonatype's Maven Central Repository](https://search.maven.org/search?q=Tinfour)
-> or the [Maven Central Repository](http://central.maven.org/maven2/org/tinfour/
+> or the [Maven Central Repository](http://central.maven.org/maven2/org/tinfour/)
 
 ### Delaunay Triangulation ###
 The Delaunay Triangulation defines an optimal form for organizing unstructured or semi-random
