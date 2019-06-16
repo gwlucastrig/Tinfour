@@ -56,6 +56,8 @@ public class SvmProperties {
   private final static String soundingSpacingKey = "computeSoundingSpacing";
   private final static String inputFolderKey = "inputFolder";
   private final static String outputFolderKey = "outputFolder";
+  private final static String gridFileName = "rasterFileName";
+  private final static String gridCellSize = "rasterCellSize";
 
   final Properties properties = new Properties();
   final List<String> keyList = new ArrayList<>();
@@ -350,7 +352,7 @@ public class SvmProperties {
   /**
    * Get the path to a file for writing an output report giving a record of the
    * computation parameters and results used for running the Simple Volumetric
-   * Mode. If not specified, a null value is returned and it is assumed that the
+   * Model. If not specified, a null value is returned and it is assumed that the
    * report should be written to standard output.
    *
    * @return a valid File instance or a null if not specified.
@@ -559,7 +561,48 @@ public class SvmProperties {
       return d;
     } catch (NumberFormatException nex) {
       throw new IllegalArgumentException(
-              "Invalid numeric for shoerline reference elevation: " + s);
+              "Invalid numeric for shoreline reference elevation: " + s);
     }
   }
+  
+   /**
+   * Get the grid cell size, if provided.
+   * @return a valid floating point number or a NaN if undefined
+   */
+  public double getGridCellSize( ) {
+    String s = properties.getProperty(gridCellSize);
+    if (s == null) {
+      return Double.NaN;
+    }
+    s = s.trim();
+    if (s.isEmpty()) {
+      return Double.NaN;
+    }
+
+    try {
+      double d = Double.parseDouble(s);
+      if (d <= 0) {
+        throw new IllegalArgumentException(
+                "Invalid value for grid cell size: " + s);
+      }
+      return d;
+    } catch (NumberFormatException nex) {
+      throw new IllegalArgumentException(
+              "Invalid numeric for gridCellSize: " + s);
+    }
+  }
+  
+  /**
+   * Get the path to a file for writing an output ASC file giving an
+   * interpolated grid of water bottom elevations.
+   *
+   * @return a valid File instance or a null if not specified.
+   */
+  public File getGridFile() {
+    return extractFile(outputFolderKey, properties.getProperty(gridFileName));
+  }
+
+  
+  
+  
 }
