@@ -3,19 +3,21 @@ Tinfour
 
 High-Performance 2D Delaunay Triangulation and Related Utilities Written in Java
 
-**Important Notice**
+**Notice**
 
-> The Tinfour project recently migrated to the Maven build environment.
-> This change will make Tinfour more compatible with the Github software distribution
-> and project management procedures and will facilitate the use of Tinfour in
-> a number of major software systems. 
+> Effective with software release 2.1 (June 2019), Tinfour has been included
+> to include a "fat jar" with bundled dependencies that greatly simplifies
+> the execution of the demonstration TinfourViewer application.
+> See [Tinfour Execution](https://github.com/gwlucastrig/Tinfour/wiki/Tinfour-Execution-from-the-Command-Line) for more details.
 >
-> The Tinfour compiled binary files (Jar files) are now available at Maven Central.
-> 
-> The build.xml file used for ant builds has been temporarily removed. Developers who prefer 
-> to not use Maven may still process code using standard IDEs such as Eclipse and Netbeans.
-> 
-
+> Effective with release 2.1, Tinfour now includes a version of the
+> [Simple Volumetric Model](https://github.com/gwlucastrig/Tinfour/wiki/Using-the-Delaunay-to-Create-a-Reservoir-Volume-Model)
+> a demonstration program that can be used to compute reservoir capacity and water volume
+> as a function of water level.
+>
+> The Tinfour compiled binary files (Jar files) are available at
+> [Sonatype's Maven Central Repository](https://search.maven.org/search?q=Tinfour)
+> or the [Maven Central Repository](http://central.maven.org/maven2/org/tinfour/
 
 ### Delaunay Triangulation ###
 The Delaunay Triangulation defines an optimal form for organizing unstructured or semi-random
