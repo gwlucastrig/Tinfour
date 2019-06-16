@@ -124,12 +124,6 @@ More hints and background information on configuring Tinfour for use in an IDE a
 [Tinfour Builds and Dependencies](https://github.com/gwlucastrig/Tinfour/wiki/Tinfour-Builds-and-Dependencies).
  
 ### Current Work ###
-Early in the Tinfour project, I made the mistake of including
-compiled binaries (jar files) in the code tree.  Over time, pull requests have grown
-quite large. I am currently setting up a new approach in which I will move
-the binaries into the Github Release feature and remove them from the main software
-download.
-
 The most recent addition to the Tinfour package is support for Voronoi Diagrams.
 We've also added a new article on [Natural Neighbor Interpolation](https://github.com/gwlucastrig/Tinfour/wiki/Introduction-to-Natural-Neighbor-Interpolation)
 to our wiki.
