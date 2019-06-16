@@ -248,7 +248,7 @@ public class SvmComputation {
         if (fixList.isEmpty()) {
           break;
         }
-        if ((iFlat % 10) == 0) {
+        if (iFlat % 10 == 0) {
           double fixArea = flatFixer.getRemediatedArea();
           double fixVolume = flatFixer.getRemediatedVolume();
           ps.format("%4d  %8d  %12.3f  %12.3f  %7.3f%n",
@@ -399,6 +399,14 @@ public class SvmComputation {
       tableOutputStream.close();
     }
 
+    File gridFile = properties.getGridFile();
+    double s = properties.getGridCellSize();
+    if (gridFile != null && !Double.isNaN(s)) {
+      SvmRaster grid = new SvmRaster();
+      grid.buildAndWriteRaster(properties, ps, tin, lakeConsumer.water, shoreReferenceElevation);
+    }
+    
+    
     return tin;
     // testGrid(ps, tin, lakeConsumer.water, 2.0, areaFactor, shoreReferenceElevation);
   }
