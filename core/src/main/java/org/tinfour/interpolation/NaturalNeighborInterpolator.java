@@ -713,7 +713,7 @@ public class NaturalNeighborInterpolator implements IInterpolatorOverTin {
    * coordinate computation. If the point is not inside the polygon or if
    * the polygon is self-intersecting, the results are undefined
    * and the method may return a null array or a meaningless result.
-   * If the point is on the perimeter of the TIN, this method will
+   * If the point is on the perimeter of the polygon, this method will
    * return a null array.
    *
    * @param polygon list of edges defining a non-self-intersecting,

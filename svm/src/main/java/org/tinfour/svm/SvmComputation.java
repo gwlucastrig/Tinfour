@@ -77,7 +77,6 @@ public class SvmComputation {
     KahanSummation areaSum = new KahanSummation();
     KahanSummation flatAreaSum = new KahanSummation();
 
-    NaturalNeighborInterpolator nni;
     SvmTriangleVolumeStore volumeStore;
 
     /**
@@ -95,7 +94,6 @@ public class SvmComputation {
       }
       Thresholds thresholds = tin.getThresholds();
       geoOp = new GeometricOperations(thresholds);
-      nni = new NaturalNeighborInterpolator(tin);
       volumeStore = new SvmTriangleVolumeStore(thresholds);
     }
 
@@ -132,12 +130,9 @@ public class SvmComputation {
 
           nTriangles++;
           double vtest = (shoreReferenceElevation - zMean) * area;
-
           volumeStore.addTriangle(vA, vB, vC, vtest);
-
           volumeSum.add(vtest);
           areaSum.add(area);
-
         }
       }
     }
@@ -167,11 +162,101 @@ public class SvmComputation {
       return areaSum.getSum();
     }
 
-    double getFlatAreaSum() {
+    double getFlatArea() {
       return flatAreaSum.getSum();
     }
   }
 
+  
+  
+  /**
+   * A Java Consumer to collect the contribution from each water triangle in the
+   * Constrained Delaunay Triangulation.
+   */
+  private static class TriangleSurvey implements Consumer<SimpleTriangle> {
+
+    double shoreReferenceElevation;
+    boolean[] water;
+
+    int nTriangles;
+    int nFlatTriangles;
+    KahanSummation areaSum = new KahanSummation();
+    KahanSummation flatAreaSum = new KahanSummation();
+        final GeometricOperations geoOp;
+
+ 
+    /**
+     * Constructs an instance for processing and extracts the water/land values
+     * based on the integer index assigned to the constraints.
+     *
+     * @param tin A valid Constrained Delaunay Triangulation
+     */
+    TriangleSurvey(IIncrementalTin tin, double shoreReferenceElevation) {
+      this.shoreReferenceElevation = shoreReferenceElevation;
+      List<IConstraint> constraintsFromTin = tin.getConstraints();
+      water = new boolean[constraintsFromTin.size()];
+      for (IConstraint con : constraintsFromTin) {
+        water[con.getConstraintIndex()] = (Boolean) con.getApplicationData();
+      }
+         Thresholds thresholds = tin.getThresholds();
+      geoOp = new GeometricOperations(thresholds);
+    }
+
+    private boolean nEqual(double a, double b) {
+      return Math.abs(a - b) < 1.0e-5;
+    }
+
+    @Override
+    public void accept(SimpleTriangle t) {
+
+      IConstraint constraint = t.getContainingRegion();
+      if (constraint instanceof PolygonConstraint) {
+        Boolean appData = (Boolean) constraint.getApplicationData();
+        if (appData) {
+          IQuadEdge a = t.getEdgeA();
+          IQuadEdge b = t.getEdgeB();
+          IQuadEdge c = t.getEdgeC();
+          Vertex vA = a.getA();
+          Vertex vB = b.getA();
+          Vertex vC = c.getA();
+          double zA = vA.getZ();
+          double zB = vB.getZ();
+          double zC = vC.getZ();
+ 
+          double area = geoOp.area(vA, vB, vC);
+
+          if (nEqual(zA, shoreReferenceElevation)
+                  && nEqual(zB, shoreReferenceElevation)
+                  && nEqual(zC, shoreReferenceElevation)) {
+            nFlatTriangles++;
+            flatAreaSum.add(area);
+          }
+
+          nTriangles++;
+          areaSum.add(area);
+        }
+      }
+    }
+
+  
+    double getSurfaceArea() {
+      return areaSum.getSum();
+    }
+
+    double getFlatArea() {
+      return flatAreaSum.getSum();
+    }
+    
+    int getFlatTriangleCount(){
+        return nFlatTriangles;
+    }
+  }
+
+  
+  
+  
+  
+  
   /**
    * Performs the main process, printing the results to the specified print
    * stream.
@@ -208,7 +293,19 @@ public class SvmComputation {
 
     List<IConstraint> allConstraints = new ArrayList<>();
     allConstraints.addAll(boundaryConstraints);
+ 
+    if (soundings.isEmpty()) {
+      ps.print("Unable to proceed, no soundings are available");
+      ps.flush();
+      throw new IOException("No soungings availble");
+    }
 
+    if (boundaryConstraints.isEmpty()) {
+      ps.print("Unable to proceed, no boundary constraints are available");
+      ps.flush();
+      throw new IOException("No boundary constraints availble");
+    }
+    
     IIncrementalTin tin;
 
     long time0 = System.nanoTime();
@@ -223,6 +320,10 @@ public class SvmComputation {
     tin.addConstraints(allConstraints, true);
     long timeToBuildTin = System.nanoTime() - time0;
 
+    TriangleSurvey  trigSurvey = new TriangleSurvey(tin, shoreReferenceElevation);
+    TriangleCollector.visitSimpleTriangles(tin, trigSurvey);
+
+    
     long timeToFixFlats = 0;
     if (properties.isFlatFixerEnabled()) {
       // During the flat-fixer loop, the total count of triangles
@@ -238,7 +339,7 @@ public class SvmComputation {
       ps.println("");
       ps.println("Remediating flat triangles");
       ps.println("Pass   Remediated     Area     Volume Added  avg. depth");
-      for (int iFlat = 0; iFlat < 200; iFlat++) {
+      for (int iFlat = 0; iFlat < 500; iFlat++) {
         // construct a new flat-fixer each time
         // so we can gather counts
         SvmFlatFixer flatFixer = new SvmFlatFixer(
@@ -303,6 +404,7 @@ public class SvmComputation {
     double netArea = lakeArea - islandArea;
     double totalShore = lakePerimeter + islandPerimeter;
     Rectangle2D bounds = data.getBounds();
+    
     ps.format("%nData from Shapefiles%n");
     ps.format("  Lake area        %10.8e %,20.0f %s%n", lakeArea, lakeArea, areaUnits);
     ps.format("  Island area      %10.8e %,20.0f %s%n", islandArea, islandArea, areaUnits);
@@ -352,11 +454,13 @@ public class SvmComputation {
       ps.format("%n");
     }
 
+    double totalVolume = lakeConsumer.getVolume();
     double volume = lakeConsumer.getVolume() / volumeFactor;
     double surfArea = lakeConsumer.getSurfaceArea() / areaFactor;
     double avgDepth = volume / surfArea;
     double vertexSpacing = estimateInteriorVertexSpacing(tin, lakeConsumer);
-    double flatArea = lakeConsumer.getFlatAreaSum() / areaFactor;
+    double flatArea = lakeConsumer.getFlatArea() / areaFactor;
+
     ps.format("%nComputations from Constrained Delaunay Triangulation%n");
     ps.format("  Volume              %10.8e %,20.0f %s%n", volume, volume, volumeUnits);
     ps.format("  Surface Area        %10.8e %,20.0f %s%n", surfArea, surfArea, areaUnits);
@@ -365,6 +469,17 @@ public class SvmComputation {
     ps.format("  N Triangles         %d%n", lakeConsumer.nTriangles);
     ps.format("  N Flat Triangles    %d%n", lakeConsumer.nFlatTriangles);
     ps.format("  Mean Vertex Spacing %8.2f%n", vertexSpacing);
+    
+    if (properties.isFlatFixerEnabled()) {
+          int originalTrigCount = trigSurvey.nTriangles;
+          int originalFlatCount = trigSurvey.getFlatTriangleCount();
+          double originalFlatArea = trigSurvey.getFlatArea() / areaFactor;
+          ps.format("%nPre-Remediation statistics%n");
+          ps.format("  Original Flat Area  %10.8e %,20.0f %s%n", 
+                  originalFlatArea, originalFlatArea, areaUnits);
+          ps.format("  Original N Triangle %d%n", originalTrigCount);
+          ps.format("  Original N Flat     %d%n", originalFlatCount);
+    }
 
     ps.format("%n%n%n");
     ps.format("Time to load data              %7.1f ms%n", data.getTimeToLoadData() / 1.0e+6);
@@ -386,12 +501,13 @@ public class SvmComputation {
       ts = new PrintStream(bos);
     }
 
-    ts.println("Elevation, Area, Volume");
+    ts.println("Elevation, Area, Volume, Percent_Capacity");
     for (AreaVolumeResult result : resultList) {
-      ts.format("%12.3f, %12.3f, %12.3f%n",
+      ts.format("%12.3f, %12.3f, %12.3f, %6.2f%n",
               result.level,
               result.area / areaFactor,
-              result.volume / volumeFactor);
+              result.volume / volumeFactor,
+              100*result.volume/totalVolume);
     }
 
     ts.flush();
