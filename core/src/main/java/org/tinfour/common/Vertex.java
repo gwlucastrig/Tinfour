@@ -414,11 +414,11 @@ public class Vertex implements ISamplePoint {
    * @param auxiliaryIndex a value in the range 0 to 255
    */
   public void setAuxiliaryIndex(int auxiliaryIndex) {
-    if((auxiliary&0xffffff00)!=0){
+    if((auxiliaryIndex&0xffffff00)!=0){
       throw new IllegalArgumentException(
               "Color index out of valid range [0..255]");
     }
-    this.auxiliary = (byte)(auxiliary&0xff);
+    this.auxiliary = (byte)(auxiliaryIndex&0xff);
   }
 
 }
