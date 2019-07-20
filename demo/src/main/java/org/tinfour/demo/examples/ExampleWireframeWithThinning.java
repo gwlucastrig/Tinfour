@@ -200,9 +200,9 @@ public class ExampleWireframeWithThinning implements IDevelopmentTest
 
 
 
-        // Give the available image area, estimate how many points can
+        // Give the available image area, estimate the number of  points that
         // it can contain based on specificated average point spacing.
-        // Even if we are frameing on a sub-region of the data samples,
+        // Even if we are depicting only a sub-region of the data samples,
         // we will build the TIN for the whole sample set because we wish
         // the rendering to include any edges that may run from outside
         // the rendering area to the inside. So when we compute the point

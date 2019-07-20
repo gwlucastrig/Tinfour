@@ -67,7 +67,10 @@ public class BoundedVoronoiStylerDefault implements IBoundedVoronoiStyler {
   Stroke lineStroke = thinStroke;
   Stroke borderStroke = new BasicStroke(2.0f);
 
-  BoundedVoronoiStylerDefault() {
+  /**
+   * Standard constructor.
+   */
+  public BoundedVoronoiStylerDefault() {
     Arrays.fill(typeEnabled, true);
   }
 
