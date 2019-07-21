@@ -97,8 +97,8 @@ public class SvmMain {
           System.out.append((char) c);
         }
         System.out.flush();
-      } catch (IOException dontCare) {
-        // NOPMD no action required
+      } catch (IOException ioex) {
+        System.err.println("Failed to load template "+ioex.getMessage());
       }
       System.exit(0); // NOPMD
     }

@@ -49,7 +49,6 @@ import org.tinfour.common.SimpleTriangle;
 import org.tinfour.common.Thresholds;
 import org.tinfour.common.Vertex;
 import org.tinfour.svm.properties.SvmProperties;
-import org.tinfour.interpolation.NaturalNeighborInterpolator;
 import org.tinfour.semivirtual.SemiVirtualIncrementalTin;
 import org.tinfour.standard.IncrementalTin;
 import org.tinfour.svm.SvmTriangleVolumeStore.AreaVolumeResult;
