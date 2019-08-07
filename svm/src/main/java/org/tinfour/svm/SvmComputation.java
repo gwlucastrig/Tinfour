@@ -521,6 +521,15 @@ public class SvmComputation {
       grid.buildAndWriteRaster(properties, ps, tin, lakeConsumer.water, shoreReferenceElevation);
     }
     
+    SvmCapacityGraph capacityGraph = new SvmCapacityGraph(
+            properties,
+            resultList,
+            shoreReferenceElevation,
+            totalVolume);
+    boolean wroteGraph = capacityGraph.writeOutput();
+    if(wroteGraph){
+      ps.println("Capacity graph written to "+properties.getCapacityGraphFile());
+    }
     
     return tin;
     // testGrid(ps, tin, lakeConsumer.water, 2.0, areaFactor, shoreReferenceElevation);

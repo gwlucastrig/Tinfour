@@ -193,7 +193,7 @@ public final class AxisIntervals {
     return m10;
   }
 
-  /**
+   /**
    * Compute the intervals over a range of values. This method
    * attempts to select the the finest real-valued intervals
    * that map to a pixel scale larger than the specified limits
@@ -216,6 +216,43 @@ public final class AxisIntervals {
     int primaryMinIntervalInPixels,
     int secondaryMinIntervalInPixels,
     int sizeInPixels)
+  {
+    return computeIntervals(
+            value0, 
+            value1, 
+            primaryMinIntervalInPixels,
+            secondaryMinIntervalInPixels, 
+            sizeInPixels, 
+            false);
+  }
+  
+  
+  /**
+   * Compute the intervals over a range of values. This method
+   * attempts to select the the finest real-valued intervals
+   * that map to a pixel scale larger than the specified limits
+   * and confirm to nice "human friendly" values.
+   *
+   * @param value0 the minimum value to be represented.
+   * @param value1 the maximum value to be represented.
+   * @param primaryMinIntervalInPixels the minimum spacing allowed for the
+   * primary interval
+   * @param secondaryMinIntervalInPixels the minimum space allowed for the
+   * secondary interval
+   * @param sizeInPixels the overall size of the area for labeling,
+   * i&#46;.e$#46; the length of a horizontal axis or the height of
+   * a vertical axis
+   * @param bracketValues true if the computed interval must fully 
+   * bracket the input values; false if bracketing is optional.
+   * @return if successful, a valid instance; otherwise, a null.
+   */
+  public static AxisIntervals computeIntervals(
+    double value0,
+    double value1,
+    int primaryMinIntervalInPixels,
+    int secondaryMinIntervalInPixels,
+    int sizeInPixels,
+    boolean bracketValues)
   {
     double delta = Math.abs(value1 - value0);
     double uPerPixel = delta/sizeInPixels;
@@ -272,16 +309,46 @@ public final class AxisIntervals {
     double vOffset = Math.floor(value0 / firstInterval) * firstInterval;
     double v0 = value0 - vOffset;
     double v1 = value1 - vOffset;
-    int i0 = (int) Math.ceil(v0 / firstInterval - 1.0e-5);
-    if (i0 * firstInterval < v0 - firstInterval / 2) {
-      i0++; // the -1.0e-5 took it down too far
+  
+    int i0, i1;
+    double f0, f1;
+
+    if (bracketValues) {
+      i0 = (int) Math.floor(v0 / firstInterval + 1.0e-5);
+      i1 = (int) Math.ceil(v1 / firstInterval - 1.0e-5);
+      f0 = i0 * firstInterval;
+      f1 = i1 * firstInterval;
+      if (f0 > v0) {
+        i0--; // the -1.0e-5 took it down too far
+        f0 = i0 * firstInterval;
+      }
+
+      if (f1 < v1) {
+        i1++;
+        f1 = i1 * firstInterval;
+      }
+      // The range of the tic marks is now based on the range from f0 to f1
+      // which may bracket the original inputs and thus be a bit larger.
+      // So we need to recompute the uPerPixel value to ensure that the
+      // tic positions are properly scaled.
+      delta = Math.abs(f1 - f0);
+      uPerPixel = delta / sizeInPixels;
+    } else {
+      i0 = (int) Math.ceil(v0 / firstInterval - 1.0e-5);
+      i1 = (int) Math.floor(v1 / firstInterval + 1.0e-5);
+      f0 = i0 * firstInterval;
+      f1 = i1 * firstInterval;
+      if (f0 < v0 - firstInterval / 2) {
+        i0++; // the -1.0e-5 took it down too far
+        f0 = i0 * firstInterval;
+      }
+      if (i1 * firstInterval > v1 + firstInterval / 2) {
+        i1--;
+        f1 = i1 * firstInterval;
+      }
     }
-    int i1 = (int) Math.floor(v1 / firstInterval + 1.0e-5);
-    if (i1 * firstInterval > v1 + firstInterval / 2) {
-      i1--;
-    }
-    double f0 = i0 * firstInterval;
-    double f1 = i1 * firstInterval;
+
+    
     boolean isValue0Labeled = Math.abs(f0 - v0) / uPerPixel < 1;
     boolean isValue1Labeled = Math.abs(f1 - v1) / uPerPixel < 1;
 
@@ -374,6 +441,15 @@ public final class AxisIntervals {
     return intervalMagnitude;
   }
 
+  
+  /**
+   * Gets the scale factor for units in the value coordinate system
+   * compare to pixels.  Useful for creating affine transforms.
+   * @return a finite, non-zero floating point value;
+   */
+  public double getUnitsPerPixel(){
+    return unitsPerPixel;
+  }
   //public static void main(String[] args) {
   //  LegendIntervals s = computeIntervals(0.4, 9, 10, 1, 0.1);
   //}

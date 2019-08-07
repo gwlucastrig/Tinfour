@@ -29,6 +29,7 @@
  */
 package org.tinfour.svm.properties;
 
+import java.awt.Dimension;
 import java.io.BufferedInputStream;
 import java.io.File;
 import java.io.FileInputStream;
@@ -58,6 +59,9 @@ public class SvmProperties {
   private final static String outputFolderKey = "outputFolder";
   private final static String gridFileName = "rasterFileName";
   private final static String gridCellSize = "rasterCellSize";
+  private final static String capacityGraphFileKey = "capacityGraphFileName";
+  private final static String capacityGraphSizeKey  = "capacityGraphSize";
+  private final static String capacityGraphTitleKey = "capacityGraphTitle";
 
   final Properties properties = new Properties();
   final List<String> keyList = new ArrayList<>();
@@ -603,6 +607,80 @@ public class SvmProperties {
   }
 
   
+  /**
+   * Get the path to a file for writing a graph of the capacity as a function of
+   * water level. .
+   *
+   * @return a valid File instance or a null if not specified.
+   */
+  public File getCapacityGraphFile() {
+    if (properties.containsKey(capacityGraphFileKey)) {
+      return extractFile(outputFolderKey, properties.getProperty(capacityGraphFileKey));
+    }
+    return null;
+  }
   
   
+  /**
+   * Get the dimensions for the capacity graph image file.
+   * @return a valid instance of non-trivial size.
+   */
+  public Dimension getCapacityGraphDimensions(){
+     return extractDimension(capacityGraphSizeKey, 650,400);  
+  }
+
+  
+  /**
+   * Gets the title for the capacity graph image
+   * @return if defined, a valid non-empty string instance;
+   * if undefined, a null.
+   */
+  public String getCapacityGraphTitle(){
+    String s = properties.getProperty(capacityGraphTitleKey);
+    if(s==null || s.trim().isEmpty()){
+        return null;
+    }
+    return s.trim();
+  }
+  
+  
+  private Dimension extractDimension(String key, int width, int height) {
+    String s = properties.getProperty(key);
+    if (s == null) {
+      return new Dimension(width, height);
+    }
+ 
+    int[] values = new int[2];
+    int nNumeric = 0;
+    int value = 0;
+    boolean numeric = false;
+    for (int i = 0; i < s.length(); i++) {
+      char c = s.charAt(i);
+      if (Character.isDigit(c)) {
+        if (!numeric) {
+          value = 0;
+          numeric = true;
+        }
+        value = value * 10 + ((int) c - 48);
+      } else if (numeric) {
+        numeric = false;
+        values[nNumeric++] = value;
+        if (nNumeric == 2) {
+          // we've completed the second numeric
+          return new Dimension(values[0], values[1]);
+        }
+      }
+    }
+
+    if (numeric) {
+      values[nNumeric++] = value;
+      if (nNumeric == 2) {
+        // we've completed the second numeric
+        return new Dimension(values[0], values[1]);
+      }
+    }
+    throw new IllegalArgumentException(
+            "Incomplete specification for dimension: " + key + "=" + s);
+  }
+
 }
