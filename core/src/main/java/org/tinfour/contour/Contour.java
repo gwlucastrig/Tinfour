@@ -174,18 +174,13 @@ public class Contour {
   }
 
   /**
-   * Removes any temporary data used during the construction of the
-   * contour and reduces the internal memory for coordinate points
-   * to the minimum size necessary to represent the daa.
+   * Trim the memory for the collection of points (the geometry) to
+   * the minimum required for the contour..
    */
-  public void removeConstructionData() {
+  public void trimToSize() {
     if (xy.length > n) {
       xy = Arrays.copyOf(xy, n);
     }
-    startEdge =null;
-    startVertex = null;
-    terminalEdge = null;
-    terminalVertex = null;
   }
 
   /**
