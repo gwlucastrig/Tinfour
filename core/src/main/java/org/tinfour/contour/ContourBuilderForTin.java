@@ -79,10 +79,13 @@ public class ContourBuilderForTin {
 
     @Override
     public double value(Vertex v) {
-      if (v == null) {
-        return Double.NaN;
+      assert v!=null: "Internal method failure, accessing value for null vertex";
+      double z = v.getZ();
+      if (Double.isNaN(z)) {
+        throw new IllegalArgumentException(
+                "Input includes vertices with NaN z values");
       }
-      return v.getZ();
+      return z;
     }
 
   }
@@ -141,6 +144,13 @@ public class ContourBuilderForTin {
       throw new IllegalArgumentException("Null reference for input contour list");
     }
 
+    for (int i = 1; i < zContour.length; i++) {
+      if (!(zContour[i - 1] < zContour[i])) {
+        throw new IllegalArgumentException(
+                "Input contours are not unique and specified in ascending order,"
+                + " see index " + i);
+      }
+    }
 
     this.tin = tin;
     if (valuatorSpec == null) {
@@ -172,13 +182,11 @@ public class ContourBuilderForTin {
   private boolean storeContour(Contour contour, boolean reachedPerimeter) {
     if (contour.closedLoop) {
       assert !reachedPerimeter : "Reached perimeter while building interior contour";
-      contour.removeConstructionData();
+      contour.trimToSize();
       closedContourList.add(contour);
-      ContourRegion region = new ContourRegion(contour);
-      regionList.add(region);
     } else {
       assert reachedPerimeter : "Failed to reached perimeter while building perimeter-intersection contour";
-      contour.removeConstructionData();
+      contour.trimToSize();
       openContourList.add(contour);
     }
     return true;
@@ -276,6 +284,10 @@ public class ContourBuilderForTin {
 
       // for the perimeter case, the dual edge is always part of a ghost
       // triangle, so we do not need to consider it.
+      //   We do not consider the case where zA==z and zB==z because
+      // that would result in a contour lying directly on a perimeter
+      // edge.  The perimeter-edge contours are treated as a special case
+      // and constructed separately. 
       if (zA > z && z > zB) {
         // e is a descending edge and a valid start
         Contour contour = new Contour(nContour++, iContour + 1, iContour, z, false);
@@ -297,7 +309,6 @@ public class ContourBuilderForTin {
           IQuadEdge n = e.getDualFromReverse();
           mark(n);
           contour.add(n, zA, zC);
-          contour.add(e.getDualFromReverse(), zA, zC);
           followContour(contour, z);
           continue mainLoop;
         }
@@ -309,12 +320,14 @@ public class ContourBuilderForTin {
         while (true) {
           IQuadEdge g = f.getDual();
           IQuadEdge h = g.getForward();
+          IQuadEdge k = h.getForward();
           Vertex G = h.getB();
           mark(g);
           mark(h);
+            mark(k);
           if (G == null) {
-            // we've pivoted to the next edge on the perimeter without
-            // finding a transition
+            // The search pivoted to the next edge on the perimeter without
+            // finding a transition. Do not create a contour through vertex B.
             break;
           }
           double zG = valuator.value(G);
@@ -326,19 +339,21 @@ public class ContourBuilderForTin {
               contour.add(e, B);
               IQuadEdge n = e.getDualFromReverse();
               mark(n);
+              contour.add(n, C);
               followContour(contour, z);
               continue mainLoop;
             } else {
               assert zC > z : "Improper perimeter to vertex transition";
               Contour contour = new Contour(nContour++, iContour + 1, iContour, z, false);
               contour.add(e, B);
-              IQuadEdge n = g.getDualFromReverse();
-              mark(n);
-              contour.add(n, zC, zG);
+              IQuadEdge q = g.getDualFromReverse();
+              mark(q);
+              contour.add(q, zC, zG);
               followContour(contour, z);
               continue mainLoop;
             }
           }
+          // advance search to triangle immediately clockwise, pivoting around B
           C = G;
           zC = zG;
           e = g;
@@ -357,19 +372,21 @@ public class ContourBuilderForTin {
   private boolean followContour(Contour contour, double z) {
     mainLoop:
     while (true) {
-      IQuadEdge e = contour.terminalEdge;
       Vertex v = contour.terminalVertex;
+      IQuadEdge e = contour.terminalEdge;
       IQuadEdge f = e.getForward();
       IQuadEdge r = e.getReverse();
+      mark(e);
+      mark(f);
+      mark(r);
       Vertex A = e.getA();
       Vertex B = f.getA();
       Vertex C = r.getA();
       if (C == null) {
+        // reached the perimeter
         return storeContour(contour, true);
       }
-      mark(e);
-      mark(f);
-      mark(r);
+
       double zA = valuator.value(A);
       double zB = valuator.value(B);
       double zC = valuator.value(C);
@@ -404,6 +421,8 @@ public class ContourBuilderForTin {
         } else {
           // this could happen if zC is a null
           // meaning we have a broken contour
+          // but because we tested on N==null above, so we should never reach
+          // here unless there's an incorrect implementation.
           return false;
         }
       } else {
@@ -460,7 +479,8 @@ public class ContourBuilderForTin {
               break; // inner loop
             }
           }
-          // zG >= z, keep searching
+          // zG >= z, keep searching and advance search
+          // to triangle immediately clockwise, pivoting around B
           e = g;
           f = h;
           r = k;
@@ -485,6 +505,10 @@ public class ContourBuilderForTin {
    * process those that intersect the perimeter of the TIN.
    */
   public void buildRegions(){
+    for (Contour contour : closedContourList) {
+      ContourRegion region = new ContourRegion(contour);
+      regionList.add(region);
+    }
     organizeNestedRegions();
   }
   
