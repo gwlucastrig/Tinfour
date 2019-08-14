@@ -33,18 +33,18 @@ package org.tinfour.contour;
  * Provides elements and data-access methods in support of contour-based
  * regions, particularly those based on multiple contours.
  */
-public class ContourRegionMember {
+class ContourRegionMember {
 
-    final Contour contour;
-    final boolean forward;
+  final Contour contour;
+  final boolean forward;
 
-    private ContourRegionMember() {
-        contour = null;
-        forward = false;
-    }
+  private ContourRegionMember() {
+    contour = null;
+    forward = false;
+  }
 
-    public ContourRegionMember(Contour contour, boolean forward) {
-        this.contour = contour;
-        this.forward = forward;
-    }
+  ContourRegionMember(Contour contour, boolean forward) {
+    this.contour = contour;
+    this.forward = forward;
+  }
 }

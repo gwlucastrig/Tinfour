@@ -118,21 +118,25 @@ public class ContourBuilderForTin {
    * implemented. It only supports the construction of polygons for
    * the interior, closed-loop contours.
    * <p>
-   * The valuator argument allows you to specify an alternate method
+   * The vertex-valuator argument allows you to specify an alternate method
    * for obtaining the vertical coordinates from the vertices in the
-   * triangulation. If you wish to use the values from the vertices directly,
+   * triangulation. If you wish to use the values from the vertices directly
+   * (i.e. the z coordinates of the vertices),
    * you may do so by supplying a null reference for the valuator argument.
    * The primary intended use of the valuator is to support the 
    * use of a smoothing filter, though many other applications are 
    * feasible.
+   * <p>
+   * The values in the zContour array must be unique and monitonically
+   * increasing.
    * @param tin a valid TIN.
-   * @param valuatorSpec an optional valuator or a null reference if
+   * @param vertexValuator an optional valuator or a null reference if
    * the default is to be used.
    * @param zContour a value array of contour values.
    */
   public ContourBuilderForTin(
           IIncrementalTin tin, 
-          IVertexValuator valuatorSpec, 
+          IVertexValuator vertexValuator, 
           double[] zContour) {
     if (tin == null) {
       throw new IllegalArgumentException("Null reference for input TIN");
@@ -153,10 +157,10 @@ public class ContourBuilderForTin {
     }
 
     this.tin = tin;
-    if (valuatorSpec == null) {
+    if (vertexValuator == null) {
       valuator = new DefaultValuator();
     } else {
-      valuator = valuatorSpec;
+      valuator = vertexValuator;
     }
     this.zContour = zContour;
 
