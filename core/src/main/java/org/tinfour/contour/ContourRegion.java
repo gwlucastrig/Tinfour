@@ -33,13 +33,31 @@ import java.awt.geom.AffineTransform;
 import java.awt.geom.Path2D;
 import java.util.ArrayList;
 import java.util.List;
+import org.tinfour.contour.Contour.ContourType;
 
 /**
- * Provides a elements and access methods for a region created
- * through a contour-building process.
+ * Provides a elements and access methods for a region created through a
+ * contour-building process.
  */
 public class ContourRegion {
 
+  /**
+   * An enumeration that indicates the type of a contour
+   */
+  public enum ContourRegionType {
+    /**
+     * All contours lie entirely within the interior of the TIN and do not
+     * intersect its perimeter.
+     */
+    Interior,
+    /**
+     * At least one contour lies on the perimeter of the TIN. Note that
+     * perimeter regions are never enclosed by another region.
+     */
+    Perimeter
+  }
+
+  ContourRegionType contourRegionType;
   List<ContourRegionMember> memberList = new ArrayList<>();
   int regionIndex;
   double z;
@@ -55,43 +73,117 @@ public class ContourRegion {
 
   }
 
+  ContourRegion(List<ContourRegionMember> memberList, int regionIndex) {
+    this.regionIndex = regionIndex;
+    this.memberList.addAll(memberList);
+    double a = 0;
+    ContourRegionType rType = ContourRegionType.Interior;
+    for (ContourRegionMember member : memberList) {
+      if (member.contour.getContourType() == ContourType.Perimeter) {
+        rType = ContourRegionType.Perimeter;
+      }
+      double s = calculateAreaContribution(member.contour);
+      if (member.forward) {
+        a += s;
+      } else {
+        a -= s;
+      }
+    }
+
+    contourRegionType = rType;
+
+    area = a / 2.0;
+    absArea = Math.abs(area);
+  }
+
   /**
    * Construct a region based on a single, closed-loop contour.
+   *
    * @param contour a valid instance describing a single, closed-loop contour.
    */
   ContourRegion(Contour contour) {
-    assert contour.closedLoop : "Single contour constructor requires closed loop";
-    if (contour.closedLoop) {
-      double a = 0;
-      memberList.add(new ContourRegionMember(contour, true));
-      double x0 = contour.xy[contour.n - 2];
-      double y0 = contour.xy[contour.n - 1];
-      for (int i = 0; i < contour.n; i += 2) {
-        double x1 = contour.xy[i];
-        double y1 = contour.xy[i + 1];
-        a += x0 * y1 - x1 * y0;
-        x0 = x1;
-        y0 = y1;
-      }
-      area = a / 2;
-      absArea = Math.abs(area);
-      if (area < 0) {
-        regionIndex = contour.rightIndex;
-      } else {
-        regionIndex = contour.leftIndex;
-      }
-      z = contour.z;
+    if (contour.getContourType() == ContourType.Interior) {
+      contourRegionType = ContourRegionType.Interior;
+    } else {
+      contourRegionType = ContourRegionType.Perimeter;
     }
+
+    assert contour.closedLoop : "Single contour constructor requires closed loop";
+    double a = 0;
+    memberList.add(new ContourRegionMember(contour, true));
+    double x0 = contour.xy[contour.n - 2];
+    double y0 = contour.xy[contour.n - 1];
+    for (int i = 0; i < contour.n; i += 2) {
+      double x1 = contour.xy[i];
+      double y1 = contour.xy[i + 1];
+      a += x0 * y1 - x1 * y0;
+      x0 = x1;
+      y0 = y1;
+    }
+    area = a / 2;
+    absArea = Math.abs(area);
+    if (area < 0) {
+      regionIndex = contour.rightIndex;
+    } else {
+      regionIndex = contour.leftIndex;
+    }
+    z = contour.z;
   }
 
-  
+  private double calculateAreaContribution(Contour contour) {
+    double x0 = contour.xy[0];
+    double y0 = contour.xy[1];
+    int n = contour.n / 2;
+    double a = 0;
+    for (int i = 1; i < n; i++) {
+      double x1 = contour.xy[i * 2];
+      double y1 = contour.xy[i * 2 + 1];
+      a += x0 * y1 - x1 * y0;
+      x0 = x1;
+      y0 = y1;
+    }
+    return a;
+  }
+
   /**
    * Get the XY coordinates for the contour region
+   *
    * @return a safe copy of the geometry of the contour region.
    */
   public double[] getXY() {
     Contour contour = memberList.get(0).contour;
-    return contour.getCoordinates();
+    if (memberList.size() == 1 && memberList.get(0).contour.isClosed()) {
+      return contour.getCoordinates();
+    }
+    int n = 0;
+    double x0 = contour.xy[0];
+    double y0 = contour.xy[1];
+    for (ContourRegionMember member : memberList) {
+      n += member.contour.size() - 1;
+    }
+    n++; // closure point
+    double[] xy = new double[n * 2];
+    int k = 0;
+    for (ContourRegionMember member : memberList) {
+      contour = member.contour;
+      n = contour.size();
+      if (member.forward) {
+        // don't copy last point
+        for (int i = 0; i < n - 1; i++) {
+          xy[k++] = contour.xy[i * 2];
+          xy[k++] = contour.xy[i * 2 + 1];
+        }
+      } else {
+        // don't copy first point
+        for (int i = n - 1; i > 0; i--) {
+          xy[k++] = contour.xy[i * 2];
+          xy[k++] = contour.xy[i * 2 + 1];
+        }
+      }
+    }
+    xy[k++] = x0;
+    xy[k++] = y0;
+    return xy;
   }
 
   void addChild(ContourRegion region) {
@@ -101,20 +193,20 @@ public class ContourRegion {
 
   /**
    * Indicates whether the specified point is inside the region
+   *
    * @param x the Cartesian coordinate for the point of interest
    * @param y the Cartesian coordinate for the point of interest
    * @return true if the point is inside the contour; otherwise, fakse
    */
   public boolean isPointInsideRegion(double x, double y) {
-    Contour c = memberList.get(0).contour;
-    double[] xy = c.xy;
+
+    double[] xy = getXY();
     int rCross = 0;
     int lCross = 0;
-    int n = c.size();
-    double x0 = xy[n * 2 - 2];
-    double y0 = xy[n * 2 - 1];
-    for (int i = 0; i < n; i++) {
-
+    int n = xy.length / 2;
+    double x0 = xy[0];
+    double y0 = xy[1];
+    for (int i = 1; i < n; i++) {
       double x1 = xy[i * 2];
       double y1 = xy[i * 2 + 1];
 
@@ -143,41 +235,44 @@ public class ContourRegion {
     }
     return false; // unambiguously outside
   }
-  
+
   /**
    * Gets the absolute value of the area of the region.
-   * @return a positive value, potentially zero if the region is
-   * incompletely specified.
+   *
+   * @return a positive value, potentially zero if the region is incompletely
+   * specified.
    */
-  public double getAbsoluteArea(){
+  public double getAbsoluteArea() {
     return absArea;
   }
 
   /**
-   * Gets the signed area of the region. If the points that specify the
-   * region are given in a counter-clockwise order, the region will have
-   * a positive area. If the points are given in a clockwise order,
-   * the region will have a negative area.
-   * @return 
+   * Gets the signed area of the region. If the points that specify the region
+   * are given in a counter-clockwise order, the region will have a positive
+   * area. If the points are given in a clockwise order, the region will have a
+   * negative area.
+   *
+   * @return a signed real value.
    */
-  public double getSignedArea(){
+  public double getSignedArea() {
     return area;
   }
-  
+
   /**
-   * Gets the index of the region. The indexing scheme is based on
-   * the original values of the zContour array used when the contour
-   * regions were built. The minimim proper region index is zero.
+   * Gets the index of the region. The indexing scheme is based on the original
+   * values of the zContour array used when the contour regions were built. The
+   * minimim proper region index is zero.
    * <p>
-   * At this time, regions are not constructed for areas of null
-   * data. In future implementations, null-data regions will be 
-   * indicated by a region index of -1.
+   * At this time, regions are not constructed for areas of null data. In future
+   * implementations, null-data regions will be indicated by a region index of
+   * -1.
+   *
    * @return a positive integer value, or -1 for null-data regions.
    */
-  public int getRegionIndex(){
+  public int getRegionIndex() {
     return regionIndex;
   }
-  
+
   /**
    * Gets a Path2D suitable for rendering purposes.
    *
@@ -203,14 +298,10 @@ public class ContourRegion {
     return path;
   }
 
-  
-  
-  
-  
   @Override
   public String toString() {
     return String.format("%4d %12.2f  %s %d",
-            regionIndex, area, parent == null ? "root " : "child", 
+            regionIndex, area, parent == null ? "root " : "child",
             children.size());
   }
 }

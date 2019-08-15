@@ -36,18 +36,34 @@ import org.tinfour.common.IQuadEdge;
 import org.tinfour.common.Vertex;
 
 /**
- * Provides methods and elements for constructing a contour.
- * Tinfour defines contours as specifying a boundary between two
- * regions in a plane. The region to the left of the contour is 
- * treated as including points with vertical coordinates greater than
- * or equal to the contour's vertical coordinate. The values to the
- * right are treated as including points with vertical coordinates
- * less than the contour's vertical coordinate.  Thus, in an elevation
- * set, a hill would be represented with a set of closed-loop
- * contours taken in counterclockwise order. A valley would be represented
- * as a set of closed-loop contours taken in clockwise order.
+ * Provides methods and elements for constructing a contour. Tinfour defines
+ * contours as specifying a boundary between two regions in a plane. The region
+ * to the left of the contour is treated as including points with vertical
+ * coordinates greater than or equal to the contour's vertical coordinate. The
+ * values to the right are treated as including points with vertical coordinates
+ * less than the contour's vertical coordinate. Thus, in an elevation set, a
+ * hill would be represented with a set of closed-loop contours taken in
+ * counterclockwise order. A valley would be represented as a set of closed-loop
+ * contours taken in clockwise order.
  */
 public class Contour {
+
+  /**
+   * An enumeration that indicates the type of a contour
+   */
+  public enum ContourType {
+    /**
+     * Contour lies entirely in the interior of the TIN with the possible
+     * exception of the two end points which may lie on perimeter edges. Both
+     * the left and right index of the contour will be defined (zero or
+     * greater).
+     */
+    Interior,
+    /**
+     * Contour is lies entirely on the perimeter of the TIN.
+     */
+    Perimeter
+  }
 
   private static final int GROWTH_FACTOR = 256;
 
@@ -64,25 +80,29 @@ public class Contour {
   Vertex startVertex;
   IQuadEdge terminalEdge;
   Vertex terminalVertex;
+  boolean traversedForward;
+  boolean traversedBackward;
+  TipLink startTip;
+  TipLink terminalTip;
 
   /**
    * Constructs an instance of a contour
+   *
    * @param contourIndex an arbitrary ID value assigned to the contour
    * @param leftIndex the contour-interval index of the area to the left of the
    * contour.
-   * @param rightIndex the contour-interval index of the area to the right
-   * of the contour.
+   * @param rightIndex the contour-interval index of the area to the right of
+   * the contour.
    * @param z the vertical coordinate for the contour
-   * @param closedLoop indicates if the contour is to be treated as a 
-   * closed loop.
+   * @param closedLoop indicates if the contour is to be treated as a closed
+   * loop.
    */
   public Contour(
-          int contourIndex, 
-          int leftIndex, 
-          int rightIndex, 
-          double z, 
-          boolean closedLoop) 
-  {
+          int contourIndex,
+          int leftIndex,
+          int rightIndex,
+          double z,
+          boolean closedLoop) {
     this.contourIndex = contourIndex;
     this.leftIndex = leftIndex;
     this.rightIndex = rightIndex;
@@ -92,8 +112,9 @@ public class Contour {
   }
 
   /**
-   * Used during construction of the contour from a Delaunay Triangulation 
-   * to create a through-edge transition point.
+   * Used during construction of the contour from a Delaunay Triangulation to
+   * create a through-edge transition point.
+   *
    * @param e the edge through which the contour passes.
    * @param zA the value of the first vertex of the edge
    * @param zB the value of the second vertex of the edge
@@ -120,19 +141,19 @@ public class Contour {
   }
 
   /**
-   * Used during construction of the contour from a Delaunay Triangulation
-   * to indicate a through-vertex transition of the contour.
-   * The edge e is expected to end in the vertex v and begin with
-   * a vertex that has a z-coordinate greater than or equal to the 
-   * contour z value. During construction, this edge is used to 
-   * indicate the area immediately to the left of the contour.
+   * Used during construction of the contour from a Delaunay Triangulation to
+   * indicate a through-vertex transition of the contour. The edge e is expected
+   * to end in the vertex v and begin with a vertex that has a z-coordinate
+   * greater than or equal to the contour z value. During construction, this
+   * edge is used to indicate the area immediately to the left of the contour.
+   *
    * @param e a valid edge
    * @param v a valid vertex through which the contour passes.
    */
   void add(IQuadEdge e, Vertex v) {
     assert v.equals(e.getB()) : "Through-vertex case, edge not pointing at vertex";
     if (n == 0) {
-      startEdge = null;
+      startEdge = e;
       startVertex = v;
     } else {
       if (n == xy.length) {
@@ -146,10 +167,19 @@ public class Contour {
     xy[n++] = v.getY();
   }
 
+  public void add(double x, double y) {
+    if (n == xy.length) {
+      xy = Arrays.copyOf(xy, xy.length + GROWTH_FACTOR);
+    }
+    xy[n++] = x;
+    xy[n++] = y;
+  }
+
   /**
    * Gets a safe copy of the coordinates for the contour.
-   * @return a valid, potentially zero-length array giving
-   * x and y coordinates for a series of points.
+   *
+   * @return a valid, potentially zero-length array giving x and y coordinates
+   * for a series of points.
    */
   public double[] getCoordinates() {
     return Arrays.copyOf(xy, n);
@@ -157,16 +187,16 @@ public class Contour {
 
   /**
    * Indicates whether the contour is empty.
-   * @return true if the contour has no geometry defined;
-   * otherwise false.
+   *
+   * @return true if the contour has no geometry defined; otherwise false.
    */
   public boolean isEmpty() {
-    return n <4; // recall n = nPoints*2.  a single-point contour is empty.
+    return n < 4; // recall n = nPoints*2.  a single-point contour is empty.
   }
 
-  
   /**
    * Indicates the number of points stored in the contour
+   *
    * @return a positive integer value, potentially zero.
    */
   public int size() {
@@ -174,21 +204,31 @@ public class Contour {
   }
 
   /**
-   * Trim the memory for the collection of points (the geometry) to
-   * the minimum required for the contour..
+   * Trim the memory for the collection of points (the geometry) to the minimum
+   * required for the contour..
    */
   public void trimToSize() {
+    if (closedLoop && n >= 6) {
+      double x0 = xy[0];
+      double y0 = xy[1];
+      double x1 = xy[n - 2];
+      double y1 = xy[n - 1];
+      if (x0 != x1 || y0 != y1) {
+        add(x0, y0);
+      }
+    }
     if (xy.length > n) {
       xy = Arrays.copyOf(xy, n);
     }
   }
 
   /**
-   * Gets the index of the contour.  When used with the ContourBuilder,
-   * this value gives a unique serial ID assigned when the contour is constructed.
-   * Other applications are free to use this index as they see fit.
-   * This value should not be confused with the contour interval or
-   * the left and right side index values.
+   * Gets the index of the contour. When used with the ContourBuilder, this
+   * value gives a unique serial ID assigned when the contour is constructed.
+   * Other applications are free to use this index as they see fit. This value
+   * should not be confused with the contour interval or the left and right side
+   * index values.
+   *
    * @return an integer value.
    */
   public int getIndex() {
@@ -217,6 +257,37 @@ public class Contour {
       }
     }
     return path;
+  }
+
+  /**
+   * Indicates whether the contour is an interior or perimeter contour.
+   *
+   * @return a valid enumeration instance
+   */
+  public ContourType getContourType() {
+    if (rightIndex == -1) {
+      return ContourType.Perimeter;
+    } else {
+      return ContourType.Interior;
+    }
+  }
+
+  /**
+   * Indicates that the contour forms a closed loop
+   *
+   * @return true if the contour forms a closed loop; otherwise false
+   */
+  public boolean isClosed() {
+    return closedLoop;
+  }
+
+  @Override
+  public String toString() {
+    return "Contour " + contourIndex
+            + ": L=" + leftIndex
+            + ", R=" + rightIndex
+            + ", z=" + z
+            + ", closed=" + closedLoop;
   }
 
 }
