@@ -33,45 +33,45 @@ import java.io.PrintStream;
 import java.util.ArrayList;
 import java.util.BitSet;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import org.tinfour.common.IIncrementalTin;
 import org.tinfour.common.IQuadEdge;
 import org.tinfour.common.Vertex;
 import org.tinfour.interpolation.IVertexValuator;
 
 /**
- * Provides data elements and methods for constructing contours
- * from a Delaunay Triangulation.   It is assumed that the data 
-   * represented by the triangulation can be treated as a continuous
-   * surface with no null values. Constrained Delaunay Triangulations
-   * are allowed.
- * 
+ * Provides data elements and methods for constructing contours from a Delaunay
+ * Triangulation. It is assumed that the data represented by the triangulation
+ * can be treated as a continuous surface with no null values. Constrained
+ * Delaunay Triangulations are allowed.
+ *
  * <p>
- * <strong>Under development, not complete.</strong> Support for 
- * polygon regions is not yet included.
+ * <strong>Under development. </strong> Initial implementation is finished
+ * but additional access methods are required and substantial testing 
+ * still remains.
  * <p>
- * <strong>Contour left-and-right index:</strong> The left and right
- * index elements for the contours created by this class are set to the
- * array index of the zContour array supplied to the constructor.
- * For example, in the case of a zContour array that specified a single
- * contour value, the right-index of the contours would be assigned the
- * value 0 and the left-index would be assigned the value 1.
- * The maximum possible left-index value is always the zContour.length.
- * The minimum possible right-index value is always zero, except
- * in the special case of perimeter contours. Perimeter contours are
+ * <strong>Contour left-and-right index:</strong> The left and right index
+ * elements for the contours created by this class are set to the array index of
+ * the zContour array supplied to the constructor. For example, in the case of a
+ * zContour array that specified a single contour value, the right-index of the
+ * contours would be assigned the value 0 and the left-index would be assigned
+ * the value 1. The maximum possible left-index value is always the
+ * zContour.length. The minimum possible right-index value is always zero,
+ * except in the special case of perimeter contours. Perimeter contours are
  * those that lie on the outer edges of the TIN and represent the boundary
- * between "data and no-data".  The right index value for perimeter contours
- * is -1.
+ * between "data and no-data". The right index value for perimeter contours is
+ * -1.
  * <p>
- * Tinfour defines contours as specifying a boundary between two
- * regions in a plane. The region to the left of the contour is 
- * treated as including points with vertical coordinates greater than
- * or equal to the contour's vertical coordinate. The values to the
- * right are treated as including points with vertical coordinates
- * less than the contour's vertical coordinate.  Thus, in an elevation
- * set, a hill would be represented with a set of closed-loop
- * contours taken in counterclockwise order. A valley would be represented
- * as a set of closed-loop contours taken in clockwise order.
+ * Tinfour defines contours as specifying a boundary between two regions in a
+ * plane. The region to the left of the contour is treated as including points
+ * with vertical coordinates greater than or equal to the contour's vertical
+ * coordinate. The values to the right are treated as including points with
+ * vertical coordinates less than the contour's vertical coordinate. Thus, in an
+ * elevation set, a hill would be represented with a set of closed-loop contours
+ * taken in counterclockwise order. A valley would be represented as a set of
+ * closed-loop contours taken in clockwise order.
  */
 public class ContourBuilderForTin {
 
@@ -79,7 +79,7 @@ public class ContourBuilderForTin {
 
     @Override
     public double value(Vertex v) {
-      assert v!=null: "Internal method failure, accessing value for null vertex";
+      assert v != null : "Internal method failure, accessing value for null vertex";
       double z = v.getZ();
       if (Double.isNaN(z)) {
         throw new IllegalArgumentException(
@@ -91,53 +91,109 @@ public class ContourBuilderForTin {
   }
 
   private final IIncrementalTin tin;
+  /**
+   * The perimeter edges for the TIN.
+   */
   private final List<IQuadEdge> perimeter;
+  /**
+   * A class for assigning numeric values to contours.
+   */
   private final IVertexValuator valuator;
+  /**
+   * A safe copy of the contour value specifications.
+   */
   private final double[] zContour;
-  private final BitSet visited;
+
+  /**
+   * A bitmap for tracking whether edges have been processed during contour
+   * construction.
+   */
+  private BitSet visited;
+  /**
+   * A list of "closed contours" which lie entirely in the interior of the TIN
+   * and form closed loops.
+   */
   private final ArrayList<Contour> closedContourList = new ArrayList<>();
+  /**
+   * A list of "open contours" which cross the interior of the TIN and terminate
+   * at points lying on its perimeter edges.
+   */
   private final ArrayList<Contour> openContourList = new ArrayList<>();
+
+  /**
+   * A list of contours lying along the boundary. These contours consist
+   * exclusively of points lying on the perimeter of the TIN. These contours are
+   * predominantly open, but may be closed in the special case that there are no
+   * interior contours that terminate at the perimeters (e.g. those in the
+   * openContourList).
+   */
+  private final ArrayList<Contour> perimeterContourList = new ArrayList<>();
+
+  /**
+   * The list of all regions (may be empty).
+   */
   private final ArrayList<ContourRegion> regionList = new ArrayList<>();
+
+  /**
+   * The list of regions that are not contained by other regions.
+   */
   private final ArrayList<ContourRegion> outterRegions = new ArrayList<>();
+
   private int nContour;
   private int nVertexTransit;
   private int nEdgeTransit;
+
+  boolean regionsAreBuilt;
   private long timeToBuildContours;
+  private long timeToBuildRegions;
 
   /**
-   * Creates a set of contours at the specified vertical coordinates
-   * from the Delaunay Triangulation.  It is assumed that the data 
-   * represented by the triangulation can be treated as a continuous
-   * surface with no null values. Constrained Delaunay Triangulations
-   * are allowed.
+   * A map relating edge index to a perimeter link
+   */
+  private final Map<Integer, PerimeterLink> perimeterMap = new HashMap<>();
+
+  /**
+   * A list of the perimeter links. Even though the perimeter links form a
+   * self-closing linked list, we track them just an array list just to simplify
+   * the debugging and diagnostics. This representation is slightly redundant,
+   * but the added overhead is less important that creating manageable code.
+   */
+  private final List<PerimeterLink> perimeterList = new ArrayList<PerimeterLink>();
+
+  /**
+   * Creates a set of contours at the specified vertical coordinates from the
+   * Delaunay Triangulation. It is assumed that the data represented by the
+   * triangulation can be treated as a continuous surface with no null values.
+   * Constrained Delaunay Triangulations are allowed.
    * <p>
-   * The constructor for this class always builds a list of contours
-   * that is maintained internally.  Contours are defined as line features.
-   * If you wish, you may invoke the buildRegions() method to connect the
-   * contours into closed polygons. This feature is currently only partially
-   * implemented. It only supports the construction of polygons for
-   * the interior, closed-loop contours.
+   * The constructor for this class always builds a list of contours that is
+   * maintained internally. Contours are defined as line features. If you wish,
+   * you may set the buildRegions argument to true to connect the contours into
+   * closed polygons. 
    * <p>
-   * The vertex-valuator argument allows you to specify an alternate method
-   * for obtaining the vertical coordinates from the vertices in the
-   * triangulation. If you wish to use the values from the vertices directly
-   * (i.e. the z coordinates of the vertices),
-   * you may do so by supplying a null reference for the valuator argument.
-   * The primary intended use of the valuator is to support the 
-   * use of a smoothing filter, though many other applications are 
+   * The vertex-valuator argument allows you to specify an alternate method for
+   * obtaining the vertical coordinates from the vertices in the triangulation.
+   * If you wish to use the values from the vertices directly (i.e. the z
+   * coordinates of the vertices), you may do so by supplying a null reference
+   * for the valuator argument. The primary intended use of the valuator is to
+   * support the use of a smoothing filter, though many other applications are
    * feasible.
    * <p>
-   * The values in the zContour array must be unique and monitonically
+   * The values in the zContour array must be unique and monotonically
    * increasing.
+   *
    * @param tin a valid TIN.
-   * @param vertexValuator an optional valuator or a null reference if
-   * the default is to be used.
+   * @param vertexValuator an optional valuator or a null reference if the
+   * default is to be used.
    * @param zContour a value array of contour values.
+   * @param buildRegions indicates whether the builder should produce region
+   * (polygon) structures in addition to contours.
    */
   public ContourBuilderForTin(
-          IIncrementalTin tin, 
-          IVertexValuator vertexValuator, 
-          double[] zContour) {
+          IIncrementalTin tin,
+          IVertexValuator vertexValuator,
+          double[] zContour,
+          boolean buildRegions) {
     if (tin == null) {
       throw new IllegalArgumentException("Null reference for input TIN");
     }
@@ -151,8 +207,8 @@ public class ContourBuilderForTin {
     for (int i = 1; i < zContour.length; i++) {
       if (!(zContour[i - 1] < zContour[i])) {
         throw new IllegalArgumentException(
-                "Input contours are not unique and specified in ascending order,"
-                + " see index " + i);
+                "Input contours must be unique and specified in ascending order,"
+                + " zContours[ " + i + "] does not meet this requirement");
       }
     }
 
@@ -167,22 +223,68 @@ public class ContourBuilderForTin {
     int n = tin.getMaximumEdgeAllocationIndex();
     visited = new BitSet(n);
 
+    // Create a closed loop of perimeter links in a counter-clockwise
+    // direction.  The edges in the perimeter are the interior side
+    // of the TIN perimeter edges.  Their duals will be the exterior sides
+    // (and will connect to the ghost vertex).
     perimeter = tin.getPerimeter();
+    PerimeterLink prior = null;
+    int k = 0;
+    for (IQuadEdge p : perimeter) {
+      PerimeterLink pLink = new PerimeterLink(k, p);
+      perimeterMap.put(p.getIndex(), pLink);
+      perimeterList.add(pLink);
+      if (prior != null) {
+        prior.next = pLink;
+        pLink.prior = prior;
+      }
+      prior = pLink;
+      k++;
+    }
+
+    assert !perimeterList.isEmpty() && prior != null : "Missing perimeter data";
+    PerimeterLink pFirst = perimeterList.get(0);
+    pFirst.prior = prior;
+    prior.next = pFirst;
+
     buildContours();
-    visited.clear();
+    if (buildRegions) {
+      buildRegions();
+    }
+
+    // TO DO: clean up all contruction elements including internal references.
+    visited = null;
   }
 
   /**
    * Gets a list of the contours that were constructed by this class.
+   *
    * @return a valid, potentially empty list.
    */
   public List<Contour> getContours() {
-    List<Contour> cList = new ArrayList<>(closedContourList.size() + openContourList.size());
+    int n = closedContourList.size()
+            + openContourList.size()
+            + perimeterContourList.size();
+    List<Contour> cList = new ArrayList<>(n);
     cList.addAll(openContourList);
     cList.addAll(closedContourList);
+    cList.addAll(perimeterContourList);
     return cList;
   }
 
+  /**
+   * Gets a list of the contour regions (polygon features) that were built by
+   * the constructor, if any.
+   *
+   * @return a valid, potentially empty list of regions.
+   */
+  public List<ContourRegion> getRegions() {
+    List<ContourRegion> aList = new ArrayList<>(regionList.size());
+    aList.addAll(regionList);
+    return aList;
+  }
+
+  
   private boolean storeContour(Contour contour, boolean reachedPerimeter) {
     if (contour.closedLoop) {
       assert !reachedPerimeter : "Reached perimeter while building interior contour";
@@ -192,26 +294,26 @@ public class ContourBuilderForTin {
       assert reachedPerimeter : "Failed to reached perimeter while building perimeter-intersection contour";
       contour.trimToSize();
       openContourList.add(contour);
+
     }
     return true;
   }
 
-  
   /**
-   * Build the contours 
+   * Build the contours
    */
-  private  void buildContours() {
+  private void buildContours() {
     long time0 = System.nanoTime();
     for (int i = 0; i < zContour.length; i++) {
       visited.clear();
-      buildPerimeterContour(i);
-      buildInteriorContour(i);
+      buildOpenContours(i);
+      buildInteriorContours(i);
     }
     long time1 = System.nanoTime();
     timeToBuildContours = time1 - time0;
   }
 
-  private void buildInteriorContour(int iContour) {
+  private void buildInteriorContours(int iContour) {
 
     double z = zContour[iContour];
 
@@ -268,7 +370,16 @@ public class ContourBuilderForTin {
     }
   }
 
-  private void buildPerimeterContour(int iContour) {
+  /**
+   * Builds the open-ended contours. These are the contours that terminate in a
+   * point lying on the perimeter of the TIN. They do form closed-loops. These
+   * contours should not be confused with perimeter-contours (those that lie
+   * directly on perimeter edges).
+   *
+   * @param iContour the index of the z-contour value being used to generate
+   * contours.
+   */
+  private void buildOpenContours(int iContour) {
 
     double z = zContour[iContour];
 
@@ -328,7 +439,7 @@ public class ContourBuilderForTin {
           Vertex G = h.getB();
           mark(g);
           mark(h);
-            mark(k);
+          mark(k);
           if (G == null) {
             // The search pivoted to the next edge on the perimeter without
             // finding a transition. Do not create a contour through vertex B.
@@ -468,7 +579,8 @@ public class ContourBuilderForTin {
               if (C.equals(contour.startVertex)) {
                 return storeContour(contour, false);
               }
-              contour.add(f, C);
+              IQuadEdge q = e.getDualFromReverse();
+              contour.add(q, C);
               e = f;
               break; // inner loop
             } else {
@@ -500,23 +612,165 @@ public class ContourBuilderForTin {
     }
   }
 
-  
-  /**
-   * Organize the contours into a series of polygons.
-   * <p>
-   * <strong>Not fully implemented</strong> A this time, this method
-   * only processes the interior, closed-loop contours, and does not
-   * process those that intersect the perimeter of the TIN.
-   */
-  public void buildRegions(){
+  private void buildRegions() {
+
+    long time0 = System.nanoTime();
+
+    // development note: the building of perimeter regions and closed
+    // regions are independent, so you can do whichever one you want
+    // first.  for debugging purposes, feel free to change the order.
+    buildPerimeterRegions();
+
     for (Contour contour : closedContourList) {
       ContourRegion region = new ContourRegion(contour);
       regionList.add(region);
     }
+
+    // Once both interior and exterior regions are built, organize
+    // the nesting relationships.  Some larger regions may enclose
+    // smaller regions, etc.   At this point, whether or not a region
+    // is constructed from open or closed contours is immaterial.
     organizeNestedRegions();
+    long time1 = System.nanoTime();
+    timeToBuildRegions = time1 - time0;
   }
-  
+
+  private void buildPerimeterRegions() {
+    if (openContourList.isEmpty()) {
+      Vertex A = perimeter.get(0).getA();
+      double z = valuator.value(A);
+      int leftIndex = zContour.length;
+      for (int i = 0; i < zContour.length; i++) {
+        if (zContour[i] > z) {
+          leftIndex = i;
+          break;
+        }
+      }
+      Contour contour = new Contour(nContour++, leftIndex, -1, z, true);
+      for (IQuadEdge p : perimeter) {
+        A = p.getA();
+        contour.add(A.getX(), A.getY());
+      }
+      contour.trimToSize();
+      this.perimeterContourList.add(contour);
+      ContourRegion region = new ContourRegion(contour);
+      regionList.add(region);
+      return;
+    }
+
+    for (Contour contour : openContourList) {
+      int startIndex = contour.startEdge.getIndex();
+      PerimeterLink pStart = perimeterMap.get(startIndex);
+      pStart.addContourTip(contour, true);
+
+      // Because the follow-contour logic always stores the
+      // "next transition" in the terminalEdge element, 
+      // the terminal edge of the contour will be the outside
+      // of the perimeter edge.  Since region builder logic is interested
+      // in the inner edges, we need to get the dual.
+      IQuadEdge termDual = contour.terminalEdge.getDual();
+      int termIndex = termDual.getIndex();
+      PerimeterLink pTerm = perimeterMap.get(termIndex);
+      pTerm.addContourTip(contour, false);
+    }
+
+    // The perimeter links form a closed-loop linked-list.
+    // However, we keep a redundant set of references in an
+    // array list (perimeterLinks) to simplify debugging and diagnostsics.
+    for (PerimeterLink pLink : perimeterList) {
+      if (pLink.tip0 == null) {
+        // there are no contour starts or terminations associated with
+        // this perimeter edge.
+        continue;
+      }
+
+      TipLink node = pLink.tip0;
+      while (node != null) {
+        if (node.start) {
+          if (!node.contour.traversedForward) {
+            int leftIndex = node.contour.leftIndex;
+            double z = node.contour.z;
+            List<ContourRegionMember> mList = traverseFromNode(node, leftIndex, z, true);
+            ContourRegion region = new ContourRegion(mList, leftIndex);
+            regionList.add(region);
+          }
+        } else {
+          // the tip is an contour termination
+          if (!node.contour.traversedBackward) {
+            int rightIndex = node.contour.rightIndex;
+            double z = node.contour.z;
+            List<ContourRegionMember> mList = traverseFromNode(node, rightIndex, z, false);
+            ContourRegion region = new ContourRegion(mList, rightIndex);
+            regionList.add(region);
+          }
+        }
+        node = node.next;
+      }
+    }
+  }
+
+  private List<ContourRegionMember> traverseFromNode(TipLink node0, int leftIndex, double z, boolean forward0) {
+    List<ContourRegionMember> mList = new ArrayList<>();
+    TipLink node = node0;
+    boolean forward = forward0;
+    do {
+      Contour contour = node.contour;
+      ContourRegionMember member = new ContourRegionMember(contour, forward);
+      mList.add(member);
+      double x, y;
+      Contour boundaryContour = new Contour(nContour++, leftIndex, -1, z, false);
+      perimeterContourList.add(boundaryContour);
+      member = new ContourRegionMember(boundaryContour, true);
+      mList.add(member);
+
+      if (forward) {
+        contour.traversedForward = true;
+        node = contour.terminalTip;
+        x = contour.xy[contour.xy.length - 2];
+        y = contour.xy[contour.xy.length - 1];
+      } else {
+        contour.traversedBackward = true;
+        node = contour.startTip;
+        x = contour.xy[0];
+        y = contour.xy[1];
+      }
+      boundaryContour.add(x, y);
+      if (node.next != null) {
+        node = node.next;
+      } else {
+        PerimeterLink pLink = node.pLink.next;
+        IQuadEdge pEdge = pLink.edge;
+        Vertex A = pEdge.getA();
+        boundaryContour.add(A.getX(), A.getY());
+        while (pLink.tip0 == null) {
+          pLink = pLink.next;
+          pEdge = pLink.edge;
+          A = pEdge.getA();
+          boundaryContour.add(A.getX(), A.getY());
+        }
+        node = pLink.tip0;
+      }
+
+      contour = node.contour;
+      if (node.start) {
+        forward = true;  // for next contour traversal
+        x = contour.xy[0];
+        y = contour.xy[1];
+      } else {
+        forward = false; // for next contour traversal
+        x = contour.xy[contour.xy.length - 2];
+        y = contour.xy[contour.xy.length - 1];
+      }
+      boundaryContour.add(x, y);
+      boundaryContour.trimToSize(); // we're done building the boundary contour
+
+    } while (node != node0);
+
+    return mList;
+  }
+
   private void organizeNestedRegions() {
+    // TO DO: does not yet support multi-contour (open-contour) regions.
     int nRegion = regionList.size();
     if (nRegion < 2) {
       return;
@@ -561,11 +815,12 @@ public class ContourBuilderForTin {
    * process and resulting data.
    *
    * @param ps a valid PrintStream instance, such as System&#46;out.
-   * @param areaFactor
+   * @param areaFactor a unit-conversion factor for scaling area values
    */
   public void summarize(PrintStream ps, double areaFactor) {
     ps.format("Summary of statistics for contour building%n");
     ps.format("Time to build contours %7.1f ms%n", timeToBuildContours / 1.0e+6);
+    ps.format("Time to build regions  %7.1f ms%n", timeToBuildRegions / 1.0e+6);
     ps.format("Open contours:      %8d,  %8d points%n",
             openContourList.size(), countPoints(openContourList));
     ps.format("Closed contours:    %8d,  %8d points%n",
@@ -574,17 +829,17 @@ public class ContourBuilderForTin {
     ps.format("Outter Regions:     %8d%n", outterRegions.size());
     ps.format("Edge transits:      %8d%n", nEdgeTransit);
     ps.format("Vertex transits:    %8d%n", nVertexTransit);
-//    ps.format("%n");
+    ps.format("%n");
 //    ps.format("%nArea computations by contour level%n");
 //    for (int iRegion = 0; iRegion < zContour.length + 1; iRegion++) {
 //      String zString;
 //      double z;
 //      if (iRegion == zContour.length) {
 //        z = zContour[zContour.length - 1];
-//        zString = String.format("> %9.1f", z);
+//        zString = String.format("> %9.3f", z);
 //      } else {
 //        z = zContour[iRegion];
-//        zString = String.format("  %9.1f", z);
+//        zString = String.format("  %9.3f", z);
 //      }
 //      double a = 0;
 //      for (ContourRegion region : regionList) {
@@ -594,7 +849,7 @@ public class ContourBuilderForTin {
 //      }
 //      ps.format("%6d   %s  %f%n", iRegion, zString, a / areaFactor);
 //    }
-
+//
 //    ps.format("%nPolygon nesting%n");
 //    for (ContourRegion region : outterRegions) {
 //      recursiveSummarize(ps, areaFactor, region, 0);
@@ -618,5 +873,4 @@ public class ContourBuilderForTin {
 //      recursiveSummarize(ps, areaFactor, r, iLevel + 1);
 //    }
 //  }
-
 }
