@@ -45,6 +45,17 @@ import org.tinfour.common.Vertex;
  * hill would be represented with a set of closed-loop contours taken in
  * counterclockwise order. A valley would be represented as a set of closed-loop
  * contours taken in clockwise order.
+ * <p>
+ * The complete() method should always be called when a contour is fully
+ * populated (e.g. it is complete). The complete call trims the internal buffers
+ * and performs any sanity checking required for contour management.
+ * <p>
+ * A closed-loop contour is expected to always include a "closure point" so that
+ * the first point in the contour matches the last. This approach is taken to
+ * simplify internal logic in the contour building routines. The complete()
+ * method ensures that a closure point is added to closed-loop contours if none
+ * is provided by the application.
+ *
  */
 public class Contour {
 
@@ -167,6 +178,12 @@ public class Contour {
     xy[n++] = v.getY();
   }
 
+  /**
+   * Add an coordinate point to the contour.
+   *
+   * @param x the Cartesian x-coordinate for the point
+   * @param y the Cartesian y-coordinate for the point
+   */
   public void add(double x, double y) {
     if (n == xy.length) {
       xy = Arrays.copyOf(xy, xy.length + GROWTH_FACTOR);
@@ -204,10 +221,14 @@ public class Contour {
   }
 
   /**
-   * Trim the memory for the collection of points (the geometry) to the minimum
-   * required for the contour..
+   * Called when the construction of a contour is complete to trim the memory
+   * for the internal point collection. This method also ensures that a
+   * closed-loop contour includes a closure point.
+   * <p>
+   * References to edges and contour-building elements are not affected by this
+   * call.
    */
-  public void trimToSize() {
+  public void complete() {
     if (closedLoop && n >= 6) {
       double x0 = xy[0];
       double y0 = xy[1];
