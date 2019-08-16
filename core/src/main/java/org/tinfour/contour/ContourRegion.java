@@ -31,6 +31,7 @@ package org.tinfour.contour;
 
 import java.awt.geom.AffineTransform;
 import java.awt.geom.Path2D;
+import java.awt.geom.Point2D;
 import java.util.ArrayList;
 import java.util.List;
 import org.tinfour.contour.Contour.ContourType;
@@ -57,23 +58,23 @@ public class ContourRegion {
     Perimeter
   }
 
-  ContourRegionType contourRegionType;
-  List<ContourRegionMember> memberList = new ArrayList<>();
-  int regionIndex;
-  double z;
-  double area;
-  double absArea;
+  final ContourRegionType contourRegionType;
+  final List<ContourRegionMember> memberList = new ArrayList<>();
+  final int regionIndex;
+  final double area;
+  final double absArea;
+  final double xTest;
+  final double yTest;
+
+  final List<ContourRegion> children = new ArrayList<>();
   ContourRegion parent;
-  List<ContourRegion> children = new ArrayList<>();
-
-  /**
-   * Standard constructor
-   */
-  ContourRegion() {
-
-  }
 
   ContourRegion(List<ContourRegionMember> memberList, int regionIndex) {
+    if (memberList.isEmpty()) {
+      throw new IllegalArgumentException(
+              "An empty specification for a region geometry is not supported");
+    }
+
     this.regionIndex = regionIndex;
     this.memberList.addAll(memberList);
     double a = 0;
@@ -94,6 +95,11 @@ public class ContourRegion {
 
     area = a / 2.0;
     absArea = Math.abs(area);
+
+    Contour contour = memberList.get(0).contour;
+    xTest = (contour.xy[0] + contour.xy[2]) / 2.0;
+    yTest = (contour.xy[1] + contour.xy[3]) / 2.0;
+
   }
 
   /**
@@ -109,25 +115,18 @@ public class ContourRegion {
     }
 
     assert contour.closedLoop : "Single contour constructor requires closed loop";
-    double a = 0;
+
     memberList.add(new ContourRegionMember(contour, true));
-    double x0 = contour.xy[contour.n - 2];
-    double y0 = contour.xy[contour.n - 1];
-    for (int i = 0; i < contour.n; i += 2) {
-      double x1 = contour.xy[i];
-      double y1 = contour.xy[i + 1];
-      a += x0 * y1 - x1 * y0;
-      x0 = x1;
-      y0 = y1;
-    }
-    area = a / 2;
+    area = calculateAreaContribution(contour) / 2;
     absArea = Math.abs(area);
     if (area < 0) {
       regionIndex = contour.rightIndex;
     } else {
       regionIndex = contour.leftIndex;
     }
-    z = contour.z;
+
+    xTest = (contour.xy[0] + contour.xy[2]) / 2.0;
+    yTest = (contour.xy[1] + contour.xy[3]) / 2.0;
   }
 
   private double calculateAreaContribution(Contour contour) {
@@ -192,6 +191,17 @@ public class ContourRegion {
   }
 
   /**
+   * Sets the reference to the contour region that encloses the region
+   * represented by this class. A null parent reference indicates that the
+   * region is not enclosed by another.
+   *
+   * @param parent a valid reference; or a null.
+   */
+  void setParent(ContourRegion parent) {
+    this.parent = parent;
+  }
+
+  /**
    * Indicates whether the specified point is inside the region
    *
    * @param x the Cartesian coordinate for the point of interest
@@ -201,6 +211,20 @@ public class ContourRegion {
   public boolean isPointInsideRegion(double x, double y) {
 
     double[] xy = getXY();
+
+    return isPointInsideRegion(xy, x, y);
+  }
+
+  /**
+   * Indicates whether the specified point is inside a closed polygon.
+   *
+   * @param xy an array giving the Cartesian coordinates of the closed, simple
+   * polygon for the region to be tested.
+   * @param x the Cartesian coordinate for the point of interest
+   * @param y the Cartesian coordinate for the point of interest
+   * @return true if the point is inside the contour; otherwise, fakse
+   */
+  public boolean isPointInsideRegion(double[] xy, double x, double y) {
     int rCross = 0;
     int lCross = 0;
     int n = xy.length / 2;
@@ -261,7 +285,7 @@ public class ContourRegion {
   /**
    * Gets the index of the region. The indexing scheme is based on the original
    * values of the zContour array used when the contour regions were built. The
-   * minimim proper region index is zero.
+   * minimum proper region index is zero.
    * <p>
    * At this time, regions are not constructed for areas of null data. In future
    * implementations, null-data regions will be indicated by a region index of
@@ -274,34 +298,96 @@ public class ContourRegion {
   }
 
   /**
-   * Gets a Path2D suitable for rendering purposes.
+   * Gets a Path2D suitable for rendering purposes. The path includes only the
+   * outer polygon for the region and does not include the internal (nested)
+   * polygons.
    *
    * @param transform a valid AffineTransform, typically specified to map the
    * Cartesian coordinates of the contour to pixel coordinate.
    * @return a valid instance
    */
   public Path2D getPath2D(AffineTransform transform) {
-    double[] xy = getXY();
-    int n = xy.length;
-    Path2D path = new Path2D.Double();
-    if (n >= 4) {
-      double[] c = new double[n];
-      transform.transform(xy, 0, c, 0, n / 2);
-
-      path.moveTo(c[0], c[1]);
-      for (int i = 1; i < n / 2; i++) {
-        path.lineTo(c[i * 2], c[i * 2 + 1]);
-      }
-      path.closePath();
-
+    AffineTransform af = transform;
+    if (af == null) {
+      af = new AffineTransform();  // identity transform
     }
+    double[] xy = getXY();
+    Path2D path = new Path2D.Double();
+    appendPathForward(af, path, xy);
     return path;
+  }
+
+  /**
+   * Gets a Path2D suitable for rendering purposes including both the outer
+   * polygon and any internal (nested child) polygons. In used for fill
+   * operations, regions that include nested child regions will be rendered with
+   * "holes" where the child polygons are indicated.
+   *
+   * @param transform a valid AffineTransform, typically specified to map the
+   * Cartesian coordinates of the contour to pixel coordinate.
+   * @return a valid instance
+   */
+  public Path2D getPathWithNesting(AffineTransform transform) {
+    AffineTransform af = transform;
+    if (af == null) {
+      af = new AffineTransform();  // identity transform
+    }
+    double[] xy = getXY();
+    Path2D path = new Path2D.Double();
+    path.setWindingRule(Path2D.WIND_EVEN_ODD);
+    appendPathForward(transform, path, xy);
+    for (ContourRegion child : children) {
+      xy = child.getXY();
+      appendPathForward(af, path, xy);
+    }
+
+    return path;
+  }
+
+  private void appendPathForward(
+          AffineTransform transform, Path2D path, double[] xy) {
+    int n = xy.length / 2;
+    if (n < 2) {
+      return;
+    }
+
+    double[] c = new double[n * 2];
+    transform.transform(xy, 0, c, 0, n);
+
+    path.moveTo(c[0], c[1]);
+    for (int i = 1; i < n; i++) {
+      path.lineTo(c[i * 2], c[i * 2 + 1]);
+    }
+    path.closePath();
+  }
+
+  /**
+   * Gets a point lying on one of the segments in the region to support testing
+   * for polygon enclosures. Note that the test point is never one of the
+   * vertices of the segment.
+   *
+   * @return a valid instance of a Point2D object
+   */
+  public Point2D getTestPoint() {
+    return new Point2D.Double(xTest, yTest);
+  }
+
+  public List<ContourRegion> getEnclosedRegions() {
+    List<ContourRegion> nList = new ArrayList<>();
+    nList.addAll(children);
+    return nList;
   }
 
   @Override
   public String toString() {
-    return String.format("%4d %12.2f  %s %d",
-            regionIndex, area, parent == null ? "root " : "child",
+    String aString;
+    if (absArea > 0.1) {
+      aString = String.format("%12.3f", area);
+    } else {
+      aString = String.format("%f", area);
+    }
+    return String.format("%4d %s %s %d",
+            regionIndex, aString, parent == null ? "root " : "child",
             children.size());
   }
 }

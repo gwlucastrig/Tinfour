@@ -30,6 +30,8 @@
  */
 package org.tinfour.common;
 
+import java.awt.geom.AffineTransform;
+import java.awt.geom.Path2D;
 import java.util.ArrayList;
 import java.util.List;
 import org.tinfour.utils.KahanSummation;
@@ -243,6 +245,40 @@ public class PolygonConstraint
     }
     return true;
   }
+  
+  
+  /**
+   * Gets a Java Path2D based on the geometry of the constraint mapped through
+   * an optional affine transform.
+   *
+   * @param transform a valid transform, or the null to use the identity
+   * transform.
+   * @return a valid instance of a Java Path2D
+   */
+  public Path2D getPath2D(AffineTransform transform) {
+    AffineTransform af = transform;
+    if (transform == null) {
+      af = new AffineTransform();
+    }
+    double[] c = new double[4];
+    Path2D path = new Path2D.Double(Path2D.WIND_EVEN_ODD);
+    boolean moveFlag = true;
+    for (Vertex v : list) {
+      c[0] = v.x;
+      c[1] = v.y;
+      af.transform(c, 0, c, 2, 1);
+      if (moveFlag) {
+        moveFlag = false;
+        path.moveTo(c[2], c[3]);
+      } else {
+        path.lineTo(c[2], c[3]);
+      }
+    }
+    path.closePath();
+    return path;
+  }
+  
+  
   
   @Override
   public String toString() {
