@@ -154,9 +154,7 @@ public class ContourRegion {
     if (memberList.size() == 1 && memberList.get(0).contour.isClosed()) {
       return contour.getCoordinates();
     }
-    int n = 0;
-    double x0 = contour.xy[0];
-    double y0 = contour.xy[1];
+    int n = 0;;
     for (ContourRegionMember member : memberList) {
       n += member.contour.size() - 1;
     }
@@ -167,21 +165,19 @@ public class ContourRegion {
       contour = member.contour;
       n = contour.size();
       if (member.forward) {
-        // don't copy last point
-        for (int i = 0; i < n - 1; i++) {
+        for (int i = 0; i < n-1; i++) {
           xy[k++] = contour.xy[i * 2];
           xy[k++] = contour.xy[i * 2 + 1];
         }
       } else {
-        // don't copy first point
         for (int i = n - 1; i > 0; i--) {
           xy[k++] = contour.xy[i * 2];
           xy[k++] = contour.xy[i * 2 + 1];
         }
       }
     }
-    xy[k++] = x0;
-    xy[k++] = y0;
+    xy[k++] = xy[0];
+    xy[k] = xy[1];
     return xy;
   }
 
@@ -380,14 +376,16 @@ public class ContourRegion {
 
   @Override
   public String toString() {
-    String aString;
+    String areaString;
     if (absArea > 0.1) {
-      aString = String.format("%12.3f", area);
+      areaString = String.format("%12.3f", area);
     } else {
-      aString = String.format("%f", area);
+      areaString = String.format("%f", area);
     }
-    return String.format("%4d %s %s %d",
-            regionIndex, aString, parent == null ? "root " : "child",
+    return String.format("%4d %s  %s %3d",
+            regionIndex,
+            areaString, 
+            parent == null ? "root " : "child",
             children.size());
   }
 }
