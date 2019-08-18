@@ -307,13 +307,28 @@ public class ContourBuilderForTin {
     for (int i = 0; i < zContour.length; i++) {
       visited.clear();
       buildOpenContours(i);
-      buildInteriorContours(i);
+      buildClosedLoopContours(i);
     }
     long time1 = System.nanoTime();
     timeToBuildContours = time1 - time0;
   }
   
-  private void buildInteriorContours(int iContour) {
+  /**
+   * Build contours that lie entirely inside the TIN and do not intersect
+   * the perimeter edges. These contours form closed loops.
+   * The left and right index values for the contour will be assigned
+   * based on the specified iContour interval index.
+   * The left-side index of the contour will be assigned a value of
+   * iContour+1, the right-side index will be assigned a value of iContour.
+   * Because contours are constructed with the locally high region 
+   * on their left side, the value of the area enclosed by the contour
+   * will determine their orientation. Contours enclosing a region of
+   * values greater than or equal zContour[iContour] will be given
+   * in counter-clockwise order. Contours enclosing a region of values
+   * less than zContour[iContour] will be given in clockwise order.
+   * @param iContour the right-side index of the contours to be constructed.
+   */
+  private void buildClosedLoopContours(int iContour) {
     
     double z = zContour[iContour];
     
@@ -372,7 +387,7 @@ public class ContourBuilderForTin {
 
   /**
    * Builds the open-ended contours. These are the contours that terminate in a
-   * point lying on the perimeter of the TIN. They do form closed-loops. These
+   * point lying on the perimeter of the TIN. They do not form closed-loops. These
    * contours should not be confused with perimeter-contours (those that lie
    * directly on perimeter edges).
    *
@@ -612,6 +627,7 @@ public class ContourBuilderForTin {
     }
   }
   
+  
   private void buildRegions() {
     
     long time0 = System.nanoTime();
@@ -635,7 +651,28 @@ public class ContourBuilderForTin {
     timeToBuildRegions = time1 - time0;
   }
   
+  /**
+   * Build regions (closed polygons) that include at elast one contour
+   * lying on the perimeter of the TIN. In most, but not all cases,
+   * the resulting regions will include at least one open-loop
+   * interior contour.  The region structure may specify that an
+   * interior contour is traversed in a forward or reverse direction.
+   * In the overall collection of all perimeter-originating regions,
+   * all interior contours will be traversed twice, once in their forward
+   * direction and once in the reverse. Perimeter contours are always traversed
+   * just once, in a forward direction.
+   * <p>
+   * The perimeter contours are constructed by this method during
+   * the construction of the regions. These contours are always oriented 
+   * so that the interior of the TIN is to their left. Their left-index
+   * is assigned according to the z values that border their immediate
+   * left. the right-index is assigned a value of -1, indicating that
+   * the data for the region to the right of the perimeter contour is undefined.
+   */
   private void buildPerimeterRegions() {
+    // Test for a special case. If none of the interiors intersect
+    // the perimeter edges, then construct a single closed-loop region
+    // based on the geometry of the perimter.
     if (openContourList.isEmpty()) {
       Vertex A = perimeter.get(0).getA();
       double z = valuator.value(A);
@@ -709,9 +746,34 @@ public class ContourBuilderForTin {
     }
   }
   
-  private List<ContourRegionMember> traverseFromNode(TipLink node0, int leftIndex, double z, boolean forward0) {
+  /**
+   * Construct a perimeter contour connecting the initial tip to its
+   * nearest neighbor in a counter-clockwise direction. The neighbor
+   * may be on the same edge as the initial tip or on a subsequent perimeter
+   * edge in a counter-clockwise direction from the initial tip.
+   * <p>
+   * The initial tip may be either the start or termination of a contour.
+   * It represents the point where the contour intersected a perimeter edge.
+   * The flag forward0 indicates the direction of traversal for the contour
+   * and is used to obtain the Cartesian coordinates for the first
+   * point in the first node.
+   * @param tipLink0 the initial tip.
+   * @param leftIndex the left index to be assigned to the perimeter contour.
+   * @param z the z value to be assigned to the perimeter contour. This value
+   * is primarily intended for diagnostic purposes.
+   * @param forward0 Indicates the direction of traversal for the contour 
+   * associated with the node.
+   * @return a list of member objects giving the contour and direction
+   * of traversal for the region.
+   */
+  private List<ContourRegionMember> traverseFromNode(
+          TipLink tipLink0, int leftIndex, double z, boolean forward0) 
+  {
+    // TO DO: The forward0 argument is probably unnecessary
+    //        we can get the same information from the tipLink0's 
+    //        "start" and "termination" flags.
     List<ContourRegionMember> mList = new ArrayList<>();
-    TipLink node = node0;
+    TipLink node = tipLink0;
     boolean forward = forward0;
     do {
       Contour contour = node.contour;
@@ -722,7 +784,6 @@ public class ContourBuilderForTin {
       perimeterContourList.add(boundaryContour);
       member = new ContourRegionMember(boundaryContour, true);
       mList.add(member);
-      
       if (forward) {
         contour.traversedForward = true;
         node = contour.terminalTip;
@@ -764,13 +825,12 @@ public class ContourBuilderForTin {
       boundaryContour.add(x, y);
       boundaryContour.complete(); // we're done building the boundary contour
 
-    } while (node != node0);
+    } while (node != tipLink0);
     
     return mList;
   }
   
   private void organizeNestedRegions() {
-    // TO DO: does not yet support multi-contour (open-contour) regions.
     int nRegion = regionList.size();
     if (nRegion < 2) {
       return;
@@ -843,7 +903,7 @@ public class ContourBuilderForTin {
     ps.format("Closed contours:    %8d,  %8d points%n",
             closedContourList.size(), countPoints(closedContourList));
     ps.format("Regions:            %8d%n", regionList.size());
-    ps.format("Outter Regions:     %8d%n", outerRegions.size());
+    ps.format("Outer Regions:      %8d%n", outerRegions.size());
     ps.format("Edge transits:      %8d%n", nEdgeTransit);
     ps.format("Vertex transits:    %8d%n", nVertexTransit);
     ps.format("%n");
@@ -868,7 +928,7 @@ public class ContourBuilderForTin {
 //    }
 //
 //    ps.format("%nPolygon nesting%n");
-//    for (ContourRegion region : outterRegions) {
+//    for (ContourRegion region : outerRegions) {
 //      recursiveSummarize(ps, areaFactor, region, 0);
 //    }
   }
