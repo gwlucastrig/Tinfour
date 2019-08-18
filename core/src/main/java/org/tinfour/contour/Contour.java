@@ -304,11 +304,21 @@ public class Contour {
 
   @Override
   public String toString() {
+    String cString = "";
+    if (n >= 4) {
+      double x0 = xy[0];
+      double y0 = xy[1];
+      double x1 = xy[n - 2];
+      double y1 = xy[n - 1];
+      cString = String.format("(x0,y0)=(%f,%f)  (x1,y1)=(%f,%f)", x0, y0, x1, y1);
+    }
+
     return "Contour " + contourIndex
             + ": L=" + leftIndex
             + ", R=" + rightIndex
             + ", z=" + z
-            + ", closed=" + closedLoop;
+            + ", closed=" + closedLoop
+            + "  "+cString;
   }
 
 }
