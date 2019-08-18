@@ -33,7 +33,7 @@
 package org.tinfour.contour;
 
 /**
- * Provides node defintions for a linked list of the tips for a single
+ * Provides node definitions for a linked list of the tips for a single
  * perimeter edge.
  */
  class TipLink {
