@@ -55,6 +55,8 @@ import org.tinfour.utils.rendering.RenderingSurfaceAid;
  * <li>The surface does not include interior null-data values and none of the
  * vertex Z coordinates give NaN (not-a-number) values.</li>
  * </ol>
+ * The output from this class includes a output file showing the
+ * results.
  */
 public class ExampleContour {
 
@@ -68,9 +70,23 @@ public class ExampleContour {
     Color.RED,
     Color.BLUE,};
 
+  // The input data shown below is intended to exercise
+  // most of the different ways contours can be constructed
+  // by the contour-builder operation.
+  //    One feature to note when inspecting the results is that the
+  // area of 3's in the upper-right corner does not produce a contour.
+  // This is consistent with the Tinfour definiton of a contour: A contour
+  // is the boundary between a region of points with lower-values and a region
+  // of points with values greater than or equal to the contour value.
+  // This the contour for zContour[1] == 3 does not pass between 
+  // vertices with values 4 and 3, and thus there is no contour or separate
+  // region in the upper-left corner of the output.
+  // 
   static final String[] input = {
     "4 4 4 4 4 4 3 3 3",
     "4 4 4 4 4 4 3 3 3",
+    "4 4 4 0 4 4 4 4 4",
+    "4 4 0 0 4 4 4 4 4",
     "4 4 4 4 4 4 4 4 4",
     "2 2 2 2 2 2 2 2 2",
     "2 2 2 2 2 2 2 2 2",
@@ -118,20 +134,21 @@ public class ExampleContour {
 
     // perform a basic sanity test.  The sum of the absolute areas of the
     // regions should equal that of the overall grid.  However, we do have
-    // to correct for enclosed areas because they would otherwuise be counted
-    // twice.
+    // to correct for enclosed areas because they would otherwise be counted
+    // twice. We accomplish that adjustment by using the getAdjustedArea()
+    // method (which subtracted enclosed areas form the overall area 
+    // for the region.
     double gridArea = (nRows - 1) * (nCols - 1);
     double sumArea = 0;
     for (ContourRegion region : regions) {
-      double sumEnclosedArea = 0;
-      for (ContourRegion enclosedRegion : region.getEnclosedRegions()) {
-        sumEnclosedArea += enclosedRegion.getAbsoluteArea();
-      }
-      double areaOfRegion = region.getAbsoluteArea() - sumEnclosedArea;
-      sumArea += areaOfRegion;
+      sumArea += region.getAdjustedArea();
     }
-    System.out.format("Total area of regions: %12.3f%n", sumArea);
-    System.out.format("Overall area of grid:  %12.3f%n", gridArea);
+    System.out.format("Total area of contour regions: %12.3f%n", sumArea);
+    System.out.format("Overall area of input grid:    %12.3f%n", gridArea);
+    double deltaArea = sumArea-gridArea;
+    System.out.format("Difference in computed areas:  %f%n",
+            Math.abs(deltaArea));
+
 
     System.out.format("%n");
     System.out.format("Reg     Intvl   Area   Encl   N-Enclosed%n");
@@ -177,14 +194,15 @@ public class ExampleContour {
     }
 
     // Overlay the regions with the contours, in gray
-    g2d.setColor(new Color(128, 128, 128, 128));
-    g2d.setColor(Color.black);
+    g2d.setColor(Color.gray);
     for (Contour contour : contours) {
       Path2D path = contour.getPath2D(af);
       g2d.draw(path);
     }
 
+   
     File output = new File("ExampleContour.png");
+    System.out.println("\nWriting output image file to "+output.getAbsolutePath());
     try {
       ImageIO.write(bImage, "PNG", output);
     } catch (IOException ioex) {

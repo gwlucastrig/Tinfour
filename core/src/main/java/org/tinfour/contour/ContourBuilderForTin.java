@@ -248,7 +248,7 @@ public class ContourBuilderForTin {
     pFirst.prior = prior;
     prior.next = pFirst;
     
-    buildContours();
+    buildAllContours();
     if (buildRegions) {
       buildRegions();
     }
@@ -302,7 +302,7 @@ public class ContourBuilderForTin {
   /**
    * Build the contours
    */
-  private void buildContours() {
+  private void buildAllContours() {
     long time0 = System.nanoTime();
     for (int i = 0; i < zContour.length; i++) {
       visited.clear();
@@ -635,7 +635,7 @@ public class ContourBuilderForTin {
     // development note: the building of perimeter regions and closed
     // regions are independent, so you can do whichever one you want
     // first.  for debugging purposes, feel free to change the order.
-    buildPerimeterRegions();
+    buildRegionsUsingPerimeter();
     
     for (Contour contour : closedContourList) {
       ContourRegion region = new ContourRegion(contour);
@@ -669,7 +669,7 @@ public class ContourBuilderForTin {
    * left. the right-index is assigned a value of -1, indicating that
    * the data for the region to the right of the perimeter contour is undefined.
    */
-  private void buildPerimeterRegions() {
+  private void buildRegionsUsingPerimeter() {
     // Test for a special case. If none of the interiors intersect
     // the perimeter edges, then construct a single closed-loop region
     // based on the geometry of the perimter.
@@ -907,47 +907,7 @@ public class ContourBuilderForTin {
     ps.format("Edge transits:      %8d%n", nEdgeTransit);
     ps.format("Vertex transits:    %8d%n", nVertexTransit);
     ps.format("%n");
-//    ps.format("%nArea computations by contour level%n");
-//    for (int iRegion = 0; iRegion < zContour.length + 1; iRegion++) {
-//      String zString;
-//      double z;
-//      if (iRegion == zContour.length) {
-//        z = zContour[zContour.length - 1];
-//        zString = String.format("> %9.3f", z);
-//      } else {
-//        z = zContour[iRegion];
-//        zString = String.format("  %9.3f", z);
-//      }
-//      double a = 0;
-//      for (ContourRegion region : regionList) {
-//        if (region.regionIndex == iRegion) {
-//          a += region.area;
-//        }
-//      }
-//      ps.format("%6d   %s  %f%n", iRegion, zString, a / areaFactor);
-//    }
-//
-//    ps.format("%nPolygon nesting%n");
-//    for (ContourRegion region : outerRegions) {
-//      recursiveSummarize(ps, areaFactor, region, 0);
-//    }
+ 
   }
-
-//  private void recursiveSummarize(
-//          PrintStream ps,
-//          double areaFactor,
-//          ContourRegion region, int iLevel) {
-//    String pad = "";
-//    if (iLevel > 0) {
-//      StringBuilder sb = new StringBuilder();
-//      for (int i = 0; i < iLevel * 3; i++) {
-//        sb.append(' ');
-//      }
-//      pad = sb.toString();
-//    }
-//    System.out.format("%s%4d %12.4f%n", pad, region.regionIndex, region.area);
-//    for (ContourRegion r : region.children) {
-//      recursiveSummarize(ps, areaFactor, r, iLevel + 1);
-//    }
-//  }
+ 
 }
