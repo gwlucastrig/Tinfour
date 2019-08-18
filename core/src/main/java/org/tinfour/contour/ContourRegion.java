@@ -257,15 +257,31 @@ public class ContourRegion {
   }
 
   /**
-   * Gets the absolute value of the area of the region.
+   * Gets the absolute value of the overall area of the region.
+   * No adjustment is made for enclosed regions.
    *
-   * @return a positive value, potentially zero if the region is incompletely
-   * specified.
+   * @return a positive value.
    */
   public double getAbsoluteArea() {
     return absArea;
   }
 
+  /**
+   * Get the area for the region excluding that of any enclosed 
+   * regions. The enclosed regions are not, strictly speaking,
+   * part of this region and, so, are not included in the adlusted area.
+   * @return a positive value.
+   */
+  public double getAdjustedArea() {
+    double sumArea = absArea;
+    for (ContourRegion enclosedRegion : children) {
+      sumArea -= enclosedRegion.getAbsoluteArea();
+    }
+    return sumArea;
+  }
+
+
+  
   /**
    * Gets the signed area of the region. If the points that specify the region
    * are given in a counter-clockwise order, the region will have a positive
