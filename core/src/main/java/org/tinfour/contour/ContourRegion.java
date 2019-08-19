@@ -154,7 +154,7 @@ public class ContourRegion {
     if (memberList.size() == 1 && memberList.get(0).contour.isClosed()) {
       return contour.getCoordinates();
     }
-    int n = 0;;
+    int n = 0;
     for (ContourRegionMember member : memberList) {
       n += member.contour.size() - 1;
     }
