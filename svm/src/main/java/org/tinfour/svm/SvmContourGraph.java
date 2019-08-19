@@ -32,7 +32,11 @@ package org.tinfour.svm;
 import java.awt.BasicStroke;
 import java.awt.Color;
 import java.awt.Dimension;
+import java.awt.Font;
 import java.awt.Graphics2D;
+import java.awt.RenderingHints;
+import java.awt.font.FontRenderContext;
+import java.awt.font.TextLayout;
 import java.awt.geom.AffineTransform;
 import java.awt.geom.Path2D;
 import java.awt.geom.Rectangle2D;
@@ -325,8 +329,79 @@ class SvmContourGraph {
     
     g2d.setColor(Color.gray);
     g2d.drawRect(0, 0, width - 1, height - 1);
+    
+    BufferedImage compositeImage =
+            new BufferedImage(width, height + 200, BufferedImage.TYPE_INT_ARGB);
+    g2d = compositeImage.createGraphics();
+    g2d.setRenderingHint(
+            RenderingHints.KEY_ANTIALIASING,
+            RenderingHints.VALUE_ANTIALIAS_ON);
+    g2d.setRenderingHint(
+            RenderingHints.KEY_TEXT_ANTIALIASING,
+            RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
+    g2d.setColor(Color.white);
+    g2d.fillRect(0, 0, width+1, height+200+1);
+    g2d.drawImage(bImage, 0, 0, null);
+    
+    Font font = new Font("Arial", Font.PLAIN, 12);
+    Font legendFont = new Font("Arial", Font.BOLD, 14);
+    String labFmt = aIntervals.getLabelFormat();
+    String []label = new String[zContour.length+1];
+    label[0] = String.format("Below "+labFmt, zContour[0]);
+    String testFmt = labFmt+" - "+labFmt;
+    for(int i=1; i<zContour.length; i++){
+       label[i] = String.format(testFmt, zContour[i-1], zContour[i]);
+    }
+    label[zContour.length] =
+            String.format("Above "+labFmt, zContour[zContour.length-1]);
+    
+      FontRenderContext frc = new FontRenderContext(null, true, true);
+    TextLayout []layout = new TextLayout[label.length];
+    double xLabMax = 0;
+    double yLabMax = 0;
+    for(int i=0; i<label.length; i++){
+      layout[i] = new TextLayout(label[i], font, frc);
+      Rectangle2D r2d = layout[i].getBounds();
+      if(r2d.getMaxX()>xLabMax){
+        xLabMax = r2d.getMaxX();
+      }
+      if(r2d.getMaxY()>yLabMax){
+        yLabMax = r2d.getMaxY();
+      }
+    }
+    if(yLabMax<20){
+      yLabMax = 20;
+    }
+    
+    double yLegend = height+10+yLabMax;
+    g2d.setFont(legendFont);
+    g2d.setColor(Color.black);
+    g2d.drawString(properties.getContourGraphLegendText(), 20, (int)yLegend);
+    
+    int nCol = (label.length + 4) / 5;
+    double colWidth = 30 + 5 + xLabMax + 30;
+    k = 0;
+    for (int iCol = 0; iCol < nCol; iCol++) {
+      double xCol = colWidth * iCol+30;
+      for (int iRow = 0; iRow < 5; iRow++) {
+        double yRow = iRow * (yLabMax + 5)+yLegend+yLabMax;
+        color = getColor(k, 0, iN);
+        g2d.setColor(color);
+        Rectangle2D r2d = new Rectangle2D.Double(xCol, yRow, 30, yLabMax);
+        g2d.fill(r2d);
+        g2d.setColor(Color.gray);
+        g2d.draw(r2d);
+        g2d.setColor(Color.black);
+        r2d = layout[k].getBounds();
+        float xLab = (float) (xCol + 35);
+        float yLab = (float) (yRow + yLabMax / 2 - r2d.getY() / 2);
+        layout[k].draw(g2d, xLab, yLab);
+        k++;
+      }
+    }
+
     try {
-      ImageIO.write(bImage, "PNG", output);
+      ImageIO.write(compositeImage, "PNG", output);
     } catch (IOException ioex) {
       ps.println("IOException writing " + output.getAbsolutePath()
               + ", " + ioex.getMessage());

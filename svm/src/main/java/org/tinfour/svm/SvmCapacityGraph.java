@@ -59,7 +59,6 @@ class SvmCapacityGraph {
 
   private final SvmProperties properties;
   private final List<AreaVolumeResult> resultList;
-  private final double shoreReferenceElevation;
   private final double totalVolume;
   private final double minLevel;
   private final double maxLevel;
@@ -105,7 +104,6 @@ class SvmCapacityGraph {
           double totalVolume) {
     this.properties = properties;
     this.resultList = resultList;
-    this.shoreReferenceElevation = shoreReferenceElevation;
     this.totalVolume = totalVolume;
 
     double zMin = resultList.get(0).level;
