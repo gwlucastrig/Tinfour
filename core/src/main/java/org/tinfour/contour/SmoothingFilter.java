@@ -146,4 +146,28 @@ public class SmoothingFilter implements IVertexValuator {
     int index = v.getIndex();
     return zArray[index];
   }
+
+  /**
+   * Gets the array of adjustment for vertices.
+   *
+   * @return a valid array.
+   */
+  public double[] getVertexAdjustments() {
+    return Arrays.copyOf(zArray, zArray.length);
+  }
+
+  /**
+   * Sets the array of adjustments for vertices
+   *
+   * @param adjustments a valid array of same length as internal storage
+   */
+  public void setVertexAdjustments(double[] adjustments) {
+    if (adjustments.length != zArray.length) {
+      throw new IllegalArgumentException("Adjustment size "
+              + adjustments.length
+              + " does not match internal value "
+              + zArray.length);
+    }
+    System.arraycopy(adjustments, 0, zArray, 0, adjustments.length);
+  }
 }

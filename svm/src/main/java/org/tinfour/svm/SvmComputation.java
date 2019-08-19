@@ -531,6 +531,18 @@ public class SvmComputation {
       ps.println("Capacity graph written to "+properties.getCapacityGraphFile());
     }
     
+      
+    
+   File contourOutput = properties.getContourGraphFile();
+   if(contourOutput!=null){
+     SvmContourGraph.write(
+             ps, 
+             properties, 
+             data, 
+             shoreReferenceElevation, 
+             tin);
+   }
+    
     return tin;
     // testGrid(ps, tin, lakeConsumer.water, 2.0, areaFactor, shoreReferenceElevation);
   }

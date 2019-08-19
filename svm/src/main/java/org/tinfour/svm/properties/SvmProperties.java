@@ -57,11 +57,17 @@ public class SvmProperties {
   private final static String soundingSpacingKey = "computeSoundingSpacing";
   private final static String inputFolderKey = "inputFolder";
   private final static String outputFolderKey = "outputFolder";
+  
   private final static String gridFileName = "rasterFileName";
   private final static String gridCellSize = "rasterCellSize";
-  private final static String capacityGraphFileKey = "capacityGraphFileName";
+  
+  private final static String capacityGraphFileKey  = "capacityGraphFileName";
   private final static String capacityGraphSizeKey  = "capacityGraphSize";
   private final static String capacityGraphTitleKey = "capacityGraphTitle";
+  
+  private final static String contourGraphFileKey = "contourGraphFileName";
+  private final static String contourGraphSizeKey = "contourGraphSize";
+
 
   final Properties properties = new Properties();
   final List<String> keyList = new ArrayList<>();
@@ -642,6 +648,33 @@ public class SvmProperties {
     }
     return s.trim();
   }
+  
+    
+  /**
+   * Get the path to a file for writing an image file showing a contour
+   * plot of the reservoir data.
+   * @return a valid File instance or a null if not specified.
+   */
+  public File getContourGraphFile() {
+    if (properties.containsKey(capacityGraphFileKey)) {
+      return extractFile(outputFolderKey, properties.getProperty(contourGraphFileKey));
+    }
+    return null;
+  }
+  
+  
+  /**
+   * Get the dimensions for the contour graph image file.
+   * @return a valid instance of non-trivial size.
+   */
+  public Dimension getContourGraphDimensions(){
+     return extractDimension(contourGraphSizeKey, 650, 650);  
+  }
+  
+  
+  
+  
+  
   
   
   private Dimension extractDimension(String key, int width, int height) {
