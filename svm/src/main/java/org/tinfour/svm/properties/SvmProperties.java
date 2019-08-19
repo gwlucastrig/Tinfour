@@ -67,7 +67,7 @@ public class SvmProperties {
   
   private final static String contourGraphFileKey = "contourGraphFileName";
   private final static String contourGraphSizeKey = "contourGraphSize";
-
+  private final static String contourGraphLegendTextKey = "contourGraphLegendText";
 
   final Properties properties = new Properties();
   final List<String> keyList = new ArrayList<>();
@@ -671,6 +671,18 @@ public class SvmProperties {
      return extractDimension(contourGraphSizeKey, 650, 650);  
   }
   
+    /**
+   * Gets the title for the capacity graph image
+   * @return if defined, a valid non-empty string instance;
+   * if undefined, a null.
+   */
+  public String getContourGraphLegendText(){
+    String s = properties.getProperty(contourGraphLegendTextKey);
+    if(s==null || s.trim().isEmpty()){
+        return "Legend";
+    }
+    return s.trim();
+  }
   
   
   
