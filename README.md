@@ -54,13 +54,16 @@ download an installer for free from
 
 Instructions for setting up and running the Tinfour Viewer application
 are provided at the wiki page [Tinfour Execution from the Command Line](https://github.com/gwlucastrig/Tinfour/wiki/Tinfour-Execution-from-the-Command-Line).
-With the introduction of the "fat jar" feature in recent releases, the procedure for
-launching the Tinfour Viewer became much simpler. Under Windows, once you have
-Java installed, you can launch the Tinfour Viewer application from your File Explorer window
-by double-clicking on the jar file. Other Tinfour applications must be launched from the command-line,
-but the wiki page attempts to simplify the process as much as possible. It also attempts to
-explain some of the nuances of the procedures and to provide the details
-you will need to set up a command window and run the command-line variation
+With the introduction of the _fat jar_ feature in recent releases, the procedure for
+launching the Tinfour Viewer became much simpler. For example, if you have Java installed
+on a Windows system, you can launch the Tinfour Viewer application from your File Explorer window
+by double-clicking on the "fat" jar file TinfourDemo-2.1.2-jar-with-dependencies
+(adjusting the version as appropriate). 
+While other Tinfour applications must be launched from the command-line,
+the wiki page attempts to simplify the process as much as possible. It also
+explains some of the nuances of the launch procedures and provides the details
+you will need to set up a command window and run the command-line variations
+for all the various Tinfour applications.
  
 The demonstrator is intended to show how the Tinfour library could be integrated
 into a full-featured GIS application or other analysis tool. It's a simple
