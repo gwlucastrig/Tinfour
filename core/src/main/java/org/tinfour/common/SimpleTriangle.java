@@ -178,19 +178,14 @@ public class SimpleTriangle {
       return tin.getConstraint(index);
     }
 
-    // The following will not accurately detect all cases, but
-    // it will at least detect the case where the constraint is, 
-    // itself, a simple triangle.
-    if (a.isConstrainedRegionBorder()
-            && b.isConstrainedRegionBorder()
-            && c.isConstrainedRegionBorder()) {
-      int aIndex = a.getConstraintIndex();
-      int bIndex = b.getConstraintIndex();
-      int cIndex = c.getConstraintIndex();
-      if (aIndex == bIndex && bIndex == cIndex) {
-        return tin.getConstraint(cIndex);
-      }
+    // Check for the special case where all three edges
+    // are borders.  We only need to look at one of them,
+    // since the values should be consistent for each.
+    IConstraint aCon = tin.getBorderConstraint(a);
+    if(aCon!=null){
+      return aCon;
     }
+ 
 
     return null;
   }

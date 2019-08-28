@@ -44,10 +44,13 @@ import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
 import java.io.PrintStream;
+import java.util.ArrayList;
 import java.util.List;
 import javax.imageio.ImageIO;
 import org.tinfour.common.IConstraint;
 import org.tinfour.common.IIncrementalTin;
+import org.tinfour.common.INeighborEdgeLocator;
+import org.tinfour.common.IQuadEdge;
 import org.tinfour.common.PolygonConstraint;
 import org.tinfour.common.Vertex;
 import org.tinfour.contour.Contour;
@@ -134,22 +137,25 @@ class SvmContourGraph {
     {242, 255, 0},
     {255, 255, 0}
   };
-  
+
   private static Color getColor(double index, double iMin, double iMax) {
     int i = (int) ((paletteB2Y.length - 1) * index / (iMax - iMin));
+    if (i == 72) {
+      System.out.println("merde");
+    }
     return new Color(
             paletteB2Y[i][0],
             paletteB2Y[i][1],
             paletteB2Y[i][2]
     );
-    
+
   }
-  
+
   private SvmContourGraph() {
     // a private constructor to deter application code from
     // constructing instances of this class.
   }
-  
+
   static void write(
           PrintStream ps,
           SvmProperties properties,
@@ -162,21 +168,30 @@ class SvmContourGraph {
       // so don't write one.
       return;
     }
-    
+
     double zMin = data.getMinZ();
     double zMax = data.getMaxZ();
-    List<PolygonConstraint> boundaryConstraints = data.getBoundaryConstraints();
-    boolean[] water = new boolean[boundaryConstraints.size()];
-    int k = 0;
+    List<PolygonConstraint> boundaryConstraints = new ArrayList<>();
+    List<IConstraint> allConstraints = tin.getConstraints();
+    int maxIndex = 0;
+    for (IConstraint icon : allConstraints) {
+      if (icon instanceof PolygonConstraint) {
+        if (icon.getConstraintIndex() > maxIndex) {
+          maxIndex = icon.getConstraintIndex();
+        }
+        boundaryConstraints.add((PolygonConstraint) icon);
+      }
+    }
+
+    boolean[] water = new boolean[maxIndex + 1];
     for (PolygonConstraint p : boundaryConstraints) {
       Object o = p.getApplicationData();
       if (o instanceof Boolean && (Boolean) o) {
-        water[k] = true;
+        water[p.getConstraintIndex()] = true;
       }
-      k++;
     }
-    
-    ps.println("");
+
+    ps.println("Constructing smoothing filter");
     SmoothingFilter filter = new SmoothingFilter(tin);
     ps.println("Time to construct smoothing filter "
             + filter.getTimeToConstructFilter() + " ms");
@@ -187,6 +202,8 @@ class SvmContourGraph {
     // it is necessary to force outside values to be at least the
     // shoreline reference elevation.
     ps.println("\nChecking for vertices lying outside of constraints");
+    INeighborEdgeLocator locator = tin.getNeighborEdgeLocator();
+
     long time0 = System.currentTimeMillis();
     int nOutsiders = 0;
     List<Vertex> vList = tin.getVertices();
@@ -195,14 +212,15 @@ class SvmContourGraph {
       int index = v.getIndex();
       double x = v.getX();
       double y = v.getY();
-      boolean found = false;
-      for (PolygonConstraint p : boundaryConstraints) {
-        if (p.isPointInsideConstraint(x, y)) {
-          found = true;
-          break;
-        }
+      IQuadEdge test = locator.getNeigborEdge(x, y);
+      IConstraint con = null;
+      if (test.isConstrainedRegionInterior()) {
+        con = tin.getConstraint(test.getConstraintIndex());
+      } else if (test.isConstrainedRegionBorder()) {
+        con = tin.getBorderConstraint(test);
       }
-      if (!found) {
+
+      if (con == null || !water[con.getConstraintIndex()]) {
         nOutsiders++;
         if (zArray[index] < shoreReferenceElevation) {
           zArray[index] = shoreReferenceElevation;
@@ -238,7 +256,7 @@ class SvmContourGraph {
         i1 = i;
       }
     }
-    
+
     if (i0 == -1) {
       ps.format("Failed to construct intervals for contour plot");
       return;
@@ -247,27 +265,27 @@ class SvmContourGraph {
     for (int i = i0; i <= i1; i++) {
       zContour[i - i0] = aArray[i];
     }
-    
+
     ps.println("\nBuilding contours for graph");
     ContourBuilderForTin builder
             = new ContourBuilderForTin(tin, filter, zContour, true);
     double areaFactor = properties.getUnitOfArea().getScaleFactor();
     builder.summarize(ps, areaFactor);
-    
+
     Dimension dimension = properties.getContourGraphDimensions();
     int width = dimension.width;
     int height = dimension.height;
-    
+
     Rectangle2D bounds = tin.getBounds();
     double x0 = bounds.getMinX();
     double y0 = bounds.getMinY();
     double x1 = bounds.getMaxX();
     double y1 = bounds.getMaxY();
     RenderingSurfaceAid rsa;
-    
+
     rsa = new RenderingSurfaceAid(width, height, 10, x0, y0, x1, y1);
     rsa.fillBackground(Color.white);
-    
+
     BufferedImage bImage = rsa.getBufferdImage();
     Graphics2D g2d = rsa.getGraphics2D();
     AffineTransform af = rsa.getCartesianToPixelTransform();
@@ -278,14 +296,12 @@ class SvmContourGraph {
     int iN = zContour.length;
     Color color = getColor(iN, 0, iN);
     g2d.setColor(color);
-    k = 0;
     for (PolygonConstraint p : boundaryConstraints) {
-      if (water[k]) {
+      if (water[p.getConstraintIndex()]) {
         g2d.setColor(color);
       } else {
         g2d.setColor(Color.white);
       }
-      k++;
       Path2D path = p.getPath2D(af);
       g2d.fill(path);
       g2d.draw(path);
@@ -315,6 +331,16 @@ class SvmContourGraph {
       }
     }
 
+    // Draw the land-areas in gray
+    g2d.setStroke(new BasicStroke(1.0f));
+    g2d.setColor(Color.white);
+    for (PolygonConstraint p : boundaryConstraints) {
+      if (p.getArea() < 0) {
+        Path2D path = p.getPath2D(af);
+        g2d.fill(path);
+      }
+    }
+
     //Draw the shoreline.  Do this last so that it 
     // is on top of all other water features and gives a strong finish
     // to the rendering.
@@ -326,12 +352,12 @@ class SvmContourGraph {
         g2d.draw(path);
       }
     }
-    
+
     g2d.setColor(Color.gray);
     g2d.drawRect(0, 0, width - 1, height - 1);
-    
-    BufferedImage compositeImage =
-            new BufferedImage(width, height + 200, BufferedImage.TYPE_INT_ARGB);
+
+    BufferedImage compositeImage
+            = new BufferedImage(width, height + 200, BufferedImage.TYPE_INT_ARGB);
     g2d = compositeImage.createGraphics();
     g2d.setRenderingHint(
             RenderingHints.KEY_ANTIALIASING,
@@ -340,51 +366,52 @@ class SvmContourGraph {
             RenderingHints.KEY_TEXT_ANTIALIASING,
             RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
     g2d.setColor(Color.white);
-    g2d.fillRect(0, 0, width+1, height+200+1);
+    g2d.fillRect(0, 0, width + 1, height + 200 + 1);
     g2d.drawImage(bImage, 0, 0, null);
-    
+
     Font font = new Font("Arial", Font.PLAIN, 12);
     Font legendFont = new Font("Arial", Font.BOLD, 14);
     String labFmt = aIntervals.getLabelFormat();
-    String []label = new String[zContour.length+1];
-    label[0] = String.format("Below "+labFmt, zContour[0]);
-    String testFmt = labFmt+" - "+labFmt;
-    for(int i=1; i<zContour.length; i++){
-       label[i] = String.format(testFmt, zContour[i-1], zContour[i]);
+    String[] label = new String[zContour.length + 1];
+    label[0] = String.format("Below " + labFmt, zContour[0]);
+    String testFmt = labFmt + " - " + labFmt;
+    for (int i = 1; i < zContour.length; i++) {
+      label[i] = String.format(testFmt, zContour[i - 1], zContour[i]);
     }
-    label[zContour.length] =
-            String.format("Above "+labFmt, zContour[zContour.length-1]);
-    
-      FontRenderContext frc = new FontRenderContext(null, true, true);
-    TextLayout []layout = new TextLayout[label.length];
+    label[zContour.length]
+            = String.format("Above " + labFmt, zContour[zContour.length - 1]);
+
+    FontRenderContext frc = new FontRenderContext(null, true, true);
+    TextLayout[] layout = new TextLayout[label.length];
     double xLabMax = 0;
     double yLabMax = 0;
-    for(int i=0; i<label.length; i++){
+    for (int i = 0; i < label.length; i++) {
       layout[i] = new TextLayout(label[i], font, frc);
       Rectangle2D r2d = layout[i].getBounds();
-      if(r2d.getMaxX()>xLabMax){
+      if (r2d.getMaxX() > xLabMax) {
         xLabMax = r2d.getMaxX();
       }
-      if(r2d.getMaxY()>yLabMax){
+      if (r2d.getMaxY() > yLabMax) {
         yLabMax = r2d.getMaxY();
       }
     }
-    if(yLabMax<20){
+    if (yLabMax < 20) {
       yLabMax = 20;
     }
-    
-    double yLegend = height+10+yLabMax;
+
+    double yLegend = height + 10 + yLabMax;
     g2d.setFont(legendFont);
     g2d.setColor(Color.black);
-    g2d.drawString(properties.getContourGraphLegendText(), 20, (int)yLegend);
-    
+    g2d.drawString(properties.getContourGraphLegendText(), 20, (int) yLegend);
+
     int nCol = (label.length + 4) / 5;
     double colWidth = 30 + 5 + xLabMax + 30;
-    k = 0;
+    int k = 0;
+    legendPlotLoop:
     for (int iCol = 0; iCol < nCol; iCol++) {
-      double xCol = colWidth * iCol+30;
+      double xCol = colWidth * iCol + 30;
       for (int iRow = 0; iRow < 5; iRow++) {
-        double yRow = iRow * (yLabMax + 5)+yLegend+yLabMax;
+        double yRow = iRow * (yLabMax + 5) + yLegend + yLabMax;
         color = getColor(k, 0, iN);
         g2d.setColor(color);
         Rectangle2D r2d = new Rectangle2D.Double(xCol, yRow, 30, yLabMax);
@@ -397,6 +424,9 @@ class SvmContourGraph {
         float yLab = (float) (yRow + yLabMax / 2 - r2d.getY() / 2);
         layout[k].draw(g2d, xLab, yLab);
         k++;
+        if (k == label.length) {
+          break legendPlotLoop;
+        }
       }
     }
 
@@ -407,5 +437,5 @@ class SvmContourGraph {
               + ", " + ioex.getMessage());
     }
   }
-  
+
 }

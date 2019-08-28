@@ -1890,6 +1890,7 @@ public class IncrementalTin implements IIncrementalTin {
     if (constraint.definesConstrainedRegion()) {
       edgesForConstraint.add(edge);
       edge.setConstrainedRegionBorderFlag();
+      edgePool.addBorderConstraintToMap(edge, constraint);
     }
   }
 
@@ -2610,6 +2611,11 @@ public class IncrementalTin implements IIncrementalTin {
       return null;
     }
     return constraintList.get(index);
+  }
+ 
+  @Override
+  public IConstraint getBorderConstraint(IQuadEdge edge) {
+    return edgePool.getBorderConstraint(edge);
   }
   
   @Override

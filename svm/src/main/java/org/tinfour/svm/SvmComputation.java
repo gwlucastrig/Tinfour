@@ -337,7 +337,7 @@ public class SvmComputation {
       int nRemediationVertices = 0;
       ps.println("");
       ps.println("Remediating flat triangles");
-      ps.println("Pass   Remediated     Area     Volume Added  avg. depth");
+      ps.println("Pass   Remediated        Area     Volume Added    avg. depth");
       for (int iFlat = 0; iFlat < 500; iFlat++) {
         // construct a new flat-fixer each time
         // so we can gather counts
@@ -351,7 +351,7 @@ public class SvmComputation {
         if (iFlat % 10 == 0) {
           double fixArea = flatFixer.getRemediatedArea();
           double fixVolume = flatFixer.getRemediatedVolume();
-          ps.format("%4d  %8d  %12.3f  %12.3f  %7.3f%n",
+          ps.format("%4d  %8d  %14.3f  %14.3f  %7.3f%n",
                   iFlat,
                   flatFixer.getRemediationCount(),
                   fixArea / areaFactor,
@@ -524,7 +524,6 @@ public class SvmComputation {
     SvmCapacityGraph capacityGraph = new SvmCapacityGraph(
             properties,
             resultList,
-            shoreReferenceElevation,
             totalVolume);
     boolean wroteGraph = capacityGraph.writeOutput();
     if(wroteGraph){
