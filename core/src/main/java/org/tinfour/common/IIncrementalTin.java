@@ -426,4 +426,14 @@ public interface IIncrementalTin {
            IQuadEdge eInput,
            double zSplit, 
            boolean restoreConformity);
+   
+   
+    /**
+   * Gets the border constraint associated with the edge.
+   * @param edge a valid edge instance.
+   * @return if a border constraint is associated with the edge, a valid
+   * instance; otherwise, a null.
+   */
+  IConstraint getBorderConstraint(IQuadEdge edge) ;
+  
 }

@@ -1786,14 +1786,14 @@ public class SemiVirtualIncrementalTin implements IIncrementalTin {
   }
 
   private void setConstrained(
-    SemiVirtualEdge edge,
-    IConstraint constraint,
-    IntCollector intCollector) {
+          SemiVirtualEdge edge,
+          IConstraint constraint,
+          IntCollector intCollector) {
     edge.setConstrained(constraint.getConstraintIndex());
     if (constraint.definesConstrainedRegion()) {
       intCollector.add(edge.getIndex());
       edge.setConstrainedRegionBorderFlag();
-      //edge.setConstrainedRegionInteriorFlag();
+      edgePool.addBorderConstraintToMap(edge, constraint);
     }
   }
 
@@ -2492,6 +2492,13 @@ public class SemiVirtualIncrementalTin implements IIncrementalTin {
     return constraintList.get(index);
   }
 
+ 
+  @Override
+  public IConstraint getBorderConstraint(IQuadEdge edge) {
+    return edgePool.getBorderConstraint(edge);
+  }
+  
+  
   @Override
   public int getSyntheticVertexCount() {
     return nSyntheticVertices;

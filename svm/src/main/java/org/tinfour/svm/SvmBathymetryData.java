@@ -225,11 +225,17 @@ public class SvmBathymetryData {
       reader.setVerticalCoordinateTransform(verticalTransform);
       List<IConstraint> list = reader.read();
       shoreReferenceElevation = Double.NaN;
+      int pIndex = 0;
       for (IConstraint c : list) {
         if (c instanceof PolygonConstraint) {
           PolygonConstraint p = (PolygonConstraint) c;
-          // this is true for both fills and holes because 
-          // the fills are oriented clockwise.
+          // this is true for both fills and holes based on the assumption 
+          // that the fills are oriented counter clockwise and the holes
+          // are oriented clockwise.  This should be the result if the
+          // boundary file was strictly based on polygons that define
+          // water areas.  Note that while Shapefiles use the opposite
+          // orientation, the reader operation reverses their ordering
+          // to reflect the conventions generally used in mathematics.
           p.setApplicationData(true);
           boundaryConstraints.add(p);
           if (p.getArea() > 0) {

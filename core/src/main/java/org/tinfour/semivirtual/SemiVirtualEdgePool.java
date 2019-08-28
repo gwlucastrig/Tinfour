@@ -59,8 +59,10 @@ package org.tinfour.semivirtual;
 import java.io.PrintStream;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
+import org.tinfour.common.IConstraint;
 import org.tinfour.common.IQuadEdge;
 import org.tinfour.common.Vertex;
 import static org.tinfour.semivirtual.SemiVirtualEdgePage.INDEX_MASK;
@@ -95,6 +97,16 @@ class SemiVirtualEdgePool implements Iterable<IQuadEdge> {
   int nFree;
   int nAllocationOperations;
   int nFreeOperations;
+  
+  
+    /**
+   * The constraint map provides a way of tying a constraint object
+   * reference to the edges that border it.  This indirect method
+   * is used to economize on memory use by edges. Although it would be possible
+   * to add constraint references to the edge structure, doing so would
+   * increase the edge memory use by an unacceptably large degree.
+   */
+  HashMap<Integer, IConstraint>constraintMap = new HashMap<>();
 
   /**
    * Construct a Edge manager allocating a small number
@@ -568,7 +580,58 @@ class SemiVirtualEdgePool implements Iterable<IQuadEdge> {
     // so we divide index by two
     int constraintFlags = ePage.constraints[e.indexOnPage / 2];
     pPage.constraints[p.indexOnPage / 2] = constraintFlags;
+    
+        // p is on the same side of the original edge e and
+    // q is on the same side as the dual edge d.
+    if (e.isConstrainedRegionBorder()) {
+      IConstraint c = constraintMap.get(e.getIndex());
+      if (c != null) {
+        this.addBorderConstraintToMap(p, c);
+      }
+      c = constraintMap.get(d.getIndex());
+      if (c != null) {
+        addBorderConstraintToMap(q, c);
+      }
+    }
+    
     return p;
   }
 
+  
+  /**
+   * Adds the specified constraint to the constraint map, thus recording
+   * which constraint lies to the left side of the edge.
+   * @param edge a valid edge instance
+   * @param constraint a valid constraint instance
+   */
+  public void addBorderConstraintToMap(IQuadEdge edge, IConstraint constraint){
+     constraintMap.put(edge.getIndex(), constraint);
+  }
+  
+  
+  /**
+   * Removes any existing border constraint from the constraint map.
+   * @param edge a valid edge instance
+   */
+  public void removeBorderConstraintFromMap(IQuadEdge edge){
+    constraintMap.remove(edge.getIndex());
+  }
+  
+  
+  /**
+   * Gets the border constraint associated with the edge.
+   * @param edge a valid edge instance.
+   * @return if a border constraint is associated with the edge, a valid
+   * instance; otherwise, a null.
+   */
+  public IConstraint getBorderConstraint(IQuadEdge edge){
+    if(edge.isConstrainedRegionBorder()){
+     return constraintMap.get(edge.getIndex());
+    }
+    return null;
+  }
+  
+  
+  
+  
 }

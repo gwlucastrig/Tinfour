@@ -563,12 +563,7 @@ public class SvmProperties {
     }
 
     try {
-      double d = Double.parseDouble(s);
-      if (d <= 0) {
-        throw new IllegalArgumentException(
-                "Invalid value for shoreline reference elevation: " + s);
-      }
-      return d;
+      return Double.parseDouble(s);
     } catch (NumberFormatException nex) {
       throw new IllegalArgumentException(
               "Invalid numeric for shoreline reference elevation: " + s);
@@ -656,7 +651,7 @@ public class SvmProperties {
    * @return a valid File instance or a null if not specified.
    */
   public File getContourGraphFile() {
-    if (properties.containsKey(capacityGraphFileKey)) {
+    if (properties.containsKey(contourGraphFileKey)) {
       return extractFile(outputFolderKey, properties.getProperty(contourGraphFileKey));
     }
     return null;

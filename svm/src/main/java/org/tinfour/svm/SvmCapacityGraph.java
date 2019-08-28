@@ -93,14 +93,11 @@ class SvmCapacityGraph {
    *
    * @param properties a valid instance
    * @param resultList the results of the SvmComputation
-   * @param shoreReferenceElevation the reference elevation for the shoreline
-   * (obtained from data or properties)
    * @param totalVolume the total computed elevation of the body of water at the
    * shore reference elevation
    */
   SvmCapacityGraph(SvmProperties properties,
           List<AreaVolumeResult> resultList,
-          double shoreReferenceElevation,
           double totalVolume) {
     this.properties = properties;
     this.resultList = resultList;
