@@ -27,7 +27,7 @@
  *
  * -----------------------------------------------------------------------
  */
-package org.tinfour.contour;
+package org.tinfour.utils;
 
 import java.util.Arrays;
 import java.util.BitSet;
@@ -50,9 +50,9 @@ import org.tinfour.interpolation.NaturalNeighborInterpolator;
  */
 public class SmoothingFilter implements IVertexValuator {
 
-  NaturalNeighborInterpolator nni;
-  IIncrementalTin tin;
-  double[] zArray;
+  final double[] zArray;
+  final double zMin;
+  final double zMax;
   private final double timeToConstructFilter;
 
   /**
@@ -71,26 +71,23 @@ public class SmoothingFilter implements IVertexValuator {
    */
   public SmoothingFilter(IIncrementalTin tin) {
     long time0 = System.nanoTime();
-    this.tin = tin;
-    nni = new NaturalNeighborInterpolator(tin);
+    // the factor of 25 iterations was obtained through trial-and-error.
+    SmoothingFilterInitializer smInit = new SmoothingFilterInitializer(tin, 25);
 
-    List<Vertex> vList = tin.getVertices();
-    zArray = new double[vList.size() + 1];
-    BitSet visited = new BitSet(vList.size() + 1);
-    int k = 0;
-    for (Vertex v : vList) {
-      zArray[k] = v.getZ();
-      v.setIndex(k++);
-    }
-
-    for (int i = 0; i < 25; i++) {
-      visited.clear();
-      double[] zSource = Arrays.copyOf(zArray, zArray.length);
-      for (IQuadEdge e : tin.edges()) {
-        process(visited, zSource, e);
-        process(visited, zSource, e.getDual());
+    zArray = smInit.result;
+    double z0 = Double.POSITIVE_INFINITY;
+    double z1 = Double.NEGATIVE_INFINITY;
+    for (int i = 0; i < zArray.length; i++) {
+      double z = zArray[i];
+      if (z < z0) {
+        z0 = z;
+      }
+      if (z > z1) {
+        z1 = z;
       }
     }
+    zMin = z0;
+    zMax = z1;
 
     long time1 = System.nanoTime();
     timeToConstructFilter = (time1 - time0) / 1.0e+6;
@@ -104,41 +101,6 @@ public class SmoothingFilter implements IVertexValuator {
    */
   public double getTimeToConstructFilter() {
     return timeToConstructFilter;
-  }
-
-  private void process(BitSet visited, double[] zSource, IQuadEdge edge) {
-    Vertex A = edge.getA();
-    if (A == null) {
-      return;
-    }
-    int index = A.getIndex();
-    if (visited.get(index)) {
-      return;
-    }
-    visited.set(index);
-    if (A.isConstraintMember()) {
-      return;
-    }
-    double x = A.getX();
-    double y = A.getY();
-
-    List<IQuadEdge> pList = nni.getConnectedPolygon(edge);
-    double[] w = nni.getBarycentricCoordinates(pList, x, y);
-    if (w == null) {
-      return;
-    }
-
-    double sumW = 0;
-    double sumZ = 0;
-    int k = 0;
-    for (IQuadEdge p : pList) {
-      double zP = zSource[p.getA().getIndex()];
-      sumW += w[k];
-      sumZ += zP * w[k];
-      k++;
-    }
-    double zNeighbors = sumZ / sumW;
-    zArray[index] = zNeighbors; //(zNeighbors + zSource[index]) / 2.0;
   }
 
   @Override
@@ -169,5 +131,25 @@ public class SmoothingFilter implements IVertexValuator {
               + zArray.length);
     }
     System.arraycopy(adjustments, 0, zArray, 0, adjustments.length);
+  }
+
+  /**
+   * Gets the minimum value from the set of possible values. Due to the
+   * smoothing, this value may be larger than the minimum input value.
+   *
+   * @return a valid floating-point value.
+   */
+  public double getMinZ() {
+    return zMin;
+  }
+
+  /**
+   * Gets the maximum value from the set of possible values. Due to the
+   * smoothing, this value may be smaller than the maximum input value.
+   *
+   * @return a valid floating-point value.
+   */
+  public double getMaxZ() {
+    return zMax;
   }
 }

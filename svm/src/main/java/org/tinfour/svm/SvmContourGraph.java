@@ -56,9 +56,9 @@ import org.tinfour.common.Vertex;
 import org.tinfour.contour.Contour;
 import org.tinfour.contour.ContourBuilderForTin;
 import org.tinfour.contour.ContourRegion;
-import org.tinfour.contour.SmoothingFilter;
 import org.tinfour.svm.properties.SvmProperties;
 import org.tinfour.utils.AxisIntervals;
+import org.tinfour.utils.SmoothingFilter;
 import org.tinfour.utils.rendering.RenderingSurfaceAid;
 
 /**
@@ -169,8 +169,14 @@ class SvmContourGraph {
       return;
     }
 
-    double zMin = data.getMinZ();
-    double zMax = data.getMaxZ();
+    ps.println("Constructing smoothing filter");
+    SmoothingFilter filter = new SmoothingFilter(tin);
+    ps.println("Time to construct smoothing filter "
+            + filter.getTimeToConstructFilter() + " ms");
+
+    double zMin = filter.getMinZ();
+    double zMax = filter.getMaxZ();
+
     List<PolygonConstraint> boundaryConstraints = new ArrayList<>();
     List<IConstraint> allConstraints = tin.getConstraints();
     int maxIndex = 0;
@@ -190,11 +196,6 @@ class SvmContourGraph {
         water[p.getConstraintIndex()] = true;
       }
     }
-
-    ps.println("Constructing smoothing filter");
-    SmoothingFilter filter = new SmoothingFilter(tin);
-    ps.println("Time to construct smoothing filter "
-            + filter.getTimeToConstructFilter() + " ms");
 
     // even if all vertices in the source were inside the boundary constraints
     // the flat-fixer logic would have create boundaries outside the
@@ -374,7 +375,7 @@ class SvmContourGraph {
     String labFmt = aIntervals.getLabelFormat();
     String[] label = new String[zContour.length + 1];
     label[0] = String.format("Below " + labFmt, zContour[0]);
-    String testFmt = labFmt + " - " + labFmt;
+    String testFmt = labFmt + " to " + labFmt;
     for (int i = 1; i < zContour.length; i++) {
       label[i] = String.format(testFmt, zContour[i - 1], zContour[i]);
     }
