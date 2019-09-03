@@ -89,7 +89,9 @@ public class MultiSquareConstraintTest implements IDevelopmentTest {
     if (reportInterval == 0) {
       reportInterval = 1;
     }
-
+    long randomSeed = options.getRandomSeed(0);
+    Random random = new Random(randomSeed);
+    
     Locale locale = Locale.getDefault();
     Date date = new Date();
     SimpleDateFormat sdFormat = new SimpleDateFormat("dd MMM yyyy HH:mm", locale);
@@ -120,18 +122,19 @@ public class MultiSquareConstraintTest implements IDevelopmentTest {
         constraints.add(p);
       }
     }
+ 
 
     IIncrementalTin tin = options.getNewInstanceOfTestTin();
     tin.addConstraints(constraints, true);
     INeighborEdgeLocator locator = tin.getNeighborEdgeLocator();
 
-    long randomSeed = options.getRandomSeed(0);
-    Random random = new Random(randomSeed);
 
-    ps.format("    Test      Interior      Border      Errors%n");
+    ps.format("%n");
+    ps.format("       Test        Inside     Border Even   Border Odd    Errors%n");
     int kTests = 0;
     int kInterior = 0;
-    int kBorder = 0;
+    int kBorderEven = 0;
+    int kBorderOdd = 0;
     int kError = 0;
     for (int iTest = 0; iTest < nTests; iTest++) {
       double x = random.nextDouble() * nCols;
@@ -167,7 +170,11 @@ public class MultiSquareConstraintTest implements IDevelopmentTest {
           continue;
         }
         index = (Integer) (constraint.getApplicationData());
-        kBorder++;
+        if((e.getIndex()&1)==0){
+        kBorderEven++;
+        }else{
+          kBorderOdd++;
+        }
       }
       int coordIndex = ((int) y) * nCols + (int) x;
       if (coordIndex != index) {
@@ -178,13 +185,13 @@ public class MultiSquareConstraintTest implements IDevelopmentTest {
       }
       kTests++;
       if ((kTests % reportInterval) == 0) {
-        ps.format("%10d %10d %10d %10d%n", kTests, kInterior, kBorder, kError);
+        ps.format("%12d %12d %12d %12d %12d%n", kTests, kInterior, kBorderEven, kBorderOdd, kError);
       }
 
     }
 
     if ((kTests % reportInterval) != 0) {
-      ps.format("%10d %10d %10d %10d%n", kTests, kInterior, kBorder, kError);
+      ps.format("%12d %12d %12d %12d%n", kTests, kInterior, kBorderEven, kBorderOdd, kError);
     }
     if(kError==0){
       ps.format("%nNo errors encountered, test passes");
