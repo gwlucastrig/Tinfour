@@ -1881,6 +1881,17 @@ public class IncrementalTin implements IIncrementalTin {
     return false;
   }
 
+  /**
+   * Will mark the edge as a constrained edge and will set the 
+   * constrained-region flags as necessary.  The constraint index
+   * is set, but is meaningful only for region-interior edges.
+   * In other cases, you may view it as a diagnostic, though its value
+   * is essentially undefined.
+   * @param edge a valid edge
+   * @param constraint a valid constraint
+   * @param edgesForConstraint the edges making up a constraint, only set
+   * for region-defining constraints.
+   */
   private void setConstrained(
     QuadEdge edge,
     IConstraint constraint,
@@ -1891,6 +1902,8 @@ public class IncrementalTin implements IIncrementalTin {
       edgesForConstraint.add(edge);
       edge.setConstrainedRegionBorderFlag();
       edgePool.addBorderConstraintToMap(edge, constraint);
+    }else{
+      edgePool.addLinearConstraintToMap(edge, constraint);
     }
   }
 
@@ -2575,10 +2588,8 @@ public class IncrementalTin implements IIncrementalTin {
       int fIndex = f.getIndex();
       if (!f.isConstrainedRegionBorder() && !visited.get(fIndex)) {
         visited.set(fIndex);
-        if (!f.isConstrained()) {
-          f.setConstrainedRegionInteriorFlag();
-          f.setConstraintIndex(constraintIndex);
-        }
+        f.setConstrainedRegionInteriorFlag();
+        f.setConstraintIndex(constraintIndex);
         deque.push(f.getDual());
         continue;
       }
@@ -2586,10 +2597,8 @@ public class IncrementalTin implements IIncrementalTin {
       int rIndex = r.getIndex();
       if (!r.isConstrainedRegionBorder() && !visited.get(rIndex)) {
         visited.set(rIndex);
-        if (!r.isConstrained()) {
-          r.setConstrainedRegionInteriorFlag();
-          r.setConstraintIndex(constraintIndex);
-        }
+        r.setConstrainedRegionInteriorFlag();
+        r.setConstraintIndex(constraintIndex);
         deque.push(r.getDual());
         continue;
       }
@@ -2612,11 +2621,28 @@ public class IncrementalTin implements IIncrementalTin {
     }
     return constraintList.get(index);
   }
- 
+
   @Override
-  public IConstraint getBorderConstraint(IQuadEdge edge) {
-    return edgePool.getBorderConstraint(edge);
+  public IConstraint getRegionConstraint(IQuadEdge edge) {
+    if (edge.isConstrainedRegionInterior()) {
+      int index = edge.getConstraintIndex();
+      // the test for constraintList.size() should be completely 
+      // unnecessary, but we do it just in case.
+      if (index < constraintList.size()) {
+        return constraintList.get(index);
+      }
+    } else if (edge.isConstrainedRegionBorder()) {
+      return edgePool.getBorderConstraint(edge);
+    }
+    return null;
   }
+
+  @Override
+  public IConstraint getLinearConstraint(IQuadEdge edge) {
+    return edgePool.getLinearConstraint(edge);
+  }
+
+
   
   @Override
   public int getSyntheticVertexCount() {

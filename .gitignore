@@ -3,6 +3,8 @@
 build/
 pmd_results.html
 nb*.xml
+test*.png
+test*.jpg;
 nbproject
 target
 analysis/doc

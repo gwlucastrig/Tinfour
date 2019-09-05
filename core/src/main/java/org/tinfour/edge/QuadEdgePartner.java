@@ -191,6 +191,12 @@ class QuadEdgePartner extends QuadEdge {
     return (index & CONSTRAINT_REGION_MEMBER_FLAGS) != 0;
   }
 
+  @Override
+  public boolean isLinearConstraintMember() {
+    return (index & CONSTRAINT_EDGE_FLAG) != 0
+            && (index & CONSTRAINT_REGION_MEMBER_FLAGS) == 0;
+  }
+  
     @Override
   public void setConstrainedRegionBorderFlag() {
     index |= CONSTRAINT_REGION_BORDER_FLAG;

@@ -525,6 +525,11 @@ public class QuadEdge implements IQuadEdge {
   public boolean isConstrainedRegionBorder() {
     return dual.isConstrainedRegionBorder();
   }
+  
+  @Override
+  public boolean isLinearConstraintMember() {
+    return dual.isLinearConstraintMember();
+  }
 
   @Override
   public void setConstrainedRegionBorderFlag() {
