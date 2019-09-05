@@ -225,7 +225,6 @@ public class SvmBathymetryData {
       reader.setVerticalCoordinateTransform(verticalTransform);
       List<IConstraint> list = reader.read();
       shoreReferenceElevation = Double.NaN;
-      int pIndex = 0;
       for (IConstraint c : list) {
         if (c instanceof PolygonConstraint) {
           PolygonConstraint p = (PolygonConstraint) c;

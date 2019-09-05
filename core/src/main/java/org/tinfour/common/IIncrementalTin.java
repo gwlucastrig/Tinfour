@@ -426,14 +426,31 @@ public interface IIncrementalTin {
            IQuadEdge eInput,
            double zSplit, 
            boolean restoreConformity);
-   
-   
-    /**
-   * Gets the border constraint associated with the edge.
+ 
+  /**
+   * Gets the region constraint associated with the edge, if any. If the edge is
+   * on the border of a region, this method will return the constraint to its
+   * immediate left side.
+   *
    * @param edge a valid edge instance.
-   * @return if a border constraint is associated with the edge, a valid
+   * @return if a region constraint is associated with the edge, a valid
    * instance; otherwise, a null.
    */
-  IConstraint getBorderConstraint(IQuadEdge edge) ;
+  IConstraint getRegionConstraint(IQuadEdge edge);
+  
+  
+    /**
+   * Gets the linear constraint associated with the edge, if any.
+   * In some cases, a linear constraint may lie within a constrained
+   * region, but it will not lie on the border of a constrained
+   * region. 
+   *
+   * @param edge a valid edge instance.
+   * @return if a linear constraint is associated with the edge, a valid
+   * instance; otherwise, a null.
+   */
+  IConstraint getLinearConstraint(IQuadEdge edge);
+
+
   
 }

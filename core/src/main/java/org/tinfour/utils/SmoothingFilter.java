@@ -30,13 +30,9 @@
 package org.tinfour.utils;
 
 import java.util.Arrays;
-import java.util.BitSet;
-import java.util.List;
 import org.tinfour.common.IIncrementalTin;
-import org.tinfour.common.IQuadEdge;
 import org.tinfour.common.Vertex;
 import org.tinfour.interpolation.IVertexValuator;
-import org.tinfour.interpolation.NaturalNeighborInterpolator;
 
 /**
  * An implementation of the vertex valuator that processes the vertices in a

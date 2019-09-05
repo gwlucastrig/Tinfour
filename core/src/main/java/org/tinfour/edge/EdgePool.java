@@ -121,14 +121,16 @@ public class EdgePool implements Iterable<IQuadEdge> {
   int nFreeOperations;
 
   /**
-   * The constraint map provides a way of tying a constraint object
-   * reference to the edges that border it.  This indirect method
-   * is used to economize on memory use by edges. Although it would be possible
+   * The constraint maps provide a way of tying a constraint object
+   * reference to the edges that are associated with it.  Separate maps are
+   * maintained for the borders of region constraints (borders) and linear
+   * constraints. This indirect method is used to economize on memory use
+   * by edges. Although it would be possible
    * to add constraint references to the edge structure, doing so would
    * increase the edge memory use by an unacceptably large degree.
    */
-  HashMap<Integer, IConstraint>constraintMap = new HashMap<>();
-  
+  HashMap<Integer, IConstraint>borderConstraintMap = new HashMap<>();
+  HashMap<Integer, IConstraint>linearConstraintMap = new HashMap<>();
   
   /**
    * Construct a QuadEdge manager allocating a small number
@@ -555,13 +557,18 @@ public class EdgePool implements Iterable<IQuadEdge> {
     // p is on the same side of the original edge e and
     // q is on the same side as the dual edge d.
     if (e.isConstrainedRegionBorder()) {
-      IConstraint c = constraintMap.get(e.getIndex());
+      IConstraint c = borderConstraintMap.get(e.getIndex());
       if (c != null) {
         this.addBorderConstraintToMap(p, c);
       }
-      c = constraintMap.get(d.getIndex());
+      c = borderConstraintMap.get(d.getIndex());
       if (c != null) {
         addBorderConstraintToMap(q, c);
+      }
+    }else if(e.isLinearConstraintMember()){
+      IConstraint c = linearConstraintMap.get(e.getIndex());
+      if(c!=null){
+        addLinearConstraintToMap(p, c);
       }
     }
  
@@ -570,14 +577,29 @@ public class EdgePool implements Iterable<IQuadEdge> {
   }
 
   /**
-   * Adds the specified constraint to the constraint map, thus recording
-   * which constraint lies to the left side of the edge.
+   * Adds the specified constraint to the border constraint map, thus recording
+   * which region constraint lies to the left side of the edge (e.g. which
+   * region is bordered by the specified edge).
    * @param edge a valid edge instance
    * @param constraint a valid constraint instance
    */
   public void addBorderConstraintToMap(IQuadEdge edge, IConstraint constraint){
-     constraintMap.put(edge.getIndex(), constraint);
+     borderConstraintMap.put(edge.getIndex(), constraint);
   }
+  
+  
+  /**
+   * Adds the specified constraint to the linear constraint map, thus recording
+   * which constraint lies to the left side of the edge.
+   * @param edge a valid edge instance
+   * @param constraint a valid constraint instance
+   */
+  public void addLinearConstraintToMap(IQuadEdge edge, IConstraint constraint){
+     int index = edge.getIndex();
+     linearConstraintMap.put(index, constraint);
+     linearConstraintMap.put(index^1, constraint);
+  }
+  
   
   
   /**
@@ -585,7 +607,7 @@ public class EdgePool implements Iterable<IQuadEdge> {
    * @param edge a valid edge instance
    */
   public void removeBorderConstraintFromMap(IQuadEdge edge){
-    constraintMap.remove(edge.getIndex());
+    borderConstraintMap.remove(edge.getIndex());
   }
   
   
@@ -597,10 +619,25 @@ public class EdgePool implements Iterable<IQuadEdge> {
    */
   public IConstraint getBorderConstraint(IQuadEdge edge){
     if(edge.isConstrainedRegionBorder()){
-     return constraintMap.get(edge.getIndex());
+     return borderConstraintMap.get(edge.getIndex());
     }
     return null;
   }
+  
+  /**
+   * Gets the linear constraint associated with the edge, if any.
+   *
+   * @param edge a valid edge instance.
+   * @return if a linear constraint is associated with the edge, a valid
+   * instance; otherwise, a null.
+   */
+  public IConstraint getLinearConstraint(IQuadEdge edge) {
+    if (edge.isLinearConstraintMember()) {
+      return linearConstraintMap.get(edge.getIndex());
+    }
+    return null;
+  }
+
   
 
   private class Page {

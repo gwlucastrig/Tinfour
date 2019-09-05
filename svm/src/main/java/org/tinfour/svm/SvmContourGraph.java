@@ -214,13 +214,7 @@ class SvmContourGraph {
       double x = v.getX();
       double y = v.getY();
       IQuadEdge test = locator.getNeigborEdge(x, y);
-      IConstraint con = null;
-      if (test.isConstrainedRegionInterior()) {
-        con = tin.getConstraint(test.getConstraintIndex());
-      } else if (test.isConstrainedRegionBorder()) {
-        con = tin.getBorderConstraint(test);
-      }
-
+      IConstraint con = tin.getRegionConstraint(test);
       if (con == null || !water[con.getConstraintIndex()]) {
         nOutsiders++;
         if (zArray[index] < shoreReferenceElevation) {

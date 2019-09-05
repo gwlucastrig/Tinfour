@@ -40,6 +40,7 @@ import static org.tinfour.semivirtual.SemiVirtualEdgePage.INDEX_MASK;
 import static org.tinfour.semivirtual.SemiVirtualEdgePage.INDICES_PER_PAGE;
 import static org.tinfour.edge.QuadEdgeConstants.CONSTRAINT_REGION_INTERIOR_FLAG;
 import static org.tinfour.edge.QuadEdgeConstants.CONSTRAINT_REGION_BORDER_FLAG;
+import static org.tinfour.edge.QuadEdgeConstants.CONSTRAINT_REGION_MEMBER_FLAGS;
 import org.tinfour.edge.QuadEdgePinwheel;
 
 /**
@@ -572,6 +573,21 @@ public final class SemiVirtualEdge implements IQuadEdge {
               & (CONSTRAINT_REGION_BORDER_FLAG | CONSTRAINT_REGION_INTERIOR_FLAG)) != 0;
     }
   }
+  
+  
+  @Override
+  public boolean isLinearConstraintMember() {
+    if (page.constraints == null) {
+      return false;
+    } else {
+      // this tests to see if the edge is a constrained-area member
+      // and doesn't care whether or not it is a constraint edge.
+      int flags = page.constraints[indexOnPage / 2];
+      return (flags & CONSTRAINT_EDGE_FLAG) != 0
+              && (index & CONSTRAINT_REGION_MEMBER_FLAGS) == 0;
+    }
+  }
+
 
   @Override
   public void setConstrainedRegionBorderFlag() {

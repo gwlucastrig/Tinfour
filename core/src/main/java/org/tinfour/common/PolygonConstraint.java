@@ -255,6 +255,7 @@ public class PolygonConstraint
    * transform.
    * @return a valid instance of a Java Path2D
    */
+  @Override
   public Path2D getPath2D(AffineTransform transform) {
     AffineTransform af = transform;
     if (transform == null) {

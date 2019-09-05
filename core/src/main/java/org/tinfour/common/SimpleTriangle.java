@@ -29,6 +29,9 @@
  */
 package org.tinfour.common;
 
+import java.awt.geom.AffineTransform;
+import java.awt.geom.Path2D;
+
 /**
  * Provides methods and elements for a simple representation of a triangle based
  * on IQuadEdge edges.
@@ -90,10 +93,9 @@ public class SimpleTriangle {
 
   /**
    * Gets vertex A of the triangle. The method names used in this class follow
-   * the conventions of trigonometry. Vertices are labeled so that vertex A
-   * is opposite edge a, vertex B is opposite edge b, etc. This approach
-   * is slightly different than that used in other parts of the
-   * Tinfour API.
+   * the conventions of trigonometry. Vertices are labeled so that vertex A is
+   * opposite edge a, vertex B is opposite edge b, etc. This approach is
+   * slightly different than that used in other parts of the Tinfour API.
    *
    * @return a valid vertex
    */
@@ -103,10 +105,9 @@ public class SimpleTriangle {
 
   /**
    * Gets vertex B of the triangle. The method names used in this class follow
-   * the conventions of trigonometry. Vertices are labeled so that vertex A
-   * is opposite edge a, vertex B is opposite edge b, etc.  This approach
-   * is slightly different than that used in other parts of the
-   * Tinfour API.
+   * the conventions of trigonometry. Vertices are labeled so that vertex A is
+   * opposite edge a, vertex B is opposite edge b, etc. This approach is
+   * slightly different than that used in other parts of the Tinfour API.
    *
    * @return a valid vertex
    */
@@ -116,10 +117,9 @@ public class SimpleTriangle {
 
   /**
    * Gets vertex A of the triangle. The method names used in this class follow
-   * the conventions of trigonometry. Vertices are labeled so that vertex A
-   * is opposite edge a, vertex B is opposite edge b, etc. This approach
-   * is slightly different than that used in other parts of the
-   * Tinfour API.
+   * the conventions of trigonometry. Vertices are labeled so that vertex A is
+   * opposite edge a, vertex B is opposite edge b, etc. This approach is
+   * slightly different than that used in other parts of the Tinfour API.
    *
    * @return a valid vertex
    */
@@ -127,11 +127,10 @@ public class SimpleTriangle {
     return edgeB.getA();
   }
 
-  
   /**
    * Gets the area of the triangle. This value is positive if the triangle is
    * given in counterclockwise order and negative if it is given in clockwise
-   * order. A value of zero indicates a degenerate triangle. 
+   * order. A value of zero indicates a degenerate triangle.
    *
    * @return a valid floating point number.
    */
@@ -146,48 +145,53 @@ public class SimpleTriangle {
   /**
    * Gets the polygon-based constraint that contains this triangle, if any.
    * <p>
-   * <strong>Under Construction</strong>This method is not yet complete.
-   * Because the Tinfour implementation does not yet record which side
-   * of an edge an region-based constraint lies on, there are cases involving
-   * constraint borders that will not be accurately detected.
-   * It can only reliably report membership when a triangle has at least
-   * one edge that is entirely inside a constraint area
+   * <strong>Under Construction</strong>This method is not yet complete. Because
+   * the Tinfour implementation does not yet record which side of an edge an
+   * region-based constraint lies on, there are cases involving constraint
+   * borders that will not be accurately detected. It can only reliably report
+   * membership when a triangle has at least one edge that is entirely inside a
+   * constraint area
    *
    * @return if the triangle is enclosed by a constraint, a valid instance;
    * otherwise, a null.
    */
   public IConstraint getContainingRegion() {
     // The triangle is an interior triangle if any one edge is
-    // unambiguously in the interior of the constraint or if
-    // all three edges are borders of the constraint
-
-    IQuadEdge a = getEdgeA();
-    IQuadEdge b = getEdgeB();
-    IQuadEdge c = getEdgeC();
-
-    if (a.isConstrainedRegionInterior()) {
-      int index = a.getConstraintIndex();
-      return tin.getConstraint(index);
-    }
-    if (b.isConstrainedRegionInterior()) {
-      int index = b.getConstraintIndex();
-      return tin.getConstraint(index);
-    }
-    if (c.isConstrainedRegionInterior()) {
-      int index = c.getConstraintIndex();
-      return tin.getConstraint(index);
-    }
-
-    // Check for the special case where all three edges
-    // are borders.  We only need to look at one of them,
-    // since the values should be consistent for each.
-    IConstraint aCon = tin.getBorderConstraint(a);
-    if(aCon!=null){
-      return aCon;
-    }
- 
-
-    return null;
+    // asspciated with a region
+    return tin.getRegionConstraint(edgeA);
   }
 
+  /**
+   * Gets a Java Path2D based on the geometry of the triangle mapped through an
+   * optional affine transform.
+   *
+   * @param transform a valid transform, or the null to use the identity
+   * transform.
+   * @return a valid instance of a Java Path2D
+   */
+  public Path2D getPath2D(AffineTransform transform) {
+    AffineTransform af = transform;
+    if (transform == null) {
+      af = new AffineTransform();
+    }
+    double[] c = new double[12];
+    
+    Vertex A = edgeA.getA();
+    Vertex B = edgeB.getA();
+    Vertex C = edgeC.getA();
+    c[0] = A.getX();
+    c[1] = A.getY();
+    c[2] = B.getX();
+    c[3] = B.getY();
+    c[4] = C.getX();
+    c[5] = C.getY();
+    af.transform(c, 0, c, 6, 3);
+
+    Path2D path = new Path2D.Double();
+    path.moveTo(c[6], c[7]);
+    path.lineTo(c[8], c[9]);
+    path.lineTo(c[10], c[11]);
+    path.closePath();
+    return path;
+  }
 }

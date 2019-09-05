@@ -76,7 +76,7 @@ public class MultiSquareConstraintTest implements IDevelopmentTest {
   @Override
   public void runTest(PrintStream ps, String args[]) {
 
-    // at this time, options are not yet implemented.
+    // at this time, only options are implemented.
     TestOptions options = new TestOptions();
     boolean[] optionsMatched = options.argumentScan(args);
     options.checkForUnrecognizedArgument(args, optionsMatched);
@@ -158,24 +158,20 @@ public class MultiSquareConstraintTest implements IDevelopmentTest {
       }
 
       int index = -1;
-      IConstraint constraint = null;
-      if (e.isConstrainedRegionInterior()) {
-        index = e.getConstraintIndex();
-        constraint = tin.getConstraint(index);
-        index = (Integer)constraint.getApplicationData();
-        kInterior++;
-      } else if (e.isConstrainedRegionBorder()) {
-        constraint = tin.getBorderConstraint(e);
-        if (constraint == null) {
-          continue;
-        }
-        index = (Integer) (constraint.getApplicationData());
-        if((e.getIndex()&1)==0){
-        kBorderEven++;
-        }else{
-          kBorderOdd++;
+      IConstraint constraint = tin.getRegionConstraint(e);
+      if (constraint != null) {
+        index = (Integer) constraint.getApplicationData();
+        if (e.isConstrainedRegionInterior()) {
+          kInterior++;
+        } else if (e.isConstrainedRegionBorder()) {
+          if ((e.getIndex() & 1) == 0) {
+            kBorderEven++;
+          } else {
+            kBorderOdd++;
+          }
         }
       }
+
       int coordIndex = ((int) y) * nCols + (int) x;
       if (coordIndex != index) {
         Vertex A = e.getA();

@@ -175,6 +175,15 @@ public interface IQuadEdge {
    * @return true if the edge is a member of an region; otherwise false.
    */
   boolean isConstrainedRegionMember();
+  
+  /**
+   * Indicates whether the edge is a member of a linear constraint, In some
+   * cases, a linear constraint member edge may lie within a constrained region
+   * but will not lie on one of its borders.
+   *
+   * @return true if the edge is a member of an region; otherwise false.
+   */
+  boolean isLinearConstraintMember();
 
     /**
    * Indicates whether the edge is in the interior of a constrained region.

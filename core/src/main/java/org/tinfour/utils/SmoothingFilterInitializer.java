@@ -224,7 +224,7 @@ public class SmoothingFilterInitializer {
     int[] iArray = iPages[iPage];
     int nTest = iPageIndex + w.length + 2;
     if (nTest >= PAGE_SIZE) {
-      iLostElements += (PAGE_SIZE - iPageIndex);
+      iLostElements += PAGE_SIZE - iPageIndex;
       // we need another page
       if (iPage == iPagesCount - 1) {
         iPages = Arrays.copyOf(iPages, iPages.length + 128);
@@ -240,7 +240,7 @@ public class SmoothingFilterInitializer {
     float[] wArray = wPages[wPage];
     nTest = wPageIndex + w.length;
     if (nTest >= PAGE_SIZE) {
-      wLostElements += (PAGE_SIZE - wPageIndex);
+      wLostElements += PAGE_SIZE - wPageIndex;
       // we need another page
       if (wPage == wPagesCount - 1) {
         wPages = Arrays.copyOf(wPages, wPages.length + 128);
