@@ -68,6 +68,7 @@ public class SvmProperties {
   private final static String contourGraphFileKey = "contourGraphFileName";
   private final static String contourGraphSizeKey = "contourGraphSize";
   private final static String contourGraphLegendTextKey = "contourGraphLegendText";
+  private final static String contourGraphIntervalKey = "contourGraphInterval";
 
   final Properties properties = new Properties();
   final List<String> keyList = new ArrayList<>();
@@ -679,8 +680,31 @@ public class SvmProperties {
     return s.trim();
   }
   
-  
-  
+  /**
+   * Gets the contour graph interval
+   * @return if defined, a floating point value greater than zero;
+   * if undefined, zero.
+   */
+  public double getContourGraphInterval() {
+    String s = properties.getProperty(contourGraphIntervalKey);
+    if (s == null || s.trim().isEmpty()) {
+      return 0;
+    }
+    s = s.trim();
+    if("automatic".equalsIgnoreCase(s)){
+      return 0;
+    }
+    try {
+      double d = Double.parseDouble(s);
+      if (d <= 0) {
+        return 0;
+      }
+      return d;
+    } catch (NumberFormatException nfe) {
+      return 0;
+    }
+  }
+
   
   
   
