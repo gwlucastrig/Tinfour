@@ -233,16 +233,32 @@ class SvmContourGraph {
     // using the axis too.  Then, take the results from the axis tool
     // and create our zContour array.  Not that the zContours must be
     // greater than the zMin value and less than the shoreReferenceElevation
+    double[] aArray = null;
+    double contourInterval = properties.getContourGraphInterval();
+    if (contourInterval > 0) {
+      long i0 = (long) Math.ceil(zMin / contourInterval);
+      long i1 = (long) Math.floor(zMax / contourInterval);
+      int nC = (int) (i1 - i0 + 1);
+      if (nC >= 1 && nC <= 100) {
+        aArray = new double[nC];
+        for (int i = 0; i < nC; i++) {
+          aArray[i] = (i + i0) * contourInterval;
+        }
+      }
+    }
+    
     AxisIntervals aIntervals = AxisIntervals.computeIntervals(
             zMin,
             zMax,
             2,
             1,
             20,
-            false);
+              false);
+    if (aArray == null) {
+      aArray = aIntervals.getLabelCoordinates();
+    }
     int i0 = -1;
     int i1 = 0;
-    double[] aArray = aIntervals.getLabelCoordinates();
     for (int i = 0; i < aArray.length; i++) {
       if (i0 == -1 && aArray[i] > zMin) {
         i0 = i;
