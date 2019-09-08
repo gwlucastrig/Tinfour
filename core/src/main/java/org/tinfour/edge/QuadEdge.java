@@ -114,9 +114,6 @@ package org.tinfour.edge;
 import java.util.Formatter;
 import org.tinfour.common.IQuadEdge;
 import org.tinfour.common.Vertex;
-import static org.tinfour.edge.QuadEdgeConstants.CONSTRAINT_REGION_INTERIOR_FLAG;
-import static org.tinfour.edge.QuadEdgeConstants.CONSTRAINT_REGION_BORDER_FLAG;
-import static org.tinfour.edge.QuadEdgeConstants.SYNTHETIC_EDGE_FLAG;
 
 /**
  * A representation of an edge with forward and reverse links on one
@@ -526,33 +523,36 @@ public class QuadEdge implements IQuadEdge {
     return dual.isConstrainedRegionBorder();
   }
   
+  
   @Override
-  public boolean isLinearConstraintMember() {
-    return dual.isLinearConstraintMember();
+  public boolean isConstraintLineMember(){
+    return dual.isConstraintLineMember();
   }
+ 
+  @Override
+  public void setConstraintLineMemberFlag(){
+     dual.setConstraintLineMemberFlag();
+  }
+  
 
   @Override
   public void setConstrainedRegionBorderFlag() {
-    dual.index |= CONSTRAINT_REGION_BORDER_FLAG;
+    dual.setConstrainedRegionBorderFlag();
   }
 
   @Override
   public void setConstrainedRegionInteriorFlag() {
-    dual.index |= CONSTRAINT_REGION_INTERIOR_FLAG;
+    dual.setConstrainedRegionInteriorFlag();
   }
-
+  
   @Override
   public void setSynthetic(boolean status){
-    if(status){
-      dual.index |= SYNTHETIC_EDGE_FLAG;
-    }else{
-      dual.index &= ~SYNTHETIC_EDGE_FLAG;
-    }
+    dual.setSynthetic(status);
   }
   
   @Override
   public boolean isSynthetic(){
-    return (dual.index&SYNTHETIC_EDGE_FLAG)!=0;
+    return dual.isSynthetic();
   }
   
   

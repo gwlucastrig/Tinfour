@@ -48,14 +48,12 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.Locale;
-import java.util.Random;
 import java.util.SimpleTimeZone;
 import java.util.function.Consumer;
 import javax.imageio.ImageIO;
 import org.tinfour.common.IConstraint;
 import org.tinfour.common.IIncrementalTin;
 import org.tinfour.common.IIntegrityCheck;
-import org.tinfour.common.INeighborEdgeLocator;
 import org.tinfour.common.IQuadEdge;
 import org.tinfour.common.LinearConstraint;
 import org.tinfour.common.PolygonConstraint;
@@ -63,19 +61,17 @@ import org.tinfour.common.SimpleTriangle;
 import org.tinfour.common.Vertex;
 import org.tinfour.demo.utils.IDevelopmentTest;
 import org.tinfour.demo.utils.TestOptions;
-import org.tinfour.semivirtual.SemiVirtualIncrementalTin;
-import org.tinfour.standard.IncrementalTin;
 import org.tinfour.utils.TriangleCollector;
 import org.tinfour.utils.rendering.RenderingSurfaceAid;
 
 /**
- *
+ * Provides a test of mixed-type constraints.
  */
 public class MixedModeConstraintTest implements IDevelopmentTest {
 
   static class TriangleRenderer implements Consumer<SimpleTriangle> {
 
-    private AffineTransform af;
+    private final AffineTransform af;
     Graphics2D g2d;
     IIncrementalTin tin;
 
@@ -108,7 +104,7 @@ public class MixedModeConstraintTest implements IDevelopmentTest {
 
   static int iVertex;
   static final float dash[] = {10.0f};
-
+ 
   /**
    * Create a test image.
    *
@@ -150,12 +146,12 @@ public class MixedModeConstraintTest implements IDevelopmentTest {
     conList.add(makePoly("R", 2, 0, 4, 4));
     // make vertical and horizontal linear constraints
     conList.add(makeHorizontal("H1", -1, 5, 1));  // y = 1
-    conList.add(makeHorizontal("H2", -1, 5, 3)); // y = 3
+    conList.add(makeHorizontal("H3", -1, 5, 3)); // y = 3
     conList.add(makeVertical("V1", 1, -1, 5));
-    conList.add(makeVertical("V2", 3, -1, 5));
+    conList.add(makeVertical("V4", 3, -1, 5));
     IIncrementalTin tin = options.getNewInstanceOfTestTin();
     tin.add(vList, null);
-    tin.addConstraints(conList, true);
+    tin.addConstraints(conList, false);
     IIntegrityCheck checker = tin.getIntegrityCheck();
     if (checker.inspect()) {
       ps.println("Integrity check passed");
@@ -216,61 +212,20 @@ public class MixedModeConstraintTest implements IDevelopmentTest {
     } catch (IOException ioex) {
       ioex.printStackTrace(ps);
     }
-
-    Random random = new Random(0);
-    INeighborEdgeLocator locator = tin.getNeighborEdgeLocator();
-    int nTests = 10000;
-    int nFail = 0;
-    for (int iTest = 0; iTest < nTests; iTest++) {
-      double x = random.nextDouble() * 4;
-      double y = random.nextDouble() * 4;
-      if (x == Math.floor(x + 1.0e-6) || y == Math.floor(y + 1.0e+6)) {
-        // one of the coordinates is very nearly integral, which would
-        // place the query point directly on an edge.  Such points have
-        // an ambiguous constraint membership, so we exclude from the test.
-        continue;
-      }
-
-      IQuadEdge e = locator.getNeigborEdge(x, y);
-      if (e == null) {
-        continue;
-      }
-      Vertex C = e.getForward().getB();
-      if (C == null) {
-        continue;
-      }
-
-      IConstraint constraint = tin.getRegionConstraint(e);
-      if (constraint == null) {
-        if (x > 0 && x < 4 && y > 0 && y < 4) {
-          ps.println("Fail, outside constraints " + x + ", " + y);
-          nFail++;
-        }
-      } else {
-        // constraint is not null
-        Object appData = constraint.getApplicationData();
-        if ("L".equals(appData)) {
-          if (x > 2) {
-            ps.println("Fail left " + x + ", " + y);
-            nFail++;
-          }
-        } else if ("R".equals(appData)) {
-          if (x < 2) {
-            ps.println("Fail right " + x + ", " + y);
-            nFail++;
-          }
-        }
-      }
-    }
-
-    if (nFail > 0) {
-      ps.println("Test completed with " + nFail + " failures");
-    } else {
-      ps.println("Test succeesfully completed with no failures");
-    }
-
+   
   }
 
+  String fail(IQuadEdge edge, String message){
+    return "Edge +("+edge.getIndex()+"): "+message;
+  }
+  
+  String eString (IQuadEdge edge){
+    Vertex A=edge.getA();
+    Vertex B = edge.getB();
+    return edge.getIndex()+": "+A+", "+B+">> "+edge.toString();
+  }
+  
+  
   PolygonConstraint makePoly(String label, int xMin, int yMin, int xMax, int yMax) {
     PolygonConstraint p = new PolygonConstraint();
     p.setApplicationData(label);
@@ -313,5 +268,17 @@ public class MixedModeConstraintTest implements IDevelopmentTest {
       lc.add(v);
     }
     return lc;
+  }
+
+  boolean isVertical(IQuadEdge edge) {
+    Vertex A = edge.getA();
+    Vertex B = edge.getB();
+    return A.getX()==B.getX();
+  }
+
+  boolean isHorizontal(IQuadEdge edge) {
+    Vertex A = edge.getA();
+    Vertex B = edge.getB(); 
+    return A.getY()==B.getY();
   }
 }

@@ -54,6 +54,8 @@ public final class QuadEdgeConstants {
    * equivalent to the 24 low-order bits.
    */
   public static final int CONSTRAINT_INDEX_MASK = 0x00ffffff;
+  
+  public static final int CONSTRAINT_INDEX_COMPLIMENT = 0xff000000;
 
   /**
    * A bit indicating that an edge is constrained. This bit just happens
@@ -71,7 +73,13 @@ public final class QuadEdgeConstants {
    * A bit indicating that an edge is in the interior of a constrained region.
    */
   public static final int CONSTRAINT_REGION_INTERIOR_FLAG = 1 << 29;
-  
+
+  /**
+   * A bit indicating that an edge is part of a non-region constraint line.
+   * Edges are allowed to be both an interior and a line, so a separate flag bit
+   * is required for both cases.
+   */
+  public static final int CONSTRAINT_LINE_MEMBER_FLAG = 1 << 28;
   /**
    * A set of bits combining the constraint region interior and border flags.
    */
@@ -81,5 +89,5 @@ public final class QuadEdgeConstants {
   /**
    * A bit indicating that an edge has been marked as synthetic.
    */
-  public static final int SYNTHETIC_EDGE_FLAG = 1<<28;
+  public static final int SYNTHETIC_EDGE_FLAG = 1<<27;
 }

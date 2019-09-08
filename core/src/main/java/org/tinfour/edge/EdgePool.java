@@ -565,7 +565,7 @@ public class EdgePool implements Iterable<IQuadEdge> {
       if (c != null) {
         addBorderConstraintToMap(q, c);
       }
-    }else if(e.isLinearConstraintMember()){
+    }else if(e.isConstraintLineMember()){
       IConstraint c = linearConstraintMap.get(e.getIndex());
       if(c!=null){
         addLinearConstraintToMap(p, c);
@@ -632,7 +632,7 @@ public class EdgePool implements Iterable<IQuadEdge> {
    * instance; otherwise, a null.
    */
   public IConstraint getLinearConstraint(IQuadEdge edge) {
-    if (edge.isLinearConstraintMember()) {
+    if (edge.isConstraintLineMember()) {
       return linearConstraintMap.get(edge.getIndex());
     }
     return null;
@@ -713,8 +713,42 @@ public class EdgePool implements Iterable<IQuadEdge> {
       if (arrayIndex < nAllocated) {
         QuadEdge swap = edges[nAllocated];
         edges[arrayIndex] = swap;
-        swap.setIndex(pageOffset + arrayIndex*2);
+        int oldIndex = swap.getIndex();
+        int newIndex = pageOffset + arrayIndex*2;
+        swap.setIndex(newIndex);
         edges[nAllocated] = e;
+        
+        // the swap operation will change the index of the line. And, because
+        // the index is used as a key into the constraint maps, we need to
+        // adjust the entries.  The fact that this action is necessarily
+        // highlights one of the disadvantages of the design choice of
+        // swapping edges.  It was chosen in an effort to save memory
+        // (constrast it with the semi-virtual implementation which
+        // maintains a free list).  But it did have side-effects.
+        if(swap.isConstraintLineMember()){
+          if(linearConstraintMap.containsKey(oldIndex)){
+          IConstraint c = linearConstraintMap.get(oldIndex);
+          linearConstraintMap.remove(oldIndex);
+          linearConstraintMap.remove(oldIndex^1);
+          linearConstraintMap.put(newIndex, c);
+          linearConstraintMap.put(newIndex^1, c);
+        }
+        if(swap.isConstrainedRegionBorder()){
+          if(borderConstraintMap.containsKey(oldIndex)){
+            IConstraint c = borderConstraintMap.get(oldIndex);
+            borderConstraintMap.remove(oldIndex);
+            borderConstraintMap.put(newIndex, c);
+          }
+          oldIndex^=1;  // set index to dual
+          newIndex^=1;
+               if(borderConstraintMap.containsKey(oldIndex)){
+            IConstraint c = borderConstraintMap.get(oldIndex);
+            borderConstraintMap.remove(oldIndex);
+            borderConstraintMap.put(newIndex, c);
+          }
+          
+        }
+      }
         e.setIndex(pageOffset + nAllocated*2);  // pro forma, for safety
       }
     }

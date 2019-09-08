@@ -663,7 +663,7 @@ class SemiVirtualEdgePool implements Iterable<IQuadEdge> {
    * instance; otherwise, a null.
    */
   public IConstraint getLinearConstraint(IQuadEdge edge) {
-    if (edge.isLinearConstraintMember()) {
+    if (edge.isConstraintLineMember()) {
       return linearConstraintMap.get(edge.getIndex());
     }
     return null;
