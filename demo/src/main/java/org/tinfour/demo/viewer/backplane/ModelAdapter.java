@@ -45,6 +45,7 @@ import java.util.Formatter;
 import java.util.List;
 import org.tinfour.common.IConstraint;
 import org.tinfour.common.IIncrementalTin;
+import org.tinfour.common.IIncrementalTinNavigator;
 import org.tinfour.common.IMonitorWithCancellation;
 import org.tinfour.common.IQuadEdge;
 import org.tinfour.common.Vertex;
@@ -215,8 +216,9 @@ public class ModelAdapter implements IModel {
       // of samples. So this should execute fairly quickly,
       // especially since the list has been Hilbert sorted and has a
       // high degree of spatial autocorrelation.
+      IIncrementalTinNavigator navigator = referenceTin.getNavigator();
       for (Vertex v : list) {
-        if (!referenceTin.isPointInsideTin(v.getX(), v.getY())) {
+        if(!navigator.isPointInsideTin(v.getX(), v.getY())) {
           referenceTin.add(v);
         }
       }

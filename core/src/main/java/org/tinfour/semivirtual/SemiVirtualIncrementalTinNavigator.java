@@ -34,7 +34,6 @@ import org.tinfour.common.IIncrementalTinNavigator;
 import org.tinfour.common.IQuadEdge;
 import org.tinfour.common.NearestEdgeResult;
 import org.tinfour.common.SimpleTriangle;
-import org.tinfour.edge.QuadEdge;
 import org.tinfour.common.Vertex;
 
 /**
