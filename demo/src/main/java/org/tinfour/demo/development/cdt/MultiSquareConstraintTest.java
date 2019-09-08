@@ -46,7 +46,7 @@ import java.util.Random;
 import java.util.SimpleTimeZone;
 import org.tinfour.common.IConstraint;
 import org.tinfour.common.IIncrementalTin;
-import org.tinfour.common.INeighborEdgeLocator;
+import org.tinfour.common.IIncrementalTinNavigator;
 import org.tinfour.common.IQuadEdge;
 import org.tinfour.common.PolygonConstraint;
 import org.tinfour.common.Vertex;
@@ -64,8 +64,8 @@ public class MultiSquareConstraintTest implements IDevelopmentTest {
   private int nTests = 10000000;
 
   /**
-   * Process the test series using specifications from 
-   * command line arguments.
+   * Process the test series using specifications from command line arguments.
+   *
    * @param args the command line arguments
    */
   public static void main(String[] args) {
@@ -91,7 +91,7 @@ public class MultiSquareConstraintTest implements IDevelopmentTest {
     }
     long randomSeed = options.getRandomSeed(0);
     Random random = new Random(randomSeed);
-    
+
     Locale locale = Locale.getDefault();
     Date date = new Date();
     SimpleDateFormat sdFormat = new SimpleDateFormat("dd MMM yyyy HH:mm", locale);
@@ -122,12 +122,10 @@ public class MultiSquareConstraintTest implements IDevelopmentTest {
         constraints.add(p);
       }
     }
- 
 
     IIncrementalTin tin = options.getNewInstanceOfTestTin();
     tin.addConstraints(constraints, true);
-    INeighborEdgeLocator locator = tin.getNeighborEdgeLocator();
-
+    IIncrementalTinNavigator navigator = tin.getNavigator();
 
     ps.format("%n");
     ps.format("       Test        Inside     Border Even   Border Odd    Errors%n");
@@ -146,7 +144,7 @@ public class MultiSquareConstraintTest implements IDevelopmentTest {
         continue;
       }
 
-      IQuadEdge e = locator.getNeigborEdge(x, y);
+      IQuadEdge e = navigator.getNeighborEdge(x, y);   
       if (e == null) {
         kError++;
         continue;
@@ -189,9 +187,9 @@ public class MultiSquareConstraintTest implements IDevelopmentTest {
     if ((kTests % reportInterval) != 0) {
       ps.format("%12d %12d %12d %12d%n", kTests, kInterior, kBorderEven, kBorderOdd, kError);
     }
-    if(kError==0){
+    if (kError == 0) {
       ps.format("%nNo errors encountered, test passes");
-    }else{
+    } else {
       ps.format("%nErrors encountered, test fails");
     }
   }
