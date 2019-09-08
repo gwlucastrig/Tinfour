@@ -44,6 +44,7 @@ import org.tinfour.common.BootstrapUtility;
 import org.tinfour.common.GeometricOperations;
 import org.tinfour.common.IConstraint;
 import org.tinfour.common.IIncrementalTin;
+import org.tinfour.common.IIncrementalTinNavigator;
 import org.tinfour.common.IIntegrityCheck;
 import org.tinfour.common.IMonitorWithCancellation;
 import org.tinfour.common.INeighborEdgeLocator;
@@ -1648,6 +1649,11 @@ public class SemiVirtualIncrementalTin implements IIncrementalTin {
   public INeighborEdgeLocator getNeighborEdgeLocator() {
     return new SemiVirtualNeighborEdgeLocator(this);
   }
+  
+  @Override
+  public IIncrementalTinNavigator getNavigator() {
+    return new SemiVirtualIncrementalTinNavigator(this);
+  }
 
   @Override
   public INeighborhoodPointsCollector getNeighborhoodPointsCollector() {
@@ -1807,6 +1813,7 @@ public class SemiVirtualIncrementalTin implements IIncrementalTin {
       edgePool.addBorderConstraintToMap(edge, constraint);
     }else{
       edgePool.addLinearConstraintToMap(edge, constraint);
+      edge.setConstraintLineMemberFlag();
     }
   }
 

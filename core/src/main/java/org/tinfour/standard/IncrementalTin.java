@@ -64,6 +64,7 @@ import org.tinfour.common.BootstrapUtility;
 import org.tinfour.common.GeometricOperations;
 import org.tinfour.common.IConstraint;
 import org.tinfour.common.IIncrementalTin;
+import org.tinfour.common.IIncrementalTinNavigator;
 import org.tinfour.common.IIntegrityCheck;
 import org.tinfour.common.IMonitorWithCancellation;
 import org.tinfour.common.INeighborEdgeLocator;
@@ -1672,6 +1673,11 @@ public class IncrementalTin implements IIncrementalTin {
   public INeighborEdgeLocator getNeighborEdgeLocator() {
     return new NeighborEdgeLocator(this);
   }
+  
+  @Override
+  public IIncrementalTinNavigator getNavigator(){
+    return new IncrementalTinNavigator(this);
+  }
 
   /**
    * Gets a new instance of a neighborhood points collector. Instances observe
@@ -1902,7 +1908,8 @@ public class IncrementalTin implements IIncrementalTin {
       edgesForConstraint.add(edge);
       edge.setConstrainedRegionBorderFlag();
       edgePool.addBorderConstraintToMap(edge, constraint);
-    }else{
+    } else {
+      edge.setConstraintLineMemberFlag();
       edgePool.addLinearConstraintToMap(edge, constraint);
     }
   }

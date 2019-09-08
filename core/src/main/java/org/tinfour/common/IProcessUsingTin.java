@@ -50,7 +50,7 @@ public interface IProcessUsingTin {
      * Reset the processor due to a change in the TIN.  For processors that
      * maintain state data about the TIN in order to expedite processing,
      * this method provides a way to clear the state data.
-     * <p>Reseting the state data unnecessarily may result in a
+     * <p>Resetting the state data unnecessarily may result in a
      * performance reduction when processing a large number of operations,
      * but is otherwise harmless.  Implementations are expected to be able
      * to run properly after a reset is called.

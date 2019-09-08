@@ -28,7 +28,6 @@
  *
  * -----------------------------------------------------------------------
  */
-
 package org.tinfour.semivirtual;
 
 import org.tinfour.common.IQuadEdge;
@@ -36,6 +35,7 @@ import org.tinfour.common.Vertex;
 import static org.tinfour.edge.QuadEdgeConstants.CONSTRAINT_EDGE_FLAG;
 import static org.tinfour.edge.QuadEdgeConstants.CONSTRAINT_INDEX_MASK;
 import static org.tinfour.edge.QuadEdgeConstants.CONSTRAINT_INDEX_MAX;
+import static org.tinfour.edge.QuadEdgeConstants.CONSTRAINT_LINE_MEMBER_FLAG;
 import static org.tinfour.semivirtual.SemiVirtualEdgePage.INDEX_MASK;
 import static org.tinfour.semivirtual.SemiVirtualEdgePage.INDICES_PER_PAGE;
 import static org.tinfour.edge.QuadEdgeConstants.CONSTRAINT_REGION_INTERIOR_FLAG;
@@ -44,9 +44,9 @@ import static org.tinfour.edge.QuadEdgeConstants.CONSTRAINT_REGION_MEMBER_FLAGS;
 import org.tinfour.edge.QuadEdgePinwheel;
 
 /**
- * Provides methods and elements implementing the QuadEdge data structure
- * using a virtual representation of the links based on integer arrays
- * rather than direct class instances.
+ * Provides methods and elements implementing the QuadEdge data structure using
+ * a virtual representation of the links based on integer arrays rather than
+ * direct class instances.
  */
 @SuppressWarnings("PMD.TooManyStaticImports")
 public final class SemiVirtualEdge implements IQuadEdge {
@@ -58,7 +58,6 @@ public final class SemiVirtualEdge implements IQuadEdge {
   SemiVirtualEdgePage page;
   int index;
   int indexOnPage;
-
 
   /**
    * Constructs a virtual edge tied to the specifed edge pool.
@@ -72,7 +71,6 @@ public final class SemiVirtualEdge implements IQuadEdge {
     this.index = index;
     this.page = page;
     indexOnPage = index & INDEX_MASK;
-
 
   }
 
@@ -95,8 +93,8 @@ public final class SemiVirtualEdge implements IQuadEdge {
   }
 
   /**
-   * Constructs an unassigned edge tied to the same edge pool
-   * as the current instance.
+   * Constructs an unassigned edge tied to the same edge pool as the current
+   * instance.
    *
    * @return a valid instance.
    */
@@ -154,8 +152,7 @@ public final class SemiVirtualEdge implements IQuadEdge {
   }
 
   /**
-   * Load the edge from the associated edge pool that has the specified
-   * index
+   * Load the edge from the associated edge pool that has the specified index
    *
    * @param index a positive integer corresponding to an edge in the pool
    */
@@ -195,13 +192,13 @@ public final class SemiVirtualEdge implements IQuadEdge {
   public Vertex getA() {
     int side = index & LOW_BIT;
     int offset = indexOnPage & MASK_LOW_BIT_CLEAR;
-   return page.vertices[offset | side];
+    return page.vertices[offset | side];
 
   }
 
   @Override
   public Vertex getB() {
-       int side = index & LOW_BIT;
+    int side = index & LOW_BIT;
     int offset = indexOnPage & MASK_LOW_BIT_CLEAR;
     return page.vertices[offset | (side ^ LOW_BIT)];
   }
@@ -213,8 +210,8 @@ public final class SemiVirtualEdge implements IQuadEdge {
   }
 
   /**
-   * When the edge exists within a TIN, this method gets the
-   * apex of a triangle formed with the edge as the base.
+   * When the edge exists within a TIN, this method gets the apex of a triangle
+   * formed with the edge as the base.
    *
    * @return if defined, a valid instance; otherwise, a null.
    */
@@ -238,8 +235,8 @@ public final class SemiVirtualEdge implements IQuadEdge {
   }
 
   /**
-   * Constructs a new instance of the virtual edge class
-   * referencing the forward of the current edge.
+   * Constructs a new instance of the virtual edge class referencing the forward
+   * of the current edge.
    *
    * @return a new instances
    */
@@ -250,8 +247,8 @@ public final class SemiVirtualEdge implements IQuadEdge {
   }
 
   /**
-   * Constructs a new instance of the virtual edge class
-   * referencing the dual of the current edge's reverse.
+   * Constructs a new instance of the virtual edge class referencing the dual of
+   * the current edge's reverse.
    *
    * @return a new instances
    */
@@ -262,8 +259,8 @@ public final class SemiVirtualEdge implements IQuadEdge {
   }
 
   /**
-   * Constructs a new instance of the virtual edge class
-   * referencing the dual of the current edge.
+   * Constructs a new instance of the virtual edge class referencing the dual of
+   * the current edge.
    *
    * @return a new instances
    */
@@ -288,9 +285,8 @@ public final class SemiVirtualEdge implements IQuadEdge {
   }
 
   /**
-   * Constructs a new instance of the virtual edge class
-   * referencing the base of the current edge (may be a copy
-   * of the current edge if it is a base).
+   * Constructs a new instance of the virtual edge class referencing the base of
+   * the current edge (may be a copy of the current edge if it is a base).
    *
    * @return a new instances
    */
@@ -300,8 +296,8 @@ public final class SemiVirtualEdge implements IQuadEdge {
   }
 
   /**
-   * Gets the index of the base of the current edge. The index value
-   * for a base is always an even number.
+   * Gets the index of the base of the current edge. The index value for a base
+   * is always an even number.
    *
    * @return an even integer value
    */
@@ -310,8 +306,8 @@ public final class SemiVirtualEdge implements IQuadEdge {
   }
 
   /**
-   * Constructs a new instance of the virtual edge class
-   * referencing the forward of the dual of the current edge
+   * Constructs a new instance of the virtual edge class referencing the forward
+   * of the dual of the current edge
    *
    * @return a new instances
    */
@@ -322,8 +318,8 @@ public final class SemiVirtualEdge implements IQuadEdge {
   }
 
   /**
-   * Constructs a new instance of the virtual edge class
-   * referencing the dual of the forward of the current edge
+   * Constructs a new instance of the virtual edge class referencing the dual of
+   * the forward of the current edge
    *
    * @return a new instances
    */
@@ -334,8 +330,8 @@ public final class SemiVirtualEdge implements IQuadEdge {
   }
 
   /**
-   * Constructs a new instance of the virtual edge class
-   * referencing the reverse of the dual of the current edge
+   * Constructs a new instance of the virtual edge class referencing the reverse
+   * of the dual of the current edge
    *
    * @return a new instances
    */
@@ -372,8 +368,7 @@ public final class SemiVirtualEdge implements IQuadEdge {
   }
 
   /**
-   * Sets the initial vertex of the current edge (and final vertex
-   * of its dual)
+   * Sets the initial vertex of the current edge (and final vertex of its dual)
    *
    * @param a a valid reference or a null.
    */
@@ -383,8 +378,7 @@ public final class SemiVirtualEdge implements IQuadEdge {
   }
 
   /**
-   * Sets the final vertex of the current edge (and initial vertex
-   * of its dual)
+   * Sets the final vertex of the current edge (and initial vertex of its dual)
    *
    * @param b a valid reference or a null.
    */
@@ -438,8 +432,8 @@ public final class SemiVirtualEdge implements IQuadEdge {
   }
 
   /**
-   * Sets both vertices for the current edge (and the opposite vertices
-   * of its dual).
+   * Sets both vertices for the current edge (and the opposite vertices of its
+   * dual).
    *
    * @param a the initial vertex
    * @param b the final vertex
@@ -462,11 +456,11 @@ public final class SemiVirtualEdge implements IQuadEdge {
     int r = page.links[indexOnPage * 2 + 1];
     int f = page.links[indexOnPage * 2];
     String s = String.format("%9d  %9s <-- (%9s,%9s) --> %9s",
-      index,
-      r == 0 ? "null" : Integer.toString(r),
-      a == null ? "gv" : a.getLabel(),
-      b == null ? "gv" : b.getLabel(),
-      f == 0 ? "null" : Integer.toString(f)
+            index,
+            r == 0 ? "null" : Integer.toString(r),
+            a == null ? "gv" : a.getLabel(),
+            b == null ? "gv" : b.getLabel(),
+            f == 0 ? "null" : Integer.toString(f)
     );
     return s;
   }
@@ -499,8 +493,8 @@ public final class SemiVirtualEdge implements IQuadEdge {
   public void setConstraintIndex(int constraintIndex) {
     if (constraintIndex < 0 || constraintIndex > CONSTRAINT_INDEX_MAX) {
       throw new IllegalArgumentException(
-        "Constraint index " + constraintIndex
-        + " is out of range [0.." + CONSTRAINT_INDEX_MAX + "]");
+              "Constraint index " + constraintIndex
+              + " is out of range [0.." + CONSTRAINT_INDEX_MAX + "]");
     }
 
     // this one sets the constraint index, but does not affect
@@ -516,14 +510,14 @@ public final class SemiVirtualEdge implements IQuadEdge {
   public void setConstrained(int constraintIndex) {
     if (constraintIndex < 0 || constraintIndex > CONSTRAINT_INDEX_MAX) {
       throw new IllegalArgumentException(
-        "Constraint index " + constraintIndex
-        + " is out of range [0.." + CONSTRAINT_INDEX_MAX + "]");
+              "Constraint index " + constraintIndex
+              + " is out of range [0.." + CONSTRAINT_INDEX_MAX + "]");
     }
 
     int ix = indexOnPage / 2; // both sides of the edge are constrained.
     int c[] = page.readyConstraints();
-    c[ix] = CONSTRAINT_EDGE_FLAG 
-            | (c[ix] & ~CONSTRAINT_INDEX_MASK) 
+    c[ix] = CONSTRAINT_EDGE_FLAG
+            | (c[ix] & ~CONSTRAINT_INDEX_MASK)
             | constraintIndex;
 
   }
@@ -562,21 +556,34 @@ public final class SemiVirtualEdge implements IQuadEdge {
     }
   }
 
-    @Override
+  @Override
   public boolean isConstrainedRegionMember() {
     if (page.constraints == null) {
       return false;
     } else {
       // this tests to see if the edge is a constrained-area member
       // and doesn't care whether or not it is a constraint edge.
-      return (page.constraints[indexOnPage / 2] 
+      return (page.constraints[indexOnPage / 2]
               & (CONSTRAINT_REGION_BORDER_FLAG | CONSTRAINT_REGION_INTERIOR_FLAG)) != 0;
     }
   }
-  
-  
+
   @Override
-  public boolean isLinearConstraintMember() {
+  public void setConstrainedRegionBorderFlag() {
+    int ix = indexOnPage / 2;
+    int c[] = page.readyConstraints();
+    c[ix] |= CONSTRAINT_REGION_BORDER_FLAG;
+  }
+
+  @Override
+  public void setConstrainedRegionInteriorFlag() {
+    int ix = indexOnPage / 2;
+    int c[] = page.readyConstraints();
+    c[ix] |= CONSTRAINT_REGION_INTERIOR_FLAG;
+  }
+
+  @Override
+  public boolean isConstraintLineMember() {
     if (page.constraints == null) {
       return false;
     } else {
@@ -588,21 +595,11 @@ public final class SemiVirtualEdge implements IQuadEdge {
     }
   }
 
-
   @Override
-  public void setConstrainedRegionBorderFlag() {
+  public void setConstraintLineMemberFlag() {
     int ix = indexOnPage / 2;
     int c[] = page.readyConstraints();
-    c[ix] |= CONSTRAINT_REGION_BORDER_FLAG;
-  }
-
-
-
-  @Override
-  public void setConstrainedRegionInteriorFlag() {
-    int ix = indexOnPage / 2;
-    int c[] = page.readyConstraints();
-    c[ix] |= CONSTRAINT_REGION_INTERIOR_FLAG;
+    c[ix] |= CONSTRAINT_LINE_MEMBER_FLAG | CONSTRAINT_EDGE_FLAG;
   }
 
   @Override

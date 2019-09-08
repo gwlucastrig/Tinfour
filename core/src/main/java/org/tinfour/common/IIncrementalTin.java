@@ -192,13 +192,32 @@ public interface IIncrementalTin {
   /**
    * Gets a new instance of the INeighborEdgeLocator interface.
    * Instances observe the contract of the IProcessUsingTin interface
-   * in that they access the TIN on a readonly basis and may be used
+   * in that they access the TIN on a read-only basis and may be used
    * in parallel threads provided that the TIN is not modified.
+   * <p>
+   * This method is obsolete. Use getNavigator instead.
    *
    * @return an edge locator tied to this TIN.
    */
   INeighborEdgeLocator getNeighborEdgeLocator();
 
+    /**
+   * Gets a new instance of the IIncrementalTinNavigator interface.
+   * The navigator implementations provide utilities to perform
+   * geometry-based queries on the TIN. These queries include tests to see if
+   * a coordinate point lies within the TIN, tests to get neighboring edges,
+   * etc.
+   * <p>
+   * Instances observe the contract of the IProcessUsingTin interface
+   * in that they access the TIN on a read-only basis and may be used
+   * in parallel threads provided that the TIN is not modified.
+   *
+   * @return an edge locator tied to this TIN.
+   */
+  IIncrementalTinNavigator getNavigator();
+  
+  
+  
   /**
    * Gets a new instance of a neighborhood points collector.
    * Instances observe the contract of the IProcessUsingTin interface
