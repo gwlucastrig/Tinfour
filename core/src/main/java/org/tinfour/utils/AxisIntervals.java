@@ -32,6 +32,12 @@ import java.util.Arrays;
 /**
  * Provides a utility for computing the intervals for labeling
  * a coordinate axis in a legend or other graph.
+ * <p>
+ * This class is used in many of the demonstration applications supplied
+ * with the Tinfour software library. For example, it is used to select intervals
+ * for legends in color-coded surface representations. It is used to
+ * label axes in trend-line graphs. And it is also used to pick contour
+ * intervals in contour-rendering applications.
  */
 @SuppressWarnings("PMD.AvoidDeeplyNestedIfStmts")
 public final class AxisIntervals {

@@ -36,9 +36,47 @@ import java.util.List;
 
 /**
  * Defines the primary methods used by an incremental TIN
- * implementation. The intended purpose of this interface is to support
- * automatic testing of different TIN implementations or to compare the
- * results of experimental changes.
+ * implementation.
+ * <h1>Implementations</h1>
+ * Currently, the Tinfour software library includes two implementations
+ * of this interface: IncrementalTin in the package org.tinfour.standard,
+ * and SemiVirtualIncrementalTin in the package org.tinfour.semivirtual.
+ * The two classes produce nearly identical output data. The standard
+ * IncrementalTin implementation is faster and simpler than its counterpart,
+ * but the semi-virtual implementation reduces memory use by a factor
+ * of two.  Under Java, IncrementalTin requires approximately 244 bytes per
+ * vertex while the semi-virtual form requires about 120.
+ * <p>
+ * The main difference between the two implementations is that standard
+ * incremental-TIN implementation represents each edge as an explicitly
+ * constructed pair of objects (using the QuadEdge class) while the semi-virtual
+ * implementation stores the raw data for vertices in memory and constructs
+ * edge objects on-the-fly (using the SemiVirtualEdge class).
+ * The semi-virtual approach has some processing overhead in that each
+ * time an edge is required, it must be constructed and then allowed to 
+ * go out-of-scope. This approach results in about a 30 percent reduction
+ * in the speed at which vertices can be added to the TIN. But by relying on
+ * short-persistence edge objects, the semi-virtual class reduces the
+ * number of objects kept in memory and the overall memory use.
+ * The standard implementation classes uses about 7.005 objects per vertex
+ * (including vertices, edges, and collections for management), while the
+ * semi-virtual implementation uses about persistent 1.012 objects per vertex.
+ * <h2>Usage Notes</h2>
+ * <h3>Purpose of this Interface</h3>
+ * The intended purpose of this interface is to allow application
+ * code to use the two classes interchangeably. Applications may select
+ * which implementation is constructed at run-time based on the size
+ * of their input data sets.
+ * <h3>Multi-Threading and Concurrency</h3>
+ * The process of creating a Delaunay Triangulation (TIN) using an
+ * incremental-insertion technique is inherently serial. Therefore, application
+ * code that creates a TIN should not attempt to access the "add" methods
+ * for this interface in parallel threads.  However, this API is designed so
+ * that once a TIN is complete, it can be accessed by multiple threads
+ * on a read-only basis.
+ * Multi-threaded access is particularly useful when performing
+ * surface-interpolation operations to construct raster (grid) representations
+ * of data.
  */
 public interface IIncrementalTin {
 
