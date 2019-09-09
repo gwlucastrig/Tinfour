@@ -220,6 +220,7 @@ public class ModelAdapter implements IModel {
       for (Vertex v : list) {
         if(!navigator.isPointInsideTin(v.getX(), v.getY())) {
           referenceTin.add(v);
+          navigator.resetForChangeToTin();
         }
       }
     }

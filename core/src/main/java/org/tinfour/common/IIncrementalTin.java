@@ -233,7 +233,7 @@ public interface IIncrementalTin {
    * in that they access the TIN on a read-only basis and may be used
    * in parallel threads provided that the TIN is not modified.
    * <p>
-   * This method is obsolete. Use getNavigator instead.
+   * <strong>This method is obsolete. Use getNavigator instead.</strong>
    *
    * @return an edge locator tied to this TIN.
    */
@@ -250,7 +250,8 @@ public interface IIncrementalTin {
    * in that they access the TIN on a read-only basis and may be used
    * in parallel threads provided that the TIN is not modified.
    *
-   * @return an edge locator tied to this TIN.
+   * @return an valid navigator instance or a null if the TIN is not
+   * properly bootstrapped.
    */
   IIncrementalTinNavigator getNavigator();
   
