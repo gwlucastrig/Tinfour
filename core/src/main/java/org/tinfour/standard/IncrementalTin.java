@@ -125,7 +125,7 @@ import org.tinfour.edge.QuadEdgeConstants;
  * bytes per object. Thus for each vertex, it requires (1+3*2)x12 = 84 bytes of
  * overhead.
  * <h2>Performance</h2>
- * <h3>Managing overhead due to object construction</h3>
+ * <h3>Managing the performance cost of object construction</h3>
  * Testing indicates that the most time-consuming part of the TIN construction
  * operation is the construction of Java objects. As noted above, this class
  * requires 6 edge-related objects per vertex. Although this overhead is
@@ -158,19 +158,25 @@ import org.tinfour.edge.QuadEdgeConstants;
  * nearly same coordinates, this class maintains a "merged group" of vertices.
  * Rules for disambiguating the values of a merged group my be specified using a
  * call to the setResolutionRuleForMergedVertices() method.
- * <h3>Sequential locality</h3>
+ * <h3>Sequential spatial autocorrelation</h3>
  * <p>
  * Inserting a vertex into a TIN depends on identifying the triangle that
  * contains an insertion vertex (if any). This class uses the Stochastic
  * Lawson's Walk algorithm (SLW) that is most efficient when subsequent vertices
- * tend to be spaced close together. This condition is usually met by lidar data
- * because its measurements are derived from scanning lasers and stored in order
- * taken. Other data sources may not be compliant. Randomly generated data
+ * tend to be spaced close together. Fortunately, this condition is met by
+ * many real-world data collection systems. For example, airborne-lidar systems
+ * tend to produce a sequence of samples that are closely spaced in
+ * terms of horizontal coordinates because they collect measurements
+ * using scanning lasers and storing them in the order they are
+ * taken.
+ * <p>
+ * Other data sources may not be compliant. Randomly generated data
  * points, in particular, may be problematic. For such data, there may be a
  * performance benefit in using the HilbertSort class to pre-order points before
- * insertion so that sequential locality is provided by the input data.
+ * insertion so that sequential spatial autocorrelation is provided by the
+ * input data.
  * <p>
- * One way to judge the degree of sequential locality in an input set of
+ * One way to judge the degree of sequential spacial autocorrelation in a set of
  * vertices is to view the output of the printDiagnostics() method after
  * building a TIN. Under the entry for the SLW statistics, the "average steps to
  * completion" indicates how many comparisons were needed to locate vertices. If
@@ -179,7 +185,7 @@ import org.tinfour.edge.QuadEdgeConstants;
  * <h3>Cleaning up when finished</h3>
  * <p>
  * Because of the complex relationships between objects in a TIN, Java garbage
- * collection may require an above average number of passes to clean up memory
+ * collection may require an above-average number of passes to clean up memory
  * when an instance of this class goes out-of-scope. The dispose() method can be
  * used to expedite garbage collection. Once the dispose() method is called on a
  * TIN, it cannot be reused. Do not confuse dispose() with clear().
@@ -204,6 +210,16 @@ import org.tinfour.edge.QuadEdgeConstants;
  * have to be discarded (and garbage collected) before the entire vertex set was
  * processed. Doing so would substantially degrade the performance of this
  * class.
+ * <h3>Multi-Threading and Concurrency</h3>
+ * The process of creating a Delaunay Triangulation (TIN) using an
+ * incremental-insertion technique is inherently serial. Therefore, application
+ * code that creates a TIN should not attempt to access the "add" methods
+ * for this class in parallel threads.  However, this API is designed so
+ * that once a TIN is complete, it can be accessed by multiple threads
+ * on a read-only basis.
+ * Multi-threaded access is particularly useful when performing
+ * surface-interpolation operations to construct raster (grid) representations
+ * of data.
  * <h1>Methods and References</h1>
  * <p>
  * A good review of point location using a stochastic Lawson's walk is provided
@@ -1764,7 +1780,7 @@ public class IncrementalTin implements IIncrementalTin {
     return vList;
   }
 
-  // Code related to the addition of constraints ------------------------
+
   @Override
   public boolean isPointInsideTin(double x, double y) {
     if (this.isBootstrapped) {

@@ -63,16 +63,16 @@ import org.tinfour.edge.QuadEdgeConstants;
  * information and tactics for using this class,
  * see the documentation for the IncrementalTin class.
  * <p>
- * The IncrementalTin class uses an implementation of the quad-edge structure
- * popularized by Guibas and Stolfi. While this structure leads to
- * elegant code, the nature of the Java language (and object-oriented coding
- * in general) results in relatively expensive memory requirements,
- * approximately 244 bytes per vertex inserted into the TIN (counting the
- * storage for both edges and vertices). Since it is common for lidar
- * data sets to include multiple-millions of points, that memory use
- * adds up fast.
+ * The counterpart to this class, IncrementalTin, uses a direct implementation
+ * of the quad-edge structure popularized by Guibas and Stolfi. While that 
+ * approach leads to elegant code, the nature of the Java language 
+ * (and object-oriented languages in general) results in relatively expensive
+ * memory requirements, approximately 244 bytes per vertex inserted into the TIN
+ * (counting the storage for both edges and vertices). Since it is common for
+ * many geophysical data sets to include multiple-millions of points,
+ * that memory use adds up fast.
  * <p>
- * This implementation reduces memory requirements by representing
+ * This class reduces memory requirements by representing
  * the edge-link relationships with internal integer arrays
  * and numerical indexing rather than object references. By keeping the edge
  * relationship data in "virtual form", the implementation reduces the
@@ -82,7 +82,7 @@ import org.tinfour.edge.QuadEdgeConstants;
  * of the edge structures.
  * <p>
  * Unfortunately, this reduction comes with a cost. In testing, the
- * virtual implementation requires approximately 60 percent more runtime
+ * virtual implementation requires approximately 30 percent more runtime
  * to process vertices than the direct implementation. Both
  * implementations experience a degradation of throughput when the
  * memory use approaches the maximum allowed by the JVM (specified
@@ -96,11 +96,7 @@ import org.tinfour.edge.QuadEdgeConstants;
  * objects per vertex (including vertices and edges) while the virtual
  * implementation uses only about 1.012. This reduction can be
  * valuable in reducing the impact of garbage collection when processing
- * large data sets.
- * <h1>Support for the Constrained Delaunay Triangulation (CDT)</h1>
- * Support for the Constrained Delaunay Triangulation (CDT) is
- * not yet implemented for this class. Please use the Standard
- * IncrementalTin class when constraints are required.
+ * large data sets..
  * <h1>Methods and References</h1>
  * A good review of point location using a stochastic Lawson's walk
  * is provided by <cite>Soukal, R.; Ma&#769;lkova&#769;, Kolingerova&#769;
