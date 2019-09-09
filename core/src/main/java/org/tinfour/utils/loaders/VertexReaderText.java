@@ -210,11 +210,13 @@ public class VertexReaderText implements Closeable, IVertexReader {
           headerRow = true;
           int n = k + 1;
           if ("x".equalsIgnoreCase(s)) {
+            xFound = true;
             xColumn = k;
             if (n > nColumnsRequired) {
               nColumnsRequired = n;
             }
           } else if ("y".equalsIgnoreCase(s)) {
+            yFound = true;
             yColumn = k;
             if (n > nColumnsRequired) {
               nColumnsRequired = n;

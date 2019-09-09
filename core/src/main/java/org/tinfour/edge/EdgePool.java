@@ -372,6 +372,8 @@ public class EdgePool implements Iterable<IQuadEdge> {
       pages[i].nextPage = pages[i + 1];
     }
     pages[pages.length - 1].nextPage = null;
+    linearConstraintMap.clear();
+    borderConstraintMap.clear();
   }
 
   @Override

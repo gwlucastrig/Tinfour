@@ -356,7 +356,8 @@ class SemiVirtualEdgePool implements Iterable<IQuadEdge> {
     pages[pages.length - 1].nextPage = null;
     nAllocated = 0;
     nFree = pages.length * PAIRS_PER_PAGE;
-
+    linearConstraintMap.clear();
+    borderConstraintMap.clear();
   }
 
   @Override
