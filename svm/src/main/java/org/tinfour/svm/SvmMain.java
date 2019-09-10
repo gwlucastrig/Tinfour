@@ -223,7 +223,7 @@ public class SvmMain {
     if (reportFile != null) {
       reportOutputStream = new FileOutputStream(reportFile);
       BufferedOutputStream bos = new BufferedOutputStream(reportOutputStream);
-      reportPrintStream = new PrintStream(bos);
+      reportPrintStream = new PrintStream(bos, true, "UTF-8");
       writeIntroduction(reportPrintStream, dateOfAnalysis);
       prop.writeSummary(reportPrintStream);
       reportPrintStream.flush();

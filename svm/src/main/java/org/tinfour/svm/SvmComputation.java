@@ -497,7 +497,7 @@ public class SvmComputation {
     if (tableFile != null) {
       tableOutputStream = new FileOutputStream(tableFile);
       BufferedOutputStream bos = new BufferedOutputStream(tableOutputStream);
-      ts = new PrintStream(bos);
+      ts = new PrintStream(bos, true, "UTF-8");
     }
 
     ts.println("Elevation, Area, Volume, Percent_Capacity");

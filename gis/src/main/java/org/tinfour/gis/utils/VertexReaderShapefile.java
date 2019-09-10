@@ -80,6 +80,9 @@ public class VertexReaderShapefile implements IVertexReader, Closeable {
    */
   public VertexReaderShapefile(File file) throws IOException {
     // TO DO: The linear units should be in the PRJ file
+    if(file==null){
+      throw new IllegalArgumentException("Null file specified for Shapefile");
+    }
     this.file = file;
 
     String testExt = null;
@@ -227,109 +230,114 @@ public class VertexReaderShapefile implements IVertexReader, Closeable {
   @Override
   public List<Vertex> read(IMonitorWithCancellation monitor) throws IOException {
     double mainFileSize = 0;
-    if(monitor!=null ){
+    if (monitor != null) {
       mainFileSize = reader.getFileSize();
     }
     DbfFileReader dbfReader = null;
     DbfField zField = null;
     boolean useShapefileZ = true;
     CoordinatePair scratch = new CoordinatePair();
-    if (dbfFieldForZ != null) {
-      File dbfFile = reader.getCoFile("DBF");
-      dbfReader = reader.getDbfFileReader();
-      zField = dbfReader.getFieldByName(dbfFieldForZ);
-      if (zField == null) {
-        try {
-          dbfReader.close();
-        } catch (IOException dontCare) {
-          // NOPMD   no action required.
-        }
-        throw new IllegalArgumentException("The specified field "
-                + dbfFieldForZ + " was not found in " + dbfFile.getName());
-      }
-      if (!zField.isNumeric()) {
-        try {
-          dbfReader.close();
-        } catch (IOException dontCare) {
-          // NOPMD no action required.
-        }
-        throw new IllegalArgumentException(
-                "The specified field " + dbfFieldForZ + " is not numeric in"
-                + dbfFile.getName());
-      }
-      useShapefileZ = false;
-    }
-
     List<Vertex> vList = new ArrayList<>();
-    ShapefileRecord record = null;
-    xMin = Double.POSITIVE_INFINITY;
-    yMin = Double.POSITIVE_INFINITY;
-    zMin = Double.POSITIVE_INFINITY;
-    xMax = Double.NEGATIVE_INFINITY;
-    yMax = Double.NEGATIVE_INFINITY;
-    zMax = Double.NEGATIVE_INFINITY;
-    int nRecordsRead = 0;
-    while (reader.hasNext()) {
-      if( monitor!=null && mainFileSize>0 && (nRecordsRead%1000)==0 ){
-        double filePos = reader.getFilePosition();
-        monitor.reportProgress((int) (100.0 * filePos/mainFileSize)); 
-      }
-      record = reader.readNextRecord(record);
-      int recNo = record.recordNumber;
-      double[] xyz = record.xyz;
-      double z = 0;
-      if (dbfReader != null && zField != null) {
-        dbfReader.readField(recNo, zField);
-        z = zField.getDouble();
-      }
-      
-      for (int i = 0; i < record.nPoints; i++) {
-        int index =i*3;
-        double x = xyz[index];
-        double y = xyz[index+1];
-        if (useShapefileZ) {
-          z = xyz[index+2];
+    try {
+      if (dbfFieldForZ != null) {
+        File dbfFile = reader.getCoFile("DBF");
+        if (dbfFile == null) {
+          throw new IOException("Missing DBF file for " + file.getName());
         }
-
-        if (coordinateTransform != null) {
-          boolean status = coordinateTransform.forward(x, y, scratch);
-          if (!status) {
-            throw new IOException(
-                    "Invalid transformation for coordinates in record "
-                    + recNo + ": " + x + "," + y);
+        dbfReader = reader.getDbfFileReader();
+        zField = dbfReader.getFieldByName(dbfFieldForZ);
+        if (zField == null) {
+          try {
+            dbfReader.close();
+          } catch (IOException dontCare) {
+            // NOPMD   no action required.
           }
-          x = scratch.x;
-          y = scratch.y;
+          throw new IllegalArgumentException("The specified field "
+                  + dbfFieldForZ + " was not found in " + dbfFile.getName());
         }
-        
-        if(verticalCoordinateTransform!=null){
-           z = verticalCoordinateTransform.transform(recNo, z);
+        if (!zField.isNumeric()) {
+          try {
+            dbfReader.close();
+          } catch (IOException dontCare) {
+            // NOPMD no action required.
+          }
+          throw new IllegalArgumentException(
+                  "The specified field " + dbfFieldForZ + " is not numeric in"
+                  + dbfFile.getName());
+        }
+        useShapefileZ = false;
+      }
+
+      ShapefileRecord record = null;
+      xMin = Double.POSITIVE_INFINITY;
+      yMin = Double.POSITIVE_INFINITY;
+      zMin = Double.POSITIVE_INFINITY;
+      xMax = Double.NEGATIVE_INFINITY;
+      yMax = Double.NEGATIVE_INFINITY;
+      zMax = Double.NEGATIVE_INFINITY;
+      int nRecordsRead = 0;
+      while (reader.hasNext()) {
+        if (monitor != null && mainFileSize > 0 && (nRecordsRead % 1000) == 0) {
+          double filePos = reader.getFilePosition();
+          monitor.reportProgress((int) (100.0 * filePos / mainFileSize));
+        }
+        record = reader.readNextRecord(record);
+        int recNo = record.recordNumber;
+        double[] xyz = record.xyz;
+        double z = 0;
+        if (dbfReader != null && zField != null) {
+          dbfReader.readField(recNo, zField);
+          z = zField.getDouble();
         }
 
-        vList.add(new Vertex(x, y, z, recNo));
-        if (x < xMin) {
-          xMin = x;
-        }
-        if (y < yMin) {
-          yMin = y;
-        }
-        if (z < zMin) {
-          zMin = z;
-        }
-        if (x > xMax) {
-          xMax = x;
-        }
-        if (y > yMax) {
-          yMax = y;
-        }
-        if (z > zMax) {
-          zMax = z;
+        for (int i = 0; i < record.nPoints; i++) {
+          int index = i * 3;
+          double x = xyz[index];
+          double y = xyz[index + 1];
+          if (useShapefileZ) {
+            z = xyz[index + 2];
+          }
+
+          if (coordinateTransform != null) {
+            boolean status = coordinateTransform.forward(x, y, scratch);
+            if (!status) {
+              throw new IOException(
+                      "Invalid transformation for coordinates in record "
+                      + recNo + ": " + x + "," + y);
+            }
+            x = scratch.x;
+            y = scratch.y;
+          }
+
+          if (verticalCoordinateTransform != null) {
+            z = verticalCoordinateTransform.transform(recNo, z);
+          }
+
+          vList.add(new Vertex(x, y, z, recNo));
+          if (x < xMin) {
+            xMin = x;
+          }
+          if (y < yMin) {
+            yMin = y;
+          }
+          if (z < zMin) {
+            zMin = z;
+          }
+          if (x > xMax) {
+            xMax = x;
+          }
+          if (y > yMax) {
+            yMax = y;
+          }
+          if (z > zMax) {
+            zMax = z;
+          }
         }
       }
-    }
-
-    if (dbfReader != null) {
-      dbfReader.close();
+    } finally {
+      if (dbfReader != null) {
+        dbfReader.close();
+      }
     }
     return vList;
   }

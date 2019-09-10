@@ -156,7 +156,7 @@ public class DbfFileReader implements Closeable {
       throw new IOException("Record " + recordNumber
               + " out of range 1 to " + nRecords);
     }
-    long recordOffset = nBytesInHeader + (recordNumber - 1) * this.nBytesInRecord;
+    long recordOffset = (long)nBytesInHeader + (long)(recordNumber - 1) * nBytesInRecord;
     field.read(brad, recordOffset);
   }
 

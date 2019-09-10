@@ -64,7 +64,7 @@ class SvmTriangleVolumeStore {
     }
   }
 
-  class AreaVolumeResult {
+  static class AreaVolumeResult {
 
     final double level;
     final double volume;
