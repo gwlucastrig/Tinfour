@@ -240,8 +240,7 @@ class SemiVirtualEdgePool implements Iterable<IQuadEdge> {
   }
 
   public SemiVirtualEdge getStartingGhostEdge() {
-    for (int i = 0; i < pages.length; i++) {
-      SemiVirtualEdgePage page = pages[i];
+    for (SemiVirtualEdgePage page : pages) {
       int[] allocatedEdges = page.getAllocations();
 
       for (int j = 0; j < allocatedEdges.length; j++) {
@@ -464,7 +463,6 @@ class SemiVirtualEdgePool implements Iterable<IQuadEdge> {
   Iterator<IQuadEdge> getIterator(final boolean includeGhostEdges) {
     return new Iterator<IQuadEdge>() {
       boolean skipGhostEdges = !includeGhostEdges;
-      SemiVirtualEdgePool pool;
       int iEdge;
       int iPage;
       int[] map = pages[0].getAllocations();
