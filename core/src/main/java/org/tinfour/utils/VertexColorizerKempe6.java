@@ -35,7 +35,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import org.tinfour.common.IIncrementalTin;
-import org.tinfour.common.INeighborEdgeLocator;
+import org.tinfour.common.IIncrementalTinNavigator;
 import org.tinfour.common.IQuadEdge;
 import org.tinfour.common.Vertex;
 
@@ -99,7 +99,7 @@ public class VertexColorizerKempe6 {
     // The minimum number of connections is two.  For a sufficiently large
     // population, the average number of connections is 6.
     ArrayDeque<Vertex> stack = new ArrayDeque<>();
-    INeighborEdgeLocator locator = tin.getNeighborEdgeLocator();
+    IIncrementalTinNavigator navigator = tin.getNavigator();
     while (!vertexList.isEmpty()) {
       Vertex vRemove = null;
       for (Vertex v : vertexList) {
@@ -110,7 +110,7 @@ public class VertexColorizerKempe6 {
       }
       vertexList.remove(vRemove);
       stack.push(vRemove);
-      IQuadEdge eRemove = locateEdge(locator, vRemove);
+      IQuadEdge eRemove = locateEdge(navigator, vRemove);
       if(eRemove==null){
         throw new IllegalStateException("Internal error, unable to locate edge");
       }
@@ -130,7 +130,7 @@ public class VertexColorizerKempe6 {
     int iStart = 0;
     while (!stack.isEmpty()) {
       Vertex v = stack.pop();
-      IQuadEdge e = locateEdge(locator, v);
+      IQuadEdge e = locateEdge(navigator, v);
       Arrays.fill(flag, true);
       for (IQuadEdge p : e.pinwheel()) {
         Vertex B = p.getB();
@@ -254,11 +254,11 @@ public class VertexColorizerKempe6 {
 
   /**
    * Locate an edge which begins with the specified vertex.
-   * @param locator the edge locator associated with the tin
+   * @param navigator the edge locator associated with the tin
    * @param v a valid vertex
    * @return  a valid edge
    */
-  private IQuadEdge locateEdge(INeighborEdgeLocator locator, Vertex v) {
+  private IQuadEdge locateEdge(IIncrementalTinNavigator navigator, Vertex v) {
     // The Tinfour edge locator identifies an edge belonging to a
     // Triangle in which vertex V lies.  The locator is a general-purpose
     // utility that does not assume that the input coordinates necessarily
@@ -266,7 +266,7 @@ public class VertexColorizerKempe6 {
     // will include the input vertex.  Since the colorization logic
     // requires a vertex that begins with input vertex v, a bit more
     // work is required to select the correct edge.
-    IQuadEdge e = locator.getNeigborEdge(v.getX(), v.getY());
+    IQuadEdge e = navigator.getNeighborEdge(v.getX(), v.getY());
     if(e == null){
       // won't happen except when the TIN is not bootstraped
       return null;

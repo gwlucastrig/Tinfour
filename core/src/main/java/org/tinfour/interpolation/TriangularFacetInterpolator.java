@@ -31,7 +31,7 @@
 package org.tinfour.interpolation;
 
 import org.tinfour.common.IIncrementalTin;
-import org.tinfour.common.INeighborEdgeLocator;
+import org.tinfour.common.IIncrementalTinNavigator;
 import org.tinfour.common.IQuadEdge;
 import org.tinfour.common.Thresholds;
 import org.tinfour.common.Vertex;
@@ -48,7 +48,7 @@ public class TriangularFacetInterpolator implements IInterpolatorOverTin {
     final private double precisionThreshold;
 
     final IIncrementalTin tin;
-    final INeighborEdgeLocator locator;
+    final IIncrementalTinNavigator navigator;
 
     private final VertexValuatorDefault defaultValuator = new VertexValuatorDefault();
 
@@ -83,7 +83,7 @@ public class TriangularFacetInterpolator implements IInterpolatorOverTin {
         precisionThreshold = thresholds.getPrecisionThreshold();
 
         this.tin = tin;
-        locator = tin.getNeighborEdgeLocator();
+        navigator = tin.getNavigator();
     }
 
     /**
@@ -94,7 +94,7 @@ public class TriangularFacetInterpolator implements IInterpolatorOverTin {
      */
     @Override
     public void resetForChangeToTin() {
-        locator.resetForChangeToTin();
+        navigator.resetForChangeToTin();
     }
 
     /**
@@ -125,7 +125,7 @@ public class TriangularFacetInterpolator implements IInterpolatorOverTin {
             vq = defaultValuator;
         }
 
-        IQuadEdge e= locator.getNeigborEdge(x, y);
+        IQuadEdge e= navigator.getNeighborEdge(x, y);
 
         if (e == null) {
           // this should happen only when TIN is not bootstrapped

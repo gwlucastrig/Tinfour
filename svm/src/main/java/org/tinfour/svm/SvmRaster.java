@@ -34,7 +34,7 @@ import java.io.File;
 import java.io.IOException;
 import java.io.PrintStream;
 import org.tinfour.common.IIncrementalTin;
-import org.tinfour.common.INeighborEdgeLocator;
+import org.tinfour.common.IIncrementalTinNavigator;
 import org.tinfour.common.IQuadEdge;
 import org.tinfour.interpolation.NaturalNeighborInterpolator;
 import org.tinfour.svm.properties.SvmProperties;
@@ -112,7 +112,7 @@ class SvmRaster {
     long reportBlockSize = nRows / 10;
     long priorReportBlock = 0;
     int nCovered = 0;
-    INeighborEdgeLocator locator = tin.getNeighborEdgeLocator();
+    IIncrementalTinNavigator navigator = tin.getNavigator();
     NaturalNeighborInterpolator nni = new NaturalNeighborInterpolator(tin);
     long time0 = System.nanoTime();
     for (long i = iMin; i < iMax; i++) {
@@ -121,7 +121,7 @@ class SvmRaster {
         int jCol = (int) (j - jMin);
         double x = j * s;
         double y = i * s;
-        IQuadEdge edge = locator.getNeigborEdge(x, y);
+        IQuadEdge edge = navigator.getNeighborEdge(x, y);
         double z = -1;
         if (testWater(edge, water)) {
           z = nni.interpolate(x, y, null);
