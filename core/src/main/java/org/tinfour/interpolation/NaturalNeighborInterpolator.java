@@ -48,7 +48,7 @@ import java.util.List;
 import org.tinfour.common.Circumcircle;
 import org.tinfour.common.GeometricOperations;
 import org.tinfour.common.IIncrementalTin;
-import org.tinfour.common.INeighborEdgeLocator;
+import org.tinfour.common.IIncrementalTinNavigator;
 import org.tinfour.common.IQuadEdge;
 import org.tinfour.common.Thresholds;
 import org.tinfour.common.Vertex;
@@ -70,7 +70,7 @@ public class NaturalNeighborInterpolator implements IInterpolatorOverTin {
 
   final IIncrementalTin tin;
   final GeometricOperations geoOp;
-  INeighborEdgeLocator locator;
+  IIncrementalTinNavigator navigator;
 
   private final VertexValuatorDefault defaultValuator = new VertexValuatorDefault();
 
@@ -109,7 +109,7 @@ public class NaturalNeighborInterpolator implements IInterpolatorOverTin {
     halfPlaneThreshold = thresholds.getHalfPlaneThreshold();
 
     this.tin = tin;
-    locator = tin.getNeighborEdgeLocator();
+    navigator = tin.getNavigator();
   }
 
   /**
@@ -120,7 +120,7 @@ public class NaturalNeighborInterpolator implements IInterpolatorOverTin {
    */
   @Override
   public void resetForChangeToTin() {
-    locator.resetForChangeToTin();
+    navigator.resetForChangeToTin();
   }
 
   /**
@@ -379,7 +379,7 @@ public class NaturalNeighborInterpolator implements IInterpolatorOverTin {
 
     ArrayList<IQuadEdge> eList = new ArrayList<>();
 
-    IQuadEdge locatorEdge = locator.getNeigborEdge(x, y);
+    IQuadEdge locatorEdge = navigator.getNeighborEdge(x, y);
     if (locatorEdge == null) {
       // this would happen only if the TIN were not bootstrapped
       return eList;

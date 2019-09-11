@@ -76,8 +76,8 @@ public class NearestEdgeResult {
       for (IQuadEdge e : edge.pinwheel()) {
         Vertex v = e.getB();
         if (v != null) {
-          dX = vMin.getX() - x;
-          dY = vMin.getY() - y;
+          dX = v.getX() - x;
+          dY = v.getY() - y;
           double d2 = dX * dX + dY * dY;
           if (d2 < d2Min) {
             d2Min = d2;

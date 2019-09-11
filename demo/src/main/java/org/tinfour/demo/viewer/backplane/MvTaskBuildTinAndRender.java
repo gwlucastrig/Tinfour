@@ -37,10 +37,9 @@ import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 import org.tinfour.common.IConstraint;
 import org.tinfour.common.IIncrementalTin;
+import org.tinfour.common.IIncrementalTinNavigator;
 import org.tinfour.common.IMonitorWithCancellation;
-import org.tinfour.common.INeighborEdgeLocator;
 import org.tinfour.common.IPolyline;
-import org.tinfour.common.NeighborEdgeVertex;
 import org.tinfour.common.PolygonConstraint;
 import org.tinfour.common.Vertex;
 import org.tinfour.utils.PolylineThinner;
@@ -399,10 +398,8 @@ class MvTaskBuildTinAndRender implements IModelViewTask {
 
   private Vertex getNearbyVertex(double x, double y) {
     IIncrementalTin referenceTin = model.getReferenceTin();
-    referenceTin.getNeighborEdgeLocator();
-    INeighborEdgeLocator locator = referenceTin.getNeighborEdgeLocator();
-    NeighborEdgeVertex nev = locator.getEdgeWithNearestVertex(x, y);
-    return nev.getNearestVertex();
+    IIncrementalTinNavigator navigator = referenceTin.getNavigator();
+    return navigator.getNearestVertex(x, y);
   }
 
   /**

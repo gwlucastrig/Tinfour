@@ -51,9 +51,9 @@ import java.util.concurrent.atomic.AtomicInteger;
 import org.apache.commons.math3.linear.SingularMatrixException;
 import org.tinfour.common.IConstraint;
 import org.tinfour.common.IIncrementalTin;
-import org.tinfour.common.INeighborEdgeLocator;
+import org.tinfour.common.IIncrementalTinNavigator;
 import org.tinfour.common.IQuadEdge;
-import org.tinfour.common.NeighborEdgeVertex;
+import org.tinfour.common.NearestEdgeResult;
 import org.tinfour.common.PolygonConstraint;
 import org.tinfour.common.Vertex;
 import org.tinfour.gwr.BandwidthSelectionMethod;
@@ -110,7 +110,7 @@ public class MvComposite {
   private List<IConstraint> constraintsForRender;
 
   GwrTinInterpolator interpolator;
-  INeighborEdgeLocator edgeLocator;
+  IIncrementalTinNavigator navigator;
 
   double vx0, vy0, vx1, vy1;
 
@@ -210,7 +210,7 @@ public class MvComposite {
       interpolatingTin = model.getReferenceTin();
       reductionForInterpolatingTin = model.getReferenceReductionFactor();
       interpolator = new GwrTinInterpolator(interpolatingTin);
-      edgeLocator = interpolatingTin.getNeighborEdgeLocator();
+      navigator = interpolatingTin.getNavigator();
       applyRangeOfVisibleSamples(model.getVertexList());
     }
 
@@ -250,7 +250,7 @@ public class MvComposite {
         this.interpolator = mvComposite.interpolator;
         this.timeForBuildRaster0 = mvComposite.timeForBuildRaster0;
         this.timeForBuildRaster1 = mvComposite.timeForBuildRaster1;
-        this.edgeLocator = mvComposite.edgeLocator;
+        this.navigator = mvComposite.navigator;
         this.constraintsForRender = mvComposite.constraintsForRender;
       }
     }
@@ -262,7 +262,7 @@ public class MvComposite {
       interpolatingTin = mvComposite.interpolatingTin;
       reductionForInterpolatingTin = mvComposite.reductionForInterpolatingTin;
       interpolator = new GwrTinInterpolator(interpolatingTin);
-      edgeLocator = interpolatingTin.getNeighborEdgeLocator();
+      navigator = interpolatingTin.getNavigator();
       zVisMin = mvComposite.zVisMin;
       zVisMax = mvComposite.zVisMax;
     }
@@ -289,9 +289,9 @@ public class MvComposite {
 
     if (model.isLoaded()) {
       IIncrementalTin ref = model.getReferenceTin();
-      ref.getNeighborEdgeLocator();
+      ref.getNavigator();
       interpolator = new GwrTinInterpolator(ref);
-      edgeLocator = ref.getNeighborEdgeLocator();
+      navigator = ref.getNavigator();
     }
   }
 
@@ -442,7 +442,7 @@ public class MvComposite {
         interpolatingTin = tin;
         reductionForInterpolatingTin = reductionFactor;
         interpolator = new GwrTinInterpolator(interpolatingTin);
-        edgeLocator = interpolatingTin.getNeighborEdgeLocator();
+        navigator = interpolatingTin.getNavigator();
       }
     }
   }
@@ -924,10 +924,10 @@ public class MvComposite {
         units = "units";
         break;
     }
-    NeighborEdgeVertex nev = edgeLocator.getEdgeWithNearestVertex(mx, my);
-    boolean queryIsOutside = !nev.isInterior();
-    Vertex vNear = nev.getNearestVertex();
-    double dNear = nev.getDistance();
+    NearestEdgeResult result = navigator.getNearestEdge(mx, my);   
+    boolean queryIsOutside = !result.isInterior();
+    Vertex vNear = result.getNearestVertex();
+    double dNear = result.getDistanceToNearestVertex();
 
     // the following is a debugging aid when trying to deal with vertex
     // insertion versus TIN extension.

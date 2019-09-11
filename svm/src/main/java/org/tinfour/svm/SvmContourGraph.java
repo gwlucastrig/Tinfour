@@ -49,7 +49,7 @@ import java.util.List;
 import javax.imageio.ImageIO;
 import org.tinfour.common.IConstraint;
 import org.tinfour.common.IIncrementalTin;
-import org.tinfour.common.INeighborEdgeLocator;
+import org.tinfour.common.IIncrementalTinNavigator;
 import org.tinfour.common.IQuadEdge;
 import org.tinfour.common.PolygonConstraint;
 import org.tinfour.common.Vertex;
@@ -203,7 +203,7 @@ class SvmContourGraph {
     // it is necessary to force outside values to be at least the
     // shoreline reference elevation.
     ps.println("\nChecking for vertices lying outside of constraints");
-    INeighborEdgeLocator locator = tin.getNeighborEdgeLocator();
+    IIncrementalTinNavigator navigator = tin.getNavigator();
 
     long time0 = System.currentTimeMillis();
     int nOutsiders = 0;
@@ -213,7 +213,7 @@ class SvmContourGraph {
       int index = v.getIndex();
       double x = v.getX();
       double y = v.getY();
-      IQuadEdge test = locator.getNeigborEdge(x, y);
+      IQuadEdge test = navigator.getNeighborEdge(x, y);
       IConstraint con = tin.getRegionConstraint(test);
       if (con == null || !water[con.getConstraintIndex()]) {
         nOutsiders++;
