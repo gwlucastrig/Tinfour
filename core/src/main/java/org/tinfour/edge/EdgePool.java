@@ -726,31 +726,32 @@ public class EdgePool implements Iterable<IQuadEdge> {
         // highlights one of the disadvantages of the design choice of
         // swapping edges.  It was chosen in an effort to save memory
         // (constrast it with the semi-virtual implementation which
-        // maintains a free list).  But it did have side-effects.
-        if(swap.isConstraintLineMember()){
-          if(linearConstraintMap.containsKey(oldIndex)){
-          IConstraint c = linearConstraintMap.get(oldIndex);
-          linearConstraintMap.remove(oldIndex);
-          linearConstraintMap.remove(oldIndex^1);
-          linearConstraintMap.put(newIndex, c);
-          linearConstraintMap.put(newIndex^1, c);
+        // maintains a free list).  But it did have side-effects. The
+        // semi-virtual implementation may have the better approach.
+        if (swap.isConstraintLineMember()) {
+          if (linearConstraintMap.containsKey(oldIndex)) {
+            IConstraint c = linearConstraintMap.get(oldIndex);
+            linearConstraintMap.remove(oldIndex);
+            linearConstraintMap.remove(oldIndex ^ 1);
+            linearConstraintMap.put(newIndex, c);
+            linearConstraintMap.put(newIndex ^ 1, c);
+          }
         }
-        if(swap.isConstrainedRegionBorder()){
-          if(borderConstraintMap.containsKey(oldIndex)){
+        if (swap.isConstrainedRegionBorder()) {
+          if (borderConstraintMap.containsKey(oldIndex)) {
             IConstraint c = borderConstraintMap.get(oldIndex);
             borderConstraintMap.remove(oldIndex);
             borderConstraintMap.put(newIndex, c);
           }
-          oldIndex^=1;  // set index to dual
-          newIndex^=1;
-               if(borderConstraintMap.containsKey(oldIndex)){
+          oldIndex ^= 1;  // set index to dual
+          newIndex ^= 1;
+          if (borderConstraintMap.containsKey(oldIndex)) {
             IConstraint c = borderConstraintMap.get(oldIndex);
             borderConstraintMap.remove(oldIndex);
             borderConstraintMap.put(newIndex, c);
           }
-          
         }
-      }
+        
         e.setIndex(pageOffset + nAllocated*2);  // pro forma, for safety
       }
     }
