@@ -22,6 +22,9 @@
 
 package org.tinfour.common;
 
+import java.awt.geom.AffineTransform;
+import java.awt.geom.Line2D;
+
 /**
  * Defines methods for accessing the data in a quad-edge
  * implementation.
@@ -245,4 +248,22 @@ public interface IQuadEdge {
    * @return a valid Iterable.
    */
   Iterable<IQuadEdge>pinwheel();
+  
+  
+  /**
+   * Provides a convenience method for rendering edges by setting the 
+   * Line2D argument with the transformed coordinates of the edge.
+   * The affine transform is used to map vertex A and B of the edge
+   * to the specified coordinate system. The transformed coordinates
+   * are then stored in the application-supplied Line2D object.
+   * <p>
+   * This method is intended to support rendering operations that may
+   * render a large number of edges using Java's Line2D class. In such cases,
+   * this method avoids the overhead involved in creating multiple Line2D
+   * instances by allowing an application to reuse a single instance multiple
+   * times.
+   * @param transform a valid affine transform
+   * @param l2d a valid Line2D instance
+   */
+  void setLine2D(AffineTransform transform, Line2D l2d);
 }

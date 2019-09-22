@@ -30,6 +30,8 @@
  */
 package org.tinfour.semivirtual;
 
+import java.awt.geom.AffineTransform;
+import java.awt.geom.Line2D;
 import org.tinfour.common.IQuadEdge;
 import org.tinfour.common.Vertex;
 import static org.tinfour.edge.QuadEdgeConstants.CONSTRAINT_EDGE_FLAG;
@@ -629,6 +631,35 @@ public final class SemiVirtualEdge implements IQuadEdge {
     int cBit = ix & 0x1F;
     int cMask = 1 << cBit;
     return (c[cIndex] & cMask) != 0;
+  }
+  
+  
+  public void setLine2D(AffineTransform transform, Line2D l2d) {
+    Vertex A = getA();
+    Vertex B = getB();
+    double[] c = new double[8];
+    if (A == null && B == null) {
+      // uninitialized edge, shouldn't happen
+      l2d.setLine(0, 0, 0, 0);
+      return;
+    } else if (A == null) {
+      c[0] = B.getX();
+      c[1] = B.getY();
+      c[2] = B.getX();
+      c[3] = B.getY();
+    } else if (B == null) {
+      c[0] = A.getX();
+      c[1] = A.getY();
+      c[2] = A.getX();
+      c[3] = A.getY();
+    } else {
+      c[0] = A.getX();
+      c[1] = A.getY();
+      c[2] = B.getX();
+      c[3] = B.getY();
+    }
+    transform.transform(c, 0, c, 4, 2);
+    l2d.setLine(c[4], c[5], c[6], c[7]);
   }
 
 }
