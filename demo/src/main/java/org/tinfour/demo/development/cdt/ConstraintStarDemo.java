@@ -61,11 +61,19 @@ import org.tinfour.standard.IncrementalTin;
 import org.tinfour.utils.TriangleCollector;
 import org.tinfour.utils.rendering.RenderingSurfaceAid;
  
+/**
+ * Provides an example implementation of region-based constraints
+ * using the PolygonConstraint class.
+ */
 public class ConstraintStarDemo extends JPanel {
 
   final static long serialVersionUID = 1;
 
-  static class TriangleRenderer implements Consumer<SimpleTriangle> {
+  /**
+   * Provides logic for rendering triangles produced by the example
+   * TIN implementation.
+   */
+  private static class TriangleRenderer implements Consumer<SimpleTriangle> {
 
     final Graphics2D g2d;
     final AffineTransform af;
@@ -230,7 +238,7 @@ public class ConstraintStarDemo extends JPanel {
   final static double A36 = Math.toRadians(36);
   final static double A72 = Math.toRadians(72);
 
-  final static double rNotch = 1.0;
+  final static double rNotch = 1.0; // radius for inner (notch) vertices
   final static double rPoint = rNotch * (cos(A36) + sin(A36) * tan(A72));
 
   /**
