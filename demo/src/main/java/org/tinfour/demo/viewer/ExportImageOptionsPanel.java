@@ -59,11 +59,6 @@ public class ExportImageOptionsPanel extends javax.swing.JPanel {
 
     imageFrameCheckBox.setText("Add frame to image");
     imageFrameCheckBox.setToolTipText("Draw a thin frame (box) around image");
-    imageFrameCheckBox.addActionListener(new java.awt.event.ActionListener() {
-      public void actionPerformed(java.awt.event.ActionEvent evt) {
-        imageFrameCheckBoxActionPerformed(evt);
-      }
-    });
 
     transparentBackgroundCheckBox.setText("Transparent Background");
     transparentBackgroundCheckBox.setToolTipText("Save image with transparent background (PNG iimages only)");
@@ -95,10 +90,6 @@ public class ExportImageOptionsPanel extends javax.swing.JPanel {
         .addContainerGap(10, Short.MAX_VALUE))
     );
   }// </editor-fold>//GEN-END:initComponents
-
-  private void imageFrameCheckBoxActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_imageFrameCheckBoxActionPerformed
-    // TODO add your handling code here:
-  }//GEN-LAST:event_imageFrameCheckBoxActionPerformed
 
   boolean isImageFrameEnabled() {
     return imageFrameCheckBox.isSelected();

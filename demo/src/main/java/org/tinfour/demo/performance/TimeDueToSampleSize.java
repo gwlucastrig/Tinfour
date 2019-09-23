@@ -175,6 +175,10 @@ private static final String[] usage = {
     TestOptions options = new TestOptions();
     boolean[] recognized = options.argumentScan(args);
     File target = options.getInputFile();
+    if(target==null){
+      ps.println("Missing valid input target");
+      return;     
+    }
 
     Class<?> tinClass = options.getTinClass();
 
@@ -209,7 +213,7 @@ private static final String[] usage = {
     String dateString = sdFormat.format(date);
     ps.println("Date of test:     " + dateString);
     ps.println("TIN Class:        " + tinClass.getName());
-    ps.println("File:             " + options.getInputFile().getCanonicalPath());
+    ps.println("File:             " + target.getCanonicalPath());
     ps.println("Random size:      "
       + (randomSize == null
         ? "Unspecified, Use full size"
