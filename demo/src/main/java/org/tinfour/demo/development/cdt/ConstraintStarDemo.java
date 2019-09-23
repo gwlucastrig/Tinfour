@@ -40,9 +40,6 @@ import java.awt.geom.Line2D;
 import java.awt.geom.Path2D;
 import java.awt.geom.Rectangle2D;
 import java.awt.image.BufferedImage;
-import static java.lang.Math.sin;
-import static java.lang.Math.cos;
-import static java.lang.Math.tan;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Consumer;
@@ -239,7 +236,7 @@ public class ConstraintStarDemo extends JPanel {
   final static double A72 = Math.toRadians(72);
 
   final static double rNotch = 1.0; // radius for inner (notch) vertices
-  final static double rPoint = rNotch * (cos(A36) + sin(A36) * tan(A72));
+  final static double rPoint = rNotch * (Math.cos(A36) + Math.sin(A36) * Math.tan(A72));
 
   /**
    * Add a region (polygon) constraint in the form of a five-pointed start to

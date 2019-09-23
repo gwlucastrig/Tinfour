@@ -1752,9 +1752,6 @@ public class MvComposite {
         List<Vertex> vList = con.getVertices();
         double[] c = new double[4];
         boolean moveFlag = true;
-
-        double x0 = 0;
-        double y0 = 0;
         for (Vertex v : vList) {
           c[0] = v.getX();
           c[1] = v.getY();
@@ -1762,8 +1759,6 @@ public class MvComposite {
           if (moveFlag) {
             moveFlag = false;
             path.moveTo(c[2], c[3]);
-            x0 = c[2];
-            y0 = c[3];
           } else {
             foundStuff = true;
             path.lineTo(c[2], c[3]);

@@ -314,12 +314,7 @@ public class MixedModeConstraintTest implements IDevelopmentTest {
   private String fail(IQuadEdge edge, String message) {
     return "Edge +(" + edge.getIndex() + "): " + message;
   }
-
-  private String eString(IQuadEdge edge) {
-    Vertex A = edge.getA();
-    Vertex B = edge.getB();
-    return edge.getIndex() + ": " + A + ", " + B + ">> " + edge.toString();
-  }
+ 
 
   PolygonConstraint makePoly(String label, int xMin, int yMin, int xMax, int yMax) {
     PolygonConstraint p = new PolygonConstraint();

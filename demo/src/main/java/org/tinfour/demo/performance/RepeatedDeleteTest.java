@@ -137,13 +137,9 @@ public class RepeatedDeleteTest implements IDevelopmentTest {
 
     int iAvg = 3;  // minimum index to start collecting average
     for (int iTest = 0; iTest < nTests; iTest++) {
-      String preallocTime = "       ~~~";
       tin = options.getNewInstanceOfTestTin();
       if (usePreAlloc) {
-        time0 = System.nanoTime();
         tin.preAllocateEdges(nVertices);
-        time1 = System.nanoTime();
-        preallocTime = String.format("%12.3f", (time1 - time0) / 1000000.0);
       }
       time0 = System.nanoTime();
       tin.add(vertexList, null);

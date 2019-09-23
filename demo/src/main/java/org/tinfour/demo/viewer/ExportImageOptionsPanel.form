@@ -55,9 +55,6 @@
         <Property name="text" type="java.lang.String" value="Add frame to image"/>
         <Property name="toolTipText" type="java.lang.String" value="Draw a thin frame (box) around image"/>
       </Properties>
-      <Events>
-        <EventHandler event="actionPerformed" listener="java.awt.event.ActionListener" parameters="java.awt.event.ActionEvent" handler="imageFrameCheckBoxActionPerformed"/>
-      </Events>
     </Component>
     <Component class="javax.swing.JCheckBox" name="transparentBackgroundCheckBox">
       <Properties>

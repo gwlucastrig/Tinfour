@@ -48,7 +48,8 @@ import org.tinfour.utils.loaders.CoordinatePair;
 import org.tinfour.utils.loaders.ICoordinateTransform;
 
 /**
- * Builds a TIN from the specified Lidar file, running once and terminating to
+ * Builds a TIN from the specified input file (text, Lidar, Shapefile),
+ * running once and terminating to
  * provide a simple test of the IncrementalTin logic.
  */
 public class SingleBuildTest implements IDevelopmentTest {
