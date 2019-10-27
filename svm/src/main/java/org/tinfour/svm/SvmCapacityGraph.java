@@ -40,10 +40,14 @@ import java.awt.font.TextLayout;
 import java.awt.geom.AffineTransform;
 import java.awt.geom.Line2D;
 import java.awt.geom.Path2D;
+import java.awt.geom.Point2D;
 import java.awt.geom.Rectangle2D;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
 import javax.imageio.ImageIO;
 import org.tinfour.svm.SvmTriangleVolumeStore.AreaVolumeResult;
@@ -97,8 +101,18 @@ class SvmCapacityGraph {
    * shore reference elevation
    */
   SvmCapacityGraph(SvmProperties properties,
-          List<AreaVolumeResult> resultList,
+          List<AreaVolumeResult> sourceResultList,
           double totalVolume) {
+    List<AreaVolumeResult> resultList = new ArrayList<>();
+    resultList.addAll(sourceResultList);
+    Collections.sort(resultList, new Comparator<AreaVolumeResult>() {
+      @Override
+      public int compare(AreaVolumeResult o1, AreaVolumeResult o2) {
+        return Double.compare(o1.level, o2.level);
+      }
+
+    });
+
     this.properties = properties;
     this.resultList = resultList;
     this.totalVolume = totalVolume;
@@ -343,6 +357,16 @@ class SvmCapacityGraph {
     aLayout.draw(g2d, (float) xLabel, (float) yLabel);
 
     g2d.setClip(graphRect);
+    float lineWeight = 2.0f;
+    if (width > 1000) {
+      lineWeight = 4.0f;
+    }
+    g2d.setColor(Color.BLUE);
+    g2d.setStroke(new BasicStroke(
+            lineWeight,
+            BasicStroke.CAP_BUTT,
+            BasicStroke.JOIN_ROUND));
+
     Path2D path = new Path2D.Double();
     boolean moveFlag = true;
     for (AreaVolumeResult avr : resultList) {
@@ -357,13 +381,70 @@ class SvmCapacityGraph {
         path.lineTo(x, y);
       }
     }
-    g2d.setColor(Color.BLUE);
-    g2d.setStroke(new BasicStroke(2.0f, BasicStroke.CAP_ROUND, BasicStroke.CAP_ROUND));
+
+    List<Point2D> eList = extrapolate();
+    for (Point2D p2d : eList) {
+      double level = p2d.getX();
+      double percent = p2d.getY();
+      double x = x0 + (level - xCoords[0]) / xUnitsPerPixel;
+      double y = y1 - percent / cUnitsPerPixel;
+      path.lineTo(x, y);
+    }
+
     g2d.draw(path);
     g2d.setClip(null);
 
     ImageIO.write(bImage, "PNG", outputFile);
 
     return false;
+  }
+
+  
+  private List<Point2D> extrapolate() {
+
+    // To extrapolate the capacity curve to 110 percent, we use a linear
+    // regression to model the curve with a quadratic.  To simplify the
+    // math and provide continuity, we adjust the coordinates so that the
+    // 100 percent capacity point (maxLevel, 100.0) is at the origin.
+    // This approach allows us to specify the regression as having only
+    // two coefficients where y = a*x*x + b*x.   The resulting linear system
+    // is easily solved in code.  We do this for no better reason than to
+    // not have to introduce an external dependency to a linear algrebra 
+    // package to the SVM module.
+    double s4 = 0;  // sum of x^4
+    double s3 = 0;  // sum of x^3
+    double s2 = 0;  // sum of x^2
+    double p1 = 0;  // sum of x * y
+    double p2 = 0;  // sum of x^2 * y
+
+    for (AreaVolumeResult avr : resultList) {
+      double x = avr.level - maxLevel;
+      double y = avr.volume / totalVolume - 1;
+      double x2 = x * x;
+      s2 += x2;
+      s3 += x2 * x;
+      s4 += x2 * x2;
+      p1 += x * y;
+      p2 += x2 * y;
+    }
+    double det = s4 * s2 - s3 * s3;
+    double a = (s2 * p2 - s3 * p1) / det;
+    double b = (s4 * p1 - s3 * p2) / det;
+
+    // extrapolate forward increasing level 1/2 unit at a time.
+    // when the capacity exceeds 110 percent, we're done.
+    // to avoid problems, limit the number of points we'll extrapolate forward.
+    List<Point2D> eList = new ArrayList<>();
+    for (int i = 0; i < 100; i++) {
+      double x = i / 2.0;
+      double y = a * x * x + b * x;
+      double level = x + maxLevel;
+      double capacity = (y + 1) * 100;
+      eList.add(new Point2D.Double(level, capacity));
+      if (capacity >= 110) {
+        break;
+      }
+    }
+    return eList;
   }
 }
