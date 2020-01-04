@@ -1,5 +1,5 @@
 Tinfour -- A Software Library 
-Copyright (c) 2016 G.W. Lucas
+Copyright (c) 2016-2020 G.W. Lucas
 
  
 ===============================================================================
@@ -10,9 +10,9 @@ at http://www.apache.org/licenses// Further notices and licence
 files are bundled in the commons-math jar file.
 
 This product includes software developed by the JTS Topology Suite
-at http://tsusiatsoftware.net/jts/main.html and released under
-the GNU Lesser General Public License available at 
-http://www.gnu.org/licenses/lgpl-3.0.en.html.  
+at https://github.com/locationtech/jts and released under
+the Eclipse Distribition License v1.0, available at 
+https://www.eclipse.org/org/documents/edl-v10.php
 
 This product includes software developed by the laszip4j project
 at https://github.com/mreutegg/laszip4j and released under
@@ -27,5 +27,5 @@ Some of the palette specifications used in this product were taken from the
 Color Brewer 2 website at http://colorbrewer2.org/
 Copyright (c) 2002 Cynthia Brewer, Mark Harrower, and The Pennsylvania State University.															
 Licensed under the Apache License, Version 2.0 (the "License");  available at										
-       http://www.apache.org/licenses/LICENSE-2.0									
+http://www.apache.org/licenses/LICENSE-2.0									
 																	

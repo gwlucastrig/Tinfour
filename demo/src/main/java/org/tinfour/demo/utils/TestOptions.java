@@ -339,17 +339,12 @@ public class TestOptions {
         if (i == args.length - 1) {
           throw new IllegalArgumentException("Missing argument for " + option);
         }
-        try {
-          if (matched != null && matched.length == args.length) {
-            matched[i] = true;
-            matched[i + 1] = true;
-          }
-          return args[i + 1];
-        } catch (NumberFormatException nex) {
-          throw new IllegalArgumentException(
-            "Illegal floating-point value for " + option + ", "
-              + nex.getMessage(), nex);
-        }
+ 
+		if (matched != null && matched.length == args.length) {
+			matched[i] = true;
+			matched[i + 1] = true;
+		}
+		return args[i + 1];
       }
     }
     return null;
