@@ -253,6 +253,27 @@ public class LasFileReader {
   }
 
   /**
+   * Reads the content of a variable length record from the file.
+   * This method assumes that the variable length record was obtained
+   * from this instance and and that the associated file is still open for access.
+   * This method offers very little protection in terms of memory and
+   * file access, so implementations should take care to use it correctly.
+   * @param record a valid instances
+   * @return if successful, an array of bytes of the length specified
+   * @throws IOException in the event of an I/O error
+   */
+  public byte[] readVariableLengthRecordContent(LasVariableLengthRecord record) 
+          throws IOException 
+  {
+    braf.seek(record.offset);
+    byte []b = new byte[record.recordLength];
+    for(int i=0; i<record.recordLength; i++){
+      b[i] = braf.readByte();
+    }
+    return b;
+  }
+  
+  /**
    * Read a record from the LAS file. The LasPoint object is used
    * as a container to hold the results of the read. Since
    * this method may be called literally millions of times, it is
