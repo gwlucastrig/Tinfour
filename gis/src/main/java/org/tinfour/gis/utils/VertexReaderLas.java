@@ -21,7 +21,7 @@
  * Revision History:
  * Date     Name         Description
  * ------   ---------    -------------------------------------------------
- * 12/2018  G. Lucas     Created  
+ * 12/2018  G. Lucas     Created
  *
  * Notes:
  *
@@ -118,7 +118,11 @@ public class VertexReaderLas implements IVertexReader, Closeable {
    * @param filter a valid filter or a null if all records are to be accepted.
    */
   public void setFilter(ILasRecordFilter filter) {
-    this.filter = filter;
+    if (filter == null) {
+      this.filter = new AcceptAll();
+    } else {
+      this.filter = filter;
+    }
   }
 
   /**
