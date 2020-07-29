@@ -149,7 +149,10 @@ of why CDT's are important, see the Tinfour wiki page titled
 For more detail about the Tinfour project development plans, see the
 [Tinfour Project Status and Roadmap](https://github.com/gwlucastrig/Tinfour/wiki/Tinfour-Project-Roadmap) page.
  
- 
+### Out Companion Project ###
+Visit the [Gridfour Software Project](https://gwlucastrig.github.io/gridfour/) to learn more about our companion
+software project dedicated to creating open-source software tools for raster (grid) data sets.
+
 ### Conclusion ###
 Finally, the whole point of working on a project like Tinfour is to see 
 it used to do something useful. To that end, I welcome ideas, requests, and
