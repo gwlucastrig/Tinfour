@@ -138,12 +138,12 @@ public class ExampleGridAndHillshade implements IDevelopmentTest {
     double ymax = loader.getYMax();
     double zmin = loader.getZMin();
     double zmax = loader.getZMax();
-    // estimate the point spacing. 
+    // estimate the point spacing.
     double area = (xmax - xmin) * (ymax - ymin);
     double sSpace = Tincalc.sampleSpacing(area, nVertices);
     double nominalPointSpacing = sSpace; //used as an input into TIN class/
- 
-    
+
+
     ICoordinateTransform cTrans = loader.getCoordinateTransform();
     if (cTrans!=null) {
       CoordinatePair g0 = new CoordinatePair();
@@ -205,7 +205,7 @@ public class ExampleGridAndHillshade implements IDevelopmentTest {
     // memory.  The TestOptions permit the argument vector to specify
     // which class is used, but if a specific choice is not supplied,
     // the following logic will use the TinInstantiationUtility to pick
-    // a TIN class based on the nuber of vertices and the amount of memory
+    // a TIN class based on the number of vertices and the amount of memory
     // that the application is willing to apportion to the TIN.  Since this
     // example doesn't do much except build a TIN, we assign it 50 percent
     // of the available memory. This value would vary by application.
@@ -240,7 +240,7 @@ public class ExampleGridAndHillshade implements IDevelopmentTest {
     if (constraintsFile != null) {
       ConstraintLoader conLoader = new ConstraintLoader();
       conLoader.setCoordinateTransform(cTrans);
-    
+
       List<IConstraint> conList = conLoader.readConstraintsFile(constraintsFile);
       ps.format("Adding %d constraints, %d vertices to TIN%n",
         conList.size(), conLoader.getTotalPointCount());
@@ -285,7 +285,7 @@ public class ExampleGridAndHillshade implements IDevelopmentTest {
     File file = prepFileNamedForSubject(outputFile, "_z", "asc");
     ps.println("Writing grid to file " + file.getAbsolutePath());
     ps.flush();
-    
+
     File parent = file.getParentFile();
     if(!parent.exists()){
       throw new IOException(
