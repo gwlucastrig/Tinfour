@@ -168,7 +168,7 @@ public class ExampleCrossValidation implements IDevelopmentTest {
     double area = (xmax - xmin) * (ymax - ymin);
     double sSpace = Tincalc.sampleSpacing(area, nVertices);
     double nominalPointSpacing = sSpace; //used as an input into TIN class/
- 
+
     ICoordinateTransform cTrans = loader.getCoordinateTransform();
     if (cTrans!=null) {
       CoordinatePair g0 = new CoordinatePair();
@@ -188,7 +188,7 @@ public class ExampleCrossValidation implements IDevelopmentTest {
       ps.format("Range y values:     %11.6f, %11.6f, (%f)%n", g0.y, g1.y, gy);
       ps.format("Est. sample spacing:   %e degrees of arc%n", gsSpace);
     }
- 
+
     ps.format("Range x values:     %12.3f, %12.3f, (%f)%n", xmin, xmax, xmax - xmin);
     ps.format("Range y values:     %12.3f, %12.3f, (%f)%n", ymin, ymax, ymax - ymin);
     ps.format("Range z values:     %12.3f, %12.3f, (%f)%n", zmin, zmax, zmax - zmin);
@@ -228,7 +228,7 @@ public class ExampleCrossValidation implements IDevelopmentTest {
     // memory.  The TestOptions permit the argument vector to specify
     // which class is used, but if a specific choice is not supplied,
     // the following logic will use the TinInstantiationUtility to pick
-    // a TIN class based on the nuber of vertices and the amount of memory
+    // a TIN class based on the number of vertices and the amount of memory
     // that the application is willing to apportion to the TIN.  Since this
     // example doesn't do much except build a TIN, we assign it 50 percent
     // of the available memory. This value would vary by application.
