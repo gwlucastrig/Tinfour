@@ -236,7 +236,6 @@ public class TriangularFacetInterpolator implements IInterpolatorOverTin {
         return "Triangular Facet";
     }
 
-
   /**
    * Performs an interpolation with special handling to provide
    * values for regions to the exterior of the Delaunay Triangulation.
@@ -295,30 +294,38 @@ public class TriangularFacetInterpolator implements IInterpolatorOverTin {
     double az = z1 - z0;
 
     if (v2 == null) {
-      // (x,y) is either on perimeter or outside the TIN.
+      // (x,y) is either on perimeter edge or outside the TIN.
       // project it down to the perimeter edge and interpolate
-      // from there. The normal is computed based on the normal
-      // of the adjacent triangle.
-      double t = (sx * ax + sy * ay) / Math.sqrt(ax * ax + ay * ay);
-      double z;
-      if (t <= 0) {
-        z = v0.getZ();
-      } else if (t >= 1) {
-        z = v1.getZ();
-      } else {
-        z = t * az + z0;
-      }
-
-      // Based on our computation of z, the value of z remains
-      // constant along a ray perpendicular to the edge.
+      // from there.
+      //
+      // There are two cases for the normal.  In the gap area between
+      // edges (t<0 or t>1), the surface is flat (z has a constant value)
+      // and the normal is perpendicular to the plane (0, 0, 1).
+      // In the region outside and perpendicular to the edge,
+      // the computed value of z will vary, but will be constant
+      // along a ray perpendicular to the edge.
       // So the perpendicular vector (-ay, ax, 0) lies on the
       // planar surface beyond the edge, as does the edge itself.
       // Thus, the normal can be computed using the cross product
       // n = (ax, ay, az) <cross> (-ay, ax, 0)
-      nx = -az * ax;
-      ny = -az * ay;
-      nz = ax * ax + ay * ay;
-
+      double t = (sx * ax + sy * ay) / (ax * ax + ay * ay);
+      double z;
+      if (t <= 0) {
+        z = v0.getZ();
+        nx = 0;
+        ny = 0;
+        nz = 1;
+      } else if (t >= 1) {
+        z = v1.getZ();
+        nx = 0;
+        ny = 0;
+        nz = 1;
+      } else {
+        z = t * az + z0;
+        nx = -az * ax;
+        ny = -az * ay;
+        nz = ax * ax + ay * ay;
+      }
       return z;
     }
 
@@ -350,6 +357,7 @@ public class TriangularFacetInterpolator implements IInterpolatorOverTin {
     // solve for pz
     return z0 - (nx * sx + ny * sy) / nz;
   }
+ 
 
 
 }
