@@ -118,11 +118,7 @@ public class VertexReaderLas implements IVertexReader, Closeable {
    * @param filter a valid filter or a null if all records are to be accepted.
    */
   public void setFilter(ILasRecordFilter filter) {
-    if (filter == null) {
-      this.filter = new AcceptAll();
-    } else {
-      this.filter = filter;
-    }
+    this.filter = filter;
   }
 
   /**
@@ -189,8 +185,7 @@ public class VertexReaderLas implements IVertexReader, Closeable {
       if (p.withheld) {
         continue;
       }
-      if (filter.accept(p)) {
-
+      if (filter==null || filter.accept(p)) {
         double x = p.x;
         double y = p.y;
         double z = p.z;
