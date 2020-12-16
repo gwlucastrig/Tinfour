@@ -31,6 +31,12 @@ package org.tinfour.gis.las;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
+import java.nio.DoubleBuffer;
+import java.nio.FloatBuffer;
+import java.nio.IntBuffer;
+import java.nio.ShortBuffer;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
@@ -253,27 +259,6 @@ public class LasFileReader {
   }
 
   /**
-   * Reads the content of a variable length record from the file.
-   * This method assumes that the variable length record was obtained
-   * from this instance and and that the associated file is still open for access.
-   * This method offers very little protection in terms of memory and
-   * file access, so implementations should take care to use it correctly.
-   * @param record a valid instances
-   * @return if successful, an array of bytes of the length specified
-   * @throws IOException in the event of an I/O error
-   */
-  public byte[] readVariableLengthRecordContent(LasVariableLengthRecord record) 
-          throws IOException 
-  {
-    braf.seek(record.offset);
-    byte []b = new byte[record.recordLength];
-    for(int i=0; i<record.recordLength; i++){
-      b[i] = braf.readByte();
-    }
-    return b;
-  }
-  
-  /**
    * Read a record from the LAS file. The LasPoint object is used
    * as a container to hold the results of the read. Since
    * this method may be called literally millions of times, it is
@@ -485,6 +470,76 @@ public class LasFileReader {
     }
     return null;
   }
+
+  /**
+   * Read the content of a variable length record as a series of bytes.
+   *
+   * @param vlr a valid variable length record from the current file
+   * @return an array of bytes dimensions to the size of the record content
+   * (excluding record header)
+   * @throws IOException in the event of an unsuccessful read operation
+   */
+  public byte[] readVariableLengthRecordBytes(LasVariableLengthRecord vlr)
+          throws IOException {
+    long filePos = vlr.getFilePosition();
+    braf.seek(filePos);
+    byte[] b = new byte[vlr.getRecordLength()];
+    for (int i = 0; i < b.length; i++) {
+      b[i] = braf.readByte();
+    }
+    return b;
+  }
+
+    /**
+     * Read the content of the Variable Length Record interpreting it as
+     * an array of unsigned short integers. The LAS Specification calls for all
+     * data to be stored in little-endian byte order.
+     *
+     * @param vlr a valid instance
+     * @return an array of zero or more integers.
+     * @throws IOException in the event of an unrecoverable I/O error.
+     */
+    public int[] readVariableLengthRecordUnsignedShorts(LasVariableLengthRecord vlr)
+        throws IOException {
+        byte[] b = this.readVariableLengthRecordBytes(vlr);
+        ByteBuffer bBuff = ByteBuffer.wrap(b);
+        bBuff.order(ByteOrder.LITTLE_ENDIAN);
+        ShortBuffer sBuff = bBuff.asShortBuffer();
+        int n = b.length / 2;
+        int[] output = new int[n];
+        for (int i = 0; i < n; i++) {
+            output[i] = sBuff.get() & 0x0000ffff;
+        }
+        return output;
+    }
+
+    /**
+     * Read the content of the Variable Length Record interpreting it as
+     * an array of double-precision floating-point values.
+     * The LAS Specification calls for all floating-point data to be stored
+     * as IEEE-754 floats in little-endian byte order.
+     *
+     * @param vlr a valid instance
+     * @return an array of zero or more double-precision floating point values.
+     * @throws IOException in the event of an unrecoverable I/O error.
+     */
+    public double[] readVariableLengthRecordDoubles(LasVariableLengthRecord vlr)
+        throws IOException
+    {
+        byte[] b = this.readVariableLengthRecordBytes(vlr);
+        ByteBuffer bBuff = ByteBuffer.wrap(b);
+        bBuff.order(ByteOrder.LITTLE_ENDIAN);
+        DoubleBuffer fBuff = bBuff.asDoubleBuffer();
+        int n = b.length / 8;
+        double[] output = new double[n];
+        for (int i = 0; i < n; i++) {
+            output[i] = fBuff.get();
+        }
+        return output;
+    }
+
+
+
 
   private boolean inLonRange(double x) {
     return -180 <= x && x <= 360;

@@ -44,7 +44,7 @@ import org.tinfour.utils.loaders.CoordinatePair;
 import org.tinfour.utils.loaders.ICoordinateTransform;
 
 /**
- * Provides methods and elements for reading a compressed LAS file 
+ * Provides methods and elements for reading a compressed LAS file
  * (a LAZ file).   Intended to be called from within VertexReaderLas.
  */
 class VertexReaderLaz {
@@ -62,7 +62,7 @@ class VertexReaderLaz {
     this.maximumNumberOfVertices = maximumNumberOfVertices;
   }
 
- 
+
   List<Vertex> loadVertices(
           File file,
           long nVertices,
@@ -118,7 +118,7 @@ class VertexReaderLaz {
       t4Point.returnNumber = p.getReturnNumber();
       t4Point.numberOfReturns = p.getNumberOfReturns();
 
-      if (filter.accept(t4Point)) {
+      if (filter==null || filter.accept(t4Point)) {
         double x = t4Point.x;
         double y = t4Point.y;
         double z = t4Point.z;
