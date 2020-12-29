@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-/*
+ /*
  * -----------------------------------------------------------------------
  *
  * Revision History:
@@ -31,6 +31,11 @@
  *                     the query point is at the origin.
  * 01/2016 G. Lucas  Added calculation for surface normal
  * 11/2016 G. Lucas  Added support for constrained Delaunay
+ * 12/2020 G. Lucas  Correction for misbehavior near edges of problematic
+ *                     meshes. Removed ineffective surface normal calculation.
+ *                     Modified barycentric coordinates to conform to Sibson's
+ *                     definition and properly support transition across
+ *                     neighboring point sets.
  *
  * Notes:
  *
@@ -74,8 +79,6 @@ public class NaturalNeighborInterpolator implements IInterpolatorOverTin {
 
   private final VertexValuatorDefault defaultValuator = new VertexValuatorDefault();
 
-  private double xQuery;
-  private double yQuery;
   private double barycentricCoordinateDeviation;
 
   /**
@@ -144,157 +147,7 @@ public class NaturalNeighborInterpolator implements IInterpolatorOverTin {
    */
   @Override
   public double interpolate(double x, double y, IVertexValuator valuator) {
-    // in the logic below, we access the Vertex x and y coordinates directly
-    // but we use the getZ() method to get the z value.  Some vertices
-    // may actually be VertexMergerGroup instances and so the Z value must
-    // be selected according to whatever rules were configured for the TIN.
-    // Also, all coordinates are adjusted with an offset (-x, -y) so that the
-    // interpolation point is at the origin. This adjustment is made to
-    // compensate for the fact that map-projected coordinates for adjacent
-    // vertices often have very large coordinates (in the millions)
-    // and that the products of pairs of such values would be large enough
-    // to wash out the precision.
 
-    xQuery = x;
-    yQuery = y;
-    IVertexValuator vq = valuator;
-    if (vq == null) {
-      vq = defaultValuator;
-    }
-    List<IQuadEdge> eList = this.getBowyerWatsonPolygon(x, y);
-    int nEdge = eList.size();
-    if (nEdge == 0) {
-      // (x,y) is outside defined area
-      return Double.NaN;
-    } else if (nEdge == 1) {
-      // (x,y) matches the first vertex of the one edge in the list
-      IQuadEdge e = eList.get(0);
-      Vertex v = e.getA();
-      return vq.value(v);
-
-    }
-
-    // The eList contains a series of edges definining the cavity
-    // containing the polygon.
-    Vertex a, b, c;
-    Circumcircle c0 = new Circumcircle();
-    Circumcircle c1 = new Circumcircle();
-    IQuadEdge e0, e1, n, n1, ed0, ed1;
-    double x0, y0, x1, y1, wThiessen, wXY, wDelta;
-    double barycenterX = 0;
-    double barycenterY = 0;
-    double wSum = 0;
-    double zSum = 0;
-    for (int i0 = 0; i0 < nEdge; i0++) {
-      int i1 = (i0 + 1) % nEdge;
-      e0 = eList.get(i0);
-      e1 = eList.get(i1);
-      a = e0.getA();
-      b = e1.getA(); // same as e0.getB();
-      c = e1.getB();
-      double ax = a.getX() - x;
-      double ay = a.getY() - y;
-      double bx = b.getX() - x;
-      double by = b.getY() - y;
-      double cx = c.getX() - x;
-      double cy = c.getY() - y;
-
-      ed0 = e0.getDual();
-      Vertex d0 = ed0.getForward().getB();
-      if (d0 == null) {
-        x0 = (ax + bx) / 2;
-        y0 = (ay + by) / 2;
-      } else {
-        c0.compute(bx, by, ax, ay, d0.getX() - x, d0.getY() - y);
-        x0 = c0.getX();
-        y0 = c0.getY();
-      }
-      ed1 = e1.getDual();
-      Vertex d1 = ed1.getForward().getB();
-      if (d1 == null) {
-        x1 = (bx + cx) / 2;
-        y1 = (by + cy) / 2;
-      } else {
-        c1.compute(cx, cy, bx, by, d1.getX() - x, d1.getY() - y);
-        x1 = c1.getX();
-        y1 = c1.getY();
-      }
-
-      c0.compute(ax, ay, bx, by, 0, 0);
-      c1.compute(bx, by, cx, cy, 0, 0);
-      wXY = x0 * c0.getY()
-        - c0.getX() * y0
-        + c0.getX() * c1.getY()
-        - c1.getX() * c0.getY()
-        + c1.getX() * y1
-        - x1 * c1.getY();
-
-      n = e0.getForward();
-      Vertex nb = n.getB();
-      c1.compute(ax, ay, bx, by, nb.getX() - x, nb.getY() - y);
-      wThiessen = x0 * c1.getY() - c1.getX() * y0;
-      while (!(n.equals(e1))) {
-        n1 = n.getDual();
-        n = n1.getForward();
-        c0.copy(c1);
-        a = n1.getA();
-        b = n.getA();  // same as n1.getB();
-        c = n.getB();
-        ax = a.getX() - x;
-        ay = a.getY() - y;
-        bx = b.getX() - x;
-        by = b.getY() - y;
-        cx = c.getX() - x;
-        cy = c.getY() - y;
-        c1.compute(ax, ay, bx, by, cx, cy);
-        wThiessen += c0.getX() * c1.getY() - c1.getX() * c0.getY();
-      }
-      wThiessen += c1.getX() * y1 - x1 * c1.getY();
-
-      // for convenience, both the wXY and wThiessen weights were
-      // computed in a clockwise order, which means they are the
-      // negative of what we need for the weight computation, so
-      // negate them.
-      wDelta = -(wThiessen - wXY);  // the /2 here is unnecessary
-      wSum += wDelta;
-      b = e0.getB();
-      zSum += wDelta * vq.value(b);
-      barycenterX += wDelta * b.getX();
-      barycenterY += wDelta * b.getY();
-    }
-    barycenterX /= wSum;
-    barycenterY /= wSum;
-    double xError = barycenterX - x;
-    double yError = barycenterY - y;
-    barycentricCoordinateDeviation
-      = Math.sqrt(xError * xError + yError * yError);
-
-    return zSum / wSum;
-  }
-
-  /**
-   * Perform interpolation using Sibson's C0 method and a test algorithm
-   * based on computing the barycentric coordinates rather than
-   * through the circumcenter approach used for the original
-   * interpolation method. This method was developed to test the
-   * getBarycentricCoordinates method and investigate replacing the
-   * circumcenter method with simpler code. However, the results appear
-   * to be slightly less accurate than the original, so further investigation
-   * is required.
-   * <p>
-   * The domain of the interpolator is limited to the interior
-   * of the convex hull. Methods for extending to the edge of the
-   * TIN or beyond are being investigated.
-   *
-   * @param x the x coordinate for the interpolation point
-   * @param y the y coordinate for the interpolation point
-   * @param valuator a valid valuator for interpreting the z value of each
-   * vertex or a null value to use the default.
-   * @return if the interpolation is successful, a valid floating point
-   * value; otherwise, a NaN.
-   */
-  public double interpolateUsingTestMethod(
-    double x, double y, IVertexValuator valuator) {
     // in the logic below, we access the Vertex x and z coordinates directly
     // but we use the getZ() method to get the z value.  Some vertices
     // may actually be VertexMergerGroup instances and so the Z value must
@@ -326,11 +179,11 @@ public class NaturalNeighborInterpolator implements IInterpolatorOverTin {
     // The eList contains a series of edges definining the cavity
     // containing the polygon.
     double[] w = this.getBarycentricCoordinates(eList, x, y);
-    if(w == null){
-      // the coordinate is on the perimeter, no Barycentric coordinates 
+    if (w == null) {
+      // the coordinate is on the perimeter, no Barycentric coordinates
       // are available.
       return Double.NaN;
-    }    
+    }
     double zSum = 0;
     int k = 0;
     for (IQuadEdge s : eList) {
@@ -340,6 +193,8 @@ public class NaturalNeighborInterpolator implements IInterpolatorOverTin {
     return zSum;
 
   }
+
+
 
   /**
    * Gets the deviation of the computed equivalent of the input query (x,y)
@@ -548,138 +403,28 @@ public class NaturalNeighborInterpolator implements IInterpolatorOverTin {
     }
   }
 
-
   @Override
-  public boolean isSurfaceNormalSupported(){
-    return true;
+  public boolean isSurfaceNormalSupported() {
+    return false;
   }
 
   /**
+   * Note implemented at this time.
    * Gets the unit normal to the surface at the position of the most
    * recent interpolation. The unit normal is computed based on the
    * partial derivatives of the surface polynomial evaluated at the
    * coordinates of the query point. Note that this method
    * assumes that the vertical and horizontal coordinates of the
    * input sample points are isotropic.
-   * <p>NOT COMPLETELY TESTED AND VERIFIED YET. WHen I visually inspect
-   * the results, the surface appears to be unexpectedly blurred and flattened.
-   * At the very least, I think a code review is required to determine
-   * whether the implementation is correct or if the behavior I am seeing
-   * is just the way the algorithm works.
+   *
+   *
    * @return if defined, a valid array of dimension 3 giving
    * the x, y, and z components of the unit normal, respectively; otherwise,
    * a zero-sized array.
    */
   @Override
   public double[] getSurfaceNormal() {
-
-    List<IQuadEdge> bwList = this.getBowyerWatsonPolygon(xQuery, yQuery);
-    int nEdge = bwList.size();
-    if (nEdge == 0) {
-      // (x,y) is outside defined area
-      return new double[0];
-    } else if (nEdge == 1) {
-            // (x,y) is an exact match with the one edge in the list
-      // so the bwList is replaced with a connected polygon list
-      // and used the same way
-      bwList = getConnectedPolygon(bwList.get(0));
-    }
-
-    double[] bwWeights = getBarycentricCoordinates(bwList, xQuery, yQuery);
-    if(bwWeights == null){
-      return new double[0];
-    }
-    double xNormal = 0;
-    double yNormal = 0;
-    double zNormal = 0;
-    int i = 0;
-    for (IQuadEdge e : bwList) {
-      List<IQuadEdge> rim = getConnectedPolygon(e);
-      Vertex hub = e.getA();
-      double xHub = hub.getX();
-      double yHub = hub.getY();
-      double zHub = hub.getZ();
-      double[] w = getBarycentricCoordinates(rim, xHub, yHub);
-      if (w == null) {
-              // edge e is on the perimeter and does not have valid
-        // barycentric coordinates.  Also, some of the edges in the
-        // rim may start with ghost vertices. Since no barycentric
-        // coordinates are available, we use inverse distance weighting
-        // for those rim edges that are not ghosts and have a valid
-        // geometry.
-        w = this.repairRim(e, rim, xHub, yHub);
-        if (rim.isEmpty()) {
-          return new double[0]; // not expected
-        }
-      }
-      int k = 0;
-      double xSum = 0;
-      double ySum = 0;
-      double zSum = 0;
-      for (IQuadEdge edge : rim) {
-        Vertex v = edge.getA();
-        double x = v.getX() - xHub;
-        double y = v.getY() - yHub;
-        double z = v.getZ() - zHub;
-        double s = Math.sqrt(x * x + y * y);
-        double nx = -z * x / s;
-        double ny = -z * y / s;
-        double nz = s;
-        double n = w[k++] / Math.sqrt(nx * nx + ny * ny + nz * nz);
-        xSum += nx * n;
-        ySum += ny * n;
-        zSum += nz * n;
-      }
-      double n = bwWeights[i++] / Math.sqrt(xSum * xSum + ySum * ySum + zSum * zSum);
-      xNormal += xSum * n;
-      yNormal += ySum * n;
-      zNormal += zSum * n;
-    }
-
-    double[] normal = new double[3];
-    double n = Math.sqrt(xNormal * xNormal + yNormal * yNormal + zNormal * zNormal);
-    normal[0] = xNormal / n;
-    normal[1] = yNormal / n;
-    normal[2] = zNormal / n;
-
-    return normal;
-  }
-
-   // Rebuilds a rim that contains ghost edges. Computes new weights based
-  // on inverse distance weighting rather than barycentric coordinates.
-  private double[] repairRim(IQuadEdge e, List<IQuadEdge> rim, double xHub, double yHub) {
-    double[] w = new double[rim.size()];
-    rim.clear();
-    int k = 0;
-    double wSum = 0;
-    IQuadEdge s = e;
-    do {
-      IQuadEdge f = s.getForward();
-      Vertex v = f.getA();
-      if (v != null) {
-        double dx = v.getX() - xHub;
-        double dy = v.getY() - yHub;
-        double d = Math.sqrt(dx * dx + dy * dy);
-        if (d > 0) {
-          double weight = 1.0/d;
-          w[k++] = weight;
-          wSum += weight;
-          rim.add(f);
-        }
-
-      }
-      s = s.getReverse().getDual();
-    } while (!s.equals(e));
-
-    if (wSum == 0) {
-      // not expected
-      rim.clear();
-    } else {
-      for (int i = 0; i < k; i++) {
-        w[i] /= wSum;
-      }
-    }
-    return w;
+    return new double[0];
   }
 
   /**
@@ -726,65 +471,97 @@ public class NaturalNeighborInterpolator implements IInterpolatorOverTin {
     List<IQuadEdge> polygon,
     double x,
     double y) {
-    barycentricCoordinateDeviation = Double.NaN;  // start off pessimistic
+
     int nEdge = polygon.size();
-    IQuadEdge p0 = polygon.get(nEdge - 1);
-    IQuadEdge p1 = polygon.get(0);
-    double[] weights = new double[nEdge];
-    int k = 0;
+    if (nEdge < 3) {
+      return new double[0];
+    }
 
-    double xSum = 0;
-    double ySum = 0;
+    // The eList contains a series of edges definining the cavity
+    // containing the polygon.
+    Vertex a, b, c;
+    Circumcircle c0 = new Circumcircle();
+    Circumcircle c1 = new Circumcircle();
+    IQuadEdge e0, e1, n, n1;
+    double x0, y0, x1, y1, wThiessen, wXY, wDelta;
     double wSum = 0;
-    Vertex v0 = p0.getA();
-    Vertex v1 = p1.getA();
-    if (v0 == null || v1 == null) {
-      // the search extends to the exterior, indicating
-      // that the reference point is on the perimeter.
-      // no barycentric solution is feasible.
-      return null;
-    }
-    double x0 = v0.getX() - x;
-    double y0 = v0.getY() - y;
-    double x1 = v1.getX() - x;
-    double y1 = v1.getY() - y;
-    double r0 = Math.sqrt(x0 * x0 + y0 * y0);
-    double r1 = Math.sqrt(x1 * x1 + y1 * y1);
-    double t1 = (r0 * r1 - (x0 * x1 + y0 * y1)) / (x0 * y1 - x1 * y0); //NOPMD
-    for (IQuadEdge e1 : polygon) {
-      double t0 = t1;
-      x0 = x1;
-      y0 = y1;
-      r0 = r1;
-      v1 = e1.getB();
-      if (v1 == null) {
-        // the reference point is on the perimeter
-        return null;
+    double[] weights = new double[nEdge];
+    for (int i0 = 0; i0 < nEdge; i0++) {
+      int i1 = (i0 + 1) % nEdge;
+      e0 = polygon.get(i0);
+      e1 = polygon.get(i1);
+      a = e0.getA();
+      b = e1.getA(); // same as e0.getB();
+      c = e1.getB();
+      double ax = a.getX() - x;
+      double ay = a.getY() - y;
+      double bx = b.getX() - x;
+      double by = b.getY() - y;
+      double cx = c.getX() - x;
+      double cy = c.getY() - y;
+
+      x0 = (ax + bx) / 2;
+      y0 = (ay + by) / 2;
+      x1 = (bx + cx) / 2;
+      y1 = (by + cy) / 2;
+
+      c0.compute(ax, ay, bx, by, 0, 0);
+      c1.compute(bx, by, cx, cy, 0, 0);
+      wXY = x0 * c0.getY()
+        - c0.getX() * y0
+        + c0.getX() * c1.getY()
+        - c1.getX() * c0.getY()
+        + c1.getX() * y1
+        - x1 * c1.getY();
+
+      n = e0.getForward();
+      Vertex nb = n.getB();
+      c1.compute(ax, ay, bx, by, nb.getX() - x, nb.getY() - y);
+      wThiessen = x0 * c1.getY() - c1.getX() * y0;
+      while (!(n.equals(e1))) {
+        n1 = n.getDual();
+        n = n1.getForward();
+        c0.copy(c1);
+        a = n1.getA();
+        b = n.getA();  // same as n1.getB();
+        c = n.getB();
+        ax = a.getX() - x;
+        ay = a.getY() - y;
+        bx = b.getX() - x;
+        by = b.getY() - y;
+        cx = c.getX() - x;
+        cy = c.getY() - y;
+        c1.compute(ax, ay, bx, by, cx, cy);
+        wThiessen += c0.getX() * c1.getY() - c1.getX() * c0.getY();
       }
-      x1 = v1.getX() - x;
-      y1 = v1.getY() - y;
-      r1 = Math.sqrt(x1 * x1 + y1 * y1);
-      t1 = (r0 * r1 - (x0 * x1 + y0 * y1)) / (x0 * y1 - x1 * y0); //NOPMD
-      double w = (t0 + t1) / r0;
-      xSum += w * x0;
-      ySum += w * y0;
-      wSum += w;
-      weights[k++] = w;
+      wThiessen += c1.getX() * y1 - x1 * c1.getY();
+
+      // for convenience, both the wXY and wThiessen weights were
+      // computed in a clockwise order, which means they are the
+      // negative of what we need for the weight computation, so
+      // negate them.
+      wDelta = -(wThiessen - wXY);  // the /2 here is unnecessary
+      wSum += wDelta;
+      weights[i1] = wDelta;
     }
 
-    // normalize the weights
-    for (int i = 0; i < k; i++) {
-      weights[i] = weights[i] / wSum;
+    // Normalize the weights
+    for (int i = 0; i < weights.length; i++) {
+      weights[i] /= wSum;
     }
 
-    wSum = 0;
-    for (int i = 0; i < k; i++) {
-      wSum += weights[i];
+ double xSum = 0;
+    double ySum = 0;
+    int k = 0;
+    for (IQuadEdge s : polygon) {
+      Vertex v = s.getA();
+      xSum += weights[k]*(v.getX()-x);
+      ySum += weights[k]*(v.getY()-y);
+      k++;
     }
-
-    barycentricCoordinateDeviation = Math.sqrt(xSum * xSum + ySum * ySum);
+    barycentricCoordinateDeviation
+      = Math.sqrt(xSum * xSum + ySum * ySum);
 
     return weights;
   }
-
 }
