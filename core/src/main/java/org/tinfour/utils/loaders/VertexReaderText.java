@@ -94,7 +94,7 @@ import org.tinfour.utils.LinearUnits;
  * provided, the Cartesian coordinates will take precedence.  The rationale,
  * for this design decision is that specifications of this type are usually
  * encountered in cases where data from geographic sources have be projected
- * to a planar coordinate system.  
+ * to a planar coordinate system.
  * <p>
  * <strong>Linear Units: </strong> Although a specification of units for the
  * values in the source file is not supported by the text format, applications
@@ -393,13 +393,11 @@ public class VertexReaderText implements Closeable, IVertexReader {
             }
           }
         } else {
-          if (embeddedWhitespaceCandidate != 0) {
-            // for embedded whitespace, a tab has precedence
-            // so if embedded whitespace is already set to tab,  
-            // no further action is required.
-            if (embeddedWhitespace != '\t') {
-              embeddedWhitespace = embeddedWhitespaceCandidate;
-            }
+          // for embedded whitespace, a tab has precedence
+          // so if embedded whitespace is already set to tab,
+          // no further action is required.
+          if (embeddedWhitespaceCandidate != 0 && embeddedWhitespace != '\t') {
+            embeddedWhitespace = embeddedWhitespaceCandidate;
           }
 
           if (c == '#' && !textFound) {

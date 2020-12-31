@@ -387,10 +387,8 @@ public class VertexReaderShapefile implements IVertexReader, Closeable {
         }
         
         int indexUnit=content.indexOf("UNIT");
-        if(indexUnit>0){
-          if(content.indexOf("FOOT")>indexUnit || content.indexOf("FEET")>indexUnit){
+        if(indexUnit>0 && (content.indexOf("FOOT")>indexUnit || content.indexOf("FEET")>indexUnit)){
             linearUnits = LinearUnits.FEET;
-          }
         }
 
       } catch (IOException ioex) {
