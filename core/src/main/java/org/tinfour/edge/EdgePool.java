@@ -101,12 +101,12 @@ public class EdgePool implements Iterable<IQuadEdge> {
    * The number of Edges stored in a page
    */
   private final int pageSize;
-  
+
   /**
    * The number of edge indices for a page, a value equal to pageSize*2;
    */
    private final int pageSize2;
-   
+
 
   Page[] pages;
   /**
@@ -131,7 +131,7 @@ public class EdgePool implements Iterable<IQuadEdge> {
    */
   HashMap<Integer, IConstraint>borderConstraintMap = new HashMap<>();
   HashMap<Integer, IConstraint>linearConstraintMap = new HashMap<>();
-  
+
   /**
    * Construct a QuadEdge manager allocating a small number
    * of initial edges.
@@ -410,7 +410,7 @@ public class EdgePool implements Iterable<IQuadEdge> {
         }
       }else if(e.isConstrainedRegionInterior()){
         nConstraintInterior++;
-      } 
+      }
     }
     ps.format("Edges allocated:             %8d%n", nAllocated);
     ps.format("Edges free:                  %8d%n", nFree);
@@ -429,9 +429,9 @@ public class EdgePool implements Iterable<IQuadEdge> {
   }
 
   /**
-   * Constructs an iterator that will optionally skip 
-   * ghost edges. 
-   * @param includeGhostEdges indicates that ghost edges are 
+   * Constructs an iterator that will optionally skip
+   * ghost edges.
+   * @param includeGhostEdges indicates that ghost edges are
    * to be included in the iterator production.
    * @return a valid instance of an iterator
    */
@@ -512,7 +512,7 @@ public class EdgePool implements Iterable<IQuadEdge> {
     }
     return 0;
   }
- 
+
 
   /**
    * Split the edge e into two by inserting a new vertex m into
@@ -554,8 +554,8 @@ public class EdgePool implements Iterable<IQuadEdge> {
     //    } else {
     //      return n;
     //    }
-    
-  
+
+
     // p is on the same side of the original edge e and
     // q is on the same side as the dual edge d.
     if (e.isConstrainedRegionBorder()) {
@@ -573,7 +573,7 @@ public class EdgePool implements Iterable<IQuadEdge> {
         addLinearConstraintToMap(p, c);
       }
     }
- 
+
     return p;
 
   }
@@ -588,8 +588,8 @@ public class EdgePool implements Iterable<IQuadEdge> {
   public void addBorderConstraintToMap(IQuadEdge edge, IConstraint constraint){
      borderConstraintMap.put(edge.getIndex(), constraint);
   }
-  
-  
+
+
   /**
    * Adds the specified constraint to the linear constraint map, thus recording
    * which constraint lies to the left side of the edge.
@@ -601,9 +601,9 @@ public class EdgePool implements Iterable<IQuadEdge> {
      linearConstraintMap.put(index, constraint);
      linearConstraintMap.put(index^1, constraint);
   }
-  
-  
-  
+
+
+
   /**
    * Removes any existing border constraint from the constraint map.
    * @param edge a valid edge instance
@@ -611,8 +611,8 @@ public class EdgePool implements Iterable<IQuadEdge> {
   public void removeBorderConstraintFromMap(IQuadEdge edge){
     borderConstraintMap.remove(edge.getIndex());
   }
-  
-  
+
+
   /**
    * Gets the border constraint associated with the edge.
    * @param edge a valid edge instance.
@@ -625,7 +625,7 @@ public class EdgePool implements Iterable<IQuadEdge> {
     }
     return null;
   }
-  
+
   /**
    * Gets the linear constraint associated with the edge, if any.
    *
@@ -640,7 +640,7 @@ public class EdgePool implements Iterable<IQuadEdge> {
     return null;
   }
 
-  
+
 
   private class Page {
     int pageID;
@@ -685,6 +685,7 @@ public class EdgePool implements Iterable<IQuadEdge> {
      *
      * @param e a valid QuadEdge
      */
+    @SuppressWarnings("PMD.CollapsibleIfStatements")
     void deallocateEdge(QuadEdge be) {
       // reset to initialization state as necessary.
       // in this following block, we clear all flags that matter.
@@ -719,7 +720,7 @@ public class EdgePool implements Iterable<IQuadEdge> {
         int newIndex = pageOffset + arrayIndex*2;
         swap.setIndex(newIndex);
         edges[nAllocated] = e;
-        
+
         // the swap operation will change the index of the line. And, because
         // the index is used as a key into the constraint maps, we need to
         // adjust the entries.  The fact that this action is necessarily
@@ -751,7 +752,7 @@ public class EdgePool implements Iterable<IQuadEdge> {
             borderConstraintMap.put(newIndex, c);
           }
         }
-        
+
         e.setIndex(pageOffset + nAllocated*2);  // pro forma, for safety
       }
     }

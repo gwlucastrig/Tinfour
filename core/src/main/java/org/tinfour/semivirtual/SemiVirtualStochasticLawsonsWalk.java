@@ -310,7 +310,7 @@ public class SemiVirtualStochasticLawsonsWalk {
         vY1 = y - v1.y;
         pX1 = v1.y - v2.y;  // the perpendicular
         pY1 = v2.x - v1.x;
-        h1 = (vX1 * pX1 + vY1 * pY1);
+        h1 = vX1 * pX1 + vY1 * pY1;
         if (h1 < halfPlaneThresholdNeg) {
           edge.loadDualFromForwardOfEdge(edge);
           v0 = edge.getA();

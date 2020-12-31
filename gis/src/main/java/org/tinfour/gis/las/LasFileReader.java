@@ -598,9 +598,13 @@ public class LasFileReader {
 
   private void loadGeoTiffSpecification() throws IOException {
     // get the projection keys
-    LasVariableLengthRecord vlr = getVariableLengthRecordByRecordId(34735);
+    LasVariableLengthRecord vlr =
+        getVariableLengthRecordByRecordId(GeoTiffData.GeoKeyDirectoryTag);
+
     if (vlr == null) {
-      return;  // this is actually a file-format error
+        // The file has an error, this method would not have been called
+        // had the file not had a flag bit set indicating GeoTIFF tags.
+      return;
     }
 
     // technically, we should check to make sure that the

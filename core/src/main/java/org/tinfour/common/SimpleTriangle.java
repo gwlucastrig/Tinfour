@@ -21,7 +21,8 @@
  * Revision History:
  * Date     Name         Description
  * ------   ---------    -------------------------------------------------
- * 11/2018  G. Lucas     Created  
+ * 11/2018  G. Lucas     Created
+ * 12/2020  G. Lucas     Add extended precision for area computation
  *
  * Notes:
  *
@@ -31,6 +32,7 @@ package org.tinfour.common;
 
 import java.awt.geom.AffineTransform;
 import java.awt.geom.Path2D;
+import org.tinfour.vividsolutions.jts.math.DD;
 
 /**
  * Provides methods and elements for a simple representation of a triangle based
@@ -135,11 +137,30 @@ public class SimpleTriangle {
    * @return a valid floating point number.
    */
   public double getArea() {
+
     Vertex a = edgeA.getA();
     Vertex b = edgeB.getA();
     Vertex c = edgeC.getA();
-    double h = (c.y - a.y) * (b.x - a.x) - (c.x - a.x) * (b.y - a.y);
-    return h / 2;
+    double ax = a.getX();
+    double ay = a.getY();
+    double bx = b.getX();
+    double by = b.getY();
+    double cx = c.getX();
+    double cy = c.getY();
+
+    // The area computation is performed using extended precision
+    // to reduce the severify of numeric errors when processing
+    // triangles that are nearly degenerate (nearly collapsed to a single line).
+    //  area = ( (c.y - a.y) * (b.x - a.x) - (c.x - a.x) * (b.y - a.y) )/2;
+    DD q11= new DD(cx).selfSubtract(ax);
+    DD q12= new DD(ay).selfSubtract(by);
+    DD q21= new DD(cy).selfSubtract(ay);
+    DD q22= new DD(bx).selfSubtract(ax);
+
+    q11.selfMultiply(q12);
+    q21.selfMultiply(q22);
+    q11.selfAdd(q21);
+    return q11.doubleValue() / 2.0;
   }
 
   /**
@@ -175,7 +196,7 @@ public class SimpleTriangle {
       af = new AffineTransform();
     }
     double[] c = new double[12];
-    
+
     Vertex A = edgeA.getA();
     Vertex B = edgeB.getA();
     Vertex C = edgeC.getA();

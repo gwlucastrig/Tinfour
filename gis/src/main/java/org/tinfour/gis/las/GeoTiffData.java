@@ -42,7 +42,18 @@ import java.util.List;
 public class GeoTiffData {
 
     /**
-     * The code tag for a TIFF directory containing floating point parameters
+     * The code for a TIFF tag containing integer specifications
+     * for GeoTIFF tags. This is the primary GeoTIFF tag and provides
+     * an entry point for accessing other values stored in tags
+     * GeoDoubleParamsTag (34736) or GeoAsciiParamsTags (34737).
+     * A valid GeoTIFF specification will also include a GeoKeyDirectoryTag,
+     * but the other tags are optional (unless specifically referenced
+     * within the content of the GeoKeyDirectoryTag).
+     */
+    public static final int GeoKeyDirectoryTag = 34735;
+
+    /**
+     * The code for a TIFF tag containing floating point parameters
      * (doubles) for the GeoTIFF specification
      */
     public static final int GeoDoubleParamsTag = 34736;
@@ -202,5 +213,35 @@ public class GeoTiffData {
         List<GeoTiffKey>list = new ArrayList<>(keyList.size());
         list.addAll(keyList);
         return list;
+    }
+
+        /**
+     * Indicates whether the GeoTIFF data specifies a geographic coordinate
+     * system
+     *
+     * @return true if geographic coordinates are used; otherwise, false.
+     */
+    public boolean usesGeographicCoordinates() {
+        try {
+            int test = this.getInteger(GtModelTypeGeoKey);
+            return test == 2;
+        } catch (IOException ioex) {
+            return false;
+        }
+    }
+
+    /**
+     * Indicates whether the GeoTIFF data specifies a projected coordinate
+     * system
+     *
+     * @return true if projected coordinates are used; otherwise, false.
+     */
+    public boolean usesProjectedCoordinates() {
+        try {
+            int test = this.getInteger(GtModelTypeGeoKey);
+            return test == 1 || test == 3;
+        } catch (IOException ioex) {
+            return false;
+        }
     }
 }

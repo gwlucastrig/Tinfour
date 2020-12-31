@@ -92,7 +92,7 @@ class SemiVirtualNeighborhoodPointsCollector implements IProcessUsingTin, INeigh
     double vx = x - ax;
     double vy = y - ay;
     double h = vx * dy - vy * dx;
-    return (h == 0);
+    return h == 0;
   }
 
   private List<Vertex> pinwheel(

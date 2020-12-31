@@ -696,7 +696,7 @@ public class ExampleGridAndHillshade implements IDevelopmentTest {
    *   -cellSize &lt;value &gt; 0, default 1&gt;    the cell size for the output
    *                      grids. cell size should be consistent with
    *                      nominal pulse spacing of LAS file ground points
-   *   -method [Linear, NaturalNeighbor, Regression] default NaturalNeighbor
+   *   -interpolator [TriangularFacet, NaturalNeighbor, GeographicallyWeightedRegression] default NaturalNeighbor
    *                      Interpolation method used for modeling elevations.
    *
    *    Other arguments used by Tinfour test programs are supported

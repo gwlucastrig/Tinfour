@@ -70,7 +70,7 @@ class QuadEdgePartner extends QuadEdge {
     return dual.index+1;
   }
 
- 
+
   @Override
   protected void setIndex(final int index) {
     dual.index = index;
@@ -186,37 +186,37 @@ class QuadEdgePartner extends QuadEdge {
   public boolean isConstrainedRegionInterior() {
     return (index & CONSTRAINT_REGION_INTERIOR_FLAG) != 0;
   }
-  
+
     @Override
   public boolean isConstrainedRegionMember() {
     return (index & CONSTRAINT_REGION_MEMBER_FLAGS) != 0;
   }
- 
-  
+
+
     @Override
   public void setConstrainedRegionBorderFlag() {
     index |= CONSTRAINT_REGION_BORDER_FLAG;
   }
 
-    
+
   @Override
   public boolean isConstraintLineMember(){
     return (index & CONSTRAINT_LINE_MEMBER_FLAG)!=0;
   }
- 
+
   @Override
   public void setConstraintLineMemberFlag(){
-    index |= (CONSTRAINT_EDGE_FLAG | CONSTRAINT_LINE_MEMBER_FLAG);
+    index |= CONSTRAINT_EDGE_FLAG | CONSTRAINT_LINE_MEMBER_FLAG;
   }
-  
-  
+
+
 
   @Override
   public void setConstrainedRegionInteriorFlag() {
     index |= CONSTRAINT_REGION_INTERIOR_FLAG;
   }
- 
-  
+
+
   @Override
   public void setSynthetic(boolean status) {
     if (status) {

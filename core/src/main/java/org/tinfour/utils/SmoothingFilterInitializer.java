@@ -21,7 +21,7 @@
  * Revision History:
  * Date     Name         Description
  * ------   ---------    -------------------------------------------------
- * 08/2019  G. Lucas     Created  
+ * 08/2019  G. Lucas     Created
  *
  * Notes:
  *
@@ -65,7 +65,7 @@
  *    wPages[][PAGE_SIZE}
  *        the weights pages.  for each vertex, this gives the weights
  *        for combining the z values of its neighbors.
- *   
+ *
  *  Vertices on the perimeter of the TIN will not have a valid set of
  *  barycentric coordinates.  At this time, we have not implemented a
  *  way of combining their neighbor values, so the entry in the masterIndex[]
@@ -75,13 +75,13 @@
  */
 package org.tinfour.utils;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.BitSet;
 import java.util.List;
 import org.tinfour.common.IIncrementalTin;
 import org.tinfour.common.IQuadEdge;
 import org.tinfour.common.Vertex;
-import org.tinfour.interpolation.NaturalNeighborInterpolator;
 
 /**
  * An implementation of the vertex valuator that processes the vertices in a
@@ -97,7 +97,6 @@ public class SmoothingFilterInitializer {
 
   private static final int PAGE_SIZE = 32768;
 
-  private NaturalNeighborInterpolator nni;
   int nVertex;
 
   // the master index maps a vertex index to the location in the page-based
@@ -139,7 +138,6 @@ public class SmoothingFilterInitializer {
    */
   public SmoothingFilterInitializer(IIncrementalTin tin, int nPasses) {
     long time0 = System.nanoTime();
-    nni = new NaturalNeighborInterpolator(tin);
 
     List<Vertex> vList = tin.getVertices();
     nVertex = vList.size();
@@ -173,7 +171,6 @@ public class SmoothingFilterInitializer {
     result = zArray;
 
     // dispose of anything we aren't going to need anymore.
-    nni = null;
     for (int i = 0; i < iPages.length; i++) {
       iPages[i] = null;
     }
@@ -197,6 +194,27 @@ public class SmoothingFilterInitializer {
     return timeToConstructFilter;
   }
 
+   /**
+   * Gets a polygon consisting of edges connected to
+   * the specified edge (in effect providing the set of vertices
+   * connected to the starting vertex of the specified edge).
+   * The polygon is ordered in counterclockwise order.
+   *
+   * @param e the starting edge
+   *
+   * @return a valid list of edges (some of which may be
+   * perimeter or ghost edges).
+   */
+  public List<Vertex> getConnectedPolygon(IQuadEdge e) {
+    List<Vertex> vList = new ArrayList<>();
+
+    for(IQuadEdge s: e.pinwheel()){
+      vList.add(s.getB());
+    }
+    return vList;
+  }
+
+
   private void initForEdge(BitSet visited, IQuadEdge edge) {
     Vertex A = edge.getA();
     if (A == null) {
@@ -213,11 +231,14 @@ public class SmoothingFilterInitializer {
     double x = A.getX();
     double y = A.getY();
 
-    List<IQuadEdge> pList = nni.getConnectedPolygon(edge);
-    double[] w = nni.getBarycentricCoordinates(pList, x, y);
+    List<Vertex> pList = getConnectedPolygon(edge);
+    BarycentricCoordinates bcoord = new BarycentricCoordinates();
+    double[] w = bcoord.getBarycentricCoordinates(pList, x, y);
     if (w == null) {
       return;
     }
+    // double figureOfMerit = bcoord.getBarycentricCoordinateDeviation();
+
     assert w.length == pList.size() : "Incorrect barycentric weights result";
 
     int iPage = iPagesCount - 1;
@@ -257,7 +278,7 @@ public class SmoothingFilterInitializer {
     iArray[iPageIndex++] = w.length;  // offset to start of weights
     iArray[iPageIndex++] = wPage * PAGE_SIZE + wPageIndex;
     for (int i = 0; i < w.length; i++) {
-      iArray[iPageIndex++] = pList.get(i).getA().getIndex();
+      iArray[iPageIndex++] = pList.get(i).getIndex();
       wArray[wPageIndex++] = (float) w[i];
     }
 
