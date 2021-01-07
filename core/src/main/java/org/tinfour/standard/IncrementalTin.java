@@ -1782,20 +1782,6 @@ public class IncrementalTin implements IIncrementalTin {
 
 
   @Override
-  public boolean isPointInsideTin(double x, double y) {
-    if (this.isBootstrapped) {
-      if (searchEdge == null) {
-        searchEdge = edgePool.getStartingEdge();
-      }
-      searchEdge = walker.findAnEdgeFromEnclosingTriangle(searchEdge, x, y);
-
-      Vertex v2 = searchEdge.getForward().getB();
-      return v2 != null;
-    }
-    return false;
-  }
-
-  @Override
   public void addConstraints(
     List<IConstraint> constraints,
     boolean restoreConformity)
