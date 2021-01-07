@@ -4,27 +4,17 @@ Tinfour
 High-Performance 2D Delaunay Triangulation and Related Utilities Written in Java
 
 **Notice**
-
-> Effective with software release 2.1 (June 2019), Tinfour includes
-> a "fat jar" with bundled dependencies that greatly simplifies
-> the execution of the demonstration TinfourViewer application.
-> See [Tinfour Execution](https://github.com/gwlucastrig/Tinfour/wiki/Tinfour-Execution-from-the-Command-Line) for more details.
->
-> Effective with release 2.1, Tinfour now includes a version of the
-> [Simple Volumetric Model](https://github.com/gwlucastrig/Tinfour/wiki/Using-the-Delaunay-to-Create-a-Reservoir-Volume-Model)
-> a demonstration program that can be used to compute reservoir capacity and water volume
-> as a function of water level.
 >
 > The Tinfour compiled binary files (Jar files) are available at
 > [Sonatype's Maven Central Repository](https://search.maven.org/search?q=Tinfour)
-> or the [Maven Central Repository](http://central.maven.org/maven2/org/tinfour/)
+> or the [Maven Central Repository](https://mvnrepository.com/repos/central)
 
 ### Delaunay Triangulation ###
 The Delaunay Triangulation defines an optimal form for organizing unstructured or semi-random
 sample points into a triangular mesh. That optimality makes the Delaunay Triangulation
 a useful tool for interpolation, grid construction, and surface analysis.  
 
-![Surface Models using TINs](doc/images/TwoTins.png "Surface Models using TINs")
+![Surface Models using TINs](doc/images/TwoTins.png "Tinfour rendering of surface models based on a Delaunay Triangulation")
 
 ### Tinfour ###
 Tinfour is a software library written in Java that provides tools for constructing 
@@ -38,70 +28,66 @@ The Tinfour source code includes extensive documentation. This project also incl
 an informal paper that describes the uses, algorithms, and implementation
 of the software with enough detail to support potential developers 
 who may wish to contribute code or employ Tinfour in their own work. For more details, see
-[Data Elements and Algorithms for the Tinfour Libary](http://gwlucastrig.github.io/Tinfour/doc/TinfourAlgorithmsAndDataElements.pdf "Data Elements and Algorithms").
-The Tinfour API documentation is available at [Tinfour API](http://gwlucastrig.github.io/Tinfour/doc/javadoc/ "Javadoc for Tinfour API").
-And, to support our user community, we've recently started a mailing list at the [Tinfour Users Group](https://groups.google.com/forum/#!forum/tinfour-users-group). 
+[Data Elements and Algorithms for the Tinfour Libary](http://gwlucastrig.github.io/Tinfour/doc/TinfourAlgorithmsAndDataElements.pdf).
+If you would like to discuss the Tinfour project or tell us about your own work, feel free to visit [The Tinfour Discussion Page](https://github.com/gwlucastrig/Tinfour/discussions). 
 
 ### The Tinfour Viewer ###
 When someone first sees a project like Tinfour, they might reasonably ask
-that most thorny of questions "What is it good for?"  To try to address that question,
-this library includes a simple demonstration program which allows the user to view
-and explore raw data, including samples such as Lidar files that contain
-huge numbers of points. To run the demonstrator, you must have Java installed
-on your system.  If you do not have Java installed on your computer, you may
-download an installer for free from 
-[Oracle Corporation, Java Downloads](https://java.com/en/download/ "Java downloads from Oracle")
+that most thorny of questions "What is it good for?"  To answer that question,
+this library includes a simple demonstration application called Tinfour Viewer
+that allows the user to exercise the major functions of the Tinfour library.
+Using Tinfour Viewer, the user can explore data sets ranging in size from just a few points
+up to the millions.
 
+Here's a screenshot from the Tinfour Viewer showing a collection of Lidar elevation data
+collected over a section of Interstate highway in the U.S. Northeast.
+
+![Lidar over Guilford, CT](doc/images/TinfourViewerGuilford.jpg "View of Lidar sample collected over Guilford, Connecticut, U.S.A.")
+
+The Tinfour Viewer application is intended to show how the Tinfour library could be integrated
+into a full-featured GIS application or other analysis tool. It's a simple
+implementation with a minimum of features.
 Instructions for setting up and running the Tinfour Viewer application
 are provided at the wiki page [Tinfour Execution from the Command Line](https://github.com/gwlucastrig/Tinfour/wiki/Tinfour-Execution-from-the-Command-Line).
-With the introduction of the _fat jar_ feature in recent releases, the procedure for
-launching the Tinfour Viewer became much simpler. For example, if you have Java installed
-on a Windows system, you can launch the Tinfour Viewer application from your File Explorer window
-by double-clicking on the "fat" jar file TinfourDemo-2.1.2-jar-with-dependencies
-(adjusting the version as appropriate). 
-While other Tinfour applications must be launched from the command-line,
-the wiki page attempts to simplify the process as much as possible. It also
+Our wiki page attempts to simplify the process of running Tinfour demostration applications as much as possible. It also
 explains some of the nuances of the launch procedures and provides the details
 you will need to set up a command window and run the command-line variations
 for all the various Tinfour applications.
- 
-The demonstrator is intended to show how the Tinfour library could be integrated
-into a full-featured GIS application or other analysis tool. It's a simple
-implementation with a minimum of features. 
 
-![Lidar over Guilford, CT](doc/images/TinfourViewerGuilford.jpg "Lidar over Guilford, CT")
+To run the Tinfour software, you must have Java installed
+on your system.  If you do not have Java installed on your computer, you may
+download an installer for free from 
+[Oracle Corporation, Java Downloads](https://java.com/en/download/ "Java downloads from Oracle")
 
 ### Sources of Data ###
 Lidar is a system for collecting surface elevation using laser measuring devices
 mounted on low flying aircraft. It's pretty amazing technology.
 There are some excellent sources of Lidar data to be had for free, you might start at 
 [Free LiDAR Data Sources](http://gisgeography.com/top-6-free-lidar-data-sources/ "Gis Geography")
-or [USGS Center for LIDAR Information] (http://lidar.cr.usgs.gov/ "USGS").
+or [USGS Center for LIDAR Information](http://lidar.cr.usgs.gov/ "USGS").
 The Commonwealth of Pennsylvania was one of the first states to collect and post
 a comprehensive survey of lidar data, and they did the job right... Their site includes 
 not just lidar data, but the supporting breakline files (Shapefiles), multi-spectral imagery,
 and project metadata (including Dewberry reports). Visit this excellent resource at
-[PAMAP Lidar Elevation Data]( http://www.dcnr.state.pa.us/topogeo/pamap/lidar/index.htm "PAMAP Lidar Elevation Data").
+[PAMAP Lidar Elevation Data](http://www.dcnr.state.pa.us/topogeo/pamap/lidar/index.htm "PAMAP Lidar Elevation Data").
 
-If you just want to download a single Lidar file and view it, I recommend PAMAP Tile 4100133PAS
-ftp://pamap.pasda.psu.edu/pamap_lidar/cycle1/LAS/South/2006/40000000/41001330PAS.zip
+If you just want to download a single Lidar file and view it, we recommend
+[PAMAP Tile 4100133PAS](ftp://pamap.pasda.psu.edu/pamap_lidar/cycle1/LAS/South/2006/40000000/41001330PAS.zip "External reference to PAMAP FTP site").
 At 36.7 megabytes, it isn't dainty, but it does contain interesting land features and sufficient
 detail to exercise the major functions of the viewer.
 
 ### A short demo ###
-Recently, I found an earlier Delaunay triangulation project by "The Mad Creator" (Bill Dwyer)
+Recently, we found an earlier Delaunay triangulation project by "The Mad Creator" (Bill Dwyer)
 that provided a four-line demo. It was such a elegant way of introducing the package,
-that I decided to include one of my own.
+that we decided to include one of our own.
 
+    public static void main(String []args) throws Exception {
+        IncrementalTin tin = new IncrementalTin(1.0);
+        List<Vertex>vertexList = TestVertices.makeRandomVertices(100, 0);
+        tin.add(vertexList, null);
+        TinRenderingUtility.drawTin(tin, 500, 500, new File("tin.png"));
+    }
 
-```Java
-  public static void main(String []args) throws Exception {
-      IncrementalTin tin = new IncrementalTin(1.0);
-      List<Vertex>vertexList = TestVertices.makeRandomVertices(100, 0);
-      tin.add(vertexList, null);
-      TinRenderingUtility.drawTin(tin, 500, 500, new File("tin.png"));
-  }
-``` 
 
 
 ### Does Tinfour require external project dependencies? ###
@@ -149,7 +135,7 @@ of why CDT's are important, see the Tinfour wiki page titled
 For more detail about the Tinfour project development plans, see the
 [Tinfour Project Status and Roadmap](https://github.com/gwlucastrig/Tinfour/wiki/Tinfour-Project-Roadmap) page.
  
-### Out Companion Project ###
+### Our Companion Project ###
 Visit the [Gridfour Software Project](https://gwlucastrig.github.io/gridfour/) to learn more about our companion
 software project dedicated to creating open-source software tools for raster (grid) data sets.
 
@@ -158,5 +144,5 @@ Finally, the whole point of working on a project like Tinfour is to see
 it used to do something useful. To that end, I welcome ideas, requests, and
 recommendations for analysis tools and applications that would
 benefit the open source and scientific communities. Got something
-to say? You can contact me at <contact.tinfour@gmail.com>
+to say? You can contact the Tinfour project at contact.tinfour@gmail.com
  

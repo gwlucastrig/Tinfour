@@ -1660,24 +1660,7 @@ public class SemiVirtualIncrementalTin implements IIncrementalTin {
   public IIntegrityCheck getIntegrityCheck() {
     return new SemiVirtualIntegrityCheck(this);
   }
-
-
-  @Override
-  public boolean isPointInsideTin(double x, double y) {
-    if (this.isBootstrapped) {
-      if (searchEdge == null) {
-        searchEdge = edgePool.getStartingEdge();
-      }
-      walker.findAnEdgeFromEnclosingTriangleInternal(searchEdge, x, y);
-
-      // The triangle apex convenience routine saves the method
-      // from creating short-persistence edge objects.
-      Vertex v2 = searchEdge.getTriangleApex();
-      return v2 != null;
-    }
-    return false;
-
-  }
+ 
 
   @Override
   public void addConstraints(List<IConstraint> constraints, boolean restoreConformity) {

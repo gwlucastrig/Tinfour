@@ -361,22 +361,6 @@ public interface IIncrementalTin {
   boolean isBootstrapped();
 
   /**
-   * This method is deprecated; please use the IIncrementalTinNavigator 
-   * implementation obtained from the getNavigator() method instead.
-   * <p>
-   * Determines whether the point is inside the convex polygon boundary
-   * of the TIN. If the TIN is not bootstrapped, this method will
-   * return a value of false.
-   *
-   * @param x The x coordinate of interest
-   * @param y THe y coordinate of interest
-   * @return true if the coordinates identify a point inside the
-   * boundary of the TIN; otherwise, false.
-   */
-  @Deprecated
-  boolean isPointInsideTin(double x, double y);
-
-  /**
    * Provides a diagnostic print out of the edges comprising the TIN.
    *
    * @param ps A valid print stream.
