@@ -71,8 +71,8 @@ not just lidar data, but the supporting breakline files (Shapefiles), multi-spec
 and project metadata (including Dewberry reports). Visit this excellent resource at
 [PAMAP Lidar Elevation Data](http://www.dcnr.state.pa.us/topogeo/pamap/lidar/index.htm "PAMAP Lidar Elevation Data").
 
-If you just want to download a single Lidar file and view it, we recommend
-[PAMAP Tile 4100133PAS](ftp://pamap.pasda.psu.edu/pamap_lidar/cycle1/LAS/South/2006/40000000/41001330PAS.zip "External reference to PAMAP FTP site").
+If you just want to download a single Lidar file and view it, we recommend PAMAP Tile 4100133PAS
+which can be found at ftp://pamap.pasda.psu.edu/pamap_lidar/cycle1/LAS/South/2006/40000000/41001330PAS.zip.
 At 36.7 megabytes, it isn't dainty, but it does contain interesting land features and sufficient
 detail to exercise the major functions of the viewer.
 
