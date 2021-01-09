@@ -116,12 +116,12 @@ final public class LogoCDT {
     //  as a single shape, we wish to be able to assign individual colors
     //  to each character.  So we loop through one-character-at-a-time.
     //  The Java TextLayout does have provision for computing the spacing
-    //  for blank characters, so we use the spacing for a period as an 
+    //  for blank characters, so we use the spacing for a period as an
     //  alternative to the getVisibleAdvance().
 
     List<IConstraint> pList = new ArrayList<>();
     FontRenderContext frc = new FontRenderContext(null, true, true);
-    Font font = new Font("Arial Black", Font.BOLD, 72);
+    Font font = new Font("Arial Black", Font.PLAIN, 72);
 
     // compute a color adjustment factor based on the number of characters.
     double deltaHue;

@@ -6,15 +6,13 @@ Many, but not all, of the operations depend on the
 Tinfour Core packages. 
 
 
-
 Geographically Weighted Regression
 Geographically Weighted Regression would more properly be named
 "Geometrically Weighted Regression" since it is not intrinsically
 related to Geographic applications.  It's a regression technique that
 weights samples differently based on their distance from the
 query point. This is an experimental module and subject to change in the future.
- 
-	
+
 Dependencies
   This package introduces a dependency to the Apache Commons Math library.
 Although I have a great deal of respect for the Apache library, it 

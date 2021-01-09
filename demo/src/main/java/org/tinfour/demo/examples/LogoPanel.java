@@ -148,15 +148,11 @@ class LogoPanel extends JPanel {
     final Line2D l2d = new Line2D.Double();
 
     g2d.setStroke(new BasicStroke(1.0f, BasicStroke.CAP_BUTT, BasicStroke.JOIN_BEVEL));
-    List<IQuadEdge> edges = tin.getEdges();
     List<IConstraint> constraints = tin.getConstraints();
 
     // Step 1, draw all edges in the TIN in a uniform color
     g2d.setColor(Color.lightGray);
-    for (IQuadEdge e : edges) {
-      if (e.getB() == null) {
-        continue; // ghost edge
-      }
+    for (IQuadEdge e : tin.edges()) {
       mapEdge(e, af, p0, p1, l2d);
       g2d.draw(l2d);
     }
@@ -170,14 +166,14 @@ class LogoPanel extends JPanel {
     af = new AffineTransform(scale, 0, 0, -scale, xOffset, yOffset);
 
     g2d.setColor(Color.lightGray);
-    for (IQuadEdge e : edges) {
+    for (IQuadEdge e : tin.edges()) {
       if (e.isConstrainedRegionInterior()) {
         mapEdge(e, af, p0, p1, l2d);
         g2d.draw(l2d);
       }
     }
     g2d.setColor(Color.black);
-    for (IQuadEdge e : edges) {
+    for (IQuadEdge e : tin.edges()) {
       if (e.isConstrainedRegionBorder()) {
         mapEdge(e, af, p0, p1, l2d);
         g2d.draw(l2d);
@@ -185,11 +181,11 @@ class LogoPanel extends JPanel {
     }
 
     // Step 3 -- Loop on constraints.  Use the TriangleCollector
-    //           to get the triangles for the constraint.  
+    //           to get the triangles for the constraint.
     //           If a character includes a hole, the hole polygon will
     //           be oriented in a clockwise order.  All the triangles
     //           associated with the hole will be to its exterior.
-    //           These could be plotted if we chose to do so, but they 
+    //           These could be plotted if we chose to do so, but they
     //           would be the same triangles as the ones created by the
     //           containing polygon.  So we check the polygon getArea() method.
     //           If it returns a negative value, we skip the polygon.
@@ -210,8 +206,8 @@ class LogoPanel extends JPanel {
       Object obj = constraint.getApplicationData();
       g2d.setColor((Color) obj);
       TriangleCollector.visitTrianglesForConstrainedRegion(
-              constraint, 
-              new Consumer<Vertex[]>() 
+              constraint,
+              new Consumer<Vertex[]>()
       {
         @Override
         public void accept(final Vertex[] triangle) {
@@ -228,9 +224,9 @@ class LogoPanel extends JPanel {
           path.lineTo(p2.getX(), p2.getY());
           path.closePath();
 
-          // a quirk of most graphics packages is that we 
+          // a quirk of most graphics packages is that we
           // have to call g2d.draw(path) to ensure that all triangles covered
-          // all pixels.   
+          // all pixels.
           g2d.fill(path);
           g2d.draw(path);
 
@@ -245,7 +241,7 @@ class LogoPanel extends JPanel {
     // result takes advantage of Java's rendering logic and produces a more
     // pleasing line.
     g2d.setColor(new Color(128, 128, 128, 128));
-    for (IQuadEdge e : edges) {
+    for (IQuadEdge e : tin.edges()) {
       if (e.isConstrainedRegionInterior()) {
         mapEdge(e, af, p0, p1, l2d);
         g2d.draw(l2d);

@@ -115,23 +115,19 @@ More hints and background information on configuring Tinfour for use in an IDE a
 [Tinfour Builds and Dependencies](https://github.com/gwlucastrig/Tinfour/wiki/Tinfour-Builds-and-Dependencies).
  
 ### Current Work ###
-The most recent addition to the Tinfour package is support for Voronoi Diagrams.
-We've also added a new article on [Natural Neighbor Interpolation](https://github.com/gwlucastrig/Tinfour/wiki/Introduction-to-Natural-Neighbor-Interpolation)
-to our wiki.
+Development work on the Constrained Conforming Delaunay Triangulation is now complete.
+ 
+Development work for the next release of Tinfour will focus on the introduction of Delaunay Refinement.
+Delaunay Refinement is a technique for improving the quality of the triangles
+formed by a Delaunay Triangulation through the introduction of synthetic vertices
+at well-chosen positions. Refinement techniques are particularly useful in areas near
+the boundaries of constraints or near the permimeter of a triangulation. These
+areas are often prone to the formation of "skinny" triangles (triangles with two small
+angles and one very large angle). 
 
-The current focus of Tinfour development is polishing aspects
-of the Constrained Delaunay Triangulation (CDT) implementation. The CDT
-is a technique for representing discontinuities in a Triangulated Irregular Network.
-For example, geographic applications often need a way to represent "breaklines" -- features including
-rivers, roads, coastlines and escarpments -- which mark a sudden change in
-the local slope or terrain. Conventional Delaunay Triangulations
-have a limited ability to treat boundaries where the surface undergoes a
-nearly instantaneous change.  By introducing linear and polygon features to
-the construction of a TIN, the Constrained Delaunay Triangulation provides
-an effective way of representing such features. For an illustrated discussion
-of why CDT's are important, see the Tinfour wiki page titled
-[About the Constrained Delaunay Triangulation](https://github.com/gwlucastrig/Tinfour/wiki/About-the-Constrained-Delaunay-Triangulation "About the Constrained Delaunay Triangulation")
-
+Currently, we are investigating the use of Ruppert's Algorithm as a refinement technique, though other
+refine techniques do exist (such as Chew's Second Delaunay Refinement Algorithm).
+ 
 For more detail about the Tinfour project development plans, see the
 [Tinfour Project Status and Roadmap](https://github.com/gwlucastrig/Tinfour/wiki/Tinfour-Project-Roadmap) page.
  
