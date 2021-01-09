@@ -7,7 +7,7 @@ High-Performance 2D Delaunay Triangulation and Related Utilities Written in Java
 >
 > The Tinfour compiled binary files (Jar files) are available at
 > [Sonatype's Maven Central Repository](https://search.maven.org/search?q=Tinfour)
-> or the [Maven Central Repository](https://mvnrepository.com/repos/central)
+> or the [Maven Central Repository](https://mvnrepository.com/search?q=tinfour)
 
 ### Delaunay Triangulation ###
 The Delaunay Triangulation defines an optimal form for organizing unstructured or semi-random
