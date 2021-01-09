@@ -297,12 +297,8 @@ public final class SemiVirtualEdge implements IQuadEdge {
     return getEdgeForIndex(index & MASK_LOW_BIT_CLEAR);
   }
 
-  /**
-   * Gets the index of the base of the current edge. The index value for a base
-   * is always an even number.
-   *
-   * @return an even integer value
-   */
+
+  @Override
   public int getBaseIndex() {
     return index & MASK_LOW_BIT_CLEAR;
   }
@@ -632,8 +628,8 @@ public final class SemiVirtualEdge implements IQuadEdge {
     int cMask = 1 << cBit;
     return (c[cIndex] & cMask) != 0;
   }
-  
-  
+
+
   public void setLine2D(AffineTransform transform, Line2D l2d) {
     Vertex A = getA();
     Vertex B = getB();

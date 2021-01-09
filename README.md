@@ -57,14 +57,14 @@ for all the various Tinfour applications.
 To run the Tinfour software, you must have Java installed
 on your system.  If you do not have Java installed on your computer, you may
 download an installer for free from 
-[Oracle Corporation, Java Downloads](https://java.com/en/download/ "Java downloads from Oracle")
+[Oracle Corporation, Java Downloads](https://java.com/en/download/ "Java downloads from Oracle").
 
 ### Sources of Data ###
 Lidar is a system for collecting surface elevation using laser measuring devices
 mounted on low flying aircraft. It's pretty amazing technology.
-There are some excellent sources of Lidar data to be had for free, you might start at 
+There are excellent sources of Lidar data to be had for free, you might start at 
 [Free LiDAR Data Sources](http://gisgeography.com/top-6-free-lidar-data-sources/ "Gis Geography")
-or [USGS Center for LIDAR Information](http://lidar.cr.usgs.gov/ "USGS").
+or the [USGS 3D Elevation Program](https://www.usgs.gov/core-science-systems/ngp/3dep/data-tools "USGS 3D Elevation Program Data and Tools").
 The Commonwealth of Pennsylvania was one of the first states to collect and post
 a comprehensive survey of lidar data, and they did the job right... Their site includes 
 not just lidar data, but the supporting breakline files (Shapefiles), multi-spectral imagery,
@@ -73,7 +73,7 @@ and project metadata (including Dewberry reports). Visit this excellent resource
 
 If you just want to download a single Lidar file and view it, we recommend PAMAP Tile 4100133PAS
 which can be found at ftp://pamap.pasda.psu.edu/pamap_lidar/cycle1/LAS/South/2006/40000000/41001330PAS.zip.
-At 36.7 megabytes, it isn't dainty, but it does contain interesting land features and sufficient
+At 36.7 megabytes, the PAMAP file isn't dainty. But it does contain interesting land features and sufficient
 detail to exercise the major functions of the viewer.
 
 ### A short demo ###
