@@ -53,7 +53,7 @@
  *
  *  So this class contains the following fundamental member elements
  *  all of which are 4 bytes in JVMs where references are compressed:
- *      
+ *
  *      reference to the class        (4)
  *      reference to the dual         (4)
  *      reference to the vertex       (4)
@@ -74,7 +74,7 @@
  *
  *      flags                        (8)
  *         total                      32
- *      
+ *
  *
  * The index element of this class is used to assign a unique integer value
  * to each edge created in the TIN-building process or other applications.
@@ -343,6 +343,11 @@ public class QuadEdge implements IQuadEdge {
     return index;
   }
 
+  @Override
+  public int getBaseIndex(){
+    return index;
+  }
+
   /**
    * Sets the index value for this edge. Because this index value is
    * used by edge-pool implementations and for other data management activities,
@@ -514,7 +519,7 @@ public class QuadEdge implements IQuadEdge {
   public boolean isConstrainedRegionMember() {
     return dual.isConstrainedRegionMember();
   }
-  
+
   @Override
   public boolean isConstrainedRegionInterior() {
     return dual.isConstrainedRegionInterior();
@@ -524,18 +529,18 @@ public class QuadEdge implements IQuadEdge {
   public boolean isConstrainedRegionBorder() {
     return dual.isConstrainedRegionBorder();
   }
-  
-  
+
+
   @Override
   public boolean isConstraintLineMember(){
     return dual.isConstraintLineMember();
   }
- 
+
   @Override
   public void setConstraintLineMemberFlag(){
      dual.setConstraintLineMemberFlag();
   }
-  
+
 
   @Override
   public void setConstrainedRegionBorderFlag() {
@@ -546,18 +551,18 @@ public class QuadEdge implements IQuadEdge {
   public void setConstrainedRegionInteriorFlag() {
     dual.setConstrainedRegionInteriorFlag();
   }
-  
+
   @Override
   public void setSynthetic(boolean status){
     dual.setSynthetic(status);
   }
-  
+
   @Override
   public boolean isSynthetic(){
     return dual.isSynthetic();
   }
-  
-  
+
+
   @Override
   public Iterable<IQuadEdge> pinwheel() {
     return new QuadEdgePinwheel(this);

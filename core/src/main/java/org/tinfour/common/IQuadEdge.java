@@ -56,7 +56,11 @@ public interface IQuadEdge {
 
   /**
    * Gets the reference to the side-zero edge of the pair.
-   * @return a link to the side-zero edge of the pair.
+   * <p>
+   * From the perspective of application code, the Tinfour implementations
+   * of the two elements associated with a bi-directional edge are symmetrical.
+   * Neither side of an edge is more significant than the other.
+   * @return a reference to the side-zero edge of the pair.
    */
   IQuadEdge getBaseReference();
 
@@ -82,17 +86,42 @@ public interface IQuadEdge {
 
   /**
    * Gets the index value for this edge. In general, the index value is
-   * intended for memory management and edge pools.  Thus, it may not
-   * be set by application code. In some applications
-   * involving edge-traversal operations, it is used to maintain a bitmap
-   * of visited edges.
-   * <p>When an edge is allocated, it is set with an arbitrary index value.
+   * intended for memory management and edge pools.  So while application
+   * code may read index values, it is not generally enabled to set them.
+   * <p>
+   * In Tinfour implementations, edges are bi-directional. In effect,
+   * the edge is implemented as a pair of unidirectional elements.
+   * Each element is assigned a separate index.
+   * <p>
+   * One common use for the index code by applications is to main a record
+   * of processing performed using edge-traversal operations. For example,
+   * some applications use the index to maintain a bitmap of visited edges
+   * when performing surface analysis.
+   * <p>
+   * When an edge is allocated, it is set with an arbitrary index value.
    * This value will not change while the edge remains allocated by and
    * edge-pool instance. As soon as the edge is released, it is likely
    * to have its index value reassigned.
-   * @return a positive integer value 
+   * @return a positive integer value
    */
   int getIndex();
+
+  /**
+   * Gets the index of the "base" side of a bi-directional edge.
+   * In Tinfour implementations, edges are bi-directional. In effect,
+   * the edge is implemented as a pair of unidirectional elements.
+   * Each element is assigned a separate index. The first element in the
+   * pair is designated as the "base" and is assigned an even-valued index.
+   * Its dual is assigned a value one greater than the base index.
+   * This method always returns an even value.
+   * <p>
+   * This method can be useful in cases where an application needs to track
+   * a complete edge without regard to which side of the edge is being
+   * considered.
+   *
+   * @return a positive, even value.
+   */
+  int getBaseIndex();
 
     /**
      * Indicates which side of an edge a particular IQuadEdge instance is
@@ -178,7 +207,7 @@ public interface IQuadEdge {
    * @return true if the edge is a member of an region; otherwise false.
    */
   boolean isConstrainedRegionMember();
-  
+
   /**
    * Indicates whether the edge is a member of a constraint line, In some
    * cases, a constraint line member edge may lie within a constrained region
@@ -192,19 +221,19 @@ public interface IQuadEdge {
    * Sets the constraint-line member flag for the edge to true.
    */
   void setConstraintLineMemberFlag();
-  
+
     /**
    * Indicates whether the edge is in the interior of a constrained region.
-   * Both sides of the edge lie within the interior of the region.  
+   * Both sides of the edge lie within the interior of the region.
    * All points along the edge will lie within the interior of the region
-   * with the possible exception of the endpoints. The endpoints may 
+   * with the possible exception of the endpoints. The endpoints may
    * lie on the border of the region.  An interior edge for a constrained
    * region is not a constrained edge.  Interior edges are also classified
    * as "member" edges of a constrained region.
    * @return true if the edge is in the interior of an region; otherwise false.
    */
   boolean isConstrainedRegionInterior();
- 
+
   /**
    * Indicates whether an edge represents the border of a constrained
    * region. Border edges will always be constrained.  Border edges are also
@@ -223,7 +252,7 @@ public interface IQuadEdge {
    * Sets the constrained region membership flag for the edge to true.
    */
   void setConstrainedRegionInteriorFlag( );
-  
+
   /**
    * Sets the synthetic flag for the edge. Synthetic edges are
    * those that do not arise naturally from the TIN-building logic but
@@ -231,7 +260,7 @@ public interface IQuadEdge {
    * @param status true if the edge is synthetic; otherwise, false.
    */
   void setSynthetic(boolean status);
-  
+
   /**
    * Indicates whether the synthetic flag is set for the edge.
    * @return true if the edge is synthetic; otherwise, false.
@@ -248,10 +277,10 @@ public interface IQuadEdge {
    * @return a valid Iterable.
    */
   Iterable<IQuadEdge>pinwheel();
-  
-  
+
+
   /**
-   * Provides a convenience method for rendering edges by setting the 
+   * Provides a convenience method for rendering edges by setting the
    * Line2D argument with the transformed coordinates of the edge.
    * The affine transform is used to map vertex A and B of the edge
    * to the specified coordinate system. The transformed coordinates
