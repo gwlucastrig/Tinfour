@@ -99,11 +99,11 @@ class LogoPanel extends JPanel {
     super.paintComponent(g);
     Graphics2D g2d = (Graphics2D) g;
     g2d.setRenderingHint(
-            RenderingHints.KEY_ANTIALIASING,
-            RenderingHints.VALUE_ANTIALIAS_ON);
+      RenderingHints.KEY_ANTIALIASING,
+      RenderingHints.VALUE_ANTIALIAS_ON);
     g2d.setRenderingHint(
-            RenderingHints.KEY_TEXT_ANTIALIASING,
-            RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
+      RenderingHints.KEY_TEXT_ANTIALIASING,
+      RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
 
     // set up an AffineTransform to map the TIN to the rendering area:
     //    a.  The TIN should be scaled uniformly so that its
@@ -115,32 +115,46 @@ class LogoPanel extends JPanel {
     g.setColor(Color.white);
     g.fillRect(0, 0, w, h);
 
-    // This particular application is going to draw the TIN twice,
-    // one image above the other.  To do that, we adjust the h value to
-    // half its height, fit the TIN to that space, and then adjust it back.
-    h = h / 2;  // half high
+    // This particular application is going to draw the TIN three times,
+    // with the images stacked vertically.  To ensure uniform spacing
+    // between TINs, we allow a 1.1 vertical factor so that the spacing
+    // between rows is 0.1 times the hight of the figure.
     Rectangle2D bounds = tin.getBounds();
+    double bH = (2 * 0.1 + 3) * bounds.getHeight();
+    double bW = bounds.getWidth();
+
     // compare aspect ratios of the data bounds and panel to determine
-    // how to scale the data
+    // how to scale the data. Also, allow 10 pixels of white space on all sides
+    w -= 2 * 10;
+    h -= 2 * 10;
     double scale;
-    double aB = bounds.getWidth() / bounds.getHeight();
+    double aB = bW / bH;
     double aP = (double) w / (double) h;
-    if (aP / aB > 1) {
-      // the panel is fatter than the bounds
+    double aspectRatio = aP / aB;
+    if (aspectRatio > 1) {
+      // the panel is fatter than the adjusted bounds
       // the height of the panel is the limiting factor
-      scale = h / (bounds.getHeight() * oversize);
+      scale = h / bH;
     } else {
       // the panel is skinnier than the bounds
       // the width of the bounds is the limiting factor
-      scale = w / (bounds.getWidth() * oversize);
+      scale = w / bounds.getWidth();
     }
 
-    // find the offset by scaling the center of the bounds and
-    // computing how far off from the pixel center it ends up
-    int xOffset = (int) ((w / 2.0 - scale * bounds.getCenterX()));
-    int yOffset = (int) ((h / 2.0 + scale * bounds.getCenterY()));
+    // compute the size of a single entry
+    double sHeight = bounds.getHeight() * scale;
+    double sWidth = bW * scale;
+
+    // Compute the X offset for the AffineTransformation by centering the
+    // overall image horizontally.  The Y offset is a little more
+    // complicated because there are three rows of rendering and
+    // the initial offset is set for the top of the first row.
+    // This calculation will center the image set vertically.
+    double yOffset = getHeight() / 2 + bounds.getCenterY() * scale - sHeight * 1.1;
+    double xOffset = (getWidth() - sWidth) / 2;
+
     AffineTransform af
-            = new AffineTransform(scale, 0, 0, -scale, xOffset, yOffset);
+      = new AffineTransform(scale, 0, 0, -scale, xOffset, yOffset);
 
     final Point2D p0 = new Point2D.Double();
     final Point2D p1 = new Point2D.Double();
@@ -162,7 +176,7 @@ class LogoPanel extends JPanel {
     //          are drawn in light gray.  For aesthetic reasons,  we want
     //          the border edges to be drawn on top of the interior edges,
     //          so we conduct this render operation in two passes.
-    yOffset += 1.15 * scale * bounds.getHeight();
+    yOffset += 1.1 * sHeight;
     af = new AffineTransform(scale, 0, 0, -scale, xOffset, yOffset);
 
     g2d.setColor(Color.lightGray);
@@ -189,7 +203,7 @@ class LogoPanel extends JPanel {
     //           would be the same triangles as the ones created by the
     //           containing polygon.  So we check the polygon getArea() method.
     //           If it returns a negative value, we skip the polygon.
-    yOffset += 1.15 * scale * bounds.getHeight();
+    yOffset += 1.1 * sHeight;
     af = new AffineTransform(scale, 0, 0, -scale, xOffset, yOffset);
 
     final AffineTransform at = af; // Java needs this to be final
@@ -206,9 +220,8 @@ class LogoPanel extends JPanel {
       Object obj = constraint.getApplicationData();
       g2d.setColor((Color) obj);
       TriangleCollector.visitTrianglesForConstrainedRegion(
-              constraint,
-              new Consumer<Vertex[]>()
-      {
+        constraint,
+        new Consumer<Vertex[]>() {
         @Override
         public void accept(final Vertex[] triangle) {
           p0.setLocation(triangle[0].x, triangle[0].y);
@@ -240,7 +253,7 @@ class LogoPanel extends JPanel {
     // from the constraint itself and draw it in a continuous path.  The
     // result takes advantage of Java's rendering logic and produces a more
     // pleasing line.
-    g2d.setColor(new Color(128, 128, 128, 128));
+    g2d.setColor(new Color(64, 64, 64, 128));
     for (IQuadEdge e : tin.edges()) {
       if (e.isConstrainedRegionInterior()) {
         mapEdge(e, af, p0, p1, l2d);
@@ -269,10 +282,10 @@ class LogoPanel extends JPanel {
     try {
       // Set System L&F
       UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
-    } catch (ClassNotFoundException |
-            InstantiationException |
-            IllegalAccessException |
-            UnsupportedLookAndFeelException ex) {
+    } catch (ClassNotFoundException
+      | InstantiationException
+      | IllegalAccessException
+      | UnsupportedLookAndFeelException ex) {
       ex.printStackTrace(System.err);
     }
 

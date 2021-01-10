@@ -15,7 +15,7 @@
  * ---------------------------------------------------------------------
  */
 
-/*
+ /*
  * -----------------------------------------------------------------------
  *
  * Revision History:
@@ -27,7 +27,7 @@
  *
  * -----------------------------------------------------------------------
  */
-package org.tinfour.test.performance;
+package org.tinfour.demo.performance;
 
 import java.io.File;
 import java.io.IOException;
@@ -45,9 +45,6 @@ import org.tinfour.common.Vertex;
 import org.tinfour.demo.utils.IDevelopmentTest;
 import org.tinfour.demo.utils.TestOptions;
 import org.tinfour.demo.utils.VertexLoader;
-import org.tinfour.gis.las.ILasRecordFilter;
-import org.tinfour.gis.las.LasPoint;
- 
 
 /**
  * Performs time test on randomly selected subsets of the samples from an input
@@ -56,53 +53,16 @@ import org.tinfour.gis.las.LasPoint;
  */
 public class TimeDueToSampleSize implements IDevelopmentTest {
 
-  private static class RecordFilter implements ILasRecordFilter {
-
-    int classification;
-    double thinningFactor;
-    Random random = new Random();
-
-    /**
-     * Implement a thinning filter.
-     *
-     * @param classification only accept points of the designated
-     * classification (or -1 for wildcards).
-     * @param thinningFactor the fraction of the sample points to accept
-     * (1.0 to include all sample points).
-     */
-    public RecordFilter(int classification, double thinningFactor) {
-      this.classification = classification;
-      this.thinningFactor = thinningFactor;
-    }
-
-    @Override
-    public boolean accept(LasPoint record) {
-      // on the theory that withheld records are relatively uncommon
-      // test on classification first
-      if (record.withheld) {
-        return false;
-      }
-      if (classification >= 0 && record.classification != classification) {
-        return false;
-      }
-      if (thinningFactor == 1) {
-        return true;
-      }
-      double test = random.nextDouble();
-      return test < thinningFactor;
-
-    }
- 
-  }
-
   private static class Result implements Comparable<Result> {
 
     double timeMS;
     long nVertices;
+    long timeOfExecution;
 
     Result(double timeMS, long nVertices) {
       this.timeMS = timeMS;
       this.nVertices = nVertices;
+      this.timeOfExecution = System.currentTimeMillis();
 
     }
 
@@ -136,7 +96,7 @@ public class TimeDueToSampleSize implements IDevelopmentTest {
 
   }
 
-private static final String[] usage = {
+  private static final String[] usage = {
     "usage: TimeDueToSampleSize",
     "   Mandatory Arguments:",
     "       -in <valid LAS file or sample-point text file>",
@@ -163,21 +123,20 @@ private static final String[] usage = {
     "                           processed by each iteration."
   };
 
-
   @Override
   public void runTest(PrintStream ps, String[] args) throws IOException {
     if (args.length == 0) {
-      for(String s: usage){
-          ps.println(s);
+      for (String s : usage) {
+        ps.println(s);
       }
       return;
     }
     TestOptions options = new TestOptions();
     boolean[] recognized = options.argumentScan(args);
     File target = options.getInputFile();
-    if(target==null){
+    if (target == null) {
       ps.println("Missing valid input target");
-      return;     
+      return;
     }
 
     Class<?> tinClass = options.getTinClass();
@@ -188,7 +147,6 @@ private static final String[] usage = {
         "Random size " + randomSize
         + " is not in valid range >0 to 1.0");
     }
-
 
     options.checkForUnrecognizedArgument(args, recognized);
 
@@ -204,11 +162,11 @@ private static final String[] usage = {
     VertexLoader loader = new VertexLoader();
     loader.setPreSortEnabed(true);
     masterList = loader.readInputFile(options);
-      int nMasterVertices = masterList.size();
+    int nMasterVertices = masterList.size();
 
     Date date = new Date();
-    SimpleDateFormat sdFormat =
-      new SimpleDateFormat("dd MMM yyyy HH:mm", Locale.getDefault());
+    SimpleDateFormat sdFormat
+      = new SimpleDateFormat("dd MMM yyyy HH:mm", Locale.getDefault());
     sdFormat.setTimeZone(new SimpleTimeZone(0, "UTC"));
     String dateString = sdFormat.format(date);
     ps.println("Date of test:     " + dateString);
@@ -226,18 +184,15 @@ private static final String[] usage = {
     ps.println("Max Samples:      " + nMasterVertices);
     ps.println("");
 
-
-
     // The pre-test.  We load the Tin a few of times to make sure the
     // class loader and JIT have completed their initialization.
-  
     for (int iPretest = 0; iPretest < 3; iPretest++) {
-        ps.println("Running Pre-Test "+iPretest);
+      ps.println("Running Pre-Test " + iPretest);
       IIncrementalTin tin = options.getNewInstanceOfTestTin();
       if (tin == null) {
         return;
       }
-      tin.add(masterList,  null);
+      tin.add(masterList, null);
       tin.dispose();
       getUsedMemory();
     }
@@ -253,17 +208,20 @@ private static final String[] usage = {
       "   n_vertices,   m_vertices, time_ms,    used_mb,     total_mb,  used_bytes");
     for (int iThin = 1; iThin <= nTests; iThin++) {
       mem0 = getUsedMemory();
-      double thinningFactor = 1.0;
+      double thinningFactor = random.nextDouble();
       if (randomSize != null && randomSize > 0) {
-        thinningFactor = randomSize * random.nextDouble();
+        thinningFactor *= randomSize;
       }
-      if(thinningFactor<0.025){
+      if (thinningFactor < 0.025) {
         thinningFactor = 0.025;
       }
-      List<Vertex>vertexList = new ArrayList<>();
-      int skip = (int)Math.ceil(1.0/thinningFactor);
-      for(int i=0; i<nMasterVertices; i+=skip){
-        vertexList.add(masterList.get(i));
+
+      List<Vertex> vertexList = new ArrayList<>();
+      for (int i = 0; i < nMasterVertices; i++) {
+        double test = random.nextDouble();
+        if (test <= thinningFactor) {
+          vertexList.add(masterList.get(i));
+        }
       }
       int nVertices = vertexList.size();
       IIncrementalTin tin = options.getNewInstanceOfTestTin();
