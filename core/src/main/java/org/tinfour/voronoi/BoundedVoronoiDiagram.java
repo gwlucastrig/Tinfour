@@ -21,7 +21,7 @@
  * Revision History:
  * Date Name Description
  * ------   --------- -------------------------------------------------
- * 07/2018  G. Lucas  Initial implementation 
+ * 07/2018  G. Lucas  Initial implementation
  * 08/2018  G. Lucas  Added vertex based constructor and build options
  * 09/2018  G. Lucas  Fixed bugs with infinite rays, refined concept of operations
  *
@@ -36,9 +36,9 @@
  * case for an input data set with a large number of sample points
  * (except for features developed at the perimeter edges, all edges will
  * be interior).
- *   The clipping performed here is also complicated by the fact that 
- * a true Voronoi Diagram covers the entire plane (is unbounded) and 
- * so some of the boundary divisions are infinite rays rather than 
+ *   The clipping performed here is also complicated by the fact that
+ * a true Voronoi Diagram covers the entire plane (is unbounded) and
+ * so some of the boundary divisions are infinite rays rather than
  * finite segments.
  *
  * -----------------------------------------------------------------------
@@ -52,8 +52,10 @@ import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
 import org.tinfour.common.Circumcircle;
+import org.tinfour.common.GeometricOperations;
 import org.tinfour.common.IIncrementalTin;
 import org.tinfour.common.IQuadEdge;
+import org.tinfour.common.Thresholds;
 import org.tinfour.common.Vertex;
 import org.tinfour.edge.EdgePool;
 import org.tinfour.edge.QuadEdge;
@@ -67,7 +69,7 @@ import org.tinfour.utils.VertexColorizerKempe6;
  * covers only a finite domain on the coordinate plane (unlike a true Voronoi
  * Diagram, which covers an infinite domain).
  * <p>
- * <strong>This class is under development and is subject to minor 
+ * <strong>This class is under development and is subject to minor
  * changes in its API and behavior.</strong>
  */
 public class BoundedVoronoiDiagram {
@@ -94,12 +96,15 @@ public class BoundedVoronoiDiagram {
 
   private double maxRadius = -1;
 
+  private final GeometricOperations geoOp;
+
   private BoundedVoronoiDiagram() {
     // a private constructor to deter applications from
     // invoking the default constructor
     sampleBounds = null;
     bounds = null;
     edgePool = null;
+    geoOp = null;
   }
 
   /**
@@ -153,6 +158,9 @@ public class BoundedVoronoiDiagram {
             sampleBounds.getWidth(),
             sampleBounds.getHeight());
 
+    Thresholds thresholds = tin.getThresholds();
+    geoOp = new GeometricOperations(thresholds);
+
     edgePool = new EdgePool();
 
     BoundedVoronoiBuildOptions pOptions = options;
@@ -170,7 +178,7 @@ public class BoundedVoronoiDiagram {
 
   /**
    * Constructs an instance of a Voronoi Diagram that corresponds to the input
-   * Delaunay Triangulation. 
+   * Delaunay Triangulation.
    *
    * @param delaunayTriangulation a valid instance of a Delaunay Triangulation
    * implementation.
@@ -185,7 +193,7 @@ public class BoundedVoronoiDiagram {
       throw new IllegalArgumentException(
               "Input TIN is not bootstrapped (populated)");
     }
- 
+
     this.bounds = new Rectangle2D.Double(
             sampleBounds.getX(),
             sampleBounds.getY(),
@@ -193,6 +201,8 @@ public class BoundedVoronoiDiagram {
             sampleBounds.getHeight());
 
     edgePool = new EdgePool();
+    Thresholds thresholds = delaunayTriangulation.getThresholds();
+    geoOp = new GeometricOperations(thresholds);
     BoundedVoronoiBuildOptions pOptions = new BoundedVoronoiBuildOptions();
     buildStructure(delaunayTriangulation, pOptions);
   }
@@ -200,7 +210,7 @@ public class BoundedVoronoiDiagram {
   private void buildPart(IQuadEdge e, Vertex[] center, IQuadEdge[] part) {
     // the parts are built so that the part associated with an edge index
     // is a segment from outside the triangle to its circumcircle center
-    // in cases where the center is inside the triangle, this is 
+    // in cases where the center is inside the triangle, this is
     // essentially "outside to inside", though that is often not true.
     IQuadEdge d = e.getDual();
     int eIndex = e.getIndex();
@@ -212,7 +222,7 @@ public class BoundedVoronoiDiagram {
       return;
     }
 
-    // The Cohen-Sutherland line-clipping algorithm allows us to 
+    // The Cohen-Sutherland line-clipping algorithm allows us to
     // trivially reject an edge that is completely outside the bounds
     // and one that is completely inside the bounds.
     int outcode0 = v0.getAuxiliaryIndex();
@@ -221,7 +231,7 @@ public class BoundedVoronoiDiagram {
     if ((outcode0&outcode1)!=0) {
       return;
     }
-    
+
     if ((outcode0|outcode1)==0) {
       // both vertices are entirely within the bounded area.
       // the edge can be accepted trivially
@@ -230,7 +240,7 @@ public class BoundedVoronoiDiagram {
       part[dIndex] = n.getDual();
       return;
     }
-    
+
     // the edge intersects at least one and potentially two boundaries.
     IQuadEdge n = liangBarsky(v0, v1);
     if (n != null) {
@@ -267,7 +277,7 @@ public class BoundedVoronoiDiagram {
           q = xmax - x0;
           break;
         case 2:
-          // top 
+          // top
           p = yDelta;
           q = ymax - y0;
           break;
@@ -424,11 +434,11 @@ public class BoundedVoronoiDiagram {
     // construct and edge from the outside to the inside.
     //   the edge we construct is based on an infinite ray outward
     // from the circumcircle and perpendicular to the perimeter edge.
-    // because we will be constructing on the RIGHT side of the 
+    // because we will be constructing on the RIGHT side of the
     // perimeter edge rather than the left, the perpendicular vector
-    // for the ray will be (eY, -eX).   Because we cannot handle 
-    // infinite rays, we need to clip the ray to form a segment 
-    // running from the circumcircle center to the bounds.  it is 
+    // for the ray will be (eY, -eX).   Because we cannot handle
+    // infinite rays, we need to clip the ray to form a segment
+    // running from the circumcircle center to the bounds.  it is
     // possible that the ray could intersect two edges (a horizontal edge
     // and a vertical edge), so we want to find the first intersection
     // the one closest to the center.
@@ -474,7 +484,7 @@ public class BoundedVoronoiDiagram {
       t = (y1 - cY) / uY;
       x = t * uX + cX;
       if (t >= 0 && x0 <= x && x <= x1) {
-        z = 3 - (x - x0) / (x1 - x0); // top side, descending, z in [2,3] 
+        z = 3 - (x - x0) / (x1 - x0); // top side, descending, z in [2,3]
         Vertex v = new PerimeterVertex(x, y1, z, -vCenter.getIndex());
         nBuild = insertRayVertex(nBuild, vBuild, tBuild, t, v);
       }
@@ -567,7 +577,8 @@ public class BoundedVoronoiDiagram {
       IQuadEdge r = e.getReverse();
       Vertex C = e.getForward().getB();
       if (C != null) {
-        if (!cCircle.compute(A, B, C)) {
+        if(!geoOp.circumcircle(A, B, C, cCircle)){
+          geoOp.circumcircle(A, B, C, cCircle);
           throw new IllegalStateException(
                   "Internal error, triangle does not yield circumcircle");
         }
@@ -582,7 +593,7 @@ public class BoundedVoronoiDiagram {
         } else {
           v = new PerimeterVertex(x, y, z, mindex(e, f, r));
         }
-        
+
         centers[e.getIndex()] = v;
         centers[f.getIndex()] = v;
         centers[r.getIndex()] = v;
@@ -600,9 +611,9 @@ public class BoundedVoronoiDiagram {
   private void buildStructure(
           IIncrementalTin tin,
           BoundedVoronoiBuildOptions pOptions) {
- 
 
-    // The visited array tracks which of the TIN edges were 
+
+    // The visited array tracks which of the TIN edges were
     // visited for various processes.  It is used more than once.
     // There should be one part for each non-ghost edge.   The part
     // array is indexed using the tin edge index so that
@@ -614,7 +625,7 @@ public class BoundedVoronoiDiagram {
     List<IQuadEdge> scratch = new ArrayList<>();
     List<IQuadEdge> perimeter = tin.getPerimeter();
     Circumcircle cCircle = new Circumcircle();
-    // build the circumcircle-center vertices 
+    // build the circumcircle-center vertices
     // also collect some information about the overall
     // bounds and edge length of the input TIN.
     Iterator<IQuadEdge> edgeIterator = tin.getEdgeIterator();
@@ -699,7 +710,7 @@ public class BoundedVoronoiDiagram {
     }
 
     // the first polygons we build are those that are anchored by a perimeter
-    // vertex.  This is the set of all the open polygons.   
+    // vertex.  This is the set of all the open polygons.
     // All other polygons are closed. So, as a diagnostic, we could check to
     // verify that all polygons at the end of this loop are open and all
     // polygons created by the next loop are closed.
@@ -791,7 +802,7 @@ public class BoundedVoronoiDiagram {
     }
 
     // construct new edges to thread a line for z0 to z1
-    // 
+    //
     // first, it is possible that z0 and z1 are nearly equal but not quite.
     // this could happen due to round-off in the clipping routine.
     // at this time, I have never observed this special case happening
@@ -799,8 +810,8 @@ public class BoundedVoronoiDiagram {
     double test = Math.abs(z0 - z1);
     if (test < 1.0e-9 || test > 4 - 1.0e-9) {
       // a simple link is all that's required
-      // TO DO: do we want to replace one of the vertices so that 
-      // they are identical?  But what happens in a reverse order 
+      // TO DO: do we want to replace one of the vertices so that
+      // they are identical?  But what happens in a reverse order
       // of traversal?
       scratch.add(q);
       prior.setForward(q);
@@ -810,13 +821,13 @@ public class BoundedVoronoiDiagram {
     // we need to thread v0 to v1.  If both lie on the same
     // border, then this action requires the construction of a synthetic
     // edge from v0 to v1.  But if the vertices lie on different borders,
-    // it will be necessary to construct joining lines that bend 
+    // it will be necessary to construct joining lines that bend
     // around the corners.
     //     the borders are numbered from 0 to 3 in the order
     // bottom, right, top, left.  The z coordinates indicate which
     // border the vertices lie on, with z being given as a fractional
-    // value. 
-    //  
+    // value.
+    //
     // TO DO: are variable names iLast, iFirst confusing? change them?
     int iLast = (int) z0;
     int iFirst = (int) z1;

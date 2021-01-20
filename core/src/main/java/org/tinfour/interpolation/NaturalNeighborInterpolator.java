@@ -47,6 +47,7 @@
  */
 package org.tinfour.interpolation;
 
+import java.io.PrintStream;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.List;
@@ -80,6 +81,12 @@ public class NaturalNeighborInterpolator implements IInterpolatorOverTin {
   private final VertexValuatorDefault defaultValuator = new VertexValuatorDefault();
 
   private double barycentricCoordinateDeviation;
+
+  // diagnostic counts
+  private long sumN;
+  private long sumSides;
+  private long nInCircle;
+  private long nInCircleExtended;
 
   /**
    * Construct an interpolator that operates on the specified TIN.
@@ -117,7 +124,7 @@ public class NaturalNeighborInterpolator implements IInterpolatorOverTin {
 
   /**
    * Used by an application to reset the state data within the interpolator
-   * when the content of the TIN may have changed. Reseting the state data
+   * when the content of the TIN may have changed. Resetting the state data
    * unnecessarily may result in a minor performance reduction when processing
    * a large number of interpolations, but is otherwise harmless.
    */
@@ -158,7 +165,6 @@ public class NaturalNeighborInterpolator implements IInterpolatorOverTin {
     // vertices often have very large coordinates (in the millions)
     // and that the products of pairs of such values would be large enough
     // to wash out the precision.
-
     IVertexValuator vq = valuator;
     if (vq == null) {
       vq = defaultValuator;
@@ -176,6 +182,8 @@ public class NaturalNeighborInterpolator implements IInterpolatorOverTin {
 
     }
 
+    sumN++;
+    sumSides+=eList.size();
     // The eList contains a series of edges definining the cavity
     // containing the polygon.
     double[] w = this.getBarycentricCoordinates(eList, x, y);
@@ -193,8 +201,6 @@ public class NaturalNeighborInterpolator implements IInterpolatorOverTin {
     return zSum;
 
   }
-
-
 
   /**
    * Gets the deviation of the computed equivalent of the input query (x,y)
@@ -328,6 +334,7 @@ public class NaturalNeighborInterpolator implements IInterpolatorOverTin {
         // just add the edge and continue.
         h = -1;
       } else {
+        nInCircle++;
         // test for the Delaunay inCircle criterion.
         // see notes about efficiency in the IncrementalTIN class.
         double a11 = n0.getA().x - x;
@@ -343,6 +350,7 @@ public class NaturalNeighborInterpolator implements IInterpolatorOverTin {
           + (a21 * a21 + a22 * a22) * (a31 * a12 - a11 * a32)
           + (a31 * a31 + a32 * a32) * (a11 * a22 - a21 * a12);
         if (-inCircleThreshold < h && h < inCircleThreshold) {
+          nInCircleExtended++;
           h = geoOp.inCircleQuadPrecision(
             n0.getA().x, n0.getA().y,
             n1.getA().x, n1.getA().y,
@@ -428,28 +436,6 @@ public class NaturalNeighborInterpolator implements IInterpolatorOverTin {
   }
 
   /**
-   * Gets a polygon consisting of edges connected to
-   * the specified edge (in effect providing the set of vertices
-   * connected to the starting vertex of the specified edge).
-   * The polygon is ordered in counterclockwise order.
-   *
-   * @param e the starting edge
-   *
-   * @return a valid list of edges (some of which may be
-   * perimeter or ghost edges).
-   */
-  public List<IQuadEdge> getConnectedPolygon(IQuadEdge e) {
-    List<IQuadEdge> eList = new ArrayList<>();
-
-    IQuadEdge s = e;
-    do {
-      eList.add(s.getForward());
-      s = s.getReverse().getDual();
-    } while (!s.equals(e));
-    return eList;
-  }
-
-  /**
    * Given a reference point inside a simple, but potentially non-convex
    * polygon, creates an array of barycentric coordinates for the point. The
    * coordinates are normalized, so that their sum is 1.0. This method
@@ -482,6 +468,8 @@ public class NaturalNeighborInterpolator implements IInterpolatorOverTin {
     Vertex a, b, c;
     Circumcircle c0 = new Circumcircle();
     Circumcircle c1 = new Circumcircle();
+    Circumcircle c2 = new Circumcircle();
+    Circumcircle c3 = new Circumcircle();
     IQuadEdge e0, e1, n, n1;
     double x0, y0, x1, y1, wThiessen, wXY, wDelta;
     double wSum = 0;
@@ -505,8 +493,21 @@ public class NaturalNeighborInterpolator implements IInterpolatorOverTin {
       x1 = (bx + cx) / 2;
       y1 = (by + cy) / 2;
 
-      c0.compute(ax, ay, bx, by, 0, 0);
-      c1.compute(bx, by, cx, cy, 0, 0);
+      // for the first edge processed, the code needs to initialize values
+      // for c0 and c3.  But after that, the code can reuse values from
+      // the previous calculation.
+      if (i0 == 0) {
+        geoOp.circumcircle(ax, ay, bx, by, 0, 0, c0);
+        Vertex nb = e0.getForward().getB();
+        geoOp.circumcircle(ax, ay, bx, by, nb.getX() - x, nb.getY() - y, c3);
+      } else {
+        c0.copy(c1);
+      }
+
+      geoOp.circumcircle(bx, by, cx, cy, 0, 0, c1);
+
+      // compute the reduced "component area" of the Theissen polygon
+      // constructed around point B, the second point of edge[i0].
       wXY = x0 * c0.getY()
         - c0.getX() * y0
         + c0.getX() * c1.getY()
@@ -514,14 +515,14 @@ public class NaturalNeighborInterpolator implements IInterpolatorOverTin {
         + c1.getX() * y1
         - x1 * c1.getY();
 
+      // compute the full "component area" of the Theissen polygon
+      // constructed around point B, the second point of edge[i0]
       n = e0.getForward();
-      Vertex nb = n.getB();
-      c1.compute(ax, ay, bx, by, nb.getX() - x, nb.getY() - y);
-      wThiessen = x0 * c1.getY() - c1.getX() * y0;
+      wThiessen = x0 * c3.getY() - c3.getX() * y0;
       while (!(n.equals(e1))) {
         n1 = n.getDual();
         n = n1.getForward();
-        c0.copy(c1);
+        c2.copy(c3);
         a = n1.getA();
         b = n.getA();  // same as n1.getB();
         c = n.getB();
@@ -531,16 +532,22 @@ public class NaturalNeighborInterpolator implements IInterpolatorOverTin {
         by = b.getY() - y;
         cx = c.getX() - x;
         cy = c.getY() - y;
-        c1.compute(ax, ay, bx, by, cx, cy);
-        wThiessen += c0.getX() * c1.getY() - c1.getX() * c0.getY();
+        geoOp.circumcircle(ax, ay, bx, by, cx, cy, c3);
+        wThiessen += c2.getX() * c3.getY() - c3.getX() * c2.getY();
       }
-      wThiessen += c1.getX() * y1 - x1 * c1.getY();
+      wThiessen += c3.getX() * y1 - x1 * c3.getY();
 
-      // for convenience, both the wXY and wThiessen weights were
+      // Compute wDelta, the amount of area that the Theissen polygon
+      // constructed around vertex B would yield to an insertion at
+      // the query point.
+      //    for convenience, both the wXY and wThiessen weights were
       // computed in a clockwise order, which means they are the
       // negative of what we need for the weight computation, so
-      // negate them.
-      wDelta = -(wThiessen - wXY);  // the /2 here is unnecessary
+      // negate them and  -(wTheissen-wXY) becomes wXY-wTheissen
+      // Also, there would normally be a divide by 2 factor from the
+      // shoelace area formula, but that is ommitted because it will
+      // drop out when we unitize the sum of the set of the weights.
+      wDelta = wXY - wThiessen;
       wSum += wDelta;
       weights[i1] = wDelta;
     }
@@ -550,18 +557,49 @@ public class NaturalNeighborInterpolator implements IInterpolatorOverTin {
       weights[i] /= wSum;
     }
 
- double xSum = 0;
+    // Compute the barycentric coordinate deviation. This is a purely diagnostic
+    // value and computing it adds some small overhead to the interpolation.
+    double xSum = 0;
     double ySum = 0;
     int k = 0;
     for (IQuadEdge s : polygon) {
       Vertex v = s.getA();
-      xSum += weights[k]*(v.getX()-x);
-      ySum += weights[k]*(v.getY()-y);
+      xSum += weights[k] * (v.getX() - x);
+      ySum += weights[k] * (v.getY() - y);
       k++;
     }
     barycentricCoordinateDeviation
       = Math.sqrt(xSum * xSum + ySum * ySum);
 
     return weights;
+  }
+
+  /**
+   * Prints a set of diagnostic information describing the operations
+   * used to interpolate points.
+   * @param ps a valid print stream such as System&#46;out.
+   */
+  public void printDiagnostics(PrintStream ps){
+    long  nC = geoOp.getCircumcircleCount();
+    long  nCE = geoOp.getExtendedCircumcircleCount();
+    ps.format("N inCircle:          %12d%n", nInCircle);
+    ps.format("N inCircle extended: %12d%n", nInCircleExtended);
+    ps.format("N circumcircle:      %12d%n", nC);
+    ps.format("N circumcircle ext:  %12d%n", nCE);
+    long n = sumN>0 ? sumN:1;
+    ps.format("Avg circumcircles per interpolation: %9.6f%n", (double)nC/n);
+    ps.format("Avg sides per Theissen polygon:      %9.6f%n", (double)sumSides/n);
+  }
+
+
+  /**
+   * Clears any diagnostic information accumulated during processing.
+   */
+  public void clearDiagnostics(){
+    geoOp.clearDiagnostics();
+    nInCircle = 0;
+    nInCircleExtended = 0;
+    sumSides = 0;
+    sumN = 0;
   }
 }

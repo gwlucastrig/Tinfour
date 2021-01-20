@@ -44,7 +44,7 @@ public class Thresholds {
   public static final double PRECISION_THRESHOLD_FACTOR = 256;
   /** Factor for computing the half-plane threshold. */
   public static final double HALF_PLANE_THRESHOLD_FACTOR = 256.0;
-  /** Factor for computing the delaunay threshold. */
+  /** Factor for computing the Delaunay threshold. */
   public static final double DELAUNAY_THRESHOLD_FACTOR = 256.0;
   /** Factor for computing the in-circle threshold. */
   public static final double IN_CIRCLE_THRESHOLD_FACTOR = 1024 * 1024;
@@ -103,6 +103,7 @@ public class Thresholds {
    */
   private final double vertexTolerance2; // square of vertexTolerance;
 
+  private final double circumcircleDeterminantThreshold;
   /**
    * Constructs thresholds for a nominal point spacing of 1.
    */
@@ -115,6 +116,8 @@ public class Thresholds {
     delaunayThreshold = DELAUNAY_THRESHOLD_FACTOR * precisionThreshold;
     vertexTolerance = nominalPointSpacing / VERTEX_TOLERANCE_FACTOR_DEFAULT;
     vertexTolerance2 = vertexTolerance * vertexTolerance;
+    circumcircleDeterminantThreshold =
+      IN_CIRCLE_THRESHOLD_FACTOR*precisionThreshold;
   }
 
   /**
@@ -143,6 +146,9 @@ public class Thresholds {
 
     vertexTolerance = nominalPointSpacing / VERTEX_TOLERANCE_FACTOR_DEFAULT;
     vertexTolerance2 = vertexTolerance * vertexTolerance;
+
+    circumcircleDeterminantThreshold =
+      IN_CIRCLE_THRESHOLD_FACTOR*precisionThreshold;
   }
 
   /**
@@ -233,5 +239,19 @@ public class Thresholds {
    */
   public double getHalfPlaneThreshold() {
     return halfPlaneThreshold;
+  }
+
+  /**
+   * Gets a threshold value giving guidelines for the smallest absolute value
+   * result that can be trusted in geometric calculations for for computing
+   * a determinant to be used in determining a set of circumcircle
+   * center coordinates and radius.  If the absolute value
+   * of the determinant result is smaller than this threshold, extended-precision
+   * arithmetic is advised.
+   * @return a positive, non-zero value significantly smaller than the
+   * nominal point spacing.
+   */
+  public double getCircumcircleDeterminantThreshold(){
+    return   circumcircleDeterminantThreshold;
   }
 }
