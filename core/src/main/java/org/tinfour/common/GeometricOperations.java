@@ -13,9 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
-
-/*
+ /*
  * -----------------------------------------------------------------------
  *
  * Revision History:
@@ -66,12 +64,16 @@ public class GeometricOperations {
   private final double inCircleThreshold;
   private final double halfPlaneThresholdNeg;
   private final double halfPlaneThreshold;
+  private final double circumcircleDeterminantThreshold;
 
   /* Diagnostics for counting operations   */
-  private int nInCircleCalls;
-  private int nExtendedPrecisionInCircle;
-  private int nExtendedConflict;
-  private int nHalfPlaneCalls;
+  private long nInCircleCalls;
+  private long nExtendedPrecisionInCircle;
+  private long nExtendedConflict;
+  private long nHalfPlaneCalls;
+
+  private long nCircumcircle;
+  private long nCircumcircleExtended;
 
   /**
    * Construct an instance based on a nominal point spacing of 1 unit.
@@ -81,10 +83,13 @@ public class GeometricOperations {
     this.inCircleThreshold = thresholds.getInCircleThreshold();
     this.halfPlaneThresholdNeg = -thresholds.getHalfPlaneThreshold();
     this.halfPlaneThreshold = thresholds.getHalfPlaneThreshold();
+    this.circumcircleDeterminantThreshold
+      = thresholds.getCircumcircleDeterminantThreshold();
   }
 
   /**
    * Construct an instance based on the specified threshold values.
+   *
    * @param thresholds a valid instance
    */
   public GeometricOperations(Thresholds thresholds) {
@@ -92,6 +97,8 @@ public class GeometricOperations {
     this.inCircleThreshold = thresholds.getInCircleThreshold();
     this.halfPlaneThresholdNeg = -thresholds.getHalfPlaneThreshold();
     this.halfPlaneThreshold = thresholds.getHalfPlaneThreshold();
+    this.circumcircleDeterminantThreshold
+      = thresholds.getCircumcircleDeterminantThreshold();
   }
 
   /**
@@ -272,23 +279,23 @@ public class GeometricOperations {
     return s1.doubleValue();
   }
 
- /**
-  * Uses extended arithmetic to find the side on which a point lies with
-  * respect to a directed edge.
+  /**
+   * Uses extended arithmetic to find the side on which a point lies with
+   * respect to a directed edge.
+   *
    * @param ax the x coordinate of the first vertex in the segment
    * @param ay the y coordinate of the first vertex in the segment
    * @param bx the x coordinate of the second vertex in the segment
    * @param by the y coordinate of the second vertex in the segment
    * @param cx the x coordinate of the point of interest
    * @param cy the y coordinate of the point of interest
-  * @return  positive if the point is to the left of the edge,
-  * negative if it is to the right, or zero if it lies on the ray
-  * coincident with the edge.
-  */
+   * @return positive if the point is to the left of the edge,
+   * negative if it is to the right, or zero if it lies on the ray
+   * coincident with the edge.
+   */
   public double halfPlane(double ax, double ay,
-          double bx, double by,
-          double cx, double cy)
-  {
+    double bx, double by,
+    double cx, double cy) {
     nHalfPlaneCalls++;
     q11.setValue(cx).selfSubtract(ax);
     q12.setValue(ay).selfSubtract(by);
@@ -305,6 +312,7 @@ public class GeometricOperations {
    * a point with coordinates (cx, cy) compared to a
    * directed edge from vertex A to B. This value is given by the dot
    * product (cx-ax, cy-ay) dot (bx-ax, by-ay).
+   *
    * @param ax the x coordinate of the initial point on the edge
    * @param ay the y coordinate of the initial point on the edge
    * @param bx the x coordinate of the second point on the edge
@@ -314,10 +322,9 @@ public class GeometricOperations {
    * @return a valid, signed floating point number, potentially zero.
    */
   public double direction(
-          double ax, double ay,
-          double bx, double by,
-          double cx, double cy)
-  {
+    double ax, double ay,
+    double bx, double by,
+    double cx, double cy) {
     nHalfPlaneCalls++;
     q11.setValue(bx).selfSubtract(ax);
     q12.setValue(by).selfSubtract(ay);
@@ -344,10 +351,9 @@ public class GeometricOperations {
    * a clockwise order, a negative value.
    */
   public double orientation(
-          double ax, double ay,
-          double bx, double by,
-          double cx, double cy)
-  {
+    double ax, double ay,
+    double bx, double by,
+    double cx, double cy) {
     double a = (ax - cx) * (by - cy) - (bx - cx) * (ay - cy);
 
     if (a > halfPlaneThresholdNeg && a < halfPlaneThreshold) {
@@ -363,43 +369,67 @@ public class GeometricOperations {
     return a;
   }
 
-    /**
-     * Get a diagnostic count of the number of times an in-circle calculation
-     * was performed.
-     *
-     * @return a positive integer value
-     */
-  int getInCircleCount() {
+  /**
+   * Get a diagnostic count of the number of times an in-circle calculation
+   * was performed.
+   *
+   * @return a positive integer value
+   */
+  public long getInCircleCount() {
     return nInCircleCalls;
   }
 
-      /**
+  /**
    * Get a diagnostic count of the number of incidents where an extended
    * precision calculation was required for an in-circle calculation
    * due to the small-magnitude value of the computed value.
+   *
    * @return a positive integer value
    */
-  public int getExtendedPrecisionInCircleCount() {
+  public long getExtendedPrecisionInCircleCount() {
     return nExtendedPrecisionInCircle;
   }
 
-    /**
+  /**
    * Get a diagnostic count of the number of incidents where an extended
    * precision calculation was in conflict with the ordinary precision
    * calculation.
+   *
    * @return a positive integer value
    */
-  public int getExtendedConflictCount() {
+  public long getExtendedConflictCount() {
     return nExtendedConflict;
   }
 
   /**
    * Get a diagnostic count of the number of half-plane calculations
+   *
    * @return a positive integer value
    */
-  public int getHalfPlaneCount() {
+  public long getHalfPlaneCount() {
     return nHalfPlaneCalls;
   }
+
+  /**
+   * Get a diagnostic count of the number of circumcircle calculations
+   *
+   * @return a positive integer value
+   */
+  public long getCircumcircleCount() {
+    return nCircumcircle;
+  }
+
+  /**
+   * Get a diagnostic count of the number of circumcircle calculations
+   * that required extended precision arithmetic
+   *
+   * @return a positive integer value
+   */
+  public long getExtendedCircumcircleCount() {
+    return nCircumcircleExtended;
+  }
+
+
 
   /**
    * Determines the signed area of triangle ABC. If necessary, uses extended
@@ -438,10 +468,9 @@ public class GeometricOperations {
    * negative if it is oriented clockwise, or zero if it is degenerate.
    */
   public double area(
-          double ax, double ay, 
-          double bx, double by, 
-          double cx, double cy)
-  {
+    double ax, double ay,
+    double bx, double by,
+    double cx, double cy) {
     // the computation used here and the one used in the
     // halfPlane() method are the same.  However, to save operations
     // in the halfPlane() calculation, we swap a couple of variables
@@ -454,7 +483,6 @@ public class GeometricOperations {
     return h / 2.0;
   }
 
-  
   /**
    * Clear the diagnostic operation counts maintained by this class.
    */
@@ -463,57 +491,36 @@ public class GeometricOperations {
     nExtendedPrecisionInCircle = 0;
     nExtendedConflict = 0;
     nHalfPlaneCalls = 0;
-  }
-
-    /**
-   * Computes the circumcircle for the coordinates of three vertices.
-   * For efficiency purposes, results are stored in a reusable container
-   * instance.
-   * @param a Vertex A
-   * @param b Vertex B
-   * @param c Vertex C
-   * @param result a valid instance to store the result.
-   */
-  public void computeCircumcircle(
-          final Vertex a,
-          final Vertex b,
-          final Vertex c,
-          final Circumcircle result)
-  {
-
-    double bx, by, cx, cy, d, c2, b2;
-    double x0 = a.x;
-    double y0 = a.y;
-
-    bx = b.x - x0;
-    by = b.y - y0;
-    cx = c.x - x0;
-    cy = c.y - y0;
-
-    d = 2 * (bx * cy - by * cx);
-    if (d < 1.0e-11) {
-      // the triangle is close to the degenerate case
-      // (all 3 points in a straight line)
-      // even if determinant d is not zero, numeric precision
-      // issues might lead to a very poor computation for
-      // the circumcircle.
-      result.setCircumcenter(
-        Double.POSITIVE_INFINITY,
-        Double.POSITIVE_INFINITY,
-        Double.POSITIVE_INFINITY);
-      return;
-    }
-    b2 = bx * bx + by * by;
-    c2 = cx * cx + cy * cy;
-    double x = (cy * b2 - by * c2) / d;
-    double y = (bx * c2 - cx * b2) / d;
-    result.setCircumcenter(x + a.x, y + a.y, x * x + y * y);
+    nCircumcircle = 0;
+    nCircumcircleExtended = 0;
   }
 
   /**
    * Computes the circumcircle for the coordinates of three vertices.
    * For efficiency purposes, results are stored in a reusable container
    * instance.
+   *
+   * @param a Vertex A
+   * @param b Vertex B
+   * @param c Vertex C
+   * @param result a valid instance to store the result.
+   * @return true if the circumcircle was computed successfully
+   * with a finite radius; otherwise, false.
+   */
+  public boolean circumcircle(
+    final Vertex a,
+    final Vertex b,
+    final Vertex c,
+    final Circumcircle result) {
+    circumcircle(a.x, a.y, b.x, b.y, c.x, c.y, result);
+    return Double.isFinite(result.getRadiusSq()); // also covers NaN case
+  }
+
+  /**
+   * Computes the circumcircle for the coordinates of three vertices.
+   * For efficiency purposes, results are stored in a reusable container
+   * instance.
+   *
    * @param vax The x coordinate of vertex A
    * @param vay The y coordinate of vertex A
    * @param vbx The x coordinate of vertex B
@@ -522,47 +529,91 @@ public class GeometricOperations {
    * @param vcy The y coordinate of vertex C
    * @param result a valid instance to store the result.
    */
-  public void computeCircumcircle(
-          final double vax, final double vay,
-          final double vbx, final double vby,
-          final double vcx, final double vcy,
-          final Circumcircle result)
-  {
-    double x0, y0, bx, by, cx, cy, d, c2, b2;
-    x0 = vax;
-    y0 = vay;
-    bx = vbx - x0;
-    by = vby - y0;
-    cx = vcx - x0;
-    cy = vcy - y0;
+  public void circumcircle(
+    final double vax, final double vay,
+    final double vbx, final double vby,
+    final double vcx, final double vcy,
+    final Circumcircle result) {
+    nCircumcircle++;
+    double bx, by, cx, cy, d, c2, b2;
+    // In order to reduce the magnitude of terms, remap the
+    // coordinate system using (vax, vay) as the origin.
+    bx = vbx - vax;
+    by = vby - vay;
+    cx = vcx - vax;
+    cy = vcy - vay;
 
-    d = 2 * (bx * cy - by * cx);
-    if (d < 1.0e-11) {
-      // the triangle is close to the degenerate case
-      // (all 3 points in a straight line)
-      // even if determinant d is not zero, numeric precision
-      // issues might lead to a very poor computation for
-      // the circumcircle.
+    d = bx * cy - by * cx;
+    if (Math.abs(d) > circumcircleDeterminantThreshold) {
+      d *= 2;
+      b2 = bx * bx + by * by;
+      c2 = cx * cx + cy * cy;
+      double x = (cy * b2 - by * c2) / d;
+      double y = (bx * c2 - cx * b2) / d;
+
+      result.setCircumcenter(x + vax, y + vay, x * x + y * y);
+    } else {
+      nCircumcircleExtended++;
+      //  bx = vbx - x0;
+      //  by = vby - y0;
+      //  cx = vcx - x0;
+      //  cy = vcy - y0;
+      //  d = 2 * (bx * cy - by * cx);
+      q11.setValue(vbx).selfSubtract(vax); // bx
+      q12.setValue(vby).selfSubtract(vay); // by
+      q21.setValue(vcx).selfSubtract(vax); //cx
+      q22.setValue(vcy).selfSubtract(vay); //cy
+      q11s.setValue(q11).selfMultiply(q22); //bx*cy
+      q12s.setValue(q12).selfMultiply(q21); //by*cx
+      q11s.selfSubtract(q12s);
+      DD det = q11s.multiply(2.0);
+      d = det.doubleValue();
+      if (d == 0) {
+        result.setCircumcenter(
+          Double.POSITIVE_INFINITY,
+          Double.POSITIVE_INFINITY,
+          Double.POSITIVE_INFINITY);
+        return;
+      }
+
+      //  b2 = bx * bx + by * by;
+      //  c2 = cx * cx + cy * cy;
+      //  double x = (cy * b2 - by * c2) / d;
+      //  double y = (bx * c2 - cx * b2) / d;
+      q11s.setValue(q11).selfMultiply(q11); // bx*bx
+      q12s.setValue(q12).selfMultiply(q12); // by*by
+      q11s.selfAdd(q12s); // b2
+      q21s.setValue(q21).selfMultiply(q21); //cx*cx
+      q22s.setValue(q22).selfMultiply(q22); // cy*cy
+      q21s.selfAdd(q22s); // c2
+
+      q31.setValue(q22).selfMultiply(q11s); // cy*b2
+      q32.setValue(q12).selfMultiply(q21s); // by*c2
+      DD xCenter = q31.subtract(q32).selfDivide(det);
+
+      q31.setValue(q11).selfMultiply(q21s); // bx*c2
+      q32.setValue(q21).selfMultiply(q11s); // cx*b2
+      DD yCenter = q31.subtract(q32).selfDivide(det);
+
+      q11s.setValue(xCenter).selfMultiply(xCenter);
+      q21s.setValue(yCenter).selfMultiply(yCenter);
+      q11s.selfAdd(q21s);
+      xCenter.selfAdd(vax);
+      yCenter.selfAdd(vay);
       result.setCircumcenter(
-        Double.POSITIVE_INFINITY,
-        Double.POSITIVE_INFINITY,
-        Double.POSITIVE_INFINITY);
-      return;
+        xCenter.doubleValue(),
+        yCenter.doubleValue(),
+        q11s.doubleValue());
     }
-    b2 = bx * bx + by * by;
-    c2 = cx * cx + cy * cy;
-    double x = (cy * b2 - by * c2) / d;
-    double y = (bx * c2 - cx * b2) / d;
-
-    result.setCircumcenter(x + vax, y + vay, x * x + y * y);
   }
 
-  
   /**
    * Gets the threshold values associated with this instance.
+   *
    * @return a valid instance of Thresholds.
    */
-  public Thresholds getThresholds(){
+  public Thresholds getThresholds() {
     return thresholds;
   }
+
 }

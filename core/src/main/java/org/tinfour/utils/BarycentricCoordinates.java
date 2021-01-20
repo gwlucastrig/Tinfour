@@ -91,8 +91,6 @@ public class BarycentricCoordinates {
     }
 
     double[] weights = new double[nVertices];
-    int k = 0;
-
     double wSum = 0;
 
     double x0 = v0.getX() - x;

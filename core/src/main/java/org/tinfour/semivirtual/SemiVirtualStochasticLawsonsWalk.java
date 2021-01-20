@@ -514,7 +514,7 @@ public class SemiVirtualStochasticLawsonsWalk {
    * @param ps a valid print stream.
    */
   public void printDiagnostics(final PrintStream ps) {
-    int nHalfPlaneCalls = geoOp.getHalfPlaneCount();
+    long nHalfPlaneCalls = geoOp.getHalfPlaneCount();
     double avgSLW = 0;
     if (nSLW > 0) {
       avgSLW = (double) nSLWSteps / (double) nSLW;
