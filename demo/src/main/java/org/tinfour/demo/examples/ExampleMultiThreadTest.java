@@ -42,13 +42,13 @@ import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import org.tinfour.common.IIncrementalTin;
 import org.tinfour.common.Vertex;
-import org.tinfour.gwr.GwrTinInterpolator;
 import org.tinfour.interpolation.IInterpolatorOverTin;
 import org.tinfour.semivirtual.SemiVirtualIncrementalTin;
 import org.tinfour.standard.IncrementalTin;
 import org.tinfour.demo.utils.IDevelopmentTest;
 import org.tinfour.demo.utils.TestOptions;
 import org.tinfour.demo.utils.VertexLoader;
+import org.tinfour.interpolation.NaturalNeighborInterpolator;
 
 /**
  * Provides an example of code to build a GRID from an LAS file
@@ -360,7 +360,7 @@ public class ExampleMultiThreadTest implements IDevelopmentTest {
     double yUL = grid.yUpperRight;
     double cellSize = grid.cellSize;
 
-    IInterpolatorOverTin interpolator = new GwrTinInterpolator(tin);
+    IInterpolatorOverTin interpolator = new NaturalNeighborInterpolator(tin);
 
     for (int iRow = row0; iRow < row0 + nRows; iRow++) {
       // interpolator.resetForChangeToTin();
