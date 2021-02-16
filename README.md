@@ -137,7 +137,7 @@ software project dedicated to creating open-source software tools for raster (gr
 
 ### Conclusion ###
 Finally, the whole point of working on a project like Tinfour is to see 
-it used to do something useful. To that end, I welcome ideas, requests, and
+it employed to do something useful. To that end, I welcome ideas, requests, and
 recommendations for analysis tools and applications that would
 benefit the open source and scientific communities. Got something
 to say? You can contact the Tinfour project at contact.tinfour@gmail.com
