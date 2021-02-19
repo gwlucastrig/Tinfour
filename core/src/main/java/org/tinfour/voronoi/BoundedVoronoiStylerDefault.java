@@ -169,7 +169,7 @@ public class BoundedVoronoiStylerDefault implements IBoundedVoronoiStyler {
     if (paletteSpecification == null) {
       throw new IllegalArgumentException("Null argument not supported");
     }
-    if (paletteSpecification.length > 0) {
+    if (paletteSpecification.length == 0) {
       throw new IllegalArgumentException("Zero-length array not supported");
     }
 
