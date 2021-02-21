@@ -125,7 +125,7 @@ public class RenderingSurfaceAid {
    * Gets the buffered image associated with this drawing surface
    * @return a valid instance of a buffered image
    */
-  public BufferedImage getBufferdImage() {
+  public BufferedImage getBufferedImage() {
     return bImage;
   }
 

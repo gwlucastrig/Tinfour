@@ -297,7 +297,7 @@ class SvmContourGraph {
     rsa = new RenderingSurfaceAid(width, height, 10, x0, y0, x1, y1);
     rsa.fillBackground(Color.white);
 
-    BufferedImage bImage = rsa.getBufferdImage();
+    BufferedImage bImage = rsa.getBufferedImage();
     Graphics2D g2d = rsa.getGraphics2D();
     AffineTransform af = rsa.getCartesianToPixelTransform();
     g2d.setStroke(new BasicStroke(1.0f));

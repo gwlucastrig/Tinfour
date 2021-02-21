@@ -178,7 +178,7 @@ public class ExampleContour {
             x0, y0, x1, y1);
     rsa.fillBackground(Color.white);
 
-    BufferedImage bImage = rsa.getBufferdImage();
+    BufferedImage bImage = rsa.getBufferedImage();
     Graphics2D g2d = rsa.getGraphics2D();
     AffineTransform af = rsa.getCartesianToPixelTransform();
 
