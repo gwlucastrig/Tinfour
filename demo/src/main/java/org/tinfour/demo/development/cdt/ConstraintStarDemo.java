@@ -354,7 +354,7 @@ public class ConstraintStarDemo extends JPanel {
     rsa.fillBackground(Color.white);
     AffineTransform af = rsa.getCartesianToPixelTransform();
 
-    BufferedImage bImage = rsa.getBufferdImage();
+    BufferedImage bImage = rsa.getBufferedImage();
     Graphics2D g2d = rsa.getGraphics2D();
     g2d.setStroke(new BasicStroke(1.0f));
 
