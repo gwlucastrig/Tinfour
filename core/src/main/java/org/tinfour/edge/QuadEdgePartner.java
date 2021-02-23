@@ -113,6 +113,13 @@ class QuadEdgePartner extends QuadEdge {
     dual.r = null;
     index = 0;
   }
+  
+  @Override
+  public int hashCode() {
+    int hash = 7;
+	hash = 11 * hash + getIndex();
+	return hash;
+  }
 
   /**
    * Gets the index of the constraint associated with this edge.
