@@ -44,11 +44,14 @@ public class SimpleTriangle {
   private final IQuadEdge edgeA;
   private final IQuadEdge edgeB;
   private final IQuadEdge edgeC;
+  private Circumcircle circumcircle;
 
   /**
    * Construct a simple triangle from the specified edges. For efficiency
    * purposes, this constructor is very lean and does not perform sanity
-   * checking on the inputs.
+   * checking on the inputs. In particular, it is essential that the specified
+   * edge be a member of the specified TIN and that the TIN must not be modified
+   * while the SimpleTriangle instance is in use.
    *
    * @param tin a reference to the TIN that was used to create this triangle.
    * @param a a valid edge
@@ -56,14 +59,34 @@ public class SimpleTriangle {
    * @param c a valid edge
    */
   public SimpleTriangle(
-          IIncrementalTin tin,
-          IQuadEdge a,
-          IQuadEdge b,
-          IQuadEdge c) {
+    IIncrementalTin tin,
+    IQuadEdge a,
+    IQuadEdge b,
+    IQuadEdge c) {
     this.tin = tin;
     this.edgeA = a;
     this.edgeB = b;
     this.edgeC = c;
+  }
+
+  /**
+   * Construct a simple triangle from the specified edges. For efficiency
+   * purposes, this constructor is very lean and does not perform sanity
+   * checking on the inputs. In particular, it is essential that the specified
+   * edge be a member of the specified TIN and that the TIN must not be modified
+   * while the SimpleTriangle instance is in use.
+   *
+   *
+   * @param tin a reference to the TIN that was used to create this triangle.
+   * @param a a valid edge which must be a member of the specified TIN.
+   */
+  public SimpleTriangle(
+    IIncrementalTin tin,
+    IQuadEdge a) {
+    this.tin = tin;
+    this.edgeA = a;
+    this.edgeB = a.getForward();
+    this.edgeC = a.getReverse();
   }
 
   /**
@@ -141,6 +164,10 @@ public class SimpleTriangle {
     Vertex a = edgeA.getA();
     Vertex b = edgeB.getA();
     Vertex c = edgeC.getA();
+    if (a == null || b == null || c == null) {
+      return 0;
+    }
+
     double ax = a.getX();
     double ay = a.getY();
     double bx = b.getX();
@@ -152,10 +179,10 @@ public class SimpleTriangle {
     // to reduce the severify of numeric errors when processing
     // triangles that are nearly degenerate (nearly collapsed to a single line).
     //  area = ( (c.y - a.y) * (b.x - a.x) - (c.x - a.x) * (b.y - a.y) )/2;
-    DD q11= new DD(cx).selfSubtract(ax);
-    DD q12= new DD(ay).selfSubtract(by);
-    DD q21= new DD(cy).selfSubtract(ay);
-    DD q22= new DD(bx).selfSubtract(ax);
+    DD q11 = new DD(cx).selfSubtract(ax);
+    DD q12 = new DD(ay).selfSubtract(by);
+    DD q21 = new DD(cy).selfSubtract(ay);
+    DD q22 = new DD(bx).selfSubtract(ax);
 
     q11.selfMultiply(q12);
     q21.selfMultiply(q22);
@@ -214,5 +241,47 @@ public class SimpleTriangle {
     path.lineTo(c[10], c[11]);
     path.closePath();
     return path;
+  }
+
+  /**
+   * Obtains the circumcircle for a simple triangle.
+   *
+   * @return a valid instance
+   */
+  public Circumcircle getCircumcircle() {
+    if (circumcircle == null) {
+      circumcircle = new Circumcircle();
+      Vertex a = edgeA.getA();
+      Vertex b = edgeB.getA();
+      Vertex c = edgeC.getA();
+      if (a == null || b == null || c == null) {
+        circumcircle.setCircumcenter(
+          Double.POSITIVE_INFINITY,
+          Double.POSITIVE_INFINITY,
+          Double.POSITIVE_INFINITY);
+      } else {
+        GeometricOperations geoOp
+          = new GeometricOperations(tin.getThresholds());
+        geoOp.circumcircle(a, b, c, circumcircle);
+      }
+    }
+    return circumcircle;
+  }
+
+  /**
+   * Indicates whether the triangle is a ghost triangle. A ghost triangle
+   * is one that lies outside the bounds of a Delaunay triangulation and
+   * contains an undefined vertex.
+   * <p>
+   * The TriangleCollector class does not produce ghost triangles, but
+   * those created from perimeter edges may be ghosts.
+   *
+   * @return true if the triangle is a ghost triangle; otherwise, false.
+   */
+  public boolean isGhost() {
+    Vertex a = edgeA.getA();
+    Vertex b = edgeB.getA();
+    Vertex c = edgeC.getA();
+    return (a == null || b == null || c == null);
   }
 }
