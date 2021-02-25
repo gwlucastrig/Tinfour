@@ -508,12 +508,9 @@ public class NaturalNeighborInterpolator implements IInterpolatorOverTin {
 
       // compute the reduced "component area" of the Theissen polygon
       // constructed around point B, the second point of edge[i0].
-      wXY = x0 * c0.getY()
-        - c0.getX() * y0
-        + c0.getX() * c1.getY()
-        - c1.getX() * c0.getY()
-        + c1.getX() * y1
-        - x1 * c1.getY();
+      wXY = (x0 * c0.getY()        - c0.getX() * y0)
+        +   (c0.getX() * c1.getY() - c1.getX() * c0.getY())
+        +   (c1.getX() * y1        - x1 * c1.getY());
 
       // compute the full "component area" of the Theissen polygon
       // constructed around point B, the second point of edge[i0]
