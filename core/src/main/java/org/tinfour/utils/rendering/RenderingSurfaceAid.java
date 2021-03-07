@@ -21,7 +21,7 @@
  * Revision History:
  * Date     Name         Description
  * ------   ---------    -------------------------------------------------
- * 07/2019  G. Lucas     Created  
+ * 07/2019  G. Lucas     Created
  *
  * Notes:
  *
@@ -85,7 +85,6 @@ public class RenderingSurfaceAid {
     g2d.setRenderingHint(
             RenderingHints.KEY_TEXT_ANTIALIASING,
             RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
-
   }
 
   /**
@@ -137,7 +136,7 @@ public class RenderingSurfaceAid {
     return g2d;
   }
 
-  
+
    /**
    * Gets the distance across a pixel in the corresponding Cartesian
    * coordinate system.
@@ -147,8 +146,8 @@ public class RenderingSurfaceAid {
   public double getUnitsPerPixel() {
     return rta.getUnitsPerPixel();
   }
-  
-  
+
+
   /**
    * Gets the distance in pixels across one unit of distance in
    * the Cartesian coordinate system.
@@ -157,13 +156,13 @@ public class RenderingSurfaceAid {
   public double getPixelsPerUnit(){
     return rta.getPixelsPerUnit();
   }
-  
+
   public void fillBackground(Color c){
     g2d.setColor(c);
     g2d.fillRect(0, 0, width, height);
   }
-  
-  
+
+
   public void drawFrame(Color c){
     g2d.setStroke(new BasicStroke(1.0f));
     g2d.setColor(c);

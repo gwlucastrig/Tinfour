@@ -245,24 +245,28 @@ public class SimpleTriangle {
 
   /**
    * Obtains the circumcircle for a simple triangle.
+   * <p>
+   * This method uses an ordinary-precision computation for circumcircles
+   * that yields acceptable accuracy for well-formed triangles.  Applications
+   * that need more accuracy or may need to deal with nearly degenerate
+   * triangles (nearly flat triangles) may prefer to use Tinfour's
+   * GeometricOperations class for that purpose.
    *
    * @return a valid instance
    */
   public Circumcircle getCircumcircle() {
     if (circumcircle == null) {
-      circumcircle = new Circumcircle();
       Vertex a = edgeA.getA();
       Vertex b = edgeB.getA();
       Vertex c = edgeC.getA();
+      circumcircle = new Circumcircle();
       if (a == null || b == null || c == null) {
         circumcircle.setCircumcenter(
           Double.POSITIVE_INFINITY,
           Double.POSITIVE_INFINITY,
           Double.POSITIVE_INFINITY);
       } else {
-        GeometricOperations geoOp
-          = new GeometricOperations(tin.getThresholds());
-        geoOp.circumcircle(a, b, c, circumcircle);
+        circumcircle.compute(a, b, c);
       }
     }
     return circumcircle;

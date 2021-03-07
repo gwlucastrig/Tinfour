@@ -21,7 +21,7 @@
  * Revision History:
  * Date Name Description
  * ------   --------- -------------------------------------------------
- * 09/2018  G. Lucas  Initial implementation 
+ * 09/2018  G. Lucas  Initial implementation
  *
  * Notes:
  *
@@ -59,8 +59,11 @@ public class BoundedVoronoiStylerDefault implements IBoundedVoronoiStyler {
 
   boolean vertexLabelingEnabled = true;
   boolean vertexSymbolEnabled = true;
-  double vertexSymbolSize = 7.0;
+  double vertexSymbolSize = 9.0;
   Font vertexLabelingFont = new Font("Dialog", Font.BOLD, 12);
+
+  boolean areaFillEnabled = true;
+  boolean lineDrawEnabled = true;
   Color[] palette = defaultPalette;
   Color lineColor = Color.black;
   Color vertexColor = Color.black;
@@ -126,7 +129,6 @@ public class BoundedVoronoiStylerDefault implements IBoundedVoronoiStyler {
     }
 
     this.lineColor = color;
-
   }
 
   /**
@@ -180,6 +182,19 @@ public class BoundedVoronoiStylerDefault implements IBoundedVoronoiStyler {
 
   }
 
+    /**
+   * Set the color for rendering vertices
+   *
+   * @param color a valid color object
+   */
+  public void setVertexColor(Color color) {
+    if (color == null) {
+      throw new IllegalArgumentException("Null argument not supported");
+    }
+
+    this.vertexColor = color;
+  }
+
   /**
    * Sets the font for labeling vertices
    *
@@ -207,13 +222,13 @@ public class BoundedVoronoiStylerDefault implements IBoundedVoronoiStyler {
    * diameter (width and height) of the circle. Applications using other
    * presentations for vertices are free to interpret this value as appropriate.
    *
-   * @param size a value greater than zero
+   * @param vertexSymbolSize a value greater than zero
    */
-  public void setVertexSymbolSize(double size) {
-    if (size <= 0) {
+  public void setVertexSymbolSize(double vertexSymbolSize) {
+    if (vertexSymbolSize <= 0) {
       throw new IllegalArgumentException("Negative and zero sizes not supported");
     }
-    this.vertexSymbolSize = size;
+    this.vertexSymbolSize = vertexSymbolSize;
   }
 
   /**
@@ -223,6 +238,7 @@ public class BoundedVoronoiStylerDefault implements IBoundedVoronoiStyler {
    */
   public void setVertexSymbolEnabled(boolean enabled) {
     vertexSymbolEnabled = enabled;
+      typeEnabled[BoundedVoronoiRenderingType.Vertex.ordinal()] = enabled;
   }
 
   /**
@@ -237,13 +253,33 @@ public class BoundedVoronoiStylerDefault implements IBoundedVoronoiStyler {
   @Override
   public IBoundedVoronoiVertexSymbol getVertexSymbol(ThiessenPolygon polygon) {
     if (isRenderingEnabled(polygon, BoundedVoronoiRenderingType.Vertex)) {
-      BoundedVoronoiVertexSymbol symbol = new BoundedVoronoiVertexSymbol();
-      symbol.setColor(vertexColor);
-      symbol.setFont(vertexLabelingFont);
-      symbol.setLabel(Integer.toString(polygon.getVertex().getIndex()));
+      BoundedVoronoiVertexSymbol symbol = new BoundedVoronoiVertexSymbol(vertexSymbolSize);
+              symbol.setColor(vertexColor);
+      if (this.vertexLabelingEnabled) {
+        symbol.setFont(vertexLabelingFont);
+        symbol.setLabel(Integer.toString(polygon.getVertex().getIndex()));
+      }
       return symbol;
     }
     return null;
   }
 
+  /**
+   * Sets the option for enabling area fill operations
+   * @param enabled true if the Theissen polygons (Voronoi cells) are to
+   * be area-filled; otherwise, false.
+   */
+  @Override
+  public void setAreaFillEnabled(boolean enabled){
+    typeEnabled[BoundedVoronoiRenderingType.Area.ordinal()] = enabled;
+  }
+
+  /**
+   * Indicates whether area-fill operations are enabled
+   * @return true if the Theissen polygons (Voronoi cells) are to
+   * be area-filled; otherwise, false.
+   */
+  public boolean isAreaFillEnabled(){
+    return typeEnabled[BoundedVoronoiRenderingType.Area.ordinal()];
+  }
 }

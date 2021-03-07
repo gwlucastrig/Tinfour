@@ -116,8 +116,7 @@ public class Thresholds {
     delaunayThreshold = DELAUNAY_THRESHOLD_FACTOR * precisionThreshold;
     vertexTolerance = nominalPointSpacing / VERTEX_TOLERANCE_FACTOR_DEFAULT;
     vertexTolerance2 = vertexTolerance * vertexTolerance;
-    circumcircleDeterminantThreshold =
-      IN_CIRCLE_THRESHOLD_FACTOR*precisionThreshold;
+    circumcircleDeterminantThreshold = 256 * inCircleThreshold;
   }
 
   /**
@@ -147,8 +146,7 @@ public class Thresholds {
     vertexTolerance = nominalPointSpacing / VERTEX_TOLERANCE_FACTOR_DEFAULT;
     vertexTolerance2 = vertexTolerance * vertexTolerance;
 
-    circumcircleDeterminantThreshold =
-      IN_CIRCLE_THRESHOLD_FACTOR*precisionThreshold;
+    circumcircleDeterminantThreshold = 32 * inCircleThreshold;
   }
 
   /**
