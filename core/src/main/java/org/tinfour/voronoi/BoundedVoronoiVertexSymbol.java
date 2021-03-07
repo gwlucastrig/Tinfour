@@ -21,7 +21,7 @@
  * Revision History:
  * Date Name Description
  * ------   --------- -------------------------------------------------
- * 10/2018  G. Lucas  Initial implementation 
+ * 10/2018  G. Lucas  Initial implementation
  *
  * Notes:
  *
@@ -48,6 +48,18 @@ public class BoundedVoronoiVertexSymbol implements IBoundedVoronoiVertexSymbol {
   String label;
   Font font;
   Color color;
+  double vertexSymbolSize;
+
+  public BoundedVoronoiVertexSymbol() {
+    vertexSymbolSize = 7;
+  }
+
+  public BoundedVoronoiVertexSymbol(double vertexSymbolSize) {
+    if (vertexSymbolSize <= 0) {
+      throw new IllegalArgumentException("Negative and zero sizes not supported");
+    }
+    this.vertexSymbolSize = vertexSymbolSize;
+  }
 
   /**
    * Sets the label for this symbol
@@ -56,7 +68,6 @@ public class BoundedVoronoiVertexSymbol implements IBoundedVoronoiVertexSymbol {
    */
   public void setLabel(String label) {
     this.label = label;
-
   }
 
   /**
@@ -95,7 +106,11 @@ public class BoundedVoronoiVertexSymbol implements IBoundedVoronoiVertexSymbol {
     if (font == null) {
       font = g2d.getFont();
     }
-    Ellipse2D e2d = new Ellipse2D.Double(x - 2, y - 2, 5, 5);
+    Ellipse2D e2d = new Ellipse2D.Double(
+      x - vertexSymbolSize / 2,
+      y - vertexSymbolSize / 3,
+      vertexSymbolSize,
+      vertexSymbolSize);
     g2d.setStroke(new BasicStroke(1.0f));
     g2d.fill(e2d);
     g2d.draw(e2d);
@@ -103,9 +118,10 @@ public class BoundedVoronoiVertexSymbol implements IBoundedVoronoiVertexSymbol {
       FontRenderContext frc = new FontRenderContext(null, true, true);
       TextLayout layout = new TextLayout(label, font, frc);
       Rectangle2D r2d = layout.getBounds();
-      layout.draw(g2d, (float) (x + 3), (float) (y + 3 + r2d.getCenterY()));
+      double s = (vertexSymbolSize + 1) / 2;
+      layout.draw(g2d,
+        (float) (x + s),
+        (float) (y - s));
     }
-
   }
-
 }

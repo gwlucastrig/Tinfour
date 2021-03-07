@@ -54,6 +54,7 @@ public class TabulatorDelta {
   int nD; // number of tabulated deltas
   int nNaN; // number of NaN's
 
+
   /**
    * Adds the specified delta value to the running tally of observed value.
    *
@@ -99,6 +100,7 @@ public class TabulatorDelta {
   public void summarize(PrintStream ps, String label) {
     double meanE = 0;
     double sigma = 0;
+    double rmse = 0;
     if (nD > 1) {
       meanE = sumD / nD;
       // to reduce errors due to loss of precision,
@@ -106,9 +108,10 @@ public class TabulatorDelta {
       // nE*sumE2-sumE*sumE)/((nE*(nE-1))
       // use the form below
       sigma = Math.sqrt((sumD2 - (sumD / nD) * sumD) / (nD - 1));
+      rmse = getRMSE();
     }
-    ps.format("%s %13.6f %13.6f %10.3f %8.3f %9.3f%n",
-      label, meanE, sigma, minD, maxD, sumSignedD);
+    ps.format("%-25.25s %13.6f %13.6f %13.6f %10.3f %8.3f %9.3f%n",
+      label, rmse, meanE, sigma, minD, maxD, sumSignedD);
   }
 
   /**
@@ -127,10 +130,11 @@ public class TabulatorDelta {
    * Get an unbiased estimate of the standard deviation of the population
    * based on the tabulated samples.
    *
-   * @return the standard deviation of the absolute values of the inputs.
+   * @return the standard deviation of the absolute values of the inputs,
+   * or zero if insufficient data is available.
    */
   public double getStdDevAbsValue() {
-    if (nD < 1) {
+    if (nD < 2) {
       return 0;
     }
 
@@ -179,6 +183,18 @@ public class TabulatorDelta {
    */
   public int getNumberSamples() {
     return nD;
+  }
+
+   /**
+   * Get the root mean squared error (RMSE)
+   *
+   * @return a positive value or zero if insufficient data is available.
+   */
+  public double getRMSE() {
+    if (nD < 2) {
+      return 0;
+    }
+    return Math.sqrt(sumD2  / (nD - 1));
   }
 
 }

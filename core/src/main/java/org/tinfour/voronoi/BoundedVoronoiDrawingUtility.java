@@ -21,7 +21,7 @@
  * Revision History:
  * Date Name Description
  * ------   --------- -------------------------------------------------
- * 08/2018  G. Lucas  Initial implementation 
+ * 08/2018  G. Lucas  Initial implementation
  *
  * Notes:
  *
@@ -180,7 +180,7 @@ public class BoundedVoronoiDrawingUtility {
       return af.createInverse();
     } catch (NoninvertibleTransformException ex) {
       // this will never happen because it was already tested
-      // when the class was instantiated.  But the Java API demands that we 
+      // when the class was instantiated.  But the Java API demands that we
       // declare it.
       return new AffineTransform();
     }

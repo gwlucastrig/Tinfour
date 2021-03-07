@@ -21,7 +21,7 @@
  * Revision History:
  * Date Name Description
  * ------   --------- -------------------------------------------------
- * 09/2018  G. Lucas  Initial implementation 
+ * 09/2018  G. Lucas  Initial implementation
  *
  * Notes:
  *
@@ -48,7 +48,7 @@ public class BoundedVoronoiStylerAdapter implements IBoundedVoronoiStyler {
   public boolean isRenderingEnabled(ThiessenPolygon polygon, BoundedVoronoiRenderingType type) {
     return true;
   }
- 
+
 
   @Override
   public void initializeRendering(Graphics2D g2d) {
@@ -59,7 +59,7 @@ public class BoundedVoronoiStylerAdapter implements IBoundedVoronoiStyler {
             RenderingHints.KEY_TEXT_ANTIALIASING,
             RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
     g2d.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 1.0f));
-    
+
   }
 
   @Override
@@ -76,6 +76,11 @@ public class BoundedVoronoiStylerAdapter implements IBoundedVoronoiStyler {
   public IBoundedVoronoiVertexSymbol getVertexSymbol(ThiessenPolygon polygon) {
     return null;
   }
- 
+
+  @Override
+  public void setAreaFillEnabled(boolean enabled) {
+    // no action implemented at this time
+  }
+
 
 }

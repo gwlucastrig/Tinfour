@@ -21,7 +21,7 @@
  * Revision History:
  * Date Name Description
  * ------   --------- -------------------------------------------------
- * 09/2018  G. Lucas  Initial implementation 
+ * 09/2018  G. Lucas  Initial implementation
  *
  * Notes:
  *
@@ -33,13 +33,13 @@ import java.awt.Graphics2D;
 
 /**
  * Defines methods that supply style information for rendering.
- * The choice of methods for this interface reflects a set of options 
+ * The choice of methods for this interface reflects a set of options
  * that are broadly used in rendering applications, but is not
- * exhaustive. In general, the design of this interface attempts to 
- * keep the overall number of methods small.  However, the rendering 
+ * exhaustive. In general, the design of this interface attempts to
+ * keep the overall number of methods small. However, the rendering
  * of vertices does require a small number of special methods.
  * Methods are provided to allow the application to control
- * whether vertices are labeled, drawn with symbols, or both. 
+ * whether vertices are labeled, drawn with symbols, or both.
  * A getter method is also supplied for getting the label symbol size.
  * <p>
  * <strong>This interface is under development.</strong> It is
@@ -75,16 +75,14 @@ public interface IBoundedVoronoiStyler {
    * otherwise, false.
    */
   boolean isRenderingEnabled(
-          ThiessenPolygon polygon,
-          BoundedVoronoiRenderingType type);
- 
+    ThiessenPolygon polygon,
+    BoundedVoronoiRenderingType type);
 
- 
-  
   /**
    * Tests to see if the polygon is enabled for rendering a symbol
    * at the vertex position and, if it is, returns a vertex symbol
    * that can be used for rendering
+   *
    * @param polygon a valid polygon
    * @return if rendering is enabled, a valid symbol instance; otherwise,
    * a null.
@@ -118,6 +116,12 @@ public interface IBoundedVoronoiStyler {
    */
   void applyStylingForLineDrawing(Graphics2D g2d, ThiessenPolygon polygon);
 
- 
+  /**
+   * Sets the option for enabling area fill operations
+   *
+   * @param enabled true if the Theissen polygons (Voronoi cells) are to
+   * be area-filled; otherwise, false.
+   */
+  public void setAreaFillEnabled(boolean enabled);
 
 }
