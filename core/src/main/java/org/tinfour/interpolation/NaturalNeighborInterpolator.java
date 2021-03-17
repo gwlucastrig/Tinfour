@@ -169,7 +169,7 @@ public class NaturalNeighborInterpolator implements IInterpolatorOverTin {
     if (vq == null) {
       vq = defaultValuator;
     }
-    List<IQuadEdge> eList = this.getBowyerWatsonPolygon(x, y);
+    List<IQuadEdge> eList = getBowyerWatsonEnvelope(x, y);
     int nEdge = eList.size();
     if (nEdge == 0) {
       // (x,y) is outside defined area
@@ -233,7 +233,7 @@ public class NaturalNeighborInterpolator implements IInterpolatorOverTin {
    * @param y A Cartesian coordinate in the coordinate system used for the TIN
    * @return a valid, potentially empty, list.
    */
-  public List<IQuadEdge> getBowyerWatsonPolygon(double x, double y) {
+  public List<IQuadEdge> getBowyerWatsonEnvelope(double x, double y) {
     // in the logic below, we access the Vertex x and y coordinates directly
     // but we use the getZ() method to get the z value.  Some vertices
     // may actually be VertexMergerGroup instances

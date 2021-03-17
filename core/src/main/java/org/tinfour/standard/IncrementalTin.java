@@ -60,6 +60,7 @@ import java.util.ArrayList;
 import java.util.BitSet;
 import java.util.Iterator;
 import java.util.List;
+import java.util.NoSuchElementException;
 import org.tinfour.common.BootstrapUtility;
 import org.tinfour.common.GeometricOperations;
 import org.tinfour.common.IConstraint;
@@ -70,6 +71,8 @@ import org.tinfour.common.IMonitorWithCancellation;
 import org.tinfour.common.INeighborEdgeLocator;
 import org.tinfour.common.INeighborhoodPointsCollector;
 import org.tinfour.common.IQuadEdge;
+import org.tinfour.common.SimpleTriangle;
+import org.tinfour.common.SimpleTriangleIterator;
 import org.tinfour.common.Thresholds;
 import org.tinfour.common.TriangleCount;
 import org.tinfour.common.Vertex;
@@ -193,7 +196,7 @@ import org.tinfour.edge.QuadEdgeConstants;
  * <p>
  * Because of the unusually demanding performance considerations related to the
  * use of this class, object instances are frequently reused and, thus, are
- * subject to change. Consequently, this implementation provides little 
+ * subject to change. Consequently, this implementation provides little
  * protection against improper method calls by
  * applications accessing its data. In particular, applications must never
  * modify an object (such as an edge) obtained from instances of this class.
@@ -214,7 +217,7 @@ import org.tinfour.edge.QuadEdgeConstants;
  * The process of creating a Delaunay Triangulation (TIN) using an
  * incremental-insertion technique is inherently serial. Therefore, application
  * code that creates a TIN should not attempt to access the "add" methods
- * for this class in parallel threads.  However, this API is designed so
+ * for this class in parallel threads. However, this API is designed so
  * that once a TIN is complete, it can be accessed by multiple threads
  * on a read-only basis.
  * Multi-threaded access is particularly useful when performing
@@ -426,18 +429,18 @@ public class IncrementalTin implements IIncrementalTin {
    * Delaunay conformity after adding constraints
    */
   private int nSyntheticVertices;
- 
+
   /**
    * Tracks the maximum depth of recursion when restoring Delaunay
    * conformance after the addition of constraints.
    */
   private int maxDepthOfRecursionInRestore;
-  
+
   /**
    * Gets the maximum length of the queue in the flood fill operation.
    */
   private int maxLengthOfQueueInFloodFill;
-  
+
   /**
    * The rule used for disambiguating z values in a vertex merger group.
    */
@@ -1306,15 +1309,15 @@ public class IncrementalTin implements IIncrementalTin {
   }
 
   @Override
-  public Iterable<IQuadEdge>edges(){
-    return new Iterable<IQuadEdge>(){
+  public Iterable<IQuadEdge> edges() {
+    return new Iterable<IQuadEdge>() {
       @Override
       public Iterator<IQuadEdge> iterator() {
-         return edgePool.getIterator(false);
+        return edgePool.getIterator(false);
       }
     };
   }
-  
+
   @Override
   public int getMaximumEdgeAllocationIndex() {
     return edgePool.getMaximumAllocationIndex();
@@ -1524,8 +1527,8 @@ public class IncrementalTin implements IIncrementalTin {
       }
     }
     n0 = n1;
-    
-    if(initialSize-edgePool.size() == 3){
+
+    if (initialSize - edgePool.size() == 3) {
       // Three edges deleted, which indicates that
       // the removal of the vertex resulted in a single triangle
       // that is already Delaunay.  The cavitation process should
@@ -1533,8 +1536,6 @@ public class IncrementalTin implements IIncrementalTin {
       setSearchEdgeAfterRemoval(n0);
       return true;
     }
-    
-
 
     // Step 2 -- Ear Creation
     //           Create a set of Devillers Ears around
@@ -1558,7 +1559,6 @@ public class IncrementalTin implements IIncrementalTin {
     } while (n1 != pStart);
     priorEar.next = firstEar;
     firstEar.prior = priorEar;
- 
 
     // Step 3: Ear Closing
     // loop through the set of ears, finding the one
@@ -1689,9 +1689,9 @@ public class IncrementalTin implements IIncrementalTin {
   public INeighborEdgeLocator getNeighborEdgeLocator() {
     return new NeighborEdgeLocator(this);
   }
-  
+
   @Override
-  public IIncrementalTinNavigator getNavigator(){
+  public IIncrementalTinNavigator getNavigator() {
     return new IncrementalTinNavigator(this);
   }
 
@@ -1780,12 +1780,10 @@ public class IncrementalTin implements IIncrementalTin {
     return vList;
   }
 
-
   @Override
   public void addConstraints(
     List<IConstraint> constraints,
-    boolean restoreConformity)
-  {
+    boolean restoreConformity) {
     if (isLocked) {
       if (isDisposed) {
         throw new IllegalStateException(
@@ -1845,13 +1843,13 @@ public class IncrementalTin implements IIncrementalTin {
 
     // Step 2 -- Construct new edges for constraint and mark any existing
     //           edges with the constraint index.
-    ArrayList<ArrayList<IQuadEdge>>efcList = new ArrayList<>();
+    ArrayList<ArrayList<IQuadEdge>> efcList = new ArrayList<>();
 
     isLocked = true;
     int k = 0;
     for (IConstraint c : constraintList) {
       c.setConstraintIndex(this, k);
-      ArrayList<IQuadEdge>edgesForConstraint = new ArrayList<>(); //NOPMD
+      ArrayList<IQuadEdge> edgesForConstraint = new ArrayList<>(); //NOPMD
       efcList.add(edgesForConstraint);
       processConstraint(c, edgesForConstraint);
       edgesForConstraint.trimToSize();
@@ -1868,11 +1866,11 @@ public class IncrementalTin implements IIncrementalTin {
     }
 
     int maxIndex = getMaximumEdgeAllocationIndex();
-    BitSet visited = new BitSet(maxIndex+1);
+    BitSet visited = new BitSet(maxIndex + 1);
     for (int i = 0; i < constraintList.size(); i++) {
       IConstraint c = constraintList.get(i);
       if (c.definesConstrainedRegion()) {
-        ArrayList<IQuadEdge>edgesForConstraint = efcList.get(i);
+        ArrayList<IQuadEdge> edgesForConstraint = efcList.get(i);
         floodFillConstrainedRegion(c, edgesForConstraint, visited);
         c.setConstraintLinkingEdge(edgesForConstraint.get(0));
       }
@@ -1890,11 +1888,12 @@ public class IncrementalTin implements IIncrementalTin {
   }
 
   /**
-   * Will mark the edge as a constrained edge and will set the 
-   * constrained-region flags as necessary.  The constraint index
+   * Will mark the edge as a constrained edge and will set the
+   * constrained-region flags as necessary. The constraint index
    * is set, but is meaningful only for region-interior edges.
    * In other cases, you may view it as a diagnostic, though its value
    * is essentially undefined.
+   *
    * @param edge a valid edge
    * @param constraint a valid constraint
    * @param edgesForConstraint the edges making up a constraint, only set
@@ -1903,8 +1902,7 @@ public class IncrementalTin implements IIncrementalTin {
   private void setConstrained(
     QuadEdge edge,
     IConstraint constraint,
-    ArrayList<IQuadEdge>edgesForConstraint)
-  {
+    ArrayList<IQuadEdge> edgesForConstraint) {
     edge.setConstrained(constraint.getConstraintIndex());
     if (constraint.definesConstrainedRegion()) {
       edgesForConstraint.add(edge);
@@ -1918,11 +1916,10 @@ public class IncrementalTin implements IIncrementalTin {
 
   private void processConstraint(
     IConstraint constraint,
-    ArrayList<IQuadEdge>edgesForConstraint)
-  {
+    ArrayList<IQuadEdge> edgesForConstraint) {
     List<Vertex> cvList = new ArrayList<>();
     cvList.addAll(constraint.getVertices());
-    if(constraint.isPolygon()){
+    if (constraint.isPolygon()) {
       // close the loop
       cvList.add(cvList.get(0));
     }
@@ -2462,8 +2459,8 @@ public class IncrementalTin implements IIncrementalTin {
   }
 
   private void restoreConformity(QuadEdge ab, int depthOfRecursion) {
-    if(depthOfRecursion>maxDepthOfRecursionInRestore){
-       maxDepthOfRecursionInRestore = depthOfRecursion;
+    if (depthOfRecursion > maxDepthOfRecursionInRestore) {
+      maxDepthOfRecursionInRestore = depthOfRecursion;
     }
 
     QuadEdge ba = ab.getDual();
@@ -2514,7 +2511,6 @@ public class IncrementalTin implements IIncrementalTin {
       QuadEdge mc = cm.getDual();
       QuadEdge md = dm.getDual();
 
-
       ma.setForward(ad);  // should already be set
       ad.setForward(dm);
       dm.setForward(ma);
@@ -2530,8 +2526,8 @@ public class IncrementalTin implements IIncrementalTin {
       md.setForward(db);
       db.setForward(bm);
       bm.setForward(md);
-      restoreConformity(am, depthOfRecursion+1);
-      restoreConformity(mb, depthOfRecursion+1);
+      restoreConformity(am, depthOfRecursion + 1);
+      restoreConformity(mb, depthOfRecursion + 1);
     } else {
       // the edge is not constrained, so perform a flip to restore Delaunay
       ab.setVertices(d, c);
@@ -2543,26 +2539,26 @@ public class IncrementalTin implements IIncrementalTin {
       db.setForward(bc);
     }
 
-    restoreConformity(bc.getDual(), depthOfRecursion+1);
-    restoreConformity(ca.getDual(), depthOfRecursion+1);
-    restoreConformity(ad.getDual(), depthOfRecursion+1);
-    restoreConformity(db.getDual(), depthOfRecursion+1);
+    restoreConformity(bc.getDual(), depthOfRecursion + 1);
+    restoreConformity(ca.getDual(), depthOfRecursion + 1);
+    restoreConformity(ad.getDual(), depthOfRecursion + 1);
+    restoreConformity(db.getDual(), depthOfRecursion + 1);
   }
-
 
   /**
    * Marks all edges inside a constrained region as being members of
    * that region (transferring the index value of the constraint to
    * the member edges). The name of this method is based on the idea
    * that the operation resembles a flood-fill algorithm from computer graphics.
+   *
    * @param c the constraint giving the region for the flood fill
    * @param edgeList a list of the edges corresponding to the boundary
    * of the constrained region
    */
   private void floodFillConstrainedRegion(
-          final IConstraint c,
-          final ArrayList<IQuadEdge> edgeList,
-          final BitSet visited) {
+    final IConstraint c,
+    final ArrayList<IQuadEdge> edgeList,
+    final BitSet visited) {
 
     int constraintIndex = c.getConstraintIndex();
     for (IQuadEdge e : edgeList) {
@@ -2573,9 +2569,9 @@ public class IncrementalTin implements IIncrementalTin {
   }
 
   private void floodFillConstrainedRegionsQueue(
-          final int constraintIndex,
-          final BitSet visited,
-          final IQuadEdge firstEdge) {
+    final int constraintIndex,
+    final BitSet visited,
+    final IQuadEdge firstEdge) {
     // While the following logic could be more elegantly coded
     // using recursion, the depth of the recursion could get so deep that
     // it would overflow any reasonably sized stack.  So we use as
@@ -2615,7 +2611,6 @@ public class IncrementalTin implements IIncrementalTin {
     }
   }
 
-
   @Override
   public List<IConstraint> getConstraints() {
     List<IConstraint> result = new ArrayList<>();
@@ -2635,7 +2630,7 @@ public class IncrementalTin implements IIncrementalTin {
   public IConstraint getRegionConstraint(IQuadEdge edge) {
     if (edge.isConstrainedRegionInterior()) {
       int index = edge.getConstraintIndex();
-      // the test for constraintList.size() should be completely 
+      // the test for constraintList.size() should be completely
       // unnecessary, but we do it just in case.
       if (index < constraintList.size()) {
         return constraintList.get(index);
@@ -2651,8 +2646,6 @@ public class IncrementalTin implements IIncrementalTin {
     return edgePool.getLinearConstraint(edge);
   }
 
-
-  
   @Override
   public int getSyntheticVertexCount() {
     return nSyntheticVertices;
@@ -2660,8 +2653,9 @@ public class IncrementalTin implements IIncrementalTin {
 
   /**
    * Checks to see if the vertex is already a member of the TIN. If it is,
-   * returns a reference to the member.  The member may be the vertex itself
+   * returns a reference to the member. The member may be the vertex itself
    * or the vertex merger group to which it belongs.
+   *
    * @param v a valid vertex.
    * @return if matched, the matching member; otherwise, a null.
    */
@@ -2698,16 +2692,14 @@ public class IncrementalTin implements IIncrementalTin {
     }
     return null;
   }
- 
-  
-  
+
   @Override
-  public Vertex  splitEdge(IQuadEdge eInput, double zSplit, boolean restoreConformity) {
+  public Vertex splitEdge(IQuadEdge eInput, double zSplit, boolean restoreConformity) {
 
     QuadEdge ab = (QuadEdge) eInput;
     // TO DO: implement a check to make sure that eInput
     //        is a valid edge for this TIN instance.
-   
+
     QuadEdge ba = ab.getDual();
     QuadEdge bc = ab.getForward();
     QuadEdge ad = ba.getForward();
@@ -2715,7 +2707,7 @@ public class IncrementalTin implements IIncrementalTin {
     Vertex b = ab.getB();
     Vertex c = bc.getB();
     Vertex d = ad.getB();
-    
+
     if (a == null || b == null) {
       return null;
     }
@@ -2726,7 +2718,7 @@ public class IncrementalTin implements IIncrementalTin {
     double mx = (a.getX() + b.getX()) / 2.0;
     double my = (a.getY() + b.getY()) / 2.0;
     double mz = zSplit;
-    
+
     Vertex m = new Vertex(mx, my, mz, nSyntheticVertices++);
     if (ab.isConstrained()) {
       m.setStatus(Vertex.BIT_SYNTHETIC | Vertex.BIT_CONSTRAINT);
@@ -2760,7 +2752,18 @@ public class IncrementalTin implements IIncrementalTin {
     md.setForward(db);
     db.setForward(bm);
     bm.setForward(md);
-
     return m;
   }
+
+  @Override
+  public Iterable<SimpleTriangle> triangles() {
+    final SimpleTriangleIterator sti = new SimpleTriangleIterator(this);
+    return new Iterable<SimpleTriangle>() {
+      @Override
+      public Iterator<SimpleTriangle> iterator() {
+        return sti;
+      }
+    };
+  }
+
 }

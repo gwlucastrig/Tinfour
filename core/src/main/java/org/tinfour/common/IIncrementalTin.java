@@ -53,7 +53,7 @@ import java.util.List;
  * implementation stores the raw data for vertices in memory and constructs
  * edge objects on-the-fly (using the SemiVirtualEdge class).
  * The semi-virtual approach has some processing overhead in that each
- * time an edge is required, it must be constructed and then allowed to 
+ * time an edge is required, it must be constructed and then allowed to
  * go out-of-scope. This approach results in about a 30 percent reduction
  * in the speed at which vertices can be added to the TIN. But by relying on
  * short-persistence edge objects, the semi-virtual class reduces the
@@ -137,6 +137,10 @@ public interface IIncrementalTin {
    * Gets an iterator for stepping through the collection of edges
    * currently stored in the TIN.
    * <p>
+   * Note that this loop produces only the "base side" of each edge.  To access
+   * the counterpart (the side of the edge in the other direction), an
+   * application needs to access its dual using the edge's getDual() method.
+   * <p>
    * <strong>Warning:</strong> For efficiency purposes, the edges
    * returned by this routine are the same objects as those currently being used
    * in the instance. Any modification of the edge objects will damage
@@ -150,12 +154,13 @@ public interface IIncrementalTin {
    * @return a valid iterator.
    */
   Iterator<IQuadEdge> getEdgeIterator();
-  
-  
+
+
   /**
-   * Provides a convenience implementation of a wrapper class
-   * that can be used in a Java enhanced-loop statement. The
-   * edges produced by this Iterator are filtered so that the
+   * Provides a convenience implementation
+   * that can be used with a Java enhanced-loop statement to access the set
+   * of edges that form the structure of the incremental TIN.
+   * The edges produced by this Iterator are filtered so that the
    * fictitious edges (ghost edges) are not produced by the
    * iteration.  For example, this method could be used in the
    * following manner:
@@ -165,19 +170,47 @@ public interface IIncrementalTin {
    *            // some processing logic
    *     }
    * </pre>
-   * 
-   * <p>Please see the API documentation for getEdgeIterator() for
+   *
+   * <p>
+   * Note that this loop produces only the "base side" of each edge.  To access
+   * the counterpart (the side of the edge in the other direction), an
+   * application needs to access its dual using the edge's getDual() method.
+   * <p>
+   * Please see the API documentation for getEdgeIterator() for
    * cautions regarding the use of this method.
    * @return a valid instance.
    */
   Iterable<IQuadEdge>edges();
 
   /**
+   * Provides a convenience implementation
+   * that can be used with a Java enhanced-loop statement to access the set
+   * of SimpleTriangles implicit in the structure of the incremental TIN.
+   * This iterable will produce all SimpleTriangles in the collection with
+   * no repeats or omissions.
+   * <p>
+   * For example, this method could be used in the
+   * following manner:
+   * <pre>
+   *     IIncremntal tin = // a valid instance
+   *     for(SimpleTriangle t: tin.triangles(){
+   *            // some processing logic
+   *     }
+   * </pre>
+   *
+   * <p>
+   * Please see the API documentation for SimpleTriangleIterator for
+   * cautions regarding the use of this method.
+   * @return a valid instance.
+   */
+   public Iterable<SimpleTriangle> triangles();
+
+  /**
    * Gets the maximum index of the currently allocated edges. This
    * method can be used in support of applications that require the need
    * to survey the edge set and maintain a parallel array or
    * collection instance that tracks information about the edges.
-   * In such cases, the maximum edge index provides a way of knowing how large 
+   * In such cases, the maximum edge index provides a way of knowing how large
    * to size the array or collection.
    * <p>
    * Internally, Tinfour uses edge index values to manage edges in memory.
@@ -254,9 +287,9 @@ public interface IIncrementalTin {
    * properly bootstrapped.
    */
   IIncrementalTinNavigator getNavigator();
-  
-  
-  
+
+
+
   /**
    * Gets a new instance of a neighborhood points collector.
    * Instances observe the contract of the IProcessUsingTin interface
@@ -433,10 +466,10 @@ public interface IIncrementalTin {
    * @return a valid, potentially empty list of constraint instances.
    */
   List<IConstraint> getConstraints();
-  
- 
+
+
   /**
-   * Gets the constraint associated with the index, or a null if 
+   * Gets the constraint associated with the index, or a null if
    * no such constraint exists. Note that there is no out-of-bounds
    * range for the input index. An invalid index simply yields a null
    * reference.
@@ -455,24 +488,24 @@ public interface IIncrementalTin {
    */
   int getSyntheticVertexCount();
 
-  
+
   /**
    * Split an existing edge into two at the midpoint, using the
    * specified zSplit value as the z coordinate for the edge.
    * <p>
-   * <strong>WARNING</strong> The restoreDelaunay feature is 
+   * <strong>WARNING</strong> The restoreDelaunay feature is
    * not yet implemented.
    * @param eInput a valid edge
    * @param zSplit the z coordinate for the new vertex
-   * @param restoreConformity restore Delaunay conformance after 
+   * @param restoreConformity restore Delaunay conformance after
    * insertion <strong>NOT YET IMPLEMENTE</strong>
    * @return the insertion vertex
    */
    Vertex  splitEdge(
            IQuadEdge eInput,
-           double zSplit, 
+           double zSplit,
            boolean restoreConformity);
- 
+
   /**
    * Gets the region constraint associated with the edge, if any. If the edge is
    * on the border of a region, this method will return the constraint to its
@@ -483,13 +516,13 @@ public interface IIncrementalTin {
    * instance; otherwise, a null.
    */
   IConstraint getRegionConstraint(IQuadEdge edge);
-  
-  
+
+
     /**
    * Gets the linear constraint associated with the edge, if any.
    * In some cases, a linear constraint may lie within a constrained
    * region, but it will not lie on the border of a constrained
-   * region. 
+   * region.
    *
    * @param edge a valid edge instance.
    * @return if a linear constraint is associated with the edge, a valid
@@ -498,5 +531,5 @@ public interface IIncrementalTin {
   IConstraint getLinearConstraint(IQuadEdge edge);
 
 
-  
+
 }
