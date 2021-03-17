@@ -50,6 +50,8 @@ import org.tinfour.common.IMonitorWithCancellation;
 import org.tinfour.common.INeighborEdgeLocator;
 import org.tinfour.common.INeighborhoodPointsCollector;
 import org.tinfour.common.IQuadEdge;
+import org.tinfour.common.SimpleTriangle;
+import org.tinfour.common.SimpleTriangleIterator;
 import org.tinfour.common.Thresholds;
 import org.tinfour.common.TriangleCount;
 import org.tinfour.common.Vertex;
@@ -64,8 +66,8 @@ import org.tinfour.edge.QuadEdgeConstants;
  * see the documentation for the IncrementalTin class.
  * <p>
  * The counterpart to this class, IncrementalTin, uses a direct implementation
- * of the quad-edge structure popularized by Guibas and Stolfi. While that 
- * approach leads to elegant code, the nature of the Java language 
+ * of the quad-edge structure popularized by Guibas and Stolfi. While that
+ * approach leads to elegant code, the nature of the Java language
  * (and object-oriented languages in general) results in relatively expensive
  * memory requirements, approximately 244 bytes per vertex inserted into the TIN
  * (counting the storage for both edges and vertices). Since it is common for
@@ -312,7 +314,7 @@ public class SemiVirtualIncrementalTin implements IIncrementalTin {
    * conformance after the addition of constraints.
    */
   private int maxDepthOfRecursionInRestore;
-  
+
   /**
    * Gets the maximum length of the queue in the flood fill operation.
    */
@@ -1193,7 +1195,7 @@ public class SemiVirtualIncrementalTin implements IIncrementalTin {
   public Iterator<IQuadEdge> getEdgeIterator() {
     return edgePool.getIterator(true);
   }
-  
+
   @Override
   public Iterable<IQuadEdge> edges() {
     return  new Iterable<IQuadEdge>(){
@@ -1425,7 +1427,7 @@ public class SemiVirtualIncrementalTin implements IIncrementalTin {
       }
     }
     n0 = n1;
-    
+
     if(initialSize-edgePool.size() == 3){
       // Three edges deleted, which indicates that
       // the removal of the vertex resulted in a single triangle
@@ -1434,7 +1436,7 @@ public class SemiVirtualIncrementalTin implements IIncrementalTin {
       setSearchEdgeAfterRemoval(n0);
       return true;
     }
-    
+
     // Step 2 -- Ear Creation
     //           Create a set of Devillers Ears around
     //           the polygonal cavity.
@@ -1457,7 +1459,7 @@ public class SemiVirtualIncrementalTin implements IIncrementalTin {
     } while (!n1.equals(pStart));
     priorEar.next = firstEar;
     firstEar.prior = priorEar;
- 
+
 
     // Step 3: Ear Closing
     // loop through the set of ears, finding the one
@@ -1645,7 +1647,7 @@ public class SemiVirtualIncrementalTin implements IIncrementalTin {
   public INeighborEdgeLocator getNeighborEdgeLocator() {
     return new SemiVirtualNeighborEdgeLocator(this);
   }
-  
+
   @Override
   public IIncrementalTinNavigator getNavigator() {
     return new SemiVirtualIncrementalTinNavigator(this);
@@ -1660,7 +1662,7 @@ public class SemiVirtualIncrementalTin implements IIncrementalTin {
   public IIntegrityCheck getIntegrityCheck() {
     return new SemiVirtualIntegrityCheck(this);
   }
- 
+
 
   @Override
   public void addConstraints(List<IConstraint> constraints, boolean restoreConformity) {
@@ -1771,7 +1773,7 @@ public class SemiVirtualIncrementalTin implements IIncrementalTin {
   }
 
    /**
-   * Will mark the edge as a constrained edge and will set the 
+   * Will mark the edge as a constrained edge and will set the
    * constrained-region flags as necessary.  The constraint index
    * is set, but is meaningful only for region-interior edges.
    * In other cases, you may view it as a diagnostic, though its value
@@ -2425,8 +2427,8 @@ public class SemiVirtualIncrementalTin implements IIncrementalTin {
       }
     }
   }
- 
-  
+
+
   private void floodFillConstrainedRegionsQueue(
           final int constraintIndex,
           final BitSet visited,
@@ -2469,16 +2471,16 @@ public class SemiVirtualIncrementalTin implements IIncrementalTin {
       deque.pop();
     }
   }
-  
-  
+
+
   @Override
   public List<IConstraint> getConstraints() {
     List<IConstraint> result = new ArrayList<>();
     result.addAll(constraintList);
     return result;
   }
-  
-  
+
+
   @Override
   public IConstraint getConstraint(int index){
     if(index<0 || index>=constraintList.size()){
@@ -2487,12 +2489,12 @@ public class SemiVirtualIncrementalTin implements IIncrementalTin {
     return constraintList.get(index);
   }
 
- 
+
   @Override
   public IConstraint getRegionConstraint(IQuadEdge edge) {
     if (edge.isConstrainedRegionInterior()) {
       int index = edge.getConstraintIndex();
-      // the test for constraintList.size() should be completely 
+      // the test for constraintList.size() should be completely
       // unnecessary, but we do it just in case.
       if (index < constraintList.size()) {
         return constraintList.get(index);
@@ -2508,7 +2510,7 @@ public class SemiVirtualIncrementalTin implements IIncrementalTin {
     return edgePool.getLinearConstraint(edge);
   }
 
-  
+
   @Override
   public int getSyntheticVertexCount() {
     return nSyntheticVertices;
@@ -2546,8 +2548,8 @@ public class SemiVirtualIncrementalTin implements IIncrementalTin {
 
   @Override
   public Vertex splitEdge(
-          IQuadEdge eInput, 
-          double zSplit, 
+          IQuadEdge eInput,
+          double zSplit,
           boolean restoreConformity)
   {
     if (restoreConformity) {
@@ -2565,11 +2567,11 @@ public class SemiVirtualIncrementalTin implements IIncrementalTin {
               + index);
     }
 
-    
+
    SemiVirtualEdge ab = (SemiVirtualEdge) eInput;
     // TO DO: implement a check to make sure that eInput
     //        is a valid edge for this TIN instance.
-   
+
     SemiVirtualEdge ba = ab.getDual();
     SemiVirtualEdge bc = ab.getForward();
     SemiVirtualEdge ad = ba.getForward();
@@ -2577,7 +2579,7 @@ public class SemiVirtualIncrementalTin implements IIncrementalTin {
     Vertex b = ab.getB();
     Vertex c = bc.getB();
     Vertex d = ad.getB();
-    
+
     if (a == null || b == null) {
       return null;
     }
@@ -2588,7 +2590,7 @@ public class SemiVirtualIncrementalTin implements IIncrementalTin {
     double mx = (a.getX() + b.getX()) / 2.0;
     double my = (a.getY() + b.getY()) / 2.0;
     double mz = zSplit;
-    
+
     Vertex m = new Vertex(mx, my, mz, nSyntheticVertices++);
     if (ab.isConstrained()) {
       m.setStatus(Vertex.BIT_SYNTHETIC | Vertex.BIT_CONSTRAINT);
@@ -2624,7 +2626,18 @@ public class SemiVirtualIncrementalTin implements IIncrementalTin {
     bm.setForward(md);
 
     return m;
-  
+
+  }
+
+  @Override
+  public Iterable<SimpleTriangle> triangles() {
+    final SimpleTriangleIterator sti = new SimpleTriangleIterator(this);
+    return new Iterable<SimpleTriangle>() {
+      @Override
+      public Iterator<SimpleTriangle> iterator() {
+        return sti;
+      }
+    };
   }
 
 }
