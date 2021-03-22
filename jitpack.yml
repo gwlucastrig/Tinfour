@@ -1,2 +1,2 @@
 install:
-   - mvn install -DskipTests -Prelease
+   - mvn install -DskipTests -Pjitpack
