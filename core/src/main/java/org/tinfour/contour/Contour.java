@@ -109,11 +109,11 @@ public class Contour {
    * loop.
    */
   public Contour(
-          int contourIndex,
-          int leftIndex,
-          int rightIndex,
-          double z,
-          boolean closedLoop) {
+    int contourIndex,
+    int leftIndex,
+    int rightIndex,
+    double z,
+    boolean closedLoop) {
     this.contourIndex = contourIndex;
     this.leftIndex = leftIndex;
     this.rightIndex = rightIndex;
@@ -162,7 +162,9 @@ public class Contour {
    * @param v a valid vertex through which the contour passes.
    */
   void add(IQuadEdge e, Vertex v) {
-    assert v.equals(e.getB()) : "Through-vertex case, edge not pointing at vertex";
+    // the following assertion does not apply when adding the first
+    // vertex to the contour.
+    assert n == 0 || v.equals(e.getB()) : "Through-vertex case, edge not pointing at vertex";
     if (n == 0) {
       startEdge = e;
       startVertex = v;
@@ -314,11 +316,11 @@ public class Contour {
     }
 
     return "Contour " + contourIndex
-            + ": L=" + leftIndex
-            + ", R=" + rightIndex
-            + ", z=" + z
-            + ", closed=" + closedLoop
-            + "  "+cString;
+      + ": L=" + leftIndex
+      + ", R=" + rightIndex
+      + ", z=" + z
+      + ", closed=" + closedLoop
+      + "  " + cString;
   }
 
 }
