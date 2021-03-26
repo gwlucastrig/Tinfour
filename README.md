@@ -10,7 +10,7 @@ High-Performance 2D Delaunay Triangulation and Related Utilities Written in Java
 > or the [Maven Central Repository](https://mvnrepository.com/search?q=tinfour)
 >
 > We are migrating some of our documentation to a separate project.
-> Visit [TinfourDocs](https://github.com/gwlucastrig/TinfourDocs) to check it out.
+> Visit [TinfourDocs](https://gwlucastrig.github.io/TinfourDocs/) to check it out.
 >
 
 ### Delaunay Triangulation ###
