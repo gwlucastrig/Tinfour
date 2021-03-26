@@ -8,6 +8,10 @@ High-Performance 2D Delaunay Triangulation and Related Utilities Written in Java
 > The Tinfour compiled binary files (Jar files) are available at
 > [Sonatype's Maven Central Repository](https://search.maven.org/search?q=Tinfour)
 > or the [Maven Central Repository](https://mvnrepository.com/search?q=tinfour)
+>
+> We are migrating some of our documentation to a separate project.
+> Visit [TinfourDocs](https://github.com/gwlucastrig/TinfourDocs) to check it out.
+>
 
 ### Delaunay Triangulation ###
 The Delaunay Triangulation defines an optimal form for organizing unstructured or semi-random
@@ -126,7 +130,7 @@ areas are often prone to the formation of "skinny" triangles (triangles with two
 angles and one very large angle). 
 
 Currently, we are investigating the use of Ruppert's Algorithm as a refinement technique, though other
-refine techniques do exist (such as Chew's Second Delaunay Refinement Algorithm).
+refinement techniques do exist (such as Chew's Second Delaunay Refinement Algorithm).
  
 For more detail about the Tinfour project development plans, see the
 [Tinfour Project Status and Roadmap](https://github.com/gwlucastrig/Tinfour/wiki/Tinfour-Project-Roadmap) page.
