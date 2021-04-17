@@ -117,7 +117,8 @@ public class SimpleTriangleIterator implements Iterator<SimpleTriangle> {
   @Override
   public SimpleTriangle next() {
     if (nextTriangle == null) {
-      if (!hasNext()) {
+      hasNext();
+      if (nextTriangle==null) {
         throw new NoSuchElementException("No more triangles in TIN");
       }
     }

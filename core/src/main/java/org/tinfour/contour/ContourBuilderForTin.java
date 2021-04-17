@@ -32,6 +32,7 @@ package org.tinfour.contour;
 import java.awt.geom.Point2D;
 import java.io.PrintStream;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.BitSet;
 import java.util.Collections;
 import java.util.HashMap;
@@ -63,7 +64,7 @@ import org.tinfour.interpolation.IVertexValuator;
  * except in the special case of perimeter contours. Perimeter contours are
  * those that lie on the outer edges of the TIN and represent the boundary
  * between "data and no-data". The right index value for perimeter contours is
- -1.
+ * -1.
  * <p>
  * Tinfour defines contours as specifying a boundary between two regions in a
  * plane. The region to the left of the contour is treated as including points
@@ -91,15 +92,15 @@ public class ContourBuilderForTin {
 
   }
 
-  private final IIncrementalTin tin;
+  private IIncrementalTin tin;
   /**
    * The perimeter edges for the TIN.
    */
-  private final List<IQuadEdge> perimeter;
+  private List<IQuadEdge> perimeter;
   /**
    * A class for assigning numeric values to contours.
    */
-  private final IVertexValuator valuator;
+  private IVertexValuator valuator;
   /**
    * A safe copy of the contour value specifications.
    */
@@ -110,6 +111,13 @@ public class ContourBuilderForTin {
    * construction.
    */
   private BitSet visited;
+
+  /**
+   * A bitmap for tracking whether edges have been processed during contour
+   * construction.
+   */
+  private BitSet perimeterTermination;
+
   /**
    * A list of "closed contours" which lie entirely in the interior of the TIN
    * and form closed loops.
@@ -140,6 +148,8 @@ public class ContourBuilderForTin {
    */
   private final ArrayList<ContourRegion> outerRegions = new ArrayList<>();
 
+  private final double []envelope;
+
   private int nContour;
   private int nVertexTransit;
   private int nEdgeTransit;
@@ -151,7 +161,7 @@ public class ContourBuilderForTin {
   /**
    * A map relating edge index to a perimeter link
    */
-  private final Map<Integer, PerimeterLink> perimeterMap = new HashMap<>();
+  private Map<Integer, PerimeterLink> perimeterMap = new HashMap<>();
 
   /**
    * A list of the perimeter links. Even though the perimeter links form a
@@ -159,7 +169,7 @@ public class ContourBuilderForTin {
    * the debugging and diagnostics. This representation is slightly redundant,
    * but the added overhead is less important that creating manageable code.
    */
-  private final List<PerimeterLink> perimeterList = new ArrayList<PerimeterLink>();
+  private List<PerimeterLink> perimeterList = new ArrayList<PerimeterLink>();
 
   /**
    * Creates a set of contours at the specified vertical coordinates from the
@@ -219,10 +229,11 @@ public class ContourBuilderForTin {
     } else {
       valuator = vertexValuator;
     }
-    this.zContour = zContour;
+    this.zContour = Arrays.copyOf(zContour, zContour.length);
 
     int n = tin.getMaximumEdgeAllocationIndex();
     visited = new BitSet(n);
+    perimeterTermination = new BitSet(n);
 
     // Create a closed loop of perimeter links in a counter-clockwise
     // direction.  The edges in the perimeter are the interior side
@@ -248,13 +259,45 @@ public class ContourBuilderForTin {
     pFirst.prior = prior;
     prior.next = pFirst;
 
+    // Set flags for all edges that terminate on a perimeter vertex.
+    // The pinwheel iterator gives edges leading away from the perimeter
+    // vertex A of p.   So we set the bit flag for its dual using an XOR
+    for (IQuadEdge p : perimeter) {
+      for (IQuadEdge w : p.pinwheel()) {
+        perimeterTermination.set(w.getIndex() ^ 1);
+      }
+    }
+
+    envelope = new double[2*perimeter.size()+2];
+    k = 0;
+    for(IQuadEdge p: perimeter){
+      Vertex A = p.getA();
+      envelope[k++] = A.getX();
+      envelope[k++] = A.getY();
+    }
+    envelope[k++] = envelope[0];
+    envelope[k++] = envelope[1];
+
     buildAllContours();
     if (buildRegions) {
       buildRegions();
     }
 
-    // TO DO: clean up all contruction elements including internal references.
+    // Clean up all contruction elements including internal references.
+    this.tin = null;
+    this.valuator = null;
     visited = null;
+    perimeterTermination = null;
+    perimeterMap = null;
+    perimeterList = null;
+    perimeter = null;
+
+    for (Contour contour : closedContourList) {
+      contour.cleanUp();
+    }
+    for (Contour contour : openContourList) {
+      contour.cleanUp();
+    }
   }
 
   /**
@@ -285,19 +328,21 @@ public class ContourBuilderForTin {
     return aList;
   }
 
-  private boolean storeContour(Contour contour, boolean reachedPerimeter) {
-    if (contour.closedLoop) {
-      assert !reachedPerimeter : "Reached perimeter while building interior contour";
-      contour.complete();
-      closedContourList.add(contour);
-    } else {
-      assert reachedPerimeter : "Failed to reached perimeter while building perimeter-intersection contour";
-      contour.complete();
-      openContourList.add(contour);
-
-    }
-    return true;
+  /**
+   * Gets the Cartesian coordinates of the convex hull of the triangulation
+   * that was used to construct the contours for this instance.
+   * This information in intended mainly for diagnostic and debugging
+   * purposes, by may also be used for rendering.
+   * <p>
+   * Coordinates are stored in an array of doubles in the order
+   * { (x0,y0), (x1,y1), (x2,y2), etc. }.
+   * 
+   * @return a valid array of coordinates.
+   */
+  public double []getEnvelope(){
+    return Arrays.copyOf(envelope, envelope.length);
   }
+
 
   /**
    * Build the contours
@@ -334,52 +379,57 @@ public class ContourBuilderForTin {
 
     double z = zContour[iContour];
 
-    for (IQuadEdge e : tin.edges()) {
+    for (IQuadEdge p : tin.edges()) {
+      IQuadEdge e = p;
       int eIndex = e.getIndex();
       if (visited.get(eIndex)) {
         continue;
       }
-      mark(e);
-
+      markAsVisited(e);
       Vertex A = e.getA();
       Vertex B = e.getB();
       double zA = valuator.value(A);
       double zB = valuator.value(B);
-      if (zA > zB) {
-        // e is a descending edge, potentially valid start
-        if (zA > z && z > zB) {
-          Contour contour = new Contour(nContour++, iContour + 1, iContour, z, true);
-          contour.add(e, zA, zB);
-          followContour(contour, z);
+      double test = (zA - z) * (zB - z);
+      if (test < 0) {
+        // the edge crosses the contour value.
+        if (zA < zB) {
+          // e is an ascending edge, but the dual is a descending edge
+          e = e.getDual();
+          double zSwap = zA;
+          zA = zB;
+          zB = zSwap;
+          A = e.getA();
+          B = e.getB();
         }
-      } else if (zB > zA) {
-        // dual is descending edge, potentially valid start
-        if (zB > z && z > zA) {
-          Contour contour = new Contour(nContour++, iContour + 1, iContour, z, true);
-          contour.add(e.getDual(), zB, zA);
-          followContour(contour, z);
-        }
-      } else { //  zA == zB, if zA==zB==z, we have the level edge case
-        if (zA == z) {
+        // e is an ascending edge and a valid start
+        Contour contour = new Contour(nContour++, iContour + 1, iContour, z, true);
+        contour.add(e, zA, zB);
+        followContour(contour, z, e, null, 0, e, null);
+
+      } else if (test == 0) {
+        // at least one of the vertices is level with the contour value.
+        if (zA == z && zB == z) {
           IQuadEdge f = e.getForward();
-          IQuadEdge d = e.getDual();
-          IQuadEdge g = d.getForward();
+          IQuadEdge g = e.getDual();
+          IQuadEdge h = g.getForward();
+          markAsVisited(f);
+          markAsVisited(g);
+          markAsVisited(h);
           Vertex C = f.getB();
-          Vertex D = g.getB();
+          Vertex D = h.getB();
           double zC = valuator.value(C);
           double zD = valuator.value(D);
           if (zC >= z && z > zD) {
-            mark(f);
             Contour contour = new Contour(nContour++, iContour + 1, iContour, z, true);
             contour.add(e, A);
-            contour.add(e, B);
-            followContour(contour, z);
+            contour.add(f, B);
+            followContour(contour, z, e, A, 0, f, B);
           } else if (zD >= z && z > zC) {
-            mark(g);
             Contour contour = new Contour(nContour++, iContour + 1, iContour, z, true);
-            contour.add(d, B);
-            contour.add(d, A);
-            followContour(contour, z);
+            contour.add(g, B);
+            contour.add(h, A);
+            followContour(contour, z, g, B, 0, h, A);
           }
         }
       }
@@ -401,132 +451,117 @@ public class ContourBuilderForTin {
 
     double z = zContour[iContour];
 
+    // As edges are traversed, they are marked as "visited" so that
+    // they will not be traversed in the closed-contour processing
     mainLoop:
     for (IQuadEdge p : perimeter) {
+      markAsVisited(p);
       IQuadEdge e = p;
-      int eIndex = e.getIndex();
-      if (visited.get(eIndex)) {
-        continue;
-      }
-      mark(e);
+      IQuadEdge f = e.getForward();
+      IQuadEdge r = e.getReverse();
 
       Vertex A = e.getA();
-      Vertex B = e.getB();
+      Vertex B = f.getA();
+      Vertex C = r.getA();
       double zA = valuator.value(A);
       double zB = valuator.value(B);
+      double zC = valuator.value(C);
 
-      // for the perimeter case, the dual edge is always part of a ghost
-      // triangle, so we do not need to consider it.
-      //   We do not consider the case where zA==z and zB==z because
-      // that would result in a contour lying directly on a perimeter
-      // edge.  The perimeter-edge contours are treated as a special case
-      // and constructed separately.
       if (zA > z && z > zB) {
-        // e is a descending edge and a valid start
+        // e is an ascending edge and a valid start
         Contour contour = new Contour(nContour++, iContour + 1, iContour, z, false);
         contour.add(e, zA, zB);
-        followContour(contour, z);
-      } else if (zA > z && zB == z) {
-        // e is a candidate for a starting edge in the through-vertex case,
-        // but we need to inspect the interior to see if there is a
-
-        // valid transition. Alternately, it could be part of a
-        // ridge, trough, or the interior of a plateau.
-        IQuadEdge f = e.getForward();
-        mark(f);
-        Vertex C = f.getB();
-        double zC = valuator.value(C);
-        // check for the special case of an immediate edge transition
-        if (zC < z) {
-          Contour contour = new Contour(nContour++, iContour + 1, iContour, z, false);
-          contour.add(e, B);
-          IQuadEdge n = e.getDualFromReverse();
-          mark(n);
-          contour.add(n, zA, zC);
-          followContour(contour, z);
-          continue mainLoop;
-        }
-
-        // loop clockwise looking for a transition.
-        // for efficieny, the code in followContour() depends on a verified
-        // "correct" state when it's called, so some of the logic
-        // here is partially redundant with that of followContour()
+        followContour(contour, z, e, null, 0, e, null);
+      } else if (zA == z) {
+        // loop counterclockwise collecting all valid contours (there
+        // may be zero, one, or more).
+        int startSweepIndex = 0;
+        IQuadEdge g = r.getDual();
+        IQuadEdge h = g.getForward();
+        Vertex G = h.getB();
+        markAsVisited(h);
         while (true) {
-          IQuadEdge g = f.getDual();
-          IQuadEdge h = g.getForward();
-          IQuadEdge k = h.getForward();
-          Vertex G = h.getB();
-          mark(g);
-          mark(h);
-          mark(k);
+          startSweepIndex++;
+          if (zB < z && z < zC) {
+            // exit through an ascending edge
+            markAsVisited(f);
+            Contour contour = new Contour(nContour++, iContour + 1, iContour, z, false);
+            contour.add(e, A);
+            contour.add(f.getDual(), zC, zB);
+            followContour(contour, z, e, A, startSweepIndex, f.getDual(), null);
+          }
           if (G == null) {
-            // The search pivoted to the next edge on the perimeter without
-            // finding a transition. Do not create a contour through vertex B.
             break;
           }
           double zG = valuator.value(G);
-
-          if (zG < z) {
-            if (zC == z) {
-              // through vertex case
-              Contour contour = new Contour(nContour++, iContour + 1, iContour, z, false);
-              contour.add(e, B);
-              IQuadEdge n = e.getDualFromReverse();
-              mark(n);
-              contour.add(n, C);
-              followContour(contour, z);
-              continue mainLoop;
+          if (zB < z && zC == z && zG >= z) {
+            Contour contour = new Contour(nContour++, iContour + 1, iContour, z, false);
+            contour.add(e, A);
+            contour.add(h, C);
+            markAsVisited(g);
+            markAsVisited(h);
+            int dualIndex = h.getIndex() ^ 1;
+            if (perimeterTermination.get(dualIndex)) {
+              finishContour(contour, e, A, startSweepIndex, h, G);
             } else {
-              assert zC > z : "Improper perimeter to vertex transition";
-              Contour contour = new Contour(nContour++, iContour + 1, iContour, z, false);
-              contour.add(e, B);
-              IQuadEdge q = g.getDualFromReverse();
-              mark(q);
-              contour.add(q, zC, zG);
-              followContour(contour, z);
-              continue mainLoop;
+              followContour(contour, z, e, A, startSweepIndex, h, G);
             }
           }
-          // advance search to triangle immediately clockwise, pivoting around B
+          B = C;
           C = G;
+          zB = zC;
           zC = zG;
-          e = g;
           f = h;
+          r = h.getForward();
+          g = r.getDual();
+          h = g.getForward();
+          G = h.getB();
+          markAsVisited(h);
         }
       }
     }
   }
 
-  private void mark(IQuadEdge e) {
+  /**
+   * Sets the visited flag for an edge and its dual.
+   *
+   * @param e a valid edge
+   */
+  private void markAsVisited(IQuadEdge e) {
     int index = e.getIndex();
     visited.set(index);
     visited.set(index ^ 1);
   }
 
-  private boolean followContour(Contour contour, double z) {
+  private boolean followContour(Contour contour, double z,
+    IQuadEdge startEdge,
+    Vertex startVertex,
+    int startSweepIndex,
+    IQuadEdge terminalEdge,
+    Vertex terminalVertex) {
+    Vertex v = terminalVertex;
+    IQuadEdge e = terminalEdge;
+    markAsVisited(e);
+
     mainLoop:
     while (true) {
-      Vertex v = contour.terminalVertex;
-      IQuadEdge e = contour.terminalEdge;
       IQuadEdge f = e.getForward();
       IQuadEdge r = e.getReverse();
-      mark(e);
-      mark(f);
-      mark(r);
+      markAsVisited(e);
       Vertex A = e.getA();
       Vertex B = f.getA();
       Vertex C = r.getA();
-      if (C == null) {
-        // reached the perimeter
-        return storeContour(contour, true);
-      }
-
       double zA = valuator.value(A);
       double zB = valuator.value(B);
-      double zC = valuator.value(C);
+      double zC;
+      if (C == null) {
+        zC = Double.NaN;
+      } else {
+        zC = valuator.value(C);
+      }
 
       if (v == null) {
-        // transition-edge case
+        // transition through edge
         // e should be a descending edge with z values
         // bracketing the contour z.
         nEdgeTransit++;
@@ -534,24 +569,18 @@ public class ContourBuilderForTin {
         if (zC < z) {
           // exit via edge C-to-A
           e = r.getDual();
-          if (e.equals(contour.startEdge)) {
-            return storeContour(contour, false);
-          }
           contour.add(e, zA, zC);
+          markAsVisited(e);
         } else if (zC > z) {
           // exit through edge B-to-C
           e = f.getDual();
-          if (e.equals(contour.startEdge)) {
-            return storeContour(contour, false);
-          }
           contour.add(e, zC, zB);
+          markAsVisited(e);
         } else if (zC == z) {
           // transition-vertex side
-          e = r.getDual();
+          e = r;
+          v = C;
           contour.add(e, C);
-          if (C.equals(contour.startVertex)) {
-            return storeContour(contour, false);
-          }
         } else {
           // this could happen if zC is a null
           // meaning we have a broken contour
@@ -560,75 +589,117 @@ public class ContourBuilderForTin {
           return false;
         }
       } else {
-        // transition-vertex case
+        // transition through vertex
+        // sweep search clockwise starting from support edge
         nVertexTransit++;
-        assert zA >= z && z >= zB : "transition vertex-to-edge failure";
-        if (zA > z && z > zC) {
-          e = r.getDual();
-          if (e.equals(contour.startEdge)) {
-            return storeContour(contour, false);
-          }
-          contour.add(e, zA, zC);
-          continue mainLoop;
-        }
 
         // since we couldn't find a transition within the
         // current triangle, we need to search in a clockwise
         // direction for the transition.
         IQuadEdge e0 = e;
-        IQuadEdge g = f.getDual();
-        IQuadEdge h = g.getForward();
-        IQuadEdge k = g.getReverse();
-        Vertex G = h.getB();
 
+        IQuadEdge g = e;
         while (true) {
-          mark(g);
-          mark(h);
-          mark(k);
-          if (G == null) {
-            return storeContour(contour, true);
-          }
+          g = g.getForwardFromDual();
+          IQuadEdge h = g.getForward();
+          IQuadEdge k = h.getForward();
+          Vertex K = h.getA();
+          Vertex G = h.getB();
+          double zK = valuator.value(K);
           double zG = valuator.value(G);
-
-          if (zG < z) {
-            // we've reached a transition
-            if (zC == z) {
-              // the transition is along the forward edge
-              // to vertex c
-              if (C.equals(contour.startVertex)) {
-                return storeContour(contour, false);
-              }
-              IQuadEdge q = e.getDualFromReverse();
-              contour.add(q, C);
-              e = f;
-              break; // inner loop
-            } else {
-              // zC must be > z so the transition
-              // is through edge C-to-G
-
-              assert zC > z : "zC must be > z, value=" + z;
-              e = k.getDual();
-              if (e.equals(contour.startEdge)) {
-                return storeContour(contour, false);
-              }
-              contour.add(e, zC, zG);
-              break; // inner loop
-            }
+          markAsVisited(g);
+          markAsVisited(h);
+          markAsVisited(k);
+          if (zG > z && z > zK) {
+            contour.add(h, zK, zG);
+            e = h.getDual();
+            v = null;
+            break;
+          } else if (zG == z && z > zK) {
+            contour.add(f, G);
+            e = f;
+            v = G;
+            break;
           }
-          // zG >= z, keep searching and advance search
-          // to triangle immediately clockwise, pivoting around B
-          e = g;
           f = h;
-          r = k;
-          C = G;
-          zC = zG;
-          g = f.getDual();
-          h = g.getForward();
-          k = g.getReverse();
-          G = h.getB();
-          assert !e0.equals(e) : "trans-vertex search loop failed";
+        }
+        assert !e0.equals(e) : "trans-vertex search loop failed";
+      }
+
+      // check for termination conditions
+      if (v == null) {
+        if (contour.isClosed()) {
+          if (startEdge.equals(e) && startVertex == null) {
+            // closed loop
+            finishContour(contour, startEdge, startVertex, startSweepIndex, e, v);
+            return true;
+          }
+        } else {
+          C = e.getForward().getB();
+          if (C == null) {
+            finishContour(contour, startEdge, startVertex, startSweepIndex, e, v);
+            return true;
+          }
+        }
+      } else {
+        if (contour.isClosed()) {
+          if (v == startVertex) {
+            finishContour(contour, startEdge, startVertex, 0, e, v);
+            return true;
+          }
+        }
+        int dualIndex = e.getIndex() ^ 1;
+        if (perimeterTermination.get(dualIndex)) {
+          finishContour(contour, startEdge, startVertex, startSweepIndex, e, v);
+          return true;
         }
       }
+
+    }
+  }
+
+  private void finishContour(Contour contour,
+    IQuadEdge startEdge,
+    Vertex startVertex,
+    int startSweepIndex,
+    IQuadEdge terminalEdge,
+    Vertex terminalVertex) {
+    contour.complete();
+
+    if (contour.isClosed()) {
+      closedContourList.add(contour);
+      return;
+    }
+
+    openContourList.add(contour);
+    int startIndex = startEdge.getIndex();
+    PerimeterLink pStart = perimeterMap.get(startIndex);
+    pStart.addContourTip(contour, true, startSweepIndex);
+
+    if (terminalVertex == null) {
+      int termIndex = terminalEdge.getDual().getIndex();
+      PerimeterLink pTerm = perimeterMap.get(termIndex);
+      pTerm.addContourTip(contour, false, 0);
+    } else {
+      // terminalVertex == null
+      // the terminal edge will actually be the supporting edge, and
+      // not the associated perimeter edge that we want.  So we need
+      // to sweep around clockwise and find the inside perimeter edge.
+      int terminalSweepIndex = 0;
+      IQuadEdge s = terminalEdge;
+      while (true) {
+        terminalSweepIndex++;
+        IQuadEdge n = s.getForwardFromDual();
+        Vertex B = n.getB();
+        if (B == null) {
+          break;
+        }
+        s = n;
+      }
+      int termIndex = s.getIndex();
+      PerimeterLink pTerm = perimeterMap.get(termIndex);
+      pTerm.addContourTip(contour, false, terminalSweepIndex);
+
     }
   }
 
@@ -700,26 +771,26 @@ public class ContourBuilderForTin {
       return;
     }
 
-    for (Contour contour : openContourList) {
-      int startIndex = contour.startEdge.getIndex();
-      PerimeterLink pStart = perimeterMap.get(startIndex);
-      pStart.addContourTip(contour, true);
-
-      IQuadEdge termEdge = contour.terminalEdge;
-      IQuadEdge testEdge = termEdge.getForward();
-      while (testEdge.getB() != null) {
-        termEdge = testEdge.getDual();
-        testEdge = termEdge.getForward();
-      }
-
-      int termIndex = termEdge.getDual().getIndex();
-      PerimeterLink pTerm = perimeterMap.get(termIndex);
-      pTerm.addContourTip(contour, false);
-    }
-
     // The perimeter links form a closed-loop linked-list.
     // However, we keep a redundant set of references in an
     // array list (perimeterLinks) to simplify debugging and diagnostsics.
+    //
+    // During construction, the through-vertex tips (if any) were
+    // put in a temporary storage.  Now loop through, sorting them
+    // and prepending them to each set of tip-links
+    for (PerimeterLink pLink : perimeterList) {
+      pLink.prependThroughVertexTips();
+    }
+
+    // The "stitching operation".   Connect various contours into
+    // regions.  All of these regions will touch the edge of the
+    // triangulation convex hull.  None of them will be contained by
+    // another regions.
+    //     Loop through each permimeter link looking for tips (contour
+    // starts or terminations). In cases where there is a gap between
+    // tips on the same edge, short edge contours are created.  After the last
+    // tip in each link, a new edge contour is created from the last tip
+    // on the edge to the first tip on the next edge.
     for (PerimeterLink pLink : perimeterList) {
       if (pLink.tip0 == null) {
         // there are no contour starts or terminations associated with
@@ -727,27 +798,27 @@ public class ContourBuilderForTin {
         continue;
       }
 
-      TipLink node = pLink.tip0;
-      while (node != null) {
-        if (node.start) {
-          if (!node.contour.traversedForward) {
-            int leftIndex = node.contour.leftIndex;
-            double z = node.contour.z;
-            List<ContourRegionMember> mList = traverseFromNode(node, leftIndex, z, true);
+      TipLink tip = pLink.tip0;
+      while (tip != null) {
+        if (tip.start) {
+          if (!tip.contour.traversedForward) {
+            int leftIndex = tip.contour.leftIndex;
+            double z = tip.contour.z;
+            List<ContourRegionMember> mList = traverseFromTipLink(tip, leftIndex, z, true);
             ContourRegion region = new ContourRegion(mList, leftIndex);
             regionList.add(region);
           }
         } else {
           // the tip is an contour termination
-          if (!node.contour.traversedBackward) {
-            int rightIndex = node.contour.rightIndex;
-            double z = node.contour.z;
-            List<ContourRegionMember> mList = traverseFromNode(node, rightIndex, z, false);
+          if (!tip.contour.traversedBackward) {
+            int rightIndex = tip.contour.rightIndex;
+            double z = tip.contour.z;
+            List<ContourRegionMember> mList = traverseFromTipLink(tip, rightIndex, z, false);
             ContourRegion region = new ContourRegion(mList, rightIndex);
             regionList.add(region);
           }
         }
-        node = node.next;
+        tip = tip.next;
       }
     }
   }
@@ -769,16 +840,14 @@ public class ContourBuilderForTin {
    * @param z the z value to be assigned to the perimeter contour. This value
    * is primarily intended for diagnostic purposes.
    * @param forward0 Indicates the direction of traversal for the contour
-   *
    * associated with the node.
    * @return a list of member objects giving the contour and direction
    * of traversal for the region.
    */
-  private List<ContourRegionMember> traverseFromNode(
+  private List<ContourRegionMember> traverseFromTipLink(
     TipLink tipLink0, int leftIndex, double z, boolean forward0) {
     // TO DO: The forward0 argument is probably unnecessary
     //        we can get the same information from the tipLink0's
-
     //        "start" and "termination" flags.
     List<ContourRegionMember> mList = new ArrayList<>();
     TipLink node = tipLink0;
@@ -865,7 +934,7 @@ public class ContourBuilderForTin {
       double[] xy = rI.getXY();
       for (int j = i + 1; j < nRegion; j++) {
         ContourRegion rJ = regionList.get(j);
-        if (rJ.contourRegionType == ContourRegionType.Perimeter) {
+        if (rJ.contourRegionType == ContourRegionType.Primary) {
           // regions that include perimeter contours are never
           // enclosed by other regions.
           continue;
@@ -915,7 +984,6 @@ public class ContourBuilderForTin {
     ps.format("Edge transits:      %8d%n", nEdgeTransit);
     ps.format("Vertex transits:    %8d%n", nVertexTransit);
     ps.format("%n");
-
   }
 
 }

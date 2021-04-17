@@ -21,49 +21,48 @@
  * Revision History:
  * Date     Name         Description
  * ------   ---------    -------------------------------------------------
- * 08/2019  G. Lucas     Created  
+ * 08/2019  G. Lucas     Created
  *
  * Notes:
  *
  * -----------------------------------------------------------------------
  */
-
- 
-
 package org.tinfour.contour;
 
 /**
  * Provides node definitions for a linked list of the tips for a single
  * perimeter edge.
  */
- class TipLink {
+class TipLink {
 
   /**
    * True if the contour starts on the tip; otherwise false.
    */
   final boolean start;
-  
+
   /**
    * True if the contour terminates on the tip; otherwise, false.
    */
   final boolean termination;
-  
+
   /**
-   * The contour 
+   * The contour
    */
   final Contour contour;
-  
+
   final PerimeterLink pLink;
-  
+
+  final int sweepIndex;
+
   TipLink next;
   TipLink prior;
-  
-  TipLink(PerimeterLink pLink, Contour contour, boolean start){
+
+  TipLink(PerimeterLink pLink, Contour contour, boolean start, int sweepIndex) {
     this.contour = contour;
     this.pLink = pLink;
     this.start = start;
     this.termination = !start;
+    this.sweepIndex = sweepIndex;
   }
-  
- 
+
 }

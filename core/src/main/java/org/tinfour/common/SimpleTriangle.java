@@ -286,6 +286,6 @@ public class SimpleTriangle {
     Vertex a = edgeA.getA();
     Vertex b = edgeB.getA();
     Vertex c = edgeC.getA();
-    return (a == null || b == null || c == null);
+    return a == null || b == null || c == null;
   }
 }

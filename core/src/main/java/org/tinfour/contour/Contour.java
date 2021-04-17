@@ -87,10 +87,6 @@ public class Contour {
   final double z;
   final boolean closedLoop;
 
-  IQuadEdge startEdge;
-  Vertex startVertex;
-  IQuadEdge terminalEdge;
-  Vertex terminalVertex;
   boolean traversedForward;
   boolean traversedBackward;
   TipLink startTip;
@@ -131,17 +127,9 @@ public class Contour {
    * @param zB the value of the second vertex of the edge
    */
   void add(IQuadEdge e, double zA, double zB) {
-    assert zA > zB : "Adding non-decending edge";
-    if (n == 0) {
-      startEdge = e;
-      startVertex = null;
-    } else {
-      if (n == xy.length) {
-        xy = Arrays.copyOf(xy, xy.length + GROWTH_FACTOR);
-      }
+    if (n > 0 && n == xy.length) {
+      xy = Arrays.copyOf(xy, xy.length + GROWTH_FACTOR);
     }
-    terminalEdge = e;
-    terminalVertex = null;
 
     // interpolate out next point
     Vertex A = e.getA();
@@ -164,17 +152,10 @@ public class Contour {
   void add(IQuadEdge e, Vertex v) {
     // the following assertion does not apply when adding the first
     // vertex to the contour.
-    assert n == 0 || v.equals(e.getB()) : "Through-vertex case, edge not pointing at vertex";
-    if (n == 0) {
-      startEdge = e;
-      startVertex = v;
-    } else {
-      if (n == xy.length) {
-        xy = Arrays.copyOf(xy, xy.length + GROWTH_FACTOR);
-      }
+    assert n == 0 || v.equals(e.getA()) : "Through-vertex case, edge not pointing from vertex";
+    if (n > 0 && n == xy.length) {
+      xy = Arrays.copyOf(xy, xy.length + GROWTH_FACTOR);
     }
-    terminalEdge = e;
-    terminalVertex = v;
 
     xy[n++] = v.getX();
     xy[n++] = v.getY();
@@ -195,12 +176,26 @@ public class Contour {
   }
 
   /**
-   * Gets a safe copy of the coordinates for the contour.
+   * Gets a safe copy of the coordinates for the contour. This method
+   * is scheduled for replacement in a future release. Please use getXY().
    *
    * @return a valid, potentially zero-length array giving x and y coordinates
    * for a series of points.
    */
+  @Deprecated
   public double[] getCoordinates() {
+    return Arrays.copyOf(xy, n);
+  }
+
+  /**
+   * Gets a safe copy of the coordinates for the contour. Coordinates
+   * are stored in an array of doubles in the order
+   * { (x0,y0), (x1,y1), (x2,y2), etc. }.
+   *
+   * @return a valid, potentially zero-length array giving x and y coordinates
+   * for a series of points.
+   */
+  public double[] getXY() {
     return Arrays.copyOf(xy, n);
   }
 
@@ -321,6 +316,35 @@ public class Contour {
       + ", z=" + z
       + ", closed=" + closedLoop
       + "  " + cString;
+  }
+
+  /**
+   * Get the index for the region lying to the left of the contour.
+   *
+   * @return an integer in the range 0 to nContour, or -1 if the contour
+   * borders a null-data area
+   */
+  public int getLeftIndex() {
+    return leftIndex;
+  }
+
+  /**
+   * Get the index for the region lying to the right of the contour.
+   *
+   * @return an integer in the range 0 to nContour, or -1 if the contour
+   * borders a null-data area
+   */
+  public int getRightIndex() {
+    return rightIndex;
+  }
+
+  /**
+   * Null-out any resources that were required for building the contours
+   * or regions, but are no longer needed.
+   */
+  void cleanUp() {
+    startTip = null;
+    terminalTip = null;
   }
 
 }
