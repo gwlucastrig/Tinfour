@@ -43,7 +43,7 @@ import org.tinfour.contour.Contour.ContourType;
 public class ContourRegion {
 
   /**
-   * An enumeration that indicates the type of a contour
+   * An enumeration that indicates the type of a contour region.
    */
   public enum ContourRegionType {
     /**
@@ -53,9 +53,9 @@ public class ContourRegion {
     Interior,
     /**
      * At least one contour lies on the perimeter of the TIN. Note that
-     * perimeter regions are never enclosed by another region.
+     * primary regions are never enclosed by another region.
      */
-    Perimeter
+    Primary
   }
 
   final ContourRegionType contourRegionType;
@@ -72,7 +72,7 @@ public class ContourRegion {
   ContourRegion(List<ContourRegionMember> memberList, int regionIndex) {
     if (memberList.isEmpty()) {
       throw new IllegalArgumentException(
-              "An empty specification for a region geometry is not supported");
+        "An empty specification for a region geometry is not supported");
     }
 
     this.regionIndex = regionIndex;
@@ -81,7 +81,7 @@ public class ContourRegion {
     ContourRegionType rType = ContourRegionType.Interior;
     for (ContourRegionMember member : memberList) {
       if (member.contour.getContourType() == ContourType.Perimeter) {
-        rType = ContourRegionType.Perimeter;
+        rType = ContourRegionType.Primary;
       }
       double s = calculateAreaContribution(member.contour);
       if (member.forward) {
@@ -111,7 +111,7 @@ public class ContourRegion {
     if (contour.getContourType() == ContourType.Interior) {
       contourRegionType = ContourRegionType.Interior;
     } else {
-      contourRegionType = ContourRegionType.Perimeter;
+      contourRegionType = ContourRegionType.Primary;
     }
 
     assert contour.closedLoop : "Single contour constructor requires closed loop";
@@ -152,7 +152,7 @@ public class ContourRegion {
   public double[] getXY() {
     Contour contour = memberList.get(0).contour;
     if (memberList.size() == 1 && memberList.get(0).contour.isClosed()) {
-      return contour.getCoordinates();
+      return contour.getXY();
     }
     int n = 0;
     for (ContourRegionMember member : memberList) {
@@ -165,7 +165,7 @@ public class ContourRegion {
       contour = member.contour;
       n = contour.size();
       if (member.forward) {
-        for (int i = 0; i < n-1; i++) {
+        for (int i = 0; i < n - 1; i++) {
           xy[k++] = contour.xy[i * 2];
           xy[k++] = contour.xy[i * 2 + 1];
         }
@@ -177,7 +177,33 @@ public class ContourRegion {
       }
     }
     xy[k++] = xy[0];
-    xy[k] = xy[1];
+    xy[k++] = xy[1];
+
+    // remove any duplicate points
+    n = 2;
+    double px = xy[0];
+    double py = xy[1];
+    boolean removed = false;
+    for (int i = 2; i < k; i += 2) {
+      if (xy[i] == px && xy[i + 1] == py) {
+        removed = true; // it's a duplicte, remove it
+      } else {
+        // it does not match the previous point
+        px = xy[i];
+        py = xy[i + 1];
+        if (removed) {
+          xy[n] = px;
+          xy[n + 1] = py;
+        }
+        n += 2;
+      }
+    }
+    if (removed) {
+      // copy the coordinates to a downsized array
+      double[] oldXy = xy;
+      xy = new double[n];
+      System.arraycopy(oldXy, 0, xy, 0, n);
+    }
     return xy;
   }
 
@@ -267,9 +293,10 @@ public class ContourRegion {
   }
 
   /**
-   * Get the area for the region excluding that of any enclosed 
+   * Get the area for the region excluding that of any enclosed
    * regions. The enclosed regions are not, strictly speaking,
-   * part of this region and, so, are not included in the adlusted area.
+   * part of this region and, so, are not included in the adjusted area.
+   *
    * @return a positive value.
    */
   public double getAdjustedArea() {
@@ -280,8 +307,6 @@ public class ContourRegion {
     return sumArea;
   }
 
-
-  
   /**
    * Gets the signed area of the region. If the points that specify the region
    * are given in a counter-clockwise order, the region will have a positive
@@ -357,7 +382,7 @@ public class ContourRegion {
   }
 
   private void appendPathForward(
-          AffineTransform transform, Path2D path, double[] xy) {
+    AffineTransform transform, Path2D path, double[] xy) {
     int n = xy.length / 2;
     if (n < 2) {
       return;
@@ -384,11 +409,28 @@ public class ContourRegion {
     return new Point2D.Double(xTest, yTest);
   }
 
+  /**
+   * Gets a list of regions that are enclosed by this region.
+   * This list includes only those regions that are immediately
+   * enclosed by this region, but does not include any that may
+   * be "nested" within the enclosed regions.
+   * @return a valid, potentially empty, list.
+   */
   public List<ContourRegion> getEnclosedRegions() {
     List<ContourRegion> nList = new ArrayList<>();
     nList.addAll(children);
     return nList;
   }
+
+  /** Gets an enumerated value indicating what kind of contour
+   * region this instance represents.
+   *
+   * @return a valid enumeration.
+   */
+  public ContourRegionType getContourRegionType(){
+    return this.contourRegionType;
+  }
+
 
   @Override
   public String toString() {
@@ -399,9 +441,9 @@ public class ContourRegion {
       areaString = String.format("%f", area);
     }
     return String.format("%4d %s  %s %3d",
-            regionIndex,
-            areaString, 
-            parent == null ? "root " : "child",
-            children.size());
+      regionIndex,
+      areaString,
+      parent == null ? "root " : "child",
+      children.size());
   }
 }

@@ -162,8 +162,9 @@ public interface IIncrementalTin {
    * of edges that form the structure of the incremental TIN.
    * The edges produced by this Iterator are filtered so that the
    * fictitious edges (ghost edges) are not produced by the
-   * iteration.  For example, this method could be used in the
-   * following manner:
+   * iteration.
+   * <p>
+   * For example, this method could be used in the following manner:
    * <pre>
    *     IIncremntal tin = // some implementation
    *     for(IQuadEdge e: tin.edges(){
@@ -203,7 +204,7 @@ public interface IIncrementalTin {
    * cautions regarding the use of this method.
    * @return a valid instance.
    */
-   public Iterable<SimpleTriangle> triangles();
+   Iterable<SimpleTriangle> triangles();
 
   /**
    * Gets the maximum index of the currently allocated edges. This

@@ -21,7 +21,7 @@
  * Revision History:
  * Date     Name         Description
  * ------   ---------    -------------------------------------------------
- * 08/2019  G. Lucas     Created  
+ * 08/2019  G. Lucas     Created
  *
  * Notes:
  *
@@ -29,6 +29,9 @@
  */
 package org.tinfour.contour;
 
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
 import org.tinfour.common.IQuadEdge;
 
 /**
@@ -68,18 +71,27 @@ class PerimeterLink {
    */
   TipLink tip1;
 
+  ArrayList<TipLink> tempList = new ArrayList<>();
+
   PerimeterLink(int index, IQuadEdge edge) {
     this.index = index;
     this.edge = edge;
   }
 
-  void addContourTip(Contour contour, boolean contourStart) {
-    TipLink tip = new TipLink(this, contour, contourStart);
+  void addContourTip(Contour contour, boolean contourStart, int sweepIndex) {
+    TipLink tip = new TipLink(this, contour, contourStart, sweepIndex);
+
     if (contourStart) {
       contour.startTip = tip;
     } else {
       contour.terminalTip = tip;
     }
+
+    if (sweepIndex != 0) {
+      tempList.add(tip);
+      return;
+    }
+
     if (tip0 == null) {
       tip0 = tip;
       tip1 = tip;
@@ -102,14 +114,40 @@ class PerimeterLink {
     }
   }
 
+  void prependThroughVertexTips() {
+    if (tempList.isEmpty()) {
+      return;
+    }
+
+    Collections.sort(tempList, new Comparator<TipLink>() {
+      @Override
+      public int compare(TipLink o1, TipLink o2) {
+        return Integer.compare(o1.sweepIndex, o2.sweepIndex);
+      }
+    });
+
+    for (TipLink tip : tempList) {
+      if (tip0 == null) {
+        tip0 = tip;
+        tip1 = tip;
+      } else {
+        tip.next = tip0;
+        tip0.prior = tip;
+        tip0 = tip;
+      }
+    }
+
+    tempList.clear();
+  }
+
   @Override
   public String toString() {
     if (prior == null || next == null) {
       return "Perimeter link " + index + ": " + edge.getIndex() + " (no links)";
     }
     return "Perimeter link " + index + ": "
-            + prior.edge.getIndex()
-            + " <- " + edge.getIndex()
-            + " -> " + next.edge.getIndex();
+      + prior.edge.getIndex()
+      + " <- " + edge.getIndex()
+      + " -> " + next.edge.getIndex();
   }
 }
