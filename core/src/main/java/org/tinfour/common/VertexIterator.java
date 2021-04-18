@@ -108,10 +108,8 @@ public class VertexIterator implements Iterator<Vertex> {
 
   @Override
   public Vertex next() {
-    if (nextVertex == null) {
-      if (!hasNext()) {
-        throw new NoSuchElementException("No more vertices in TIN");
-      }
+    if (nextVertex == null && !hasNext()) {
+      throw new NoSuchElementException("No more vertices in TIN");
     }
     Vertex result = nextVertex;
     nextVertex = null;

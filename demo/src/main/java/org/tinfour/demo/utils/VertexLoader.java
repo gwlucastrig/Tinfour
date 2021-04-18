@@ -36,6 +36,8 @@ import java.util.Random;
 import org.tinfour.common.Vertex;
 import org.tinfour.gis.las.ILasRecordFilter;
 import org.tinfour.gis.las.LasPoint;
+import org.tinfour.gis.las.LasRecordFilterByFirstReturn;
+import org.tinfour.gis.las.LasRecordFilterByLastReturn;
 import org.tinfour.gis.utils.VertexReaderLas;
 import org.tinfour.gis.utils.VertexReaderShapefile;
 import org.tinfour.utils.HilbertSort;
@@ -203,7 +205,8 @@ public class VertexLoader {
         long nRecords = lasReader.getNumberOfVerticesInSource();
         linearUnits = lasReader.getLinearUnits();
 
-        int classification = options.getLidarClass();
+        int lidarClass = options.getLidarClass();
+        String lidarReturn = options.getLidarReturn();
         double thinning = options.getLidarThinningFactor();
         maximumNumberOfVertices = options.getMaxVertices(Long.MAX_VALUE);
         if (maximumNumberOfVertices < Long.MAX_VALUE
@@ -217,7 +220,11 @@ public class VertexLoader {
         ILasRecordFilter filter;
 
         double[] clipBounds = options.getClipBounds();
-        if (classification == -1 && thinning == 1.0 && clipBounds == null) {
+        if ("First".equals(lidarReturn)) {
+          filter = new LasRecordFilterByFirstReturn();
+        } else if ("Last".equals(lidarReturn)) {
+          filter = new LasRecordFilterByLastReturn();
+        } else if (lidarClass == -1 && thinning == 1.0 && clipBounds == null) {
           filter = new ILasRecordFilter() {
             @Override
             public boolean accept(LasPoint record) {
@@ -227,7 +234,7 @@ public class VertexLoader {
           };
         } else {
           filter = new ThinningClassificationFilter(
-                  classification, thinning, clipBounds);
+                  lidarClass, thinning, clipBounds);
         }
 
         lasReader.setFilter(filter);
@@ -407,7 +414,7 @@ public class VertexLoader {
     return isSourceInGeographicCoordinates;
   }
 
- 
+
 
   /**
    * Gets the linear units for the coordinate system used by the data. It is
@@ -421,7 +428,7 @@ public class VertexLoader {
     return linearUnits;
   }
 
-  
+
   /**
    * Gets the coordinate transform, if any
    * @return if provided, a valid instance; otherwise, a null.

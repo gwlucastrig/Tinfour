@@ -62,7 +62,6 @@ public class InverseDistanceWeightingInterpolator implements IInterpolatorOverTi
   private final double vertexTolerance2; // square of vertexTolerance;
   private final double precisionThreshold;
 
-  private final IIncrementalTin tin;
   private final IIncrementalTinNavigator navigator;
   private final INeighborhoodPointsCollector neighborhoodPoints;
 
@@ -110,7 +109,6 @@ public class InverseDistanceWeightingInterpolator implements IInterpolatorOverTi
     vertexTolerance2 = thresholds.getVertexTolerance2();
     precisionThreshold = thresholds.getPrecisionThreshold();
 
-    this.tin = tin;
     navigator = tin.getNavigator();
     neighborhoodPoints = tin.getNeighborhoodPointsCollector();
     lambda = 3.5 / 2;
@@ -143,8 +141,6 @@ public class InverseDistanceWeightingInterpolator implements IInterpolatorOverTi
 
     vertexTolerance2 = thresholds.getVertexTolerance2();
     precisionThreshold = thresholds.getPrecisionThreshold();
-
-    this.tin = tin;
     navigator = tin.getNavigator();
     neighborhoodPoints = tin.getNeighborhoodPointsCollector();
     if (gaussian) {

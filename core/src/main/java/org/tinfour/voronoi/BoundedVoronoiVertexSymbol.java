@@ -117,7 +117,6 @@ public class BoundedVoronoiVertexSymbol implements IBoundedVoronoiVertexSymbol {
     if (label != null && !label.isEmpty() && font != null) {
       FontRenderContext frc = new FontRenderContext(null, true, true);
       TextLayout layout = new TextLayout(label, font, frc);
-      Rectangle2D r2d = layout.getBounds();
       double s = (vertexSymbolSize + 1) / 2;
       layout.draw(g2d,
         (float) (x + s),

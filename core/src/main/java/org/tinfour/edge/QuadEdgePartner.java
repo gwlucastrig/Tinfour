@@ -113,7 +113,23 @@ class QuadEdgePartner extends QuadEdge {
     dual.r = null;
     index = 0;
   }
-  
+
+    /**
+   * An implementation of the equals method which check for a matching
+   * reference.
+   *
+   * @param o a valid reference or a null
+   * @return true if the specified reference matches this.
+   */
+  @Override
+  public boolean equals(Object o) {
+    if (o instanceof QuadEdgePartner) {
+      return this == o;
+    }
+    return false;
+  }
+
+
   @Override
   public int hashCode() {
     int hash = 7;
