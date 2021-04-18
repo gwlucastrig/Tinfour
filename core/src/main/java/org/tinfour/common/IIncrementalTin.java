@@ -532,5 +532,28 @@ public interface IIncrementalTin {
   IConstraint getLinearConstraint(IQuadEdge edge);
 
 
+   /**
+   * Provides a convenience implementation
+   * that can be used with a Java enhanced-loop statement to access the set
+   * of vertices stored in an incremental TIN.
+   * This iterable will produce all vertices in the collection with
+   * no repeats or omissions.
+   * <p>
+   * For example, this method could be used in the
+   * following manner:
+   * <pre>
+   *     IIncremntal tin = // a valid instance
+   *     for(Vertex v: tin.verticess(){
+   *            // some processing logic
+   *     }
+   * </pre>
+   *
+   * <p>
+   * Please see the API documentation for VertexIterator for
+   * cautions regarding the use of this method.
+   * @return a valid instance.
+   */
+   Iterable<Vertex> vertices();
+
 
 }

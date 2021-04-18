@@ -55,6 +55,7 @@ import org.tinfour.common.SimpleTriangleIterator;
 import org.tinfour.common.Thresholds;
 import org.tinfour.common.TriangleCount;
 import org.tinfour.common.Vertex;
+import org.tinfour.common.VertexIterator;
 import org.tinfour.common.VertexMergerGroup;
 import org.tinfour.edge.QuadEdgeConstants;
 
@@ -2640,4 +2641,14 @@ public class SemiVirtualIncrementalTin implements IIncrementalTin {
     };
   }
 
+  @Override
+  public Iterable<Vertex> vertices() {
+    final VertexIterator vertexIterator = new VertexIterator(this);
+    return new Iterable<Vertex>() {
+      @Override
+      public Iterator<Vertex> iterator() {
+        return vertexIterator;
+      }
+    };
+  }
 }
