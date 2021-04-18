@@ -60,7 +60,6 @@ import java.util.ArrayList;
 import java.util.BitSet;
 import java.util.Iterator;
 import java.util.List;
-import java.util.NoSuchElementException;
 import org.tinfour.common.BootstrapUtility;
 import org.tinfour.common.GeometricOperations;
 import org.tinfour.common.IConstraint;

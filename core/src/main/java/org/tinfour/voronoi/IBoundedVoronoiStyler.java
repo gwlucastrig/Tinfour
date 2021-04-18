@@ -122,6 +122,6 @@ public interface IBoundedVoronoiStyler {
    * @param enabled true if the Theissen polygons (Voronoi cells) are to
    * be area-filled; otherwise, false.
    */
-  public void setAreaFillEnabled(boolean enabled);
+  void setAreaFillEnabled(boolean enabled);
 
 }

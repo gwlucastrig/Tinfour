@@ -336,7 +336,7 @@ public class ContourBuilderForTin {
    * <p>
    * Coordinates are stored in an array of doubles in the order
    * { (x0,y0), (x1,y1), (x2,y2), etc. }.
-   * 
+   *
    * @return a valid array of coordinates.
    */
   public double []getEnvelope(){
@@ -433,7 +433,6 @@ public class ContourBuilderForTin {
           }
         }
       }
-
     }
   }
 

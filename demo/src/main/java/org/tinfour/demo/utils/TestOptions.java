@@ -87,6 +87,7 @@ public class TestOptions {
     "-maxVertices",
     "-seed",
     "-lidarClass",
+    "-lidarReturn",
     "-lidarThinning",
     "-clip",
     "-frame",
@@ -107,6 +108,7 @@ public class TestOptions {
   Integer nColumns;
   Integer nTests;
   Integer lidarClass;
+  String lidarReturn;
   Double lidarThinning;
   Long maxVertices;
   Long randomSeed;
@@ -171,7 +173,7 @@ public class TestOptions {
           "Test class not found: " + tinClassName, ex);
       }
     }
- 
+
 
     if(delimiter!=null && delimiter.length()!=1){
       throw new IllegalArgumentException(
@@ -339,12 +341,11 @@ public class TestOptions {
         if (i == args.length - 1) {
           throw new IllegalArgumentException("Missing argument for " + option);
         }
- 
-		if (matched != null && matched.length == args.length) {
-			matched[i] = true;
-			matched[i + 1] = true;
-		}
-		return args[i + 1];
+        if (matched != null && matched.length == args.length) {
+          matched[i] = true;
+          matched[i + 1] = true;
+        }
+        return args[i + 1];
       }
     }
     return null;
@@ -482,7 +483,21 @@ public class TestOptions {
     randomSeed = scanLongOption(args, "-seed", matched);
 
     lidarClass = scanIntOption(args, "-lidarClass", matched, lidarClass);
+    lidarReturn = scanStringOption(args, "-lidarReturn", matched);
     lidarThinning = scanDoubleOption(args, "-lidarThinning", matched);
+
+    if(lidarReturn!=null){
+      switch (lidarReturn.toLowerCase()){
+        case "first":
+          lidarReturn = "First";
+          break;
+        case "last":
+          lidarReturn = "Last";
+          break;
+        default:
+          throw new IllegalArgumentException("Invalid lidar return specification "+lidarReturn);
+      }
+    }
 
     clipBounds = scanBounds(args, "-clip", matched);
     frame = scanBounds(args, "-frame", matched);
@@ -777,6 +792,14 @@ public class TestOptions {
     }
   }
 
+  /**
+   * Gets a string indicating whether lidar data should be selected based
+   * on return and, if so, whether first or last return should be used.
+   * @return if specified, either "First" or "Last"; otherwise, a null.
+   */
+  public String getLidarReturn(){
+    return lidarReturn;
+  }
   /**
    * Set the default classification for lidar points to be accepted when
    * reading a LAS file. Use 2 for ground points and -1 to accept all.
