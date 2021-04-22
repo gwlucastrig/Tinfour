@@ -37,7 +37,6 @@ import java.awt.Graphics2D;
 import java.awt.font.FontRenderContext;
 import java.awt.font.TextLayout;
 import java.awt.geom.Ellipse2D;
-import java.awt.geom.Rectangle2D;
 
 /**
  * The default renderer for vertices in a drawing of a BoundedVoronoiDiagram

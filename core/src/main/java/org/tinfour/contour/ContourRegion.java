@@ -80,7 +80,7 @@ public class ContourRegion {
     double a = 0;
     ContourRegionType rType = ContourRegionType.Interior;
     for (ContourRegionMember member : memberList) {
-      if (member.contour.getContourType() == ContourType.Perimeter) {
+      if (member.contour.getContourType() == ContourType.Boundary) {
         rType = ContourRegionType.Primary;
       }
       double s = calculateAreaContribution(member.contour);
@@ -145,7 +145,11 @@ public class ContourRegion {
   }
 
   /**
-   * Get the XY coordinates for the contour region
+   * Get the XY coordinates for the contour region.  Coordinates
+   * are stored in a one-dimensional array of doubles in the order:
+   * <pre>
+   * { (x0,y0), (x1,y1), (x2,y2), etc. }.
+   *</pre>
    *
    * @return a safe copy of the geometry of the contour region.
    */

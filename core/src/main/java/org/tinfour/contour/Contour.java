@@ -71,15 +71,15 @@ public class Contour {
      */
     Interior,
     /**
-     * Contour is lies entirely on the perimeter of the TIN.
+     * Contour is lies entirely on the boundary of the TIN.
      */
-    Perimeter
+    Boundary
   }
 
   private static final int GROWTH_FACTOR = 256;
 
   int n;
-  double[] xy;
+  double[] xy = new double[GROWTH_FACTOR];
 
   final int contourIndex;
   final int leftIndex;
@@ -114,7 +114,6 @@ public class Contour {
     this.leftIndex = leftIndex;
     this.rightIndex = rightIndex;
     this.z = z;
-    this.xy = new double[GROWTH_FACTOR];
     this.closedLoop = closedLoop;
   }
 
@@ -127,10 +126,9 @@ public class Contour {
    * @param zB the value of the second vertex of the edge
    */
   void add(IQuadEdge e, double zA, double zB) {
-    if (n > 0 && n == xy.length) {
+    if (n == xy.length) {
       xy = Arrays.copyOf(xy, xy.length + GROWTH_FACTOR);
     }
-
     // interpolate out next point
     Vertex A = e.getA();
     Vertex B = e.getB();
@@ -146,14 +144,10 @@ public class Contour {
    * greater than or equal to the contour z value. During construction, this
    * edge is used to indicate the area immediately to the left of the contour.
    *
-   * @param e a valid edge
    * @param v a valid vertex through which the contour passes.
    */
-  void add(IQuadEdge e, Vertex v) {
-    // the following assertion does not apply when adding the first
-    // vertex to the contour.
-    assert n == 0 || v.equals(e.getA()) : "Through-vertex case, edge not pointing from vertex";
-    if (n > 0 && n == xy.length) {
+  void add(Vertex v) {
+    if (n == xy.length) {
       xy = Arrays.copyOf(xy, xy.length + GROWTH_FACTOR);
     }
 
@@ -182,22 +176,31 @@ public class Contour {
    * @return a valid, potentially zero-length array giving x and y coordinates
    * for a series of points.
    */
-  @Deprecated
   public double[] getCoordinates() {
     return Arrays.copyOf(xy, n);
   }
 
   /**
    * Gets a safe copy of the coordinates for the contour. Coordinates
-   * are stored in an array of doubles in the order
+   * are stored in a one-dimensional array of doubles in the order:
+   * <pre>
    * { (x0,y0), (x1,y1), (x2,y2), etc. }.
-   *
+   *</pre>
    * @return a valid, potentially zero-length array giving x and y coordinates
    * for a series of points.
    */
   public double[] getXY() {
     return Arrays.copyOf(xy, n);
   }
+
+  /**
+   * Gets the z value associated with the contour
+   * @return the z value used to construct the contour.
+   */
+  public double getZ(){
+    return z;
+  }
+
 
   /**
    * Indicates whether the contour is empty.
@@ -284,7 +287,7 @@ public class Contour {
    */
   public ContourType getContourType() {
     if (rightIndex == -1) {
-      return ContourType.Perimeter;
+      return ContourType.Boundary;
     } else {
       return ContourType.Interior;
     }
