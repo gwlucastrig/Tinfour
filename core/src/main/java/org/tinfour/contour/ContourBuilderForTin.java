@@ -402,7 +402,7 @@ public class ContourBuilderForTin {
           A = e.getA();
           B = e.getB();
         }
-        // e is an ascending edge and a valid start
+        // e is an descending edge and a valid start
         Contour contour = new Contour(nContour++, iContour + 1, iContour, z, true);
         contour.add(e, zA, zB);
         followContour(contour, z, e, null, 0, e, null);
@@ -422,13 +422,13 @@ public class ContourBuilderForTin {
           double zD = valuator.value(D);
           if (zC >= z && z > zD) {
             Contour contour = new Contour(nContour++, iContour + 1, iContour, z, true);
-            contour.add(e, A);
-            contour.add(f, B);
+            contour.add(A);
+            contour.add(B);
             followContour(contour, z, e, A, 0, f, B);
           } else if (zD >= z && z > zC) {
             Contour contour = new Contour(nContour++, iContour + 1, iContour, z, true);
-            contour.add(g, B);
-            contour.add(h, A);
+            contour.add(B);
+            contour.add(A);
             followContour(contour, z, g, B, 0, h, A);
           }
         }
@@ -485,7 +485,7 @@ public class ContourBuilderForTin {
             // exit through an ascending edge
             markAsVisited(f);
             Contour contour = new Contour(nContour++, iContour + 1, iContour, z, false);
-            contour.add(e, A);
+            contour.add(A);
             contour.add(f.getDual(), zC, zB);
             followContour(contour, z, e, A, startSweepIndex, f.getDual(), null);
           }
@@ -495,13 +495,13 @@ public class ContourBuilderForTin {
           double zG = valuator.value(G);
           if (zB < z && zC == z && zG >= z) {
             Contour contour = new Contour(nContour++, iContour + 1, iContour, z, false);
-            contour.add(e, A);
-            contour.add(h, C);
+            contour.add(A);
+            contour.add(C);
             markAsVisited(g);
             markAsVisited(h);
             int dualIndex = h.getIndex() ^ 1;
             if (perimeterTermination.get(dualIndex)) {
-              finishContour(contour, e, A, startSweepIndex, h, G);
+              finishContour(contour, e, startSweepIndex, h, G);
             } else {
               followContour(contour, z, e, A, startSweepIndex, h, G);
             }
@@ -532,13 +532,34 @@ public class ContourBuilderForTin {
     visited.set(index ^ 1);
   }
 
-  private boolean followContour(Contour contour, double z,
+  /**
+   * Follow a contour to its completion.  It is expected that when this
+   * method is called, the startEdge will be either a descending edge
+   * (in the through-edge case) or a support edge for a through-vertex case.
+   * If the start passes through a vertex, the startVertex will be non-null.
+   * The start sweep index will be zero in the through-edge case or
+   * a value greater than zero in the through-vertex case.
+   * The terminal edge and vertex follow the same rules as the start.
+   * In fact, in some cases, the terminal edge may actually be the starting
+   * @param contour a valid isntance
+   * @param z the z value for the contour
+   * @param startEdge the starting edge
+   * @param startVertex the starting vertex, potentially null.
+   * @param startSweepIndex a value zero (through-edge case) or larger
+   * (through-vertex case).
+   * @param terminalEdge the last edge added to the contour, so far
+   * @param terminalVertex the last vertex added to the contour, so far,
+   * potentially null.
+   * @return indicates a successful completion; at this time, always true.
+   */
+  private boolean followContour(Contour contour,
+    double z,
     IQuadEdge startEdge,
     Vertex startVertex,
     int startSweepIndex,
     IQuadEdge terminalEdge,
     Vertex terminalVertex) {
-    Vertex v = terminalVertex;
+    Vertex V = terminalVertex;
     IQuadEdge e = terminalEdge;
     markAsVisited(e);
 
@@ -559,7 +580,7 @@ public class ContourBuilderForTin {
         zC = valuator.value(C);
       }
 
-      if (v == null) {
+      if (V == null) {
         // transition through edge
         // e should be a descending edge with z values
         // bracketing the contour z.
@@ -578,8 +599,8 @@ public class ContourBuilderForTin {
         } else if (zC == z) {
           // transition-vertex side
           e = r;
-          v = C;
-          contour.add(e, C);
+          V = C;
+          contour.add(C);
         } else {
           // this could happen if zC is a null
           // meaning we have a broken contour
@@ -596,7 +617,6 @@ public class ContourBuilderForTin {
         // current triangle, we need to search in a clockwise
         // direction for the transition.
         IQuadEdge e0 = e;
-
         IQuadEdge g = e;
         while (true) {
           g = g.getForwardFromDual();
@@ -610,14 +630,14 @@ public class ContourBuilderForTin {
           markAsVisited(h);
           markAsVisited(k);
           if (zG > z && z > zK) {
-            contour.add(h, zK, zG);
             e = h.getDual();
-            v = null;
+            V = null;
+            contour.add(e, zG, zK);
             break;
           } else if (zG == z && z > zK) {
-            contour.add(f, G);
+            contour.add(G);
             e = f;
-            v = G;
+            V = G;
             break;
           }
           f = h;
@@ -626,40 +646,62 @@ public class ContourBuilderForTin {
       }
 
       // check for termination conditions
-      if (v == null) {
+      if (V == null) {
         if (contour.isClosed()) {
           if (startEdge.equals(e) && startVertex == null) {
             // closed loop
-            finishContour(contour, startEdge, startVertex, startSweepIndex, e, v);
+            finishContour(contour, startEdge, startSweepIndex, e, V);
             return true;
           }
         } else {
           C = e.getForward().getB();
           if (C == null) {
-            finishContour(contour, startEdge, startVertex, startSweepIndex, e, v);
+            finishContour(contour, startEdge, startSweepIndex, e, V);
             return true;
           }
         }
       } else {
         if (contour.isClosed()) {
-          if (v == startVertex) {
-            finishContour(contour, startEdge, startVertex, 0, e, v);
+          if (V == startVertex) {
+            finishContour(contour, startEdge, 0, e, V);
             return true;
           }
         }
         int dualIndex = e.getIndex() ^ 1;
         if (perimeterTermination.get(dualIndex)) {
-          finishContour(contour, startEdge, startVertex, startSweepIndex, e, v);
+          finishContour(contour, startEdge, startSweepIndex, e, V);
           return true;
         }
       }
-
     }
   }
 
+  /**
+   * Finishes the construction of an individual contour by adding it
+   * to the appropriate containers.  If the contour is an open contour
+   * and intersects a boundary, perimeter link instances are created
+   * to support eventual construction of polygon (region) features.
+   * <p>The sweep index for the start (and termination) of the contour will be
+   * zero if the tip of the contour is based on an edge construction, but
+   * will be greater than zero if the tip of the contour passes
+   * directly through a vertex.
+   * <p>
+   * If the contour terminates on an edge, the terminalEdge will be the edge
+   * that was identified as its termination (it should be a perimeter edge).
+   * If the contour terminates on a vertex, then the terminalEdge will be
+   * the "supporting edge" which starts at the terminal vertex and indicates
+   * the direction inward to an area of points with a value greater than
+   * or equal to the contour value.
+   * @param contour the contour
+   * @param startEdge the edge that was used to specify the start of
+   * the contour.
+   * @param startSweepIndex The sweep index for the start of the contour.
+   * @param terminalEdge the edge that was used to create the end of the contour
+   * @param terminalVertex if the contour terminates on a vertex, a valid instance;
+   * otherwise a null.
+   */
   private void finishContour(Contour contour,
     IQuadEdge startEdge,
-    Vertex startVertex,
     int startSweepIndex,
     IQuadEdge terminalEdge,
     Vertex terminalVertex) {
@@ -680,9 +722,9 @@ public class ContourBuilderForTin {
       PerimeterLink pTerm = perimeterMap.get(termIndex);
       pTerm.addContourTip(contour, false, 0);
     } else {
-      // terminalVertex == null
+      // terminalVertex != null, the contour terminates on a vertex.
       // the terminal edge will actually be the supporting edge, and
-      // not the associated perimeter edge that we want.  So we need
+      // not necessarily the associated perimeter edge that we want.  So we need
       // to sweep around clockwise and find the inside perimeter edge.
       int terminalSweepIndex = 0;
       IQuadEdge s = terminalEdge;
