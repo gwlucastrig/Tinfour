@@ -32,6 +32,7 @@ package org.tinfour.contour;
 import java.awt.geom.AffineTransform;
 import java.awt.geom.Path2D;
 import java.util.Arrays;
+import java.util.concurrent.atomic.AtomicInteger;
 import org.tinfour.common.IQuadEdge;
 import org.tinfour.common.Vertex;
 
@@ -59,6 +60,8 @@ import org.tinfour.common.Vertex;
  */
 public class Contour {
 
+  static final AtomicInteger serialIdSource = new AtomicInteger();
+
   /**
    * An enumeration that indicates the type of a contour
    */
@@ -81,7 +84,7 @@ public class Contour {
   int n;
   double[] xy = new double[GROWTH_FACTOR];
 
-  final int contourIndex;
+  final int contourId;
   final int leftIndex;
   final int rightIndex;
   final double z;
@@ -95,7 +98,6 @@ public class Contour {
   /**
    * Constructs an instance of a contour
    *
-   * @param contourIndex an arbitrary ID value assigned to the contour
    * @param leftIndex the contour-interval index of the area to the left of the
    * contour.
    * @param rightIndex the contour-interval index of the area to the right of
@@ -105,12 +107,14 @@ public class Contour {
    * loop.
    */
   public Contour(
-    int contourIndex,
     int leftIndex,
     int rightIndex,
     double z,
     boolean closedLoop) {
-    this.contourIndex = contourIndex;
+    // the contour ID is just a debugging aid.  It gives a way of detecting
+    // when a problematic contour is constructed.  Once the software is mature
+    // it may not be necessary to preserve it.
+    this.contourId = serialIdSource.incrementAndGet();
     this.leftIndex = leftIndex;
     this.rightIndex = rightIndex;
     this.z = z;
@@ -244,16 +248,16 @@ public class Contour {
   }
 
   /**
-   * Gets the index of the contour. When used with the ContourBuilder, this
+   * Gets the serialized identification code for the contour.
+   * When used with the ContourBuilder, this
    * value gives a unique serial ID assigned when the contour is constructed.
-   * Other applications are free to use this index as they see fit. This value
-   * should not be confused with the contour interval or the left and right side
-   * index values.
+   * This value should not be confused with the contour interval
+   * or the left and right side index values.
    *
    * @return an integer value.
    */
-  public int getIndex() {
-    return contourIndex;
+  public int getContourId() {
+    return contourId;
   }
 
   /**
@@ -313,7 +317,7 @@ public class Contour {
       cString = String.format("(x0,y0)=(%f,%f)  (x1,y1)=(%f,%f)", x0, y0, x1, y1);
     }
 
-    return "Contour " + contourIndex
+    return "Contour " + contourId
       + ": L=" + leftIndex
       + ", R=" + rightIndex
       + ", z=" + z
