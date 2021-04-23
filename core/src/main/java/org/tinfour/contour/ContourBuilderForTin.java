@@ -780,7 +780,6 @@ public class ContourBuilderForTin {
    * <p>
    * The perimeter contours are constructed by this method during
    * the construction of the regions. These contours are always oriented
-   *
    * so that the interior of the TIN is to their left. Their left-index
    * is assigned according to the z values that border their immediate
    * left. the right-index is assigned a value of -1, indicating that
