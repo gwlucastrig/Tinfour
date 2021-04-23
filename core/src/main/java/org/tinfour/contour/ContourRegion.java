@@ -312,14 +312,14 @@ public class ContourRegion {
   }
 
   /**
-   * Gets the signed area of the region. If the points that specify the region
+   * Gets the <strong>signed</strong> area of the region. If the points that specify the region
    * are given in a counter-clockwise order, the region will have a positive
    * area. If the points are given in a clockwise order, the region will have a
    * negative area.
    *
    * @return a signed real value.
    */
-  public double getSignedArea() {
+  public double getArea() {
     return area;
   }
 

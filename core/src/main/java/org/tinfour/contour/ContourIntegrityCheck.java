@@ -110,7 +110,7 @@ public class ContourIntegrityCheck {
     for(ContourRegion r: regions){
       ContourRegionType rt = r.getContourRegionType();
       if(rt == ContourRegionType.Primary){
-        aSum+=r.getSignedArea();
+        aSum+=r.getArea();
       }
       adjustedSum+=r.getAdjustedArea();
     }
