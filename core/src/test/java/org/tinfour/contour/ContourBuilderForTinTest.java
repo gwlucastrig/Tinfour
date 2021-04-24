@@ -90,8 +90,8 @@ public class ContourBuilderForTinTest {
   /**
    * Test through-vertex case with a "fanout" geometry.
    * The fanout geometry is basically a diamond shape. The
-   * two points of the diamond match the contour value 20,
-   * the nVertex middle-band points alternate between 0 and 40.
+   * two vList of the diamond match the contour value 20,
+   * the nVertex middle-band vList alternate between 0 and 40.
    */
   @Test
   public void testFanout() {
@@ -253,6 +253,36 @@ public class ContourBuilderForTinTest {
         name = "z2Contour iV=" + iV + ", iZ=" + iZ;
         assertTrue(status, name + ": " + cic.getMessage());
       }
+    }
+  }
+
+  /**
+   * Test the problem set originally identified in Issue 66
+   */
+  @Test
+  public void testIssue66() {
+
+    ArrayList<Vertex> vList = new ArrayList<>();
+    vList.add(new Vertex(0.0, 0.0, 0.0, 0));
+    vList.add(new Vertex(0.0, 40.0, 40.0, 1));
+    vList.add(new Vertex(40.0, 0.0, 40.0, 2));
+    vList.add(new Vertex(40.0, 40.0, 40.0, 3));
+    vList.add(new Vertex(80.0, 0.0, 40.0, 4));
+    vList.add(new Vertex(80.0, 40.0, 40.0, 5));
+
+    double[] zContour = new double[]{40.0};
+
+    for (int iStart = 0; iStart < vList.size(); iStart++) {
+      IIncrementalTin tin = new IncrementalTin(1.0);
+      for (int i = 0; i < vList.size(); i++) {
+        tin.add(vList.get((iStart + i) % vList.size()));
+      }
+
+      ContourBuilderForTin builder = new ContourBuilderForTin(tin, null, zContour, true);
+      ContourIntegrityCheck cic = new ContourIntegrityCheck(builder);
+      boolean status = cic.inspect();
+      String name = "iStart=" + iStart;
+      assertTrue(status, name + ": " + cic.getMessage());
     }
   }
 
