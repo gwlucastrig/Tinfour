@@ -207,8 +207,52 @@ public class ContourBuilderForTinTest {
       // the larger of the two, no matter what order the regions were generated
       // during construction.  In this case, the smaller region will be 1/3rd the
       // area of the larger
-      assertEquals(rList.get(0).getArea()/3.0, rList.get(1).getArea(), 1.0e-8,
+      assertEquals(rList.get(0).getArea() / 3.0, rList.get(1).getArea(), 1.0e-8,
         "iStart=" + iStart + " invalid area values");
+    }
+  }
+
+  /**
+   * Tests the case where a through-vertex contour spans a single segment,
+   * crossing the TIN. This would also apply to the case where a corner
+   * was lopped off, though that is not explicitly tested here.
+   */
+  @Test
+  public void testShortTraversal() {
+    double[] zContour = new double[]{20};  // just the through-vertex case
+    double[] z2Contour = new double[]{10, 20, 30}; // the through-vertex and a couple of through-edge cases
+    double[][] vCoord = new double[][]{
+      {0, 0},
+      {1, 0},
+      {2, 0.75},
+      {1, 0.75}
+    };
+    double[] zCoord = new double[]{0, 20, 40, 20};
+    for (int iV = 0; iV < 4; iV++) {
+      for (int iZ = 0; iZ < 4; iZ++) {
+        IIncrementalTin tin = new IncrementalTin(1.0);
+        for (int i = 0; i < 4; i++) {
+          double x = vCoord[(iV + i) % 4][0];
+          double y = vCoord[(iV + i) % 4][1];
+          double z = zCoord[(iZ + i) % 4];
+          tin.add(new Vertex(x, y, z, i));
+        }
+        ContourBuilderForTin builder = new ContourBuilderForTin(tin, null, zContour, true);
+        ContourIntegrityCheck cic = new ContourIntegrityCheck(builder);
+        boolean status = cic.inspect();
+        String name = "zContour iV=" + iV + ", iZ=" + iZ;
+        assertTrue(status, name + ": " + cic.getMessage());
+        List<ContourRegion> rList = builder.getRegions();
+        ContourRegion r0 = rList.get(0);
+        ContourRegion r1 = rList.get(1);
+        assertEquals(r0.getArea(), r1.getArea(), 1.0e-7, "Area mistmatch for case " + name);
+
+        builder = new ContourBuilderForTin(tin, null, z2Contour, true);
+        cic = new ContourIntegrityCheck(builder);
+        status = cic.inspect();
+        name = "z2Contour iV=" + iV + ", iZ=" + iZ;
+        assertTrue(status, name + ": " + cic.getMessage());
+      }
     }
   }
 
