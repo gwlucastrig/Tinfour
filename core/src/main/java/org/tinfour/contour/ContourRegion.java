@@ -341,13 +341,17 @@ public class ContourRegion {
   /**
    * Gets a Path2D suitable for rendering purposes. The path includes only the
    * outer polygon for the region and does not include the internal (nested)
-   * polygons.
+   * polygons. Because the contour builder class sorts polygons by descending
+   * area, this method will general attain the same effect as the conventional
+   * getPath2D() call when rendering the full set of regions. However, this
+   * method is not suitable in cases where interior regions are to be omitted
+   * or filled with a semi-transparent color.
    *
    * @param transform a valid AffineTransform, typically specified to map the
    * Cartesian coordinates of the contour to pixel coordinate.
    * @return a valid instance
    */
-  public Path2D getPath2D(AffineTransform transform) {
+  public Path2D getPath2DWithoutNesting(AffineTransform transform) {
     AffineTransform af = transform;
     if (af == null) {
       af = new AffineTransform();  // identity transform
@@ -368,7 +372,7 @@ public class ContourRegion {
    * Cartesian coordinates of the contour to pixel coordinate.
    * @return a valid instance
    */
-  public Path2D getPathWithNesting(AffineTransform transform) {
+  public Path2D getPath2D(AffineTransform transform) {
     AffineTransform af = transform;
     if (af == null) {
       af = new AffineTransform();  // identity transform

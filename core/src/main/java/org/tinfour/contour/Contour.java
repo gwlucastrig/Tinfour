@@ -286,6 +286,7 @@ public class Contour {
 
   /**
    * Indicates whether the contour is an interior or perimeter contour.
+   * Note: future implementations may include additional types.
    *
    * @return a valid enumeration instance
    */
@@ -295,6 +296,14 @@ public class Contour {
     } else {
       return ContourType.Interior;
     }
+  }
+
+  /**
+   * Indicates whether the contour is a boundary contour.
+   * @return true if the contour is a boundary; otherwise, false.
+   */
+  public boolean isBoundary(){
+    return rightIndex == -1;
   }
 
   /**
@@ -323,6 +332,25 @@ public class Contour {
       + ", z=" + z
       + ", closed=" + closedLoop
       + "  " + cString;
+  }
+
+
+  /**
+   * Gets the index for the value of the input contour array that
+   * was used to build this contour, or a notional value if this
+   * instance is a boundary contour.
+   * <p>
+   * It is strongly recommended that application code check
+   * to see if this instance is a boundary contour before using the contour index.
+   * @return a value in the range 0 to the length of the input z contour array.
+   */
+  int getContourIndex(){
+     if(rightIndex<0){
+       // this is a boundary contour.  the contour index value
+       // is not truly meaningful.
+       return leftIndex;
+     }
+     return leftIndex-1;
   }
 
   /**

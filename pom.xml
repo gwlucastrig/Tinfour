@@ -9,7 +9,7 @@
 
   <groupId>org.tinfour</groupId>
   <artifactId>Tinfour</artifactId>
-  <version>2.1.6-SNAPSHOT</version>
+  <version>2.1.6</version>
   <packaging>pom</packaging>
   
   <name>Tinfour</name>
