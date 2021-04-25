@@ -21,7 +21,7 @@
  * Revision History:
  * Date     Name         Description
  * ------   ---------    -------------------------------------------------
- * 08/2019  G. Lucas     Created  
+ * 08/2019  G. Lucas     Created
  *
  * Notes:
  *
@@ -55,6 +55,7 @@ import org.tinfour.common.PolygonConstraint;
 import org.tinfour.common.Vertex;
 import org.tinfour.contour.Contour;
 import org.tinfour.contour.ContourBuilderForTin;
+import org.tinfour.contour.ContourIntegrityCheck;
 import org.tinfour.contour.ContourRegion;
 import org.tinfour.svm.properties.SvmProperties;
 import org.tinfour.utils.AxisIntervals;
@@ -199,7 +200,7 @@ class SvmContourGraph {
 
     // even if all vertices in the source were inside the boundary constraints
     // the flat-fixer logic would have create boundaries outside the
-    // constraints (that's a bug, not a feature).  In either case, 
+    // constraints (that's a bug, not a feature).  In either case,
     // it is necessary to force outside values to be at least the
     // shoreline reference elevation.
     ps.println("\nChecking for vertices lying outside of constraints");
@@ -246,7 +247,7 @@ class SvmContourGraph {
         }
       }
     }
-    
+
     AxisIntervals aIntervals = AxisIntervals.computeIntervals(
             zMin,
             zMax,
@@ -282,6 +283,10 @@ class SvmContourGraph {
             = new ContourBuilderForTin(tin, filter, zContour, true);
     double areaFactor = properties.getUnitOfArea().getScaleFactor();
     builder.summarize(ps, areaFactor);
+    ContourIntegrityCheck check = new ContourIntegrityCheck(builder);
+    check.inspect();
+    ps.println("Contour integrity check status: "+check.getMessage());
+
 
     Dimension dimension = properties.getContourGraphDimensions();
     int width = dimension.width;
@@ -318,7 +323,7 @@ class SvmContourGraph {
       g2d.draw(path);
     }
 
-    // Next, draw the area filled regions 
+    // Next, draw the area filled regions
     List<ContourRegion> regions = builder.getRegions();
     for (ContourRegion region : regions) {
       int rIndex = region.getRegionIndex();
@@ -327,7 +332,7 @@ class SvmContourGraph {
       }
       color = getColor(rIndex, 0, iN);
       g2d.setColor(color);
-      Path2D path = region.getPathWithNesting(af);
+      Path2D path = region.getPath2D(af);
       g2d.fill(path);
       g2d.draw(path);
     }
@@ -352,7 +357,7 @@ class SvmContourGraph {
       }
     }
 
-    //Draw the shoreline.  Do this last so that it 
+    //Draw the shoreline.  Do this last so that it
     // is on top of all other water features and gives a strong finish
     // to the rendering.
     g2d.setColor(Color.black);

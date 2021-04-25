@@ -148,7 +148,7 @@ public class ContourIntegrityCheck {
         if(contour.getContourType()==ContourType.Interior){
           if(!contour.traversedBackward && contour.traversedForward){
             message = "Interior contour not traversed in both directions,"
-              +" contour index "+contour.getContourId();
+              +" contour ID "+contour.getContourId();
             return false;
           }
         }
