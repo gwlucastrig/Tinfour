@@ -344,7 +344,7 @@ public class Contour {
    * to see if this instance is a boundary contour before using the contour index.
    * @return a value in the range 0 to the length of the input z contour array.
    */
-  int getContourIndex(){
+  public int getContourIndex(){
      if(rightIndex<0){
        // this is a boundary contour.  the contour index value
        // is not truly meaningful.
