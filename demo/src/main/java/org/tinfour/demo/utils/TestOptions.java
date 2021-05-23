@@ -95,7 +95,8 @@ public class TestOptions {
     "-geo",
     "-delimiter",
     "-palette",
-    "-interpolator"
+    "-interpolator",
+    "-imageSize"
   };
 
 
@@ -123,6 +124,7 @@ public class TestOptions {
   String delimiter;
   String interpolator;
   InterpolationMethod interpolationMethod;
+  int [] imageSize;
 
   /**
    * Indicates whether the specified string matches the pattern of a
@@ -394,6 +396,57 @@ public class TestOptions {
   }
 
   /**
+   * Search the arguments for the specified option followed by a pair of
+   * integers in the form ###x### which gives the integral width and height for
+   * a specification.
+   *
+   * @param args a valid array of arguments.
+   * @param option the target command-line argument (introduced by a dash)
+   * @param matched an array parallel to args used to indicate which arguments
+   * were identified by the scan operation.
+   * @return if found, a valid array containing positive numeric values.
+   */
+  public int[] scanSizeOption(String[] args, String option, boolean[] matched)
+    throws IllegalArgumentException {
+    for (int i = 0; i < args.length; i++) {
+      if (args[i].equalsIgnoreCase(option)) {
+        if (i == args.length - 1) {
+          throw new IllegalArgumentException("Missing argument for " + option);
+        }
+        try {
+          if (matched != null && matched.length == args.length) {
+            matched[i] = true;
+            matched[i + 1] = true;
+          }
+          String s = args[i + 1];
+          int index = s.indexOf("x");
+          if (index < 0) {
+            index = s.indexOf(",");
+          }
+          if (index <= 1 || index == s.length() - 1) {
+            throw new IllegalArgumentException(
+              "Invalid entry where size specificaiton expected: " + s);
+          }
+          int[] result = new int[2];
+          result[0] = Integer.parseInt(s.substring(0, index));
+          result[1] = Integer.parseInt(s.substring(index + 1, s.length()));
+          if (result[0] < 1 || result[1] < 1) {
+            throw new IllegalArgumentException(
+              "Invalid numeric values for size specification: " + s);
+          }
+          return result;
+        } catch (NumberFormatException nex) {
+          throw new IllegalArgumentException(
+            "Illegal integer size value for "
+            + option
+            + ", " + nex.getMessage(), nex);
+        }
+      }
+    }
+    return new int[0];
+  }
+
+  /**
    * Checks to see that the args[] array is valid.
    *
    * @param args an array of arguments thay must not be null and must not
@@ -501,6 +554,7 @@ public class TestOptions {
 
     clipBounds = scanBounds(args, "-clip", matched);
     frame = scanBounds(args, "-frame", matched);
+    imageSize = scanSizeOption(args, "-imageSize", matched);
 
     tinClassName = scanStringOption(args, "-tinClass", matched);
 
@@ -876,6 +930,21 @@ public class TestOptions {
     }
     return Arrays.copyOf(frame, 4);
   }
+
+  /**
+   * Gets an image size.  If no image size was specified, the
+   * application-supplied defaults will be returned.
+   * @param defaultWidth a value greater than zero.
+   * @param defaultHeight a value greater than zero.
+   * @return
+   */
+  public int []getImageSize(int defaultWidth, int defaultHeight){
+    if(imageSize!=null && imageSize.length==2){
+      return Arrays.copyOf(imageSize, 2);
+    }
+    return new int[]{defaultWidth, defaultHeight};
+  }
+
   /**
    * Indicates whether the options specified a class for the Incremental TIN.
    * @return true if the options specified a class; otherwise, false.
