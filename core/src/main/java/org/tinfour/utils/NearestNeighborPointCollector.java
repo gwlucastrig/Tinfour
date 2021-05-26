@@ -22,6 +22,7 @@
  * Date     Name         Description
  * ------   ---------    -------------------------------------------------
  * 07/2016  G. Lucas     Created
+ * 05/2021  G. Lucas     Updated to fix bugs and awkward coding.
  *
  * Notes:
  *
@@ -36,20 +37,18 @@ import org.tinfour.common.Vertex;
 import org.tinfour.common.VertexMergerGroup;
 
 /**
- * Provides a utility for the efficient identification of the
- * K-nearest points to a specified set of query coordinates.
- * This utility works by creating a grid of bins into which
- * the vertices are initially separated. The bins are then
- * searched to find the nearest vertices.
+ * Provides a utility for the efficient identification of the K-nearest points
+ * to a specified set of query coordinates. This utility works by creating a
+ * grid of bins into which the vertices are initially separated. The bins are
+ * then searched to find the nearest vertices.
  * <p>
- * This class is intended to support testing and verification.
- * It has no direct relationship with any of the graph-based structures
- * produced by the Tinfour library.
+ * This class is intended to support testing and verification. It has no direct
+ * relationship with any of the graph-based structures produced by the Tinfour
+ * library.
  * <p>
- * The design of this class is optimized for repeated searches
- * of very large vertex sets. While the up front processing is not
- * trivial, the time cost is compensated for by more efficient processing
- * across multiple searches.
+ * The design of this class is optimized for repeated searches of very large
+ * vertex sets. While the up front processing is not trivial, the time cost is
+ * compensated for by more efficient processing across multiple searches.
  */
 public class NearestNeighborPointCollector {
 
@@ -73,9 +72,9 @@ public class NearestNeighborPointCollector {
     = VertexMergerGroup.ResolutionRule.MinValue;
 
   /**
-   * Construct a collector based on the specified list of vertices and
-   * bounds. It is assumed that the coordinates and values of all specifications
-   * are valid floating-point values (no NaN's included).
+   * Construct a collector based on the specified list of vertices and bounds.
+   * It is assumed that the coordinates and values of all specifications are
+   * valid floating-point values (no NaN's included).
    *
    * @param vList a list of valid vertices
    * @param mergeDuplicates indicates whether duplicates should be merged.
@@ -211,8 +210,8 @@ public class NearestNeighborPointCollector {
   }
 
   /**
-   * Sets the rule for resolving coincident vertices; recalculates
-   * value for vertices in the collection, if necessary
+   * Sets the rule for resolving coincident vertices; recalculates value for
+   * vertices in the collection, if necessary
    *
    * @param rule a valid member of the enumeration
    */
@@ -232,8 +231,7 @@ public class NearestNeighborPointCollector {
   }
 
   /**
-   * Given a row/column index, constrains it to the
-   * range of available bins
+   * Given a row/column index, constrains it to the range of available bins
    *
    * @param index the computed coordinate index
    * @param n the number of available bins
@@ -250,13 +248,13 @@ public class NearestNeighborPointCollector {
   }
 
   /**
-   * Indicates whether the specified bin could possibly contain a point
-   * that is closer than the maximum-distance point yet located.
+   * Indicates whether the specified bin could possibly contain a point that
+   * is closer than the maximum-distance point yet located.
    * <p>
-   * If fewer than k points have been collected when this method is
-   * called, it always returns a value of true. Since the k nearest
-   * points have not yet been collected, there is no limitation on the
-   * distance range for valid candidates.
+   * If fewer than k points have been collected when this method is called, it
+   * always returns a value of true. When the k nearest points have not yet
+   * been collected, there is no limitation on the distance range for valid
+   * candidates.
    *
    * @param n the number of points collected so far
    * @param k the number of points to be collected
@@ -313,11 +311,11 @@ public class NearestNeighborPointCollector {
    * @param y the y coordinate of the query position
    * @param d storage for the distances of any previously collected vertices
    * or for those to be collected
-   * @param v storage for any previously collected vertices or for
-   * those to be collected
+   * @param v storage for any previously collected vertices or for those to be
+   * collected
    * @param bin the array of vertices for the bin to be processed.
-   * @return the number of vertices stored (from both the current
-   * and previous searches).
+   * @return the number of vertices stored (from both the current and previous
+   * searches).
    */
   int gather(int pn, int k, double x, double y, double[] d, Vertex[] v, Vertex bin[]) {
     if (bin.length == 0) {
@@ -336,7 +334,7 @@ public class NearestNeighborPointCollector {
       while (i < bin.length && n < k) {
         Vertex vTest = bin[i++];
         double dTest = vTest.getDistanceSq(x, y);
-        int index = Arrays.binarySearch(d, 0, i, dTest);
+        int index = Arrays.binarySearch(d, 0, n, dTest);
         if (index < 0) {
           index = -(index + 1);
         }
@@ -386,75 +384,49 @@ public class NearestNeighborPointCollector {
    * @param x the x coordinate of the search position
    * @param y the y coordinate of the search position
    * @param k the target number of vertices to be collected
-   * @param d storage for the distances to the vertices to be collected
-   * (must be dimensioned at least to size k, but can be larger)
-   * @param v storage for the vertices to be collected
-   * (must be dimensioned at least to size k, but can be larger)
+   * @param d storage for the distances to the vertices to be collected (must
+   * be dimensioned at least to size k, but can be larger)
+   * @param v storage for the vertices to be collected (must be dimensioned at
+   * least to size k, but can be larger)
    * @return the number of neighboring vertices identified.
    */
   public int getNearestNeighbors(
     double x, double y,
     int k, double[] d, Vertex[] v) {
+    boolean[] binSearched = new boolean[bins.length];
     int iRow = (int) ((y - ymin) / sBin);
     int iCol = (int) ((x - xmin) / sBin);
     iRow = limitedIndex(iRow, nRow);
     iCol = limitedIndex(iCol, nCol);
     int bIndex = iRow * nCol + iCol;
+    binSearched[bIndex] = true;
     int n = this.gather(0, k, x, y, d, v, bins[bIndex]);
+
     for (int iTier = 1; iTier < nTier; iTier++) {
       boolean searched = n < k;
       int i0 = limitedIndex(iRow - iTier, nRow);
       int i1 = limitedIndex(iRow + iTier, nRow);
       int j0 = limitedIndex(iCol - iTier, nCol);
       int j1 = limitedIndex(iCol + iTier, nCol);
-      int testRow = iRow - iTier;
-      if (testRow >= 0) {
+      for (int i = i0; i <= i1; i++) {
         // test row of bins from column j0 to j1, inclusive
         for (int j = j0; j <= j1; j++) {
-          if (isBinWorthSearching(n, k, x, y, testRow, j, d)) {
-            searched = true;
-            bIndex = testRow * nCol + j;
-            n = gather(n, k, x, y, d, v, bins[bIndex]);
+          bIndex = i * nCol + j;
+          if (binSearched[bIndex]) {
+            continue;
           }
-        }
-      }
-      testRow = iRow + iTier;
-      if (testRow < nRow) {
-        // test row of bins from column j0 to j1, inclusive
-        for (int j = j0; j <= j1; j++) {
-          if (isBinWorthSearching(n, k, x, y, testRow, j, d)) {
+          binSearched[bIndex] = true;
+          if (isBinWorthSearching(n, k, x, y, i, j, d)) {
             searched = true;
-            bIndex = testRow * nCol + j;
-            n = gather(n, k, x, y, d, v, bins[bIndex]);
-          }
-        }
-      }
-      int testCol = iCol - iTier;
-      if (testCol >= 0) {
-        // test column of bins from row i0 to 11, inclusive
-        for (int i = i0; i <= i1; i++) {
-          if (isBinWorthSearching(n, k, x, y, i, testCol, d)) {
-            searched = true;
-            bIndex = i * nCol + testCol;
-            n = gather(n, k, x, y, d, v, bins[bIndex]);
-          }
-        }
-      }
-      testCol = iCol + iTier;
-      if (testCol < nCol) {
-        // test column of bins from row i0 to 11, inclusive
-        for (int i = i0; i <= i1; i++) {
-          if (isBinWorthSearching(n, k, x, y, i, testCol, d)) {
-            searched = true;
-            bIndex = i * nCol + testCol;
             n = gather(n, k, x, y, d, v, bins[bIndex]);
           }
         }
       }
 
       if (!searched) {
-        // none of the neighboring bins were within search distance
-        // there is no need for futher testing.
+        // either none of the neighboring bins within search contained points
+        // or all the bins in this tier were beyond the maximum
+        // distance in the collected points.
         break;
       }
     }
@@ -462,10 +434,9 @@ public class NearestNeighborPointCollector {
   }
 
   /**
-   * Gets a list of the vertices currently stored in the collection.
-   * The result may be slightly smaller than the original input
-   * if merge rules were in effect and causes some co-located vertices
-   * to be merged.
+   * Gets a list of the vertices currently stored in the collection. The
+   * result may be slightly smaller than the original input if merge rules
+   * were in effect and causes some co-located vertices to be merged.
    *
    * @return a valid list.
    */
@@ -474,7 +445,7 @@ public class NearestNeighborPointCollector {
     for (int i = 0; i < nBins; i++) {
       n += bins[i].length;
     }
-    List<Vertex> list = new ArrayList<Vertex>(n);
+    List<Vertex> list = new ArrayList<>(n);
     for (int i = 0; i < nBins; i++) {
       list.addAll(Arrays.asList(bins[i]));
     }
