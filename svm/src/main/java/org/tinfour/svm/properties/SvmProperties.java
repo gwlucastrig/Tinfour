@@ -21,7 +21,7 @@
  * Revision History:
  * Date     Name         Description
  * ------   ---------    -------------------------------------------------
- * 04/2019  G. Lucas     Created  
+ * 04/2019  G. Lucas     Created
  *
  * Notes:
  *
@@ -57,18 +57,21 @@ public class SvmProperties {
   private final static String soundingSpacingKey = "computeSoundingSpacing";
   private final static String inputFolderKey = "inputFolder";
   private final static String outputFolderKey = "outputFolder";
-  
+
   private final static String gridFileName = "rasterFileName";
   private final static String gridCellSize = "rasterCellSize";
-  
-  private final static String capacityGraphFileKey  = "capacityGraphFileName";
-  private final static String capacityGraphSizeKey  = "capacityGraphSize";
+
+  private final static String capacityGraphFileKey = "capacityGraphFileName";
+  private final static String capacityGraphSizeKey = "capacityGraphSize";
   private final static String capacityGraphTitleKey = "capacityGraphTitle";
-  
+
   private final static String contourGraphFileKey = "contourGraphFileName";
   private final static String contourGraphSizeKey = "contourGraphSize";
   private final static String contourGraphLegendTextKey = "contourGraphLegendText";
   private final static String contourGraphIntervalKey = "contourGraphInterval";
+
+  private final static String contourRegionShapefileKey = "contourRegionShapefile";
+  private final static String contourLineShapefileKey = "contourLineShapefile";
 
   final Properties properties = new Properties();
   final List<String> keyList = new ArrayList<>();
@@ -89,6 +92,7 @@ public class SvmProperties {
   /**
    * Checks to see if an argument list includes the specified target and
    * returns its index within the argument array.
+   *
    * @param args a valid list of strings
    * @param target the desired target string
    * @param valueRequired indicates that the target argument requires
@@ -96,7 +100,7 @@ public class SvmProperties {
    * @return if found, a value of zero or greater; otherwise, -1.
    */
   static public int indexArg(String[] args, String target, boolean valueRequired) {
-    if(args == null || target==null || target.isEmpty()){
+    if (args == null || target == null || target.isEmpty()) {
       return -1;
     }
     for (int i = 0; i < args.length; i++) {
@@ -104,14 +108,14 @@ public class SvmProperties {
         if (valueRequired) {
           if (i == args.length - 1 || args[i + 1].isEmpty()) {
             throw new IllegalArgumentException(
-                    "Missing value for option " + target);
+              "Missing value for option " + target);
           }
           String s = args[i + 1];
           if (s.charAt(0) == '-') {
             // this could be an option or a negative number
             if (s.length() > 1 && !Character.isDigit(s.charAt(1))) {
               throw new IllegalArgumentException(
-                      "Missing value for option " + target);
+                "Missing value for option " + target);
             }
           }
         }
@@ -120,8 +124,7 @@ public class SvmProperties {
     }
     return -1;
   }
- 
-  
+
   private static String findArgString(String[] args, String target) {
     int index = indexArg(args, target, true);
     if (index >= 0) {
@@ -150,7 +153,7 @@ public class SvmProperties {
       }
       if (s == null) {
         throw new IllegalArgumentException(
-                "Missing properties file specification");
+          "Missing properties file specification");
       }
     }
     File file = new File(s);
@@ -169,7 +172,7 @@ public class SvmProperties {
   public void load(File file) throws IOException {
     specificationFile = file;
     try (FileInputStream fins = new FileInputStream(file);
-            BufferedInputStream bins = new BufferedInputStream(fins)) {
+      BufferedInputStream bins = new BufferedInputStream(fins)) {
       properties.load(bins);
     }
 
@@ -231,9 +234,9 @@ public class SvmProperties {
   }
 
   private SvmUnitSpecification extractUnit(
-          String name,
-          String key,
-          SvmUnitSpecification defaultUnit) {
+    String name,
+    String key,
+    SvmUnitSpecification defaultUnit) {
     String value = properties.getProperty(key);
     if (value == null) {
       return defaultUnit;
@@ -250,11 +253,11 @@ public class SvmProperties {
         scaleFactor = Double.parseDouble(splitList.get(1));
       } catch (NumberFormatException nex) {
         throw new IllegalArgumentException(
-                "Invalid specification for " + key);
+          "Invalid specification for " + key);
       }
       if (scaleFactor == 0) {
         throw new IllegalArgumentException(
-                "Zero scaling factor not allowed for " + key);
+          "Zero scaling factor not allowed for " + key);
       }
     }
     return new SvmUnitSpecification(name, label, scaleFactor);
@@ -324,8 +327,8 @@ public class SvmProperties {
   }
 
   /**
-   * Gets the input folder specification from the properties; 
-   * if the properties do not  contain a key/value for inputFolder,
+   * Gets the input folder specification from the properties;
+   * if the properties do not contain a key/value for inputFolder,
    * a null is returned.
    *
    * @return a valid instance; or a null if a folder is not specified.
@@ -333,7 +336,7 @@ public class SvmProperties {
   public File getInputFolder() {
     return getFolderForKey(inputFolderKey);
   }
-  
+
   /**
    * Gets the output folder specification from the properties; if the properties
    * do not contain a key/value for outputFolder, a null is returned.
@@ -344,8 +347,7 @@ public class SvmProperties {
     return getFolderForKey(outputFolderKey);
   }
 
-  
-    /**
+  /**
    * Gets a folder specification from the properties for the named key;
    * if the properties do not contain the key,
    * a null is returned.
@@ -363,7 +365,8 @@ public class SvmProperties {
   /**
    * Get the path to a file for writing an output report giving a record of the
    * computation parameters and results used for running the Simple Volumetric
-   * Model. If not specified, a null value is returned and it is assumed that the
+   * Model. If not specified, a null value is returned and it is assumed that
+   * the
    * report should be written to standard output.
    *
    * @return a valid File instance or a null if not specified.
@@ -398,12 +401,12 @@ public class SvmProperties {
       double d = Double.parseDouble(s);
       if (d <= 0) {
         throw new IllegalArgumentException(
-                "Invalid value for table interval: " + s);
+          "Invalid value for table interval: " + s);
       }
       return d;
     } catch (NumberFormatException nex) {
       throw new IllegalArgumentException(
-              "Invalid numeric for table interval: " + s);
+        "Invalid numeric for table interval: " + s);
     }
   }
 
@@ -417,8 +420,8 @@ public class SvmProperties {
     boolean test = Boolean.parseBoolean(s.trim());
     return test;
   }
-  
-   /**
+
+  /**
    * Indicates whether the computation of sounding spacing is enabled.
    *
    * @return true if computation is to be performed; otherwise, false.
@@ -428,7 +431,6 @@ public class SvmProperties {
     boolean test = Boolean.parseBoolean(s.trim());
     return test;
   }
-
 
   private int findMaxNameLength(int m0, List<SvmFileSpecification> samples) {
     int m = m0;
@@ -442,9 +444,9 @@ public class SvmProperties {
   }
 
   private void writeFileList(
-          PrintStream ps,
-          List<SvmFileSpecification> samples,
-          String nameFmt) {
+    PrintStream ps,
+    List<SvmFileSpecification> samples,
+    String nameFmt) {
     if (samples.size() == 0) {
       ps.println("   None");
     } else {
@@ -517,10 +519,10 @@ public class SvmProperties {
     }
     s = properties.getProperty(shorelineReferenceElevationKey);
     ps.format("Shoreline Elevation:      ");
-    if(s ==null || s.isEmpty()){
+    if (s == null || s.isEmpty()) {
       ps.format("To be obtained from boundary data");
-    }else{
-      ps.format("Explicitly specified as "+s);
+    } else {
+      ps.format("Explicitly specified as " + s);
     }
     ps.format("%n");
     boolean fixFlats = isFlatFixerEnabled();
@@ -546,14 +548,13 @@ public class SvmProperties {
   public SvmUnitSpecification getUnitOfVolume() {
     return unitOfVolume;
   }
-  
-  
-  
+
   /**
    * Get the shoreline reference elevation, if provided.
+   *
    * @return a valid floating point number or a NaN if undefined
    */
-  public double getShorelineReferenceElevation( ) {
+  public double getShorelineReferenceElevation() {
     String s = properties.getProperty(shorelineReferenceElevationKey);
     if (s == null) {
       return Double.NaN;
@@ -567,15 +568,16 @@ public class SvmProperties {
       return Double.parseDouble(s);
     } catch (NumberFormatException nex) {
       throw new IllegalArgumentException(
-              "Invalid numeric for shoreline reference elevation: " + s);
+        "Invalid numeric for shoreline reference elevation: " + s);
     }
   }
-  
-   /**
+
+  /**
    * Get the grid cell size, if provided.
+   *
    * @return a valid floating point number or a NaN if undefined
    */
-  public double getGridCellSize( ) {
+  public double getGridCellSize() {
     String s = properties.getProperty(gridCellSize);
     if (s == null) {
       return Double.NaN;
@@ -589,15 +591,15 @@ public class SvmProperties {
       double d = Double.parseDouble(s);
       if (d <= 0) {
         throw new IllegalArgumentException(
-                "Invalid value for grid cell size: " + s);
+          "Invalid value for grid cell size: " + s);
       }
       return d;
     } catch (NumberFormatException nex) {
       throw new IllegalArgumentException(
-              "Invalid numeric for gridCellSize: " + s);
+        "Invalid numeric for gridCellSize: " + s);
     }
   }
-  
+
   /**
    * Get the path to a file for writing an output ASC file giving an
    * interpolated grid of water bottom elevations.
@@ -608,7 +610,6 @@ public class SvmProperties {
     return extractFile(outputFolderKey, properties.getProperty(gridFileName));
   }
 
-  
   /**
    * Get the path to a file for writing a graph of the capacity as a function of
    * water level. .
@@ -621,34 +622,34 @@ public class SvmProperties {
     }
     return null;
   }
-  
-  
+
   /**
    * Get the dimensions for the capacity graph image file.
+   *
    * @return a valid instance of non-trivial size.
    */
-  public Dimension getCapacityGraphDimensions(){
-     return extractDimension(capacityGraphSizeKey, 650,400);  
+  public Dimension getCapacityGraphDimensions() {
+    return extractDimension(capacityGraphSizeKey, 650, 400);
   }
 
-  
   /**
    * Gets the title for the capacity graph image
+   *
    * @return if defined, a valid non-empty string instance;
    * if undefined, a null.
    */
-  public String getCapacityGraphTitle(){
+  public String getCapacityGraphTitle() {
     String s = properties.getProperty(capacityGraphTitleKey);
-    if(s==null || s.trim().isEmpty()){
-        return null;
+    if (s == null || s.trim().isEmpty()) {
+      return null;
     }
     return s.trim();
   }
-  
-    
+
   /**
    * Get the path to a file for writing an image file showing a contour
    * plot of the reservoir data.
+   *
    * @return a valid File instance or a null if not specified.
    */
   public File getContourGraphFile() {
@@ -657,31 +658,61 @@ public class SvmProperties {
     }
     return null;
   }
-  
-  
+
+  /**
+   * Get the path to a file for writing contour region Shapefile showing
+   * a contour plot of the reservoir data.
+   *
+   * @return a valid File instance or a null if not specified.
+   */
+  public File getContourRegionShapefile() {
+    if (properties.containsKey(contourRegionShapefileKey)) {
+      return extractFile(
+        outputFolderKey, properties.getProperty(contourRegionShapefileKey));
+    }
+    return null;
+  }
+
+  /**
+   * Get the path to a file for writing contour region Shapefile showing
+   * a contour plot of the reservoir data.
+   *
+   * @return a valid File instance or a null if not specified.
+   */
+  public File getContourLineShapefile() {
+    if (properties.containsKey(contourLineShapefileKey)) {
+      return extractFile(
+        outputFolderKey, properties.getProperty(contourLineShapefileKey));
+    }
+    return null;
+  }
+
   /**
    * Get the dimensions for the contour graph image file.
+   *
    * @return a valid instance of non-trivial size.
    */
-  public Dimension getContourGraphDimensions(){
-     return extractDimension(contourGraphSizeKey, 650, 650);  
+  public Dimension getContourGraphDimensions() {
+    return extractDimension(contourGraphSizeKey, 650, 650);
   }
-  
-    /**
+
+  /**
    * Gets the title for the capacity graph image
+   *
    * @return if defined, a valid non-empty string instance;
    * if undefined, a null.
    */
-  public String getContourGraphLegendText(){
+  public String getContourGraphLegendText() {
     String s = properties.getProperty(contourGraphLegendTextKey);
-    if(s==null || s.trim().isEmpty()){
-        return "Legend";
+    if (s == null || s.trim().isEmpty()) {
+      return "Legend";
     }
     return s.trim();
   }
-  
+
   /**
    * Gets the contour graph interval
+   *
    * @return if defined, a floating point value greater than zero;
    * if undefined, zero.
    */
@@ -691,7 +722,7 @@ public class SvmProperties {
       return 0;
     }
     s = s.trim();
-    if("automatic".equalsIgnoreCase(s)){
+    if ("automatic".equalsIgnoreCase(s)) {
       return 0;
     }
     try {
@@ -705,15 +736,12 @@ public class SvmProperties {
     }
   }
 
-  
-  
-  
   private Dimension extractDimension(String key, int width, int height) {
     String s = properties.getProperty(key);
     if (s == null) {
       return new Dimension(width, height);
     }
- 
+
     int[] values = new int[2];
     int nNumeric = 0;
     int value = 0;
@@ -744,7 +772,7 @@ public class SvmProperties {
       }
     }
     throw new IllegalArgumentException(
-            "Incomplete specification for dimension: " + key + "=" + s);
+      "Incomplete specification for dimension: " + key + "=" + s);
   }
 
 }

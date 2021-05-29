@@ -21,7 +21,7 @@
  * Revision History:
  * Date     Name         Description
  * ------   ---------    -------------------------------------------------
- * 12/2018  G. Lucas     Created  
+ * 12/2018  G. Lucas     Created
  *
  * Notes:
  *
@@ -34,6 +34,7 @@ import java.time.Instant;
 import java.time.ZonedDateTime;
 import java.time.ZoneOffset;
 import java.util.Arrays;
+import org.tinfour.io.BufferedRandomAccessFile;
 import org.tinfour.io.BufferedRandomAccessReader;
 
 /**
@@ -78,11 +79,11 @@ public class DbfFieldDate extends DbfField {
     int y2 = scan1(brad.readUnsignedByte(), builder);
     int y3 = scan1(brad.readUnsignedByte(), builder);
     int year = ((y0 * 10 + y1) * 10 + y2) * 10 + y3;
-    
+
     int m1 = scan1(brad.readUnsignedByte(), builder);
     int m2 = scan1(brad.readUnsignedByte(), builder);
     int month = m1 * 10 + m2;
-    
+
     int d1 = scan1(brad.readUnsignedByte(), builder);
     int d2 = scan1(brad.readUnsignedByte(), builder);
     int day = d1 * 10 + d2;
@@ -91,6 +92,16 @@ public class DbfFieldDate extends DbfField {
     }else{
       value = ZonedDateTime.of(year, month, day, 0, 0, 0, 0, zoneOffset);
     }
+  }
+
+  @Override
+  void write(BufferedRandomAccessFile braf) throws IOException {
+    int year = value.getYear();
+    int month = value.getMonthValue();
+    int day = value.getDayOfMonth();
+    String s = String.format("%4d%02d%02d", year, month, day);
+    byte[] b = s.getBytes();
+    braf.write(b, 0, 8);
   }
 
   /**
@@ -154,6 +165,12 @@ public class DbfFieldDate extends DbfField {
   public ZonedDateTime getValue() {
     return value;
   }
+
+  public void setValue(ZonedDateTime dateTime){
+     this.value = dateTime;
+  }
+
+
 
   /**
    * Gets an array of unique values for this field.
@@ -219,7 +236,7 @@ public class DbfFieldDate extends DbfField {
     }
     this.zoneOffset = zoneOffset;
   }
- 
+
   @Override
   public boolean isNull(){
     return value==null;

@@ -21,7 +21,7 @@
  * Revision History:
  * Date     Name         Description
  * ------   ---------    -------------------------------------------------
- * 11/2018  G. Lucas     Created  
+ * 11/2018  G. Lucas     Created
  *
  * Notes:
  *
@@ -31,6 +31,7 @@ package org.tinfour.gis.shapefile;
 
 import java.io.IOException;
 import java.util.Arrays;
+import org.tinfour.io.BufferedRandomAccessFile;
 import org.tinfour.io.BufferedRandomAccessReader;
 
 /**
@@ -42,14 +43,23 @@ public class DbfFieldDouble extends DbfField {
   private double value;
   private boolean engineeringNotation;
 
+  private String writingFormat;
+
   DbfFieldDouble(
           String name,
-          char fieldType, 
-          int dataAddress, 
+          char fieldType,
+          int dataAddress,
           int fieldLength,
-          int fieldDecimalCount, 
-          int offset) {
+          int fieldDecimalCount,
+          int offset,
+          boolean useEngineeringNotation) {
     super(name, fieldType, dataAddress, fieldLength, fieldDecimalCount, offset);
+    engineeringNotation = useEngineeringNotation;
+    if (useEngineeringNotation) {
+      writingFormat = String.format("%%%d.%de", fieldLength, fieldLength-7);
+    } else {
+      writingFormat = String.format("%%%d.%df", fieldLength, fieldDecimalCount);
+    }
   }
 
   @Override
@@ -90,7 +100,7 @@ public class DbfFieldDouble extends DbfField {
         return;
       }
     }
-    
+
     if(i==fieldLength){
       value = Double.NaN;
       return;
@@ -126,7 +136,7 @@ public class DbfFieldDouble extends DbfField {
     }
 
     value = sign * ((double) s + (double) f / (double) d);
-    
+
     if(engineeringNotation){
       if(i>fieldLength-3){
         value = Double.NaN;
@@ -155,9 +165,21 @@ public class DbfFieldDouble extends DbfField {
           double e = sign*d;
           value = value*Math.exp(LOG10*e);
         }
-      }   
+      }
     }
-   
+
+  }
+
+  @Override
+  void write(BufferedRandomAccessFile braf) throws IOException {
+
+    String s = String.format(writingFormat, value);
+    byte[] b = s.getBytes();
+    if(b.length>fieldLength){
+      throw new IOException("Formatted output exceeds fieldLength of "
+        +fieldLength+": \""+s+"\"");
+    }
+    braf.write(b, 0, fieldLength);
   }
 
      /**
@@ -169,16 +191,33 @@ public class DbfFieldDouble extends DbfField {
   public double getDouble(){
     return value;
   }
-  
+
+  /**
+   * Sets a value for the field.  Intended for writing files.
+   * @param value a valid floating point value (finite, not NaN).
+   */
+  public void setDouble(double value){
+    this.value = value;
+  }
+
+    /**
+   * Sets a value for the field.  Intended for writing files.
+   * @param value a valid integer value.
+   */
+  public void setInteger(int value){
+    this.value = value;
+  }
+
   /**
    * Indicates whether the value in the field was encoded
    * using engineering notation (e.g. scientific notation)
    * @return true if engineering notation was used; otherwise false.
    */
+  @Override
   public boolean usesEngineeringNotation(){
     return engineeringNotation;
   }
-  
+
   /**
    * Gets the equivalent integer value of the field.
    *
@@ -195,16 +234,16 @@ public class DbfFieldDouble extends DbfField {
       return Integer.MAX_VALUE;
     }
     return (int)value;
- 
+
   }
-  
-    
+
+
   @Override
   public Object getApplicationData(){
     return value;
   }
 
-  
+
   /**
    * Gets an array of unique values for this field.
    * @param dbf a valid instance
@@ -220,7 +259,7 @@ public class DbfFieldDouble extends DbfField {
       return new double[0];
     }
 
-    
+
     int k = 0;
     for (int i = 1; i <= nRecords; i++) {
       dbf.readField(i, this);
@@ -233,7 +272,7 @@ public class DbfFieldDouble extends DbfField {
       }
       vArray[k++] = v;
     }
-    
+
 
     Arrays.sort(vArray);
     int nUniqueValues = 1;
@@ -246,6 +285,6 @@ public class DbfFieldDouble extends DbfField {
       }
     }
     return Arrays.copyOf(vArray, nUniqueValues);
-     
+
   }
 }

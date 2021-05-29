@@ -365,7 +365,7 @@ public class SvmComputation {
       }
       long timeF1 = System.nanoTime();
       timeToFixFlats = timeF1 - timeF0;
-      ps.println("N remediation vertices added " + nRemediationVertices);
+      ps.println("N remediation vertices added: " + nRemediationVertices);
     }
     ps.println("");
     ps.println("Processing data from Delaunay Triangulation");
@@ -404,16 +404,16 @@ public class SvmComputation {
     double totalShore = lakePerimeter + islandPerimeter;
     Rectangle2D bounds = data.getBounds();
 
-    ps.format("%nData from Shapefiles%n");
-    ps.format("  Lake area        %10.8e %,20.0f %s%n", lakeArea, lakeArea, areaUnits);
-    ps.format("  Island area      %10.8e %,20.0f %s%n", islandArea, islandArea, areaUnits);
-    ps.format("  Net area (water) %10.8e %,20.0f %s%n", netArea, netArea, areaUnits);
-    ps.format("  Lake shoreline   %10.8e %,20.0f %s%n", lakePerimeter, lakePerimeter, lengthUnits);
-    ps.format("  Island shoreline %10.8e %,20.0f %s%n", islandPerimeter, islandPerimeter, lengthUnits);
-    ps.format("  Total shoreline  %10.8e %,20.0f %s%n", totalShore, totalShore, lengthUnits);
-    ps.format("  N Islands        %d%n", islandConstraints.size());
-    ps.format("  N Soundings      %d%n", data.getSoundings().size());
-    ps.format("  N Supplements    %d%n", data.getSupplements().size());
+    ps.format("%nData from Shapefiles --------------------------------------------------------------%n");
+    ps.format("  Lake area           %,18.2f %s%n",lakeArea, areaUnits);
+    ps.format("  Island area         %,18.2f %s%n",  islandArea, areaUnits);
+    ps.format("  Net area (water)    %,18.2f %s%n",  netArea, areaUnits);
+    ps.format("  Lake shoreline      %,18.2f %s%n", lakePerimeter, lengthUnits);
+    ps.format("  Island shoreline    %,18.2f %s%n",  islandPerimeter, lengthUnits);
+    ps.format("  Total shoreline     %,18.2f %s%n",  totalShore, lengthUnits);
+    ps.format("  N Islands           %18d%n", islandConstraints.size());
+    ps.format("  N Soundings         %18d%n", data.getSoundings().size());
+    ps.format("  N Supplements       %18d%n", data.getSupplements().size());
     ps.format("  Bounds%n");
     ps.format("     x:    %12.3f, %12.3f, (%5.3f)%n",
             bounds.getMinX() / lengthFactor,
@@ -462,21 +462,22 @@ public class SvmComputation {
     double vertexSpacing = estimateInteriorVertexSpacing(tin, lakeConsumer);
     double flatArea = lakeConsumer.getFlatArea() / areaFactor;
 
-    ps.format("%nComputations from Constrained Delaunay Triangulation%n");
-    ps.format("  Volume              %10.8e %,20.0f %s%n", volume, volume, volumeUnits);
-    ps.format("  Surface Area        %10.8e %,20.0f %s%n", surfArea, surfArea, areaUnits);
-    ps.format("  Flat Area           %10.8e %,20.0f %s%n", flatArea, flatArea, areaUnits);
-    ps.format("  Avg depth           %5.2f %s%n", avgDepth, lengthUnits);
-    ps.format("  N Triangles         %d%n", lakeConsumer.nTriangles);
-    ps.format("  N Flat Triangles    %d%n", lakeConsumer.nFlatTriangles);
-    ps.format("  Mean Vertex Spacing %8.2f%n", vertexSpacing);
+    ps.format("%nComputations from Constrained Delaunay Triangulation -----------------------------%n");
+    ps.format("  Volume              %,18.2f %s     %,28.1f %s^3%n", volume, volumeUnits, rawVolume, lengthUnits);
+    ps.format("  Surface Area        %,18.2f %s     %,28.1f %s^2%n", surfArea, areaUnits, rawSurfArea, lengthUnits);
+    ps.format("  Flat Area           %,18.2f %s%n", flatArea, areaUnits);
+    ps.format("  Avg depth           %,18.2f %s%n", avgDepth, lengthUnits);
+    ps.format("  Mean Vertex Spacing %,18.2f %s%n", vertexSpacing, lengthUnits);
+    ps.format("  N Triangles         %15d%n", lakeConsumer.nTriangles);
+    ps.format("  N Flat Triangles    %15d%n", lakeConsumer.nFlatTriangles);
+
 
     if (properties.isFlatFixerEnabled()) {
           int originalTrigCount = trigSurvey.nTriangles;
           int originalFlatCount = trigSurvey.getFlatTriangleCount();
           double originalFlatArea = trigSurvey.getFlatArea() / areaFactor;
           ps.format("%nPre-Remediation statistics%n");
-          ps.format("  Original Flat Area  %10.8e %,20.0f %s%n",
+          ps.format("  Original Flat Area  %14.10e %,20.2f %s%n",
                   originalFlatArea, originalFlatArea, areaUnits);
           ps.format("  Original N Triangle %d%n", originalTrigCount);
           ps.format("  Original N Flat     %d%n", originalFlatCount);

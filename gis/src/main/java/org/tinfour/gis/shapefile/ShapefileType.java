@@ -33,27 +33,30 @@ package org.tinfour.gis.shapefile;
  * An enumeration defining Shapefile
  */
 public enum ShapefileType {
-  NullShape(0, false),
-  Point(1, false),
-  PolyLine(3, false),
-  Polygon(5, false),
-  MultiPoint(8, false),
-  PointZ(11, true),
-  PolyLineZ(13, true),
-  PolygonZ(15, true),
-  MultiPointZ(18, true),
-  PointM(21, false),
-  PolyLineM(23, false),
-  PolygonM(25, false),
-  MultiPointM(28, false),
-  MultiPatch(31, false);
+  NullShape(0, false, false),
+  Point(1, false, false),
+  PolyLine(3, false, false),
+  Polygon(5, false, false),
+  MultiPoint(8, false, false),
+  PointZ(11, true, false),
+  PolyLineZ(13, true, false),
+  PolygonZ(15, true, false),
+  MultiPointZ(18, true, false),
+  PointM(21, false, true),
+  PolyLineM(23, false, true),
+  PolygonM(25, false, true),
+  MultiPointM(28, false, true),
+  MultiPatch(31, false, true);
 
   private final int shapeTypeCode;
   private final boolean hasZ;
+  private final boolean hasM;
 
-  ShapefileType(int shapeTypeCode, boolean hasZ) {
+  ShapefileType(int shapeTypeCode, boolean hasZ, boolean hasM) {
     this.shapeTypeCode = shapeTypeCode;
     this.hasZ = hasZ;
+    this.hasM = hasM;
+
   }
 
   /**
@@ -83,19 +86,50 @@ public enum ShapefileType {
 
   /**
    * Indicates if the specified Shapefile type defines a polygon geometry.
+   * Polygons are treated as being different than polylines.
    *
-   * @return true if the type is a polygon; otherwise false
+   * @return true if the type is a polygon; otherwise, false
    */
   public boolean isPolygon() {
     return this == PolygonZ || this == Polygon || this == PolygonM;
   }
 
   /**
+   * Indicates if the specified Shapefile type defines a polyline geometry.
+   * Polylines are treated as being different than polygons.
+   *
+   * @return true if the type is a polyline; otherwise, false
+   */
+  public boolean isPolyLine() {
+    return this == PolyLineZ || this == PolyLine || this == PolyLineM;
+  }
+
+  /**
    * Indicates whether the Shapefile has non-zero Z coordinates
    * (is three-dimensional).
+   *
    * @return true if the file is three-dimensional; otherwise, false.
    */
-  public boolean is3D(){
+  public boolean is3D() {
     return hasZ;
+  }
+
+  /**
+   * Indicates whether the Shapefile has valid Z coordinates
+   * (is three-dimensional).
+   *
+   * @return true if the file is has valid Z coordinates; otherwise, false.
+   */
+  public boolean hasZ() {
+    return hasZ;
+  }
+
+  /**
+   * Indicates whether the Shapefile type has a measure specification
+   *
+   * @return true if the file has a measure specification; otherwise, false.
+   */
+  public boolean hasM() {
+    return hasM;
   }
 }

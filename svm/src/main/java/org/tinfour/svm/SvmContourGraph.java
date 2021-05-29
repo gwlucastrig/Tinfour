@@ -57,6 +57,10 @@ import org.tinfour.contour.Contour;
 import org.tinfour.contour.ContourBuilderForTin;
 import org.tinfour.contour.ContourIntegrityCheck;
 import org.tinfour.contour.ContourRegion;
+import org.tinfour.gis.shapefile.ShapefileRecord;
+import org.tinfour.gis.shapefile.ShapefileType;
+import org.tinfour.gis.shapefile.ShapefileWriter;
+import org.tinfour.gis.shapefile.ShapefileWriterSpecification;
 import org.tinfour.svm.properties.SvmProperties;
 import org.tinfour.utils.AxisIntervals;
 import org.tinfour.utils.SmoothingFilter;
@@ -145,9 +149,9 @@ class SvmContourGraph {
       System.out.println("merde");
     }
     return new Color(
-            paletteB2Y[i][0],
-            paletteB2Y[i][1],
-            paletteB2Y[i][2]
+      paletteB2Y[i][0],
+      paletteB2Y[i][1],
+      paletteB2Y[i][2]
     );
 
   }
@@ -158,11 +162,11 @@ class SvmContourGraph {
   }
 
   static void write(
-          PrintStream ps,
-          SvmProperties properties,
-          SvmBathymetryData data,
-          double shoreReferenceElevation,
-          IIncrementalTin tin) {
+    PrintStream ps,
+    SvmProperties properties,
+    SvmBathymetryData data,
+    double shoreReferenceElevation,
+    IIncrementalTin tin) {
     File output = properties.getContourGraphFile();
     if (output == null) {
       // the properties did not request a contour graph,
@@ -173,7 +177,7 @@ class SvmContourGraph {
     ps.println("Constructing smoothing filter");
     SmoothingFilter filter = new SmoothingFilter(tin);
     ps.println("Time to construct smoothing filter "
-            + filter.getTimeToConstructFilter() + " ms");
+      + filter.getTimeToConstructFilter() + " ms");
 
     double zMin = filter.getMinZ();
     double zMax = filter.getMaxZ();
@@ -226,8 +230,8 @@ class SvmContourGraph {
     filter.setVertexAdjustments(zArray);
     long time1 = System.currentTimeMillis();
     ps.println("Found " + nOutsiders
-            + " vertices outside constraints,"
-            + "check required " + (time1 - time0) + " ms");
+      + " vertices outside constraints,"
+      + "check required " + (time1 - time0) + " ms");
 
     // For different data sets, we will need different contour intervals.
     // Attempt to create a specification with about 10 contour intervals
@@ -249,12 +253,12 @@ class SvmContourGraph {
     }
 
     AxisIntervals aIntervals = AxisIntervals.computeIntervals(
-            zMin,
-            zMax,
-            2,
-            1,
-            20,
-              false);
+      zMin,
+      zMax,
+      2,
+      1,
+      20,
+      false);
     if (aArray == null) {
       aArray = aIntervals.getLabelCoordinates();
     }
@@ -277,16 +281,27 @@ class SvmContourGraph {
     for (int i = i0; i <= i1; i++) {
       zContour[i - i0] = aArray[i];
     }
+    double[] zBandMin = new double[zContour.length + 1];
+    double[] zBandMax = new double[zContour.length + 1];
+    zBandMin[0] = zContour[0] - contourInterval;
+    zBandMax[0] = zContour[0];
+    for (int i = 1; i < zContour.length; i++) {
+      zBandMin[i] = zContour[i - 1];
+      zBandMax[i] = zContour[i];
+    }
+    zBandMin[zContour.length] = zBandMax[zContour.length - 1];
+    zBandMax[zContour.length] = shoreReferenceElevation;
 
     ps.println("\nBuilding contours for graph");
     ContourBuilderForTin builder
-            = new ContourBuilderForTin(tin, filter, zContour, true);
+      = new ContourBuilderForTin(tin, filter, zContour, true);
+    builder.simplify(0.001);
+
     double areaFactor = properties.getUnitOfArea().getScaleFactor();
     builder.summarize(ps, areaFactor);
     ContourIntegrityCheck check = new ContourIntegrityCheck(builder);
     check.inspect();
-    ps.println("Contour integrity check status: "+check.getMessage());
-
+    ps.println("Contour integrity check status: " + check.getMessage());
 
     Dimension dimension = properties.getContourGraphDimensions();
     int width = dimension.width;
@@ -305,7 +320,7 @@ class SvmContourGraph {
     BufferedImage bImage = rsa.getBufferedImage();
     Graphics2D g2d = rsa.getGraphics2D();
     AffineTransform af = rsa.getCartesianToPixelTransform();
-    g2d.setStroke(new BasicStroke(1.0f));
+    g2d.setStroke(new BasicStroke(1.0f, BasicStroke.CAP_BUTT, BasicStroke.JOIN_BEVEL));
 
     // The first step is to draw a color-fill representation of the
     // bounding (shoreline) constraint for the body of water.
@@ -348,7 +363,7 @@ class SvmContourGraph {
     }
 
     // Draw the land-areas in gray
-    g2d.setStroke(new BasicStroke(1.0f));
+    g2d.setStroke(new BasicStroke(1.0f, BasicStroke.CAP_BUTT, BasicStroke.JOIN_BEVEL));
     g2d.setColor(Color.white);
     for (PolygonConstraint p : boundaryConstraints) {
       if (p.getArea() < 0) {
@@ -373,14 +388,14 @@ class SvmContourGraph {
     g2d.drawRect(0, 0, width - 1, height - 1);
 
     BufferedImage compositeImage
-            = new BufferedImage(width, height + 200, BufferedImage.TYPE_INT_ARGB);
+      = new BufferedImage(width, height + 200, BufferedImage.TYPE_INT_ARGB);
     g2d = compositeImage.createGraphics();
     g2d.setRenderingHint(
-            RenderingHints.KEY_ANTIALIASING,
-            RenderingHints.VALUE_ANTIALIAS_ON);
+      RenderingHints.KEY_ANTIALIASING,
+      RenderingHints.VALUE_ANTIALIAS_ON);
     g2d.setRenderingHint(
-            RenderingHints.KEY_TEXT_ANTIALIASING,
-            RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
+      RenderingHints.KEY_TEXT_ANTIALIASING,
+      RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
     g2d.setColor(Color.white);
     g2d.fillRect(0, 0, width + 1, height + 200 + 1);
     g2d.drawImage(bImage, 0, 0, null);
@@ -388,6 +403,11 @@ class SvmContourGraph {
     Font font = new Font("Arial", Font.PLAIN, 12);
     Font legendFont = new Font("Arial", Font.BOLD, 14);
     String labFmt = aIntervals.getLabelFormat();
+    if(contourInterval-Math.floor(contourInterval)>1.0e-5 && labFmt.contains(".0f")){
+       // fractional contour interval, but the labeling logic decided on integer
+       // labels.  So we adjust accordingly
+       labFmt = "%3.1f";
+    }
     String[] label = new String[zContour.length + 1];
     label[0] = String.format("Below " + labFmt, zContour[0]);
     String testFmt = labFmt + " to " + labFmt;
@@ -395,7 +415,7 @@ class SvmContourGraph {
       label[i] = String.format(testFmt, zContour[i - 1], zContour[i]);
     }
     label[zContour.length]
-            = String.format("Above " + labFmt, zContour[zContour.length - 1]);
+      = String.format("Above " + labFmt, zContour[zContour.length - 1]);
 
     FontRenderContext frc = new FontRenderContext(null, true, true);
     TextLayout[] layout = new TextLayout[label.length];
@@ -450,8 +470,191 @@ class SvmContourGraph {
       ImageIO.write(compositeImage, "PNG", output);
     } catch (IOException ioex) {
       ps.println("IOException writing " + output.getAbsolutePath()
-              + ", " + ioex.getMessage());
+        + ", " + ioex.getMessage());
     }
+
+    File shapefileRef = properties.getContourRegionShapefile();
+    if (shapefileRef != null) {
+      removeOldShapefiles(ps, shapefileRef);
+
+      ps.println("Writing shapefile " + shapefileRef.getPath());
+
+      int iRegion = 0;
+      for (ContourRegion region : regions) {
+        int rIndex = region.getRegionIndex();
+        if (rIndex >= iN) {
+          continue;
+        }
+        iRegion++;
+        region.setApplicationIndex(iRegion);
+      }
+
+      ShapefileWriterSpecification regionSpec = new ShapefileWriterSpecification();
+      regionSpec.setShapefileType(ShapefileType.Polygon);
+      regionSpec.addIntegerField("feature_id", 8);
+      regionSpec.addIntegerField("parent_id", 8);
+      regionSpec.addIntegerField("band_idx", 4);
+      regionSpec.addFloatingPointField("band_min", 8, 2, false);
+      regionSpec.addFloatingPointField("band_max", 8, 2, false);
+
+      regionSpec.addFloatingPointField("Shape_area", 13, 6, true);
+      regionSpec.setShapefilePrjContent(data.getShapefilePrjContent());
+
+      try (ShapefileWriter regionWriter = new ShapefileWriter(shapefileRef, regionSpec);) {
+        for (ContourRegion region : regions) {
+          int rIndex = region.getRegionIndex();
+          if (rIndex >= iN) {
+            continue;
+          }
+          double bandMin = zBandMin[rIndex];
+          double bandMax = zBandMax[rIndex];
+
+          ShapefileRecord record = regionWriter.createRecord();
+          List<ContourRegion> holes = region.getEnclosedRegions();
+          double[] xy = region.getXY();
+          record.addPolygon(xy.length / 2, xy, false);
+          for (ContourRegion hole : holes) {
+            xy = hole.getXY();
+            record.addPolygon(xy.length / 2, xy, true);
+          }
+
+          int parent_id = 0;
+          ContourRegion parent = region.getParent();
+          if (parent != null) {
+            parent_id = parent.getApplicationIndex();
+          }
+
+          regionWriter.setDbfFieldValue("feature_id", region.getApplicationIndex());
+          regionWriter.setDbfFieldValue("parent_id", parent_id);
+          regionWriter.setDbfFieldValue("band_idx", region.getRegionIndex());
+          regionWriter.setDbfFieldValue("Shape_area", region.getAdjustedArea());
+          regionWriter.setDbfFieldValue("band_min", bandMin);
+          regionWriter.setDbfFieldValue("band_max", bandMax);
+
+          regionWriter.writeRecord(record);
+        }
+
+      } catch (IOException ioex) {
+        ps.println("Encounted IOException while writing contour-region shapefile " + ioex.getMessage());
+        return;
+      }
+    }
+
+    shapefileRef = properties.getContourLineShapefile();
+    if (shapefileRef != null) {
+      removeOldShapefiles(ps, shapefileRef);
+      ps.println("Writing shapefile " + shapefileRef.getPath());
+      ShapefileWriterSpecification contourSpec = new ShapefileWriterSpecification();
+      contourSpec.setShapefileType(ShapefileType.Polygon);
+      contourSpec.addIntegerField("feature_id", 8);
+      contourSpec.addIntegerField("cntr_idx", 4);
+      contourSpec.addFloatingPointField("depth", 8, 2, false);
+      contourSpec.addFloatingPointField("Shape_len", 13, 6, true);
+      contourSpec.setShapefilePrjContent(data.getShapefilePrjContent());
+
+      int nContour = 0;
+      try (ShapefileWriter contourWriter = new ShapefileWriter(shapefileRef, contourSpec);) {
+        for (Contour contour : contours) {
+          if (contour.isBoundary()) {
+            continue;
+          }
+          nContour++;
+          int cIndex = contour.getLeftIndex();
+          double z = contour.getZ();
+
+          ShapefileRecord record = contourWriter.createRecord();
+
+          double[] xy = contour.getXY();
+          record.addPolyLine(xy.length / 2, xy);
+
+          double dSum = 0;
+          for (int i = 1; i < xy.length / 2; i++) {
+            double dx = xy[i * 2] - xy[i * 2 - 2];
+            double dy = xy[i * 2 + 1] - xy[i * 2 - 1];
+            dSum += Math.sqrt(dx * dx + dy * dy);
+          }
+          contourWriter.setDbfFieldValue("feature_id", nContour);
+          contourWriter.setDbfFieldValue("cntr_idx", cIndex);
+          contourWriter.setDbfFieldValue("depth", z);
+          contourWriter.setDbfFieldValue("Shape_len", dSum);
+
+          contourWriter.writeRecord(record);
+        }
+
+      } catch (IOException ioex) {
+        ps.println("Encounted IOException while writing contour-line shapefile " + ioex.getMessage());
+        return;
+      }
+    }
+
+  }
+
+  static final String[] targetExtensions = {"shp", "shx", "dbf", "sbn", "prj"};
+
+  static void removeOldShapefiles(PrintStream ps, File shapefile) {
+    String ext = getFileExtension(shapefile);
+    if (!"shp".equalsIgnoreCase(ext)) {
+      return;
+    }
+    File parent = shapefile.getParentFile();
+    if (parent == null) {
+      parent = new File(".");
+    }
+
+    String name = shapefile.getName();
+    String basename = name.substring(0, name.length() - 4);
+    for (String s : targetExtensions) {
+      name = basename + '.' + matchCase(ext, s);
+      File target = new File(parent, name);
+      if (target.exists()) {
+        //ps.println("Removing old shapefile element: " + target.getPath());
+        target.delete();
+      }
+    }
+  }
+
+  private static String getFileExtension(File file) {
+    if (file != null) {
+      String name = file.getName();
+      int i = name.lastIndexOf('.');
+      if (i > 0 && i < name.length() - 1) {
+        return name.substring(i + 1, name.length());
+      }
+    }
+    return null;
+  }
+
+  /**
+   * When we are trying to find one of the Shapefile auxilliary files
+   * (.dbf, .prj. etc.), we try to format the file extension to match the
+   * same case structure as the Shapefile. This is relevant under Linux which
+   * uses case-sensitive file name. So if we have the extension .SHP, we would
+   * use .PRJ, not .prj, etc.
+   *
+   * @param source the extension from the source string.
+   * @param target the extension that we wish to format.
+   * @return if successful, the target extension with the proper case structure.
+   */
+  private static String matchCase(String source, String target) {
+    StringBuilder sb = new StringBuilder();
+    int i = 0;
+
+    for (i = 0; i < target.length(); i++) {
+      char s;
+      if (i < source.length()) {
+        s = source.charAt(i);
+      } else {
+        s = source.charAt(source.length() - 1);
+      }
+      char t = target.charAt(i);
+      if (Character.isLowerCase(s) && Character.isUpperCase(t)) {
+        t = Character.toLowerCase(t);
+      } else if (Character.isUpperCase(s) && Character.isLowerCase(t)) {
+        t = Character.toUpperCase(t);
+      }
+      sb.append(t);
+    }
+    return sb.toString();
   }
 
 }

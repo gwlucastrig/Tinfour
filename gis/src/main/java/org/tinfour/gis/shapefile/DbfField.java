@@ -21,7 +21,7 @@
  * Revision History:
  * Date     Name         Description
  * ------   ---------    -------------------------------------------------
- * 11/2018  G. Lucas     Created  
+ * 11/2018  G. Lucas     Created
  *
  * Notes:
  *
@@ -30,9 +30,11 @@
 package org.tinfour.gis.shapefile;
 
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import org.tinfour.io.BufferedRandomAccessFile;
 import org.tinfour.io.BufferedRandomAccessReader;
 
 /**
@@ -102,7 +104,8 @@ public class DbfField {
       return new DbfFieldDouble(
               name, fieldType, dataAddress,
               fieldLength, fieldDecimalCount,
-              offset);
+              offset,
+              false);
     }
     if (fieldType == 'N' && fieldDecimalCount == 0) {
       return new DbfFieldInt(
@@ -130,6 +133,8 @@ public class DbfField {
             fieldLength, fieldDecimalCount,
             offset);
   }
+
+
 
   /**
    * Read the content of the DBF file for the indicated record file position.
@@ -161,6 +166,30 @@ public class DbfField {
         builder.append((char) c);
       }
       builder.setLength(lastNonBlank);
+    }
+  }
+
+  /**
+   * Writes an element to the data file. Note that this method has package
+   * scope.
+   *
+   * @param braf a valid instance
+   * @throws IOException in the event of an unrecoverable I/O error.
+   */
+  void write(BufferedRandomAccessFile braf) throws IOException {
+    write(braf, builder.toString());
+  }
+
+  protected void write(BufferedRandomAccessFile braf, String s) throws IOException {
+    byte[] b = s.getBytes(StandardCharsets.ISO_8859_1);
+    int n = b.length;
+    if (n >= fieldLength) {
+      braf.write(b, 0, fieldLength);
+    } else {
+      braf.write(b, 0, b.length);
+      for (int i = b.length; i < fieldLength; i++) {
+        braf.write(b[i]);
+      }
     }
   }
 
@@ -264,6 +293,27 @@ public class DbfField {
     return false;
   }
 
+  /**
+   * Sets the string value for this field. If the specified string is
+   * longer than the specified field length, the string value will be
+   * truncated.
+   * @param value a valid string.
+   */
+  public void setString(String value) {
+    builder.setLength(0);
+    if (value != null && !value.isEmpty()) {
+      if (value.length() > fieldLength) {
+        builder.append(value.substring(fieldLength));
+      } else {
+        builder.append(value);
+        for(int i=value.length(); i<fieldLength; i++){
+          builder.append(' ');
+        }
+      }
+    }
+  }
+
+
   @Override
   public String toString() {
     return String.format("DbfField (%s %2d.%-2d) %s",
@@ -309,7 +359,7 @@ public class DbfField {
     // Investigate:  Because we are going to sort these strings anyway,
     // perhaps this logic would be better served by a Java tree rather
     // than a map.
-    HashMap<String, String> map = new HashMap();
+    HashMap<String, String> map = new HashMap<>();
     String sMin = "";
     String sMax = "";
     for (int i = 1; i <= nRecords; i++) {

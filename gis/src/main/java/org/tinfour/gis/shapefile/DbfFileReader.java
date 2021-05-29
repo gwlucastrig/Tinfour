@@ -21,7 +21,7 @@
  * Revision History:
  * Date     Name         Description
  * ------   ---------    -------------------------------------------------
- * 11/2018  G. Lucas     Created  
+ * 11/2018  G. Lucas     Created
  *
  * Notes:
  *
@@ -92,7 +92,6 @@ public class DbfFileReader implements Closeable {
     nFields = (nBytesInHeader - 32 - 1) / N_BYTES_IN_FIELD_DEF;
     fields = new ArrayList<>(nFields);
 
-    brad.seek(32);
     // allow 1 for the control character
     int offset = 1;
     for (int i = 0; i < nFields; i++) {

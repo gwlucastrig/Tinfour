@@ -31,6 +31,7 @@ package org.tinfour.contour;
 
 import java.awt.geom.AffineTransform;
 import java.awt.geom.Path2D;
+import java.awt.geom.Rectangle2D;
 import java.util.Arrays;
 import java.util.concurrent.atomic.AtomicInteger;
 import org.tinfour.common.IQuadEdge;
@@ -315,6 +316,14 @@ public class Contour {
     return closedLoop;
   }
 
+  public Rectangle2D getBounds(){
+    Rectangle2D r2d = new Rectangle2D.Double(xy[0], xy[1], 0, 0);
+    for(int i=1; i<n/2; i++){
+      r2d.add(xy[i*2], xy[i*2+1]);
+    }
+    return r2d;
+
+  }
   @Override
   public String toString() {
     String cString = "";

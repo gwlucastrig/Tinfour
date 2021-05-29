@@ -69,6 +69,8 @@ public class ContourRegion {
   final List<ContourRegion> children = new ArrayList<>();
   ContourRegion parent;
 
+  int applicationIndex;
+
   ContourRegion(List<ContourRegionMember> memberList, int regionIndex) {
     if (memberList.isEmpty()) {
       throw new IllegalArgumentException(
@@ -226,6 +228,18 @@ public class ContourRegion {
   void setParent(ContourRegion parent) {
     this.parent = parent;
   }
+
+  /**
+   * Gets the parent region for this region, if any. Regions that are
+   * enclosed in other regions will have a parent. Regions that are
+   * not enclosed will not have a parent.
+   *
+   * @return a valid instance, or a null.
+   */
+  public ContourRegion getParent() {
+    return parent;
+  }
+
 
   /**
    * Indicates whether the specified point is inside the region
@@ -453,5 +467,23 @@ public class ContourRegion {
       areaString,
       parent == null ? "root " : "child",
       children.size());
+  }
+
+  /**
+   * Allows a calling implementation to set an application-defined index value
+   * to be used to associate supplemental data with the region
+   * @param applicationIndex an arbitrary, application-specific index value.
+   */
+  public void setApplicationIndex(int applicationIndex){
+    this.applicationIndex = applicationIndex;
+  }
+
+  /**
+   * Gets an application-defined index value to be used by the calling
+   * implementation to associate supplemental data with the region.
+   * @return an arbitaru, application-specific index value.
+   */
+  public int getApplicationIndex(){
+    return this.applicationIndex;
   }
 }

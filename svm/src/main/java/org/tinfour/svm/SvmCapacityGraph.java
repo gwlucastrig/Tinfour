@@ -21,7 +21,7 @@
  * Revision History:
  * Date     Name         Description
  * ------   ---------    -------------------------------------------------
- * 08/2019  G. Lucas     Created  
+ * 08/2019  G. Lucas     Created
  *
  * Notes:
  *
@@ -57,7 +57,7 @@ import org.tinfour.utils.AxisIntervals;
 
 /*
  * Provides data elements and methods for plotting a capacity graph.
- * 
+ *
  */
 class SvmCapacityGraph {
 
@@ -177,7 +177,7 @@ class SvmCapacityGraph {
     Rectangle2D fontR2D = testLayout.getBounds();
     double axisFontHeight = fontR2D.getHeight();
     double axisFontWidth = fontR2D.getWidth();
-    int yFontAllowance = (int) (axisFontHeight * 1.1);
+    int yFontAllowance = (int) (axisFontHeight * 1.25);
     int xFontAllowance = (int) (axisFontWidth * 1.3);
 
     AffineTransform af = AffineTransform.getQuadrantRotateInstance(3);
@@ -219,12 +219,12 @@ class SvmCapacityGraph {
     double cDeltaPix = cHead / cUnitsPerPixel;
 
     // line up the vIntervals requires a few adjustments.  First, if the
-    // calling module is appling a volume-units adjustment, we need to
+    // calling module is applying a volume-units adjustment, we need to
     // apply it.  Next, we need to compute a units-per-pixel computation
     // that will scale the data so that the volumes line up with the
     // corresponding percent capacity.  Finally, the range for the
     // AxisIntervals call will have to be based on the "cHead" factor so
-    // that we can ensure that we extend the tic marks past the 
+    // that we can ensure that we extend the tic marks past the
     // total volume if there is room (and need) to do so.
     double cDeltaPix100 = 100 / cUnitsPerPixel; // delta pixels for 100 percent
     double vWithScale = totalVolume / volumeUnitsAdjustment;
@@ -254,7 +254,7 @@ class SvmCapacityGraph {
 
     // The Volume labels may have more digits that the percentage
     // capacity label.  So we may have to slide everything to the
-    // left to make it fit correctly. 
+    // left to make it fit correctly.
     testLayout = new TextLayout("100", axisFont, frc);
     fontR2D = testLayout.getBounds();
     double cWidth = fontR2D.getWidth();
@@ -399,7 +399,7 @@ class SvmCapacityGraph {
     return false;
   }
 
-  
+
   private List<Point2D> extrapolate() {
 
     // To extrapolate the capacity curve to 110 percent, we use a linear
@@ -409,7 +409,7 @@ class SvmCapacityGraph {
     // This approach allows us to specify the regression as having only
     // two coefficients where y = a*x*x + b*x.   The resulting linear system
     // is easily solved in code.  We do this for no better reason than to
-    // not have to introduce an external dependency to a linear algrebra 
+    // not have to introduce an external dependency to a linear algrebra
     // package to the SVM module.
     double s4 = 0;  // sum of x^4
     double s3 = 0;  // sum of x^3

@@ -43,6 +43,7 @@ import org.tinfour.common.IQuadEdge;
 import org.tinfour.common.Vertex;
 import org.tinfour.contour.ContourRegion.ContourRegionType;
 import org.tinfour.interpolation.IVertexValuator;
+import org.tinfour.utils.VisvalingamLineSimplification;
 
 /**
  * Provides data elements and methods for constructing contours from a Delaunay
@@ -51,8 +52,9 @@ import org.tinfour.interpolation.IVertexValuator;
  * Delaunay Triangulations are allowed.
  *
  * <p>
- * <strong>Under development. </strong> Initial implementation is finished but
- * additional access methods are required and substantial testing still remains.
+ * <strong>Under development. </strong> At this time, the contouring implementation
+ * does not support not-a-number or infinity values.  At this time, the contouring
+ * implememtation does not support discrete (non-continuous) data.
  * <p>
  * <strong>Contour left-and-right index:</strong> The left and right index
  * elements for the contours created by this class are set to the array index of
@@ -66,7 +68,7 @@ import org.tinfour.interpolation.IVertexValuator;
  * between "data and no-data". The right index value for perimeter contours is
  * -1.
  * <p>
- * Tinfour defines contours as specifying a boundary between two regions in a
+ * Tinfour defines contours as specifying a boundary between two regions on a surface over a
  * plane. The region to the left of the contour is treated as including points
  * with vertical coordinates greater than or equal to the contour's vertical
  * coordinate. The values to the right are treated as including points with
@@ -296,6 +298,23 @@ public class ContourBuilderForTin {
     }
     for (Contour contour : openContourList) {
       contour.cleanUp();
+    }
+  }
+
+  /**
+   * Simplifies line features using an implementation of Visvalingam's
+   * algorithm.   See the Tinfour VisvalingamLineSimplification class for
+   * documentation on how this method works.
+   * @param areaThreshold the minimum-area threshold for simplification.
+   */
+  public void simplify(double areaThreshold) {
+    VisvalingamLineSimplification vis = new VisvalingamLineSimplification();
+    for (Contour contour : closedContourList) {
+      int nBefore = contour.n;
+      contour.n = 2 * vis.simplify(contour.n / 2, contour.xy, areaThreshold);
+      if (contour.n < nBefore) {
+        contour.complete();
+      }
     }
   }
 

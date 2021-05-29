@@ -24,7 +24,7 @@
  * 01/2017  G. Lucas     Created
  *
  * Notes:
- *   Future Work: This module should be expanded to include processing for 
+ *   Future Work: This module should be expanded to include processing for
  *   the Well-Known Format used by .prj files.  At the very least, it
  *   should be able to obtain
  *      raw data (key-value elements)
@@ -190,9 +190,10 @@ public class ShapefileReader implements Closeable {
   public ShapefileRecord readNextRecord(ShapefileRecord pRecord) throws IOException {
     ShapefileRecord record = pRecord;
     if (record == null) {
-      record = new ShapefileRecord();
+      record = new ShapefileRecord(shapefileType);
+    }else{
+       record.shapefileType = shapefileType;
     }
-    record.shapefileType = shapefileType;
 
     long offset0 = raf.getFilePosition();
     int recNo = raf.readIntBigEndian();
@@ -421,7 +422,7 @@ public class ShapefileReader implements Closeable {
 
     return null;
   }
-  
+
   /**
    * Get an DBF file reader for the current Shapefile
    * @return if successful, a valid DbfFileReader instance.
@@ -432,10 +433,10 @@ public class ShapefileReader implements Closeable {
     if(target==null){
       throw new IOException("DBF file not found for "+file.getName());
     }
-    
+
     return new DbfFileReader(target);
   }
-  
+
   /**
    * Get the file associated with the Shapefile.
    * @return a valid instance
@@ -443,7 +444,7 @@ public class ShapefileReader implements Closeable {
   public File getFile(){
     return file;
   }
-  
+
   /**
    * Gets the current size of the main Shapefile in bytes.
    *
@@ -455,7 +456,7 @@ public class ShapefileReader implements Closeable {
     }
     return raf.getFileSize();
   }
-  
+
    /**
    * Provides the current position within the main Shapefile.
    *

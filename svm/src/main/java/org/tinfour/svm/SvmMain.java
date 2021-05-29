@@ -21,7 +21,7 @@
  * Revision History:
  * Date     Name         Description
  * ------   ---------    -------------------------------------------------
- * 04/2019  G. Lucas     Created  
+ * 04/2019  G. Lucas     Created
  *
  * Notes:
  *
@@ -190,6 +190,7 @@ public class SvmMain {
       System.exit(-1);
     }
 
+    long time0 = System.nanoTime();
     // Load the input data ----------------------------------
     SvmBathymetryData data = new SvmBathymetryData();
 
@@ -232,6 +233,8 @@ public class SvmMain {
     SvmComputation svmComp = new SvmComputation();
     svmComp.processVolume(reportPrintStream, prop, data);
 
+    long time1 = System.nanoTime();
+    reportPrintStream.format("%n%nProcessing completed in %5.2f seconds%n%n", ((time1-time0)/1.0e+9));
     reportPrintStream.flush();
     if (reportOutputStream != null) {
       reportOutputStream.close();

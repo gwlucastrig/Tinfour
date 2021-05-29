@@ -21,7 +21,7 @@
  * Revision History:
  * Date     Name         Description
  * ------   ---------    -------------------------------------------------
- * 12/2018  G. Lucas     Created  
+ * 12/2018  G. Lucas     Created
  *
  * Notes:
  *
@@ -31,6 +31,7 @@ package org.tinfour.gis.shapefile;
 
 import java.io.IOException;
 import java.util.Arrays;
+import org.tinfour.io.BufferedRandomAccessFile;
 import org.tinfour.io.BufferedRandomAccessReader;
 
 /**
@@ -39,6 +40,8 @@ import org.tinfour.io.BufferedRandomAccessReader;
 public class DbfFieldInt extends DbfField {
 
   private int value;
+  private String writingFormat;
+
 
   DbfFieldInt(
           String name,
@@ -48,6 +51,7 @@ public class DbfFieldInt extends DbfField {
           int fieldDecimalCount,
           int offset) {
     super(name, fieldType, dataAddress, fieldLength, fieldDecimalCount, offset);
+    writingFormat = String.format("%%%dd",fieldLength);
   }
 
   @Override
@@ -120,8 +124,15 @@ public class DbfFieldInt extends DbfField {
     }
 
     value = (int) s;
-
   }
+
+  @Override
+  void write(BufferedRandomAccessFile braf) throws IOException {
+    String s = String.format(writingFormat, value);
+    byte[] b = s.getBytes();
+    braf.write(b, 0, fieldLength);
+  }
+
 
   /**
    * Gets the double value stored in the field during the most recent read
@@ -143,6 +154,25 @@ public class DbfFieldInt extends DbfField {
   public int getInteger() {
     return value;
   }
+
+
+  /**
+   * Sets a value for the field.  Intended for writing files.
+   * @param value a valid floating point value in the range of integers
+   */
+  public void setDouble(double value){
+    this.value = (int)value;
+  }
+
+    /**
+   * Sets a value for the field.  Intended for writing files.
+   * @param value a valid integer value.
+   */
+  public void setInteger(int value){
+    this.value = value;
+  }
+
+
 
   @Override
   public Object getApplicationData() {

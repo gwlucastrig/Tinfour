@@ -30,7 +30,9 @@
 package org.tinfour.svm;
 
 import java.awt.geom.Rectangle2D;
+import java.io.BufferedInputStream;
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.PrintStream;
 import java.util.ArrayList;
@@ -71,6 +73,8 @@ public class SvmBathymetryData {
   private Rectangle2D constraintBounds;
   private double nominalPointSpacing;
   private long timeToLoadData;
+
+  private String prjContent;
 
   /**
    * Standard constructor
@@ -128,6 +132,11 @@ public class SvmBathymetryData {
             verticalTransform);
 
     soundings.addAll(list);
+
+    String tmpStr = loadShapePrjFile(inputSoundingsFile);
+    if(tmpStr!=null){
+      this.prjContent = tmpStr;
+    }
 
     double z0 = Double.POSITIVE_INFINITY;
     double z1 = Double.NEGATIVE_INFINITY;
@@ -228,7 +237,7 @@ public class SvmBathymetryData {
       for (IConstraint c : list) {
         if (c instanceof PolygonConstraint) {
           PolygonConstraint p = (PolygonConstraint) c;
-          // this is true for both fills and holes based on the assumption 
+          // this is true for both fills and holes based on the assumption
           // that the fills are oriented counter clockwise and the holes
           // are oriented clockwise.  This should be the result if the
           // boundary file was strictly based on polygons that define
@@ -255,6 +264,17 @@ public class SvmBathymetryData {
         }
       }
     }
+
+    // if we don't already have the content of a PRJ file, see if there
+    // was one for the inputBoundaryFile
+    if (prjContent == null) {
+      String tmpStr = loadShapePrjFile(inputBoundaryFile);
+      if (tmpStr != null) {
+        this.prjContent = tmpStr;
+      }
+    }
+
+
     long time1 = System.nanoTime();
     timeToLoadData += time1 - time0;
   }
@@ -457,6 +477,38 @@ public class SvmBathymetryData {
   }
 
   /**
+   * When we are trying to find one of the Shapefile auxilliary files
+   * (.dbf, .prj. etc.), we try to format the file extension to match the
+   * same case structure as the Shapefile.  This is relevant under Linux which
+   * uses case-sensitive file name.   So if we have the extension .SHP, we would
+   * use .PRJ, not .prj, etc.
+   * @param source the extension from the source string.
+   * @param target the extension that we wish to format.
+   * @return if successful, the target extension with the proper case structure.
+   */
+  String matchCase(String source, String target) {
+    StringBuilder sb = new StringBuilder();
+    int i = 0;
+
+    for (i = 0; i < target.length(); i++) {
+      char s;
+      if (i < source.length()) {
+        s = source.charAt(i);
+      } else {
+        s = source.charAt(source.length() - 1);
+      }
+      char t = target.charAt(i);
+      if (Character.isLowerCase(s) && Character.isUpperCase(t)) {
+        t = Character.toLowerCase(t);
+      } else if (Character.isUpperCase(s) && Character.isLowerCase(t)) {
+        t = Character.toUpperCase(t);
+      }
+      sb.append(t);
+    }
+    return sb.toString();
+  }
+
+  /**
    * Gets a list of those constraints which enclose the data area
    *
    * @return A valid, potentially empty list of polygon constraints oriented in
@@ -486,4 +538,45 @@ public class SvmBathymetryData {
     return supplement;
   }
 
+
+  private String loadShapePrjFile(File target) throws IOException {
+       String extension = getFileExtension(target);
+       if(!"shp".equals(extension)){
+         // the input file is not a Shapefile. As a convenience,
+         // we handle it, returning a null.
+         return null;
+       }
+       File parent = target.getParentFile();
+       if(parent==null){
+         parent = new File(".");
+       }
+       String name = target.getName();
+       String baseName = name.substring(0, name.length()-4);
+       String targetName =  baseName+'.'+matchCase(extension, "prj");
+       File targetFile  = new File(parent, targetName);
+
+
+
+       // Assuming that prj files are always ASCII
+       StringBuilder sb = new StringBuilder();
+       try(FileInputStream fins = new FileInputStream(targetFile);
+         BufferedInputStream bins = new BufferedInputStream(fins))
+       {
+         int c;
+         while((c = bins.read())>0){
+             sb.append((char)c);
+       }
+       }
+       return sb.toString();
+  }
+
+  /**
+   * Gets the content of the PRJ file associated with the input.
+   * This value will be non-null only if the input comes from a Shapefile
+   * (rather than a CSV or text file) and a matching PRJ file is provided.
+   * @return if available, a valid String; otherwise, a null.
+   */
+  public String getShapefilePrjContent(){
+    return prjContent;
+  }
 }
