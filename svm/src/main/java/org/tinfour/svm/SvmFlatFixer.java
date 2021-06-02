@@ -21,13 +21,13 @@
  * Revision History:
  * Date     Name         Description
  * ------   ---------    -------------------------------------------------
- * 04/2019  G. Lucas     Created  
+ * 04/2019  G. Lucas     Created
  *
  * Notes:
  *   At this time, the flat-fixer is not completely working.
  *   Part of its action is to subdivide triangles creating a new
  *   subset of non-flat triangles. Unfortunately, near the constraint
- *   boundaries, it can produce a potentially unlimited number of  
+ *   boundaries, it can produce a potentially unlimited number of
  *   "skinny" triangles.  I am investigating this problem.
  * -----------------------------------------------------------------------
  */
@@ -115,10 +115,11 @@ class SvmFlatFixer {
 
     List<Vertex> fixVertices = new ArrayList<>(fixList.size());
     for (IQuadEdge edge : fixList) {
+      IQuadEdge dual = edge.getDual();
       Vertex A = edge.getA();
       Vertex B = edge.getB();
       Vertex C = edge.getForward().getB();
-      Vertex D = edge.getForwardFromDual().getB();
+      Vertex D = dual.getForward().getB();
 
       double area = geoOp.area(A, B, C);
       if (area < 1) {
@@ -131,23 +132,26 @@ class SvmFlatFixer {
       double sC = C.getDistance(mX, mY);
       double sD = D.getDistance(mX, mY);
       double mZ;
-      if (D.getAuxiliaryIndex() == 1) {
+      if (D.getAuxiliaryIndex() == SvmBathymetryData.FLAT_ADJUSTMENT) {
         // since the earlier vertex was already interpolated
         // the model just propagates its value inward.
         mZ = D.getZ();
       } else {
-        // interpolate a new dept value combining an actual
-        // sample (D) and a shoreline vertex (C)
+        // interpolate a new depth value combining an actual
+        // sample (D) and a shoreline vertex (C).
+        // In cases where the interpolation produces a very shallow
+        // result, we limit the value to ensure that at least a small
+        // volume constibution is made.
         mZ = (sC * D.getZ() + sD * C.getZ()) / (sC + sD);
-        if (zShore - mZ < 1) {
+        if (mZ > zShore -1) {
           mZ = zShore - 1;
         }
       }
 
       Vertex M = tin.splitEdge(edge, mZ, false);
       M.setSynthetic(true);
-      M.setAuxiliaryIndex(1);
-      fixVertices.add(M);
+      M.setAuxiliaryIndex(SvmBathymetryData.FLAT_ADJUSTMENT);
+     fixVertices.add(M);
 
       //  mean depth(A, M, C) is (0 + zShore-mZ + 0)/3
       //  mean depth(M, B, C) is (zShore-mZ + 0 + 0)/3

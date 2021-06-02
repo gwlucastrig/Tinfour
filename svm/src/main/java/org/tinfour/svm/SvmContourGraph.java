@@ -38,6 +38,7 @@ import java.awt.RenderingHints;
 import java.awt.font.FontRenderContext;
 import java.awt.font.TextLayout;
 import java.awt.geom.AffineTransform;
+import java.awt.geom.Line2D;
 import java.awt.geom.Path2D;
 import java.awt.geom.Rectangle2D;
 import java.awt.image.BufferedImage;
@@ -175,7 +176,7 @@ class SvmContourGraph {
     }
 
     ps.println("Constructing smoothing filter");
-    SmoothingFilter filter = new SmoothingFilter(tin);
+    SmoothingFilter filter = new SmoothingFilter(tin, 5);
     ps.println("Time to construct smoothing filter "
       + filter.getTimeToConstructFilter() + " ms");
 
@@ -295,7 +296,7 @@ class SvmContourGraph {
     ps.println("\nBuilding contours for graph");
     ContourBuilderForTin builder
       = new ContourBuilderForTin(tin, filter, zContour, true);
-    builder.simplify(0.001);
+    builder.simplify(0.1);
 
     double areaFactor = properties.getUnitOfArea().getScaleFactor();
     builder.summarize(ps, areaFactor);
@@ -383,6 +384,22 @@ class SvmContourGraph {
         g2d.draw(path);
       }
     }
+
+//    g2d.setStroke(new BasicStroke(1.0f));
+//    g2d.setColor(Color.gray);
+//    for(IQuadEdge edge: tin.edges()){
+//      Vertex A = edge.getA();
+//      Vertex B = edge.getB();
+//      double []c = new double[8];
+//      c[0] = A.getX();
+//      c[1] = A.getY();
+//      c[2] = B.getX();
+//      c[3] = B.getY();
+//      af.transform(c, 0, c, 4, 2);
+//      Line2D l2d = new Line2D.Double(c[4], c[5], c[6], c[7]);
+//      g2d.draw(l2d);
+//
+//    }
 
     g2d.setColor(Color.gray);
     g2d.drawRect(0, 0, width - 1, height - 1);

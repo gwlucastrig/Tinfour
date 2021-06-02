@@ -196,6 +196,10 @@ public class VertexLoader {
       }
     } else if ("shp".equals(ext)) {
       try (VertexReaderShapefile sReader = new VertexReaderShapefile(file)) {
+        String dbfField = options.getDbfField();
+        if(dbfField!=null){
+            sReader.setDbfFieldForZ(dbfField);
+        }
         reader = sReader;
         list = sReader.read(null);
       }

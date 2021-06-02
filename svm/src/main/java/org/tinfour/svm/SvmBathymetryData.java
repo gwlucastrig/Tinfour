@@ -54,18 +54,34 @@ import org.tinfour.utils.loaders.VertexReaderText;
 @SuppressWarnings("PMD.AvoidInstantiatingObjectsInLoops")
 public class SvmBathymetryData {
 
+  /**
+   * Used to set an auxiliary value for a vertex indicating that it
+   * is original data from a bathymetry data source.
+   */
+  public static final int BATHYMETRY_SOURCE = 1;
+
+  /**
+   * Used to set an auxiliary value for a vertex indicating that it
+   * is data obtained from a supplemental source.
+   */
+  public static final int SUPPLEMENTAL_SOURCE =2;
+  /**
+   * Used to set an auxiliary value for a vertex indicating that it
+   * is a modeled data point used to adjust flat areas.
+   */
+  public static final int FLAT_ADJUSTMENT = 3;
+
   private double zMin;
   private double zMax;
   private double zMean;
   private int zMaxIndex;
   private int zMinIndex;
 
-  private List<Vertex> soundings = new ArrayList<>();
-  private List<Vertex> supplement = new ArrayList<>();
-  private List<PolygonConstraint> boundaryConstraints = new ArrayList<>();
-  ;
-  private List<PolygonConstraint> lakeConstraints = new ArrayList<>();
-  private List<PolygonConstraint> islandConstraints = new ArrayList<>();
+  private final List<Vertex> soundings = new ArrayList<>();
+  private final List<Vertex> supplement = new ArrayList<>();
+  private final List<PolygonConstraint> boundaryConstraints = new ArrayList<>();
+  private final List<PolygonConstraint> lakeConstraints = new ArrayList<>();
+  private final List<PolygonConstraint> islandConstraints = new ArrayList<>();
 
   double shoreReferenceElevation;
 
@@ -131,7 +147,11 @@ public class SvmBathymetryData {
             dbfBathymetryField,
             verticalTransform);
 
+    for (Vertex v : list) {
+      v.setAuxiliaryIndex(BATHYMETRY_SOURCE);
+    }
     soundings.addAll(list);
+
 
     String tmpStr = loadShapePrjFile(inputSoundingsFile);
     if(tmpStr!=null){
@@ -203,7 +223,9 @@ public class SvmBathymetryData {
             inputSupplementFile,
             dbfBathymetryField,
             verticalTransform);
-
+    for (Vertex v : list) {
+      v.setAuxiliaryIndex(SvmBathymetryData.SUPPLEMENTAL_SOURCE);
+    }
     getSupplements().addAll(list);
 
     long time1 = System.nanoTime();
@@ -211,7 +233,7 @@ public class SvmBathymetryData {
   }
 
   /**
-   * Load main set of polygon contraints defining the boundary of the body of
+   * Load main set of polygon constraints defining the boundary of the body of
    * water. This process is incremental and any new constraints will be added to
    * the list of those already loaded.
    *
@@ -317,7 +339,7 @@ public class SvmBathymetryData {
 
   /**
    * Get a list of the soundings. The result includes the main set of soundings,
-   * but does not include any supplementatal soundings that may have been
+   * but does not include any supplemental soundings that may have been
    * loaded.
    *
    * @return the soundings
@@ -488,9 +510,8 @@ public class SvmBathymetryData {
    */
   String matchCase(String source, String target) {
     StringBuilder sb = new StringBuilder();
-    int i = 0;
 
-    for (i = 0; i < target.length(); i++) {
+    for (int i = 0; i < target.length(); i++) {
       char s;
       if (i < source.length()) {
         s = source.charAt(i);

@@ -96,7 +96,8 @@ public class TestOptions {
     "-delimiter",
     "-palette",
     "-interpolator",
-    "-imageSize"
+    "-imageSize",
+    "-dbfField"
   };
 
 
@@ -125,6 +126,7 @@ public class TestOptions {
   String interpolator;
   InterpolationMethod interpolationMethod;
   int [] imageSize;
+  String dbfField;
 
   /**
    * Indicates whether the specified string matches the pattern of a
@@ -599,7 +601,7 @@ public class TestOptions {
       }
     }
 
-
+    dbfField = scanStringOption(args, "-dbfField", matched);
 
     return matched;
   }
@@ -936,7 +938,7 @@ public class TestOptions {
    * application-supplied defaults will be returned.
    * @param defaultWidth a value greater than zero.
    * @param defaultHeight a value greater than zero.
-   * @return an array of length 2 giving width and height, respectively.
+   * @return
    */
   public int []getImageSize(int defaultWidth, int defaultHeight){
     if(imageSize!=null && imageSize.length==2){
@@ -1072,5 +1074,14 @@ public class TestOptions {
    */
   public File getConstraintsFile(){
     return constraintsFile;
+  }
+
+  /**
+   * Gets the name of a DBF field to be used when extracting data from
+   * shapefile sources.
+   * @return if defined, a valid non-empty string; otherwise, a null.
+   */
+  String getDbfField(){
+    return dbfField;
   }
 }
