@@ -38,7 +38,6 @@ import java.awt.RenderingHints;
 import java.awt.font.FontRenderContext;
 import java.awt.font.TextLayout;
 import java.awt.geom.AffineTransform;
-import java.awt.geom.Line2D;
 import java.awt.geom.Path2D;
 import java.awt.geom.Rectangle2D;
 import java.awt.image.BufferedImage;
@@ -168,6 +167,25 @@ class SvmContourGraph {
     SvmBathymetryData data,
     double shoreReferenceElevation,
     IIncrementalTin tin) {
+
+    boolean useDepthModel = false;
+    boolean hasShorelineElevation = false;
+    boolean produceElevations = false;
+    if (shoreReferenceElevation > 0) {
+      hasShorelineElevation = true;
+    }
+
+    if (properties.isBathymetryModelSpecified()) {
+      SvmBathymetryModel bathyModel = properties.getBathymetryModel();
+      if (bathyModel.isDepth()) {
+        useDepthModel = true;
+        produceElevations = hasShorelineElevation;
+      } else {
+        useDepthModel = false;
+        produceElevations = true;
+      }
+    }
+
     File output = properties.getContourGraphFile();
     if (output == null) {
       // the properties did not request a contour graph,
@@ -176,7 +194,7 @@ class SvmContourGraph {
     }
 
     ps.println("Constructing smoothing filter");
-    SmoothingFilter filter = new SmoothingFilter(tin, 5);
+    SmoothingFilter filter = new SmoothingFilter(tin);
     ps.println("Time to construct smoothing filter "
       + filter.getTimeToConstructFilter() + " ms");
 
@@ -296,7 +314,7 @@ class SvmContourGraph {
     ps.println("\nBuilding contours for graph");
     ContourBuilderForTin builder
       = new ContourBuilderForTin(tin, filter, zContour, true);
-    builder.simplify(0.1);
+    builder.simplify(1);
 
     double areaFactor = properties.getUnitOfArea().getScaleFactor();
     builder.summarize(ps, areaFactor);
@@ -354,7 +372,8 @@ class SvmContourGraph {
     }
 
     // Next, draw the contours in semi-transparent gray
-    g2d.setColor(new Color(128, 128, 128, 128));
+    g2d.setColor(Color.black); // new Color(128, 128, 128, 128));
+
     List<Contour> contours = builder.getContours();
     for (Contour c : contours) {
       if (c.getContourType() == Contour.ContourType.Interior) {
@@ -400,7 +419,6 @@ class SvmContourGraph {
 //      g2d.draw(l2d);
 //
 //    }
-
     g2d.setColor(Color.gray);
     g2d.drawRect(0, 0, width - 1, height - 1);
 
@@ -417,22 +435,36 @@ class SvmContourGraph {
     g2d.fillRect(0, 0, width + 1, height + 200 + 1);
     g2d.drawImage(bImage, 0, 0, null);
 
-    Font font = new Font("Arial", Font.PLAIN, 12);
-    Font legendFont = new Font("Arial", Font.BOLD, 14);
+    Font font = new Font("Arial", Font.PLAIN, 22);
+    Font legendFont = new Font("Arial", Font.BOLD, 22);
     String labFmt = aIntervals.getLabelFormat();
-    if(contourInterval-Math.floor(contourInterval)>1.0e-5 && labFmt.contains(".0f")){
-       // fractional contour interval, but the labeling logic decided on integer
-       // labels.  So we adjust accordingly
-       labFmt = "%3.1f";
+    if (contourInterval - Math.floor(contourInterval) > 1.0e-5 && labFmt.contains(".0f")) {
+      // fractional contour interval, but the labeling logic decided on integer
+      // labels.  So we adjust accordingly
+      labFmt = "%3.1f";
     }
     String[] label = new String[zContour.length + 1];
-    label[0] = String.format("Below " + labFmt, zContour[0]);
     String testFmt = labFmt + " to " + labFmt;
-    for (int i = 1; i < zContour.length; i++) {
-      label[i] = String.format(testFmt, zContour[i - 1], zContour[i]);
+    if (useDepthModel) {
+      label[0] = String.format("Below " + labFmt, shoreReferenceElevation - zContour[0]);
+      for (int i = 1; i < zContour.length; i++) {
+        label[i] = String.format(testFmt,
+          shoreReferenceElevation - zContour[i - 1],
+          shoreReferenceElevation - zContour[i]);
+      }
+      label[zContour.length]
+        = String.format("Above " + labFmt,
+          shoreReferenceElevation - zContour[zContour.length - 1]);
+    } else {
+      label[0] = String.format("Below " + labFmt, zContour[0]);
+      for (int i = 1; i < zContour.length; i++) {
+        label[i] = String.format(testFmt,
+          zContour[i - 1],
+          zContour[i]);
+      }
+      label[zContour.length]
+        = String.format("Above " + labFmt, zContour[zContour.length - 1]);
     }
-    label[zContour.length]
-      = String.format("Above " + labFmt, zContour[zContour.length - 1]);
 
     FontRenderContext frc = new FontRenderContext(null, true, true);
     TextLayout[] layout = new TextLayout[label.length];
@@ -545,8 +577,13 @@ class SvmContourGraph {
           regionWriter.setDbfFieldValue("parent_id", parent_id);
           regionWriter.setDbfFieldValue("band_idx", region.getRegionIndex());
           regionWriter.setDbfFieldValue("Shape_area", region.getAdjustedArea());
-          regionWriter.setDbfFieldValue("band_min", bandMin);
-          regionWriter.setDbfFieldValue("band_max", bandMax);
+          if (useDepthModel) {
+            regionWriter.setDbfFieldValue("band_min", shoreReferenceElevation - bandMin);
+            regionWriter.setDbfFieldValue("band_max", shoreReferenceElevation - bandMax);
+          } else {
+            regionWriter.setDbfFieldValue("band_min", bandMin);
+            regionWriter.setDbfFieldValue("band_max", bandMax);
+          }
 
           regionWriter.writeRecord(record);
         }
@@ -562,10 +599,13 @@ class SvmContourGraph {
       removeOldShapefiles(ps, shapefileRef);
       ps.println("Writing shapefile " + shapefileRef.getPath());
       ShapefileWriterSpecification contourSpec = new ShapefileWriterSpecification();
-      contourSpec.setShapefileType(ShapefileType.Polygon);
+      contourSpec.setShapefileType(ShapefileType.PolyLine);
       contourSpec.addIntegerField("feature_id", 8);
       contourSpec.addIntegerField("cntr_idx", 4);
       contourSpec.addFloatingPointField("depth", 8, 2, false);
+      if (produceElevations) {
+        contourSpec.addFloatingPointField("elevation", 8, 2, false);
+      }
       contourSpec.addFloatingPointField("Shape_len", 13, 6, true);
       contourSpec.setShapefilePrjContent(data.getShapefilePrjContent());
 
@@ -592,7 +632,10 @@ class SvmContourGraph {
           }
           contourWriter.setDbfFieldValue("feature_id", nContour);
           contourWriter.setDbfFieldValue("cntr_idx", cIndex);
-          contourWriter.setDbfFieldValue("depth", z);
+          contourWriter.setDbfFieldValue("depth", shoreReferenceElevation - z);
+          if (produceElevations) {
+            contourWriter.setDbfFieldValue("elevation", z);
+          }
           contourWriter.setDbfFieldValue("Shape_len", dSum);
 
           contourWriter.writeRecord(record);

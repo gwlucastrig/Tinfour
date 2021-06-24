@@ -21,7 +21,7 @@
  * Revision History:
  * Date     Name         Description
  * ------   ---------    -------------------------------------------------
- * 04/2019  G. Lucas     Created  
+ * 04/2019  G. Lucas     Created
  *
  * Notes:
  *
@@ -33,6 +33,7 @@ import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 import org.tinfour.gis.utils.IVerticalCoordinateTransform;
+import org.tinfour.svm.SvmBathymetryModel;
 
 /**
  *
@@ -83,6 +84,7 @@ public class SvmFileSpecification {
   final File file;
   final String field;
   final IVerticalCoordinateTransform verticalTransform;
+  final SvmBathymetryModel bathymetryModel;
 
   /**
    * A package-scope constructor used to create specifications by the
@@ -97,7 +99,7 @@ public class SvmFileSpecification {
    * if no folder reference is to be applied.
    *
    */
-  SvmFileSpecification(String key, List<String> list, File folder) {
+  SvmFileSpecification(String key, SvmBathymetryModel bathymetryModel, List<String> list, File folder) {
     if (key == null || key.isEmpty()) {
       throw new IllegalArgumentException("Invalid key");
     }
@@ -105,6 +107,7 @@ public class SvmFileSpecification {
       throw new IllegalArgumentException("Empty specification for " + key);
     }
     this.key = key;
+    this.bathymetryModel = bathymetryModel;
     String path = list.get(0);
     File test = new File(path);
     if (test.isAbsolute() || folder == null) {
@@ -136,10 +139,20 @@ public class SvmFileSpecification {
       } else {
         field = null;
       }
+
+      // the the arguments list specifies a vertical coordinate transform,
+      // construct an instance.  Otherwise, a coordinate transform may be
+      // necessary due to the bathymetry model.
       if (list.size() > 2) {
         verticalTransform = interpretVtrans(list.get(2));
       } else {
-        verticalTransform = null;
+        if (bathymetryModel == SvmBathymetryModel.Depth) {
+          verticalTransform = new LinearValueTransform(-1, 0);
+        } else if (bathymetryModel == SvmBathymetryModel.DepthNegative) {
+          verticalTransform = new LinearValueTransform(1, 0);
+        } else {
+          verticalTransform = null;
+        }
       }
     } else {
       field = null;

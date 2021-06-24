@@ -53,7 +53,7 @@ import org.tinfour.io.BufferedRandomAccessFile;
  * While Tinfour is not a Geographic Information System (GIS), some of the
  * most interesting data sets that it can be applied to are GIS products.
  * The shapefile writer is intended to support applications that may require
- * the export of Tinfour analysis products for use in GIS systems.  However,
+ * the export of Tinfour analysis products for use in GIS systems. However,
  * this implementation is limited to the most basic cases and does not
  * provide much in the way of error-checking for input.
  * <p>
@@ -72,13 +72,14 @@ import org.tinfour.io.BufferedRandomAccessFile;
  * <li>Construct an instance of the ShapefileWriter</li>
  * <li>For each feature (record) to be added to the shapefile,
  * set metadata and write geometry</li>
- * <li>Specify metadata for each record using the appropriate "setDbf" calls.</li>
+ * <li>Specify metadata for each record using the appropriate "setDbf"
+ * calls.</li>
  * <li>Use a ShapefileRecord to specify geometry data for output and
  * pass it to the writeRecord() method to stored data</li>
  * <li>Repeat for as many records as required</li>
  * <li>Close the shapefile</li>
  * </ol>
- * The following code snippet illustrates the process.  In this case,
+ * The following code snippet illustrates the process. In this case,
  * we use Java's elegant try-with-resources syntax as an example.
  * This example writes only a single record, though most applications
  * will produce multiple records.
@@ -86,9 +87,10 @@ import org.tinfour.io.BufferedRandomAccessFile;
  * The calls to setDbfFieldValue() set the metadata data that will
  * be written to the associated .dbf file at the same time geometry
  * elements are written to the .shp file. When writeRecord() is called,
- * the ShapefileWriter stores the geometry from the application-supplied ShapefileRecord
+ * the ShapefileWriter stores the geometry from the application-supplied
+ * ShapefileRecord
  * in the associated .shp file. It also stores the values for the
- * DBF metadata.  Internally, the writer will also build a .shx (index) file.
+ * DBF metadata. Internally, the writer will also build a .shx (index) file.
  * All of these files are closed simultaneously at the end of the
  * try-with-resources block.
  * <pre><code>
@@ -320,6 +322,27 @@ public class ShapefileWriter implements Closeable {
     shapefile.writeInt(nRecords);
 
     int contentLength = 0;
+
+    if (record.x0 < xMin) {
+      xMin = record.x0;
+    }
+    if (record.x1 > xMax) {
+      xMax = record.x1;
+    }
+    if (record.y0 < yMin) {
+      yMin = record.y0;
+    }
+    if (record.y1 > yMax) {
+      yMax = record.y1;
+    }
+    if (spec.shapefileType.hasZ()) {
+      if (record.z0 > zMin) {
+        zMin = record.z0;
+      }
+      if (record.z1 > zMax) {
+        zMax = record.z1;
+      }
+    }
 
     switch (spec.shapefileType) {
       case PolyLine:

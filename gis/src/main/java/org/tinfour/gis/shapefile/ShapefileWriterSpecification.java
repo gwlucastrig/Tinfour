@@ -58,9 +58,9 @@ public class ShapefileWriterSpecification {
    * @param type a valid enumeration value
    */
   public void setShapefileType(ShapefileType type) {
-       if(!type.isPolygon() || type.hasM()){
-      throw new IllegalArgumentException("Shapefile type: "+type.name()
-        +" is not yet supported");
+    if (!(type.isPolygon() || type.isPolyLine()) || type.hasM()) {
+      throw new IllegalArgumentException("Shapefile type: " + type.name()
+        + " is not yet supported");
     }
     this.shapefileType = type;
   }

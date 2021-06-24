@@ -52,6 +52,7 @@ import org.tinfour.svm.properties.SvmProperties;
 import org.tinfour.semivirtual.SemiVirtualIncrementalTin;
 import org.tinfour.standard.IncrementalTin;
 import org.tinfour.svm.SvmTriangleVolumeStore.AreaVolumeResult;
+import org.tinfour.utils.HilbertSort;
 import org.tinfour.utils.TriangleCollector;
 
 /**
@@ -305,10 +306,13 @@ public class SvmComputation {
     } else {
       tin = new SemiVirtualIncrementalTin(1.0);
     }
-    // ps.println("TIN class: " + (tin.getClass().getName()));
+    //ps.println("TIN class: " + (tin.getClass().getName()));
     tin.add(soundings, null);
+    long time1=System.nanoTime();
     tin.addConstraints(allConstraints, true);
-    long timeToBuildTin = System.nanoTime() - time0;
+    long time2 = System.nanoTime();
+    long timeToBuildTin = time1 - time0;
+    long timeToAddConstraints = time2-time1;
 
     TriangleSurvey trigSurvey = new TriangleSurvey(tin, shoreReferenceElevation);
     TriangleCollector.visitSimpleTriangles(tin, trigSurvey);
@@ -353,26 +357,29 @@ public class SvmComputation {
         soundings.addAll(fixList);
 
       }
-      long timeF1 = System.nanoTime();
-      timeToFixFlats = timeF1 - timeF0;
       ps.println("N remediation vertices added: " + nRemediationVertices);
       // the vertex insertion logic in the flat fixer results in
       // a triangulation that is not properly Delaunay.  Additionally,
       // there is evidence that the insertion is flawed and that the
       // resulting triangulation may have crossing edges.  This is a bug,
       // and will need to be addressed.  But, for now, rebuild the triangulation.
+      tin.dispose();
       if (soundings.size() < 500000) {
         tin = new IncrementalTin(1.0);
       } else {
         tin = new SemiVirtualIncrementalTin(1.0);
       }
-      ps.println("TIN class: " + (tin.getClass().getName()));
+      //ps.println("TIN class: " + (tin.getClass().getName()));
+      HilbertSort hilbert = new HilbertSort();
+      hilbert.sort(soundings);
       tin.add(soundings, null);
       tin.addConstraints(allConstraints, true);
+            long timeF1 = System.nanoTime();
+      timeToFixFlats = timeF1 - timeF0;
     }
     ps.println("");
     ps.println("Processing data from Delaunay Triangulation");
-    long time1 = System.nanoTime();
+     time1 = System.nanoTime();
     LakeData lakeConsumer = new LakeData(tin, shoreReferenceElevation);
     TriangleCollector.visitSimpleTriangles(tin, lakeConsumer);
     SvmTriangleVolumeStore vStore = lakeConsumer.volumeStore;
@@ -394,7 +401,7 @@ public class SvmComputation {
       }
     }
 
-    long time2 = System.nanoTime();
+     time2 = System.nanoTime();
 
     List<PolygonConstraint> lakeConstraints = data.getLakeConstraints();
     List<PolygonConstraint> islandConstraints = data.getIslandConstraints();
@@ -445,10 +452,10 @@ public class SvmComputation {
         }
         prior = v;
       }
-
+      Arrays.sort(lenArray, 0, nLen);
       double meanLen = sumLen / nLen;
       double medianLen = lenArray[nLen / 2];
-      Arrays.sort(lenArray, 0, nLen);
+
       ps.format("  Mean sounding spacing:   %12.3f %s%n",
         meanLen / lengthFactor, lengthUnits);
       ps.format("  Median sounding spacing: %12.3f %s%n",
@@ -492,6 +499,7 @@ public class SvmComputation {
     ps.format("%n%n%n");
     ps.format("Time to load data              %7.1f ms%n", data.getTimeToLoadData() / 1.0e+6);
     ps.format("Time to build TIN              %7.1f ms%n", timeToBuildTin / 1.0e+6);
+    ps.format("Time to add shore constraint   %7.1f ms%n", timeToAddConstraints / 1.0e+6);
     ps.format("Time to remedy flat triangles: %7.1f ms%n", timeToFixFlats / 1.0e+6);
     ps.format("Time to compute lake volume    %7.1f ms%n", (time2 - time1) / 1.0e+6);
     ps.format("Time for all analysis          %7.1f ms%n", (time2 - time0) / 1.0e+6);
@@ -541,6 +549,22 @@ public class SvmComputation {
 
     File contourOutput = properties.getContourGraphFile();
     if (contourOutput != null) {
+         ps.println("\nIn preparation for contouring, subdividing large triangles");
+      SvmRefinement refinement = new SvmRefinement();
+      List<Vertex>vList = refinement.subdivideLargeTriangles(ps,  tin, 0.95);
+      if(!vList.isEmpty()){
+        tin.dispose();
+        soundings.addAll(vList);
+        HilbertSort hilbert = new HilbertSort();
+        hilbert.sort(soundings);
+         if (soundings.size() < 500000) {
+      tin = new IncrementalTin(1.0);
+    } else {
+      tin = new SemiVirtualIncrementalTin(1.0);
+    }
+    tin.add(soundings, null);
+    tin.addConstraints(allConstraints, true);
+      }
       SvmContourGraph.write(
         ps,
         properties,
@@ -586,12 +610,16 @@ public class SvmComputation {
         // to exclude any edges that connect a sounding to
         // a constraint border.
         Vertex a = e.getA();
-        Vertex b = e.getB();
-        if (!a.isConstraintMember() && !b.isConstraintMember()) {
+        int aAux = a.getAuxiliaryIndex();
+        int bAux = a.getAuxiliaryIndex();
+        if(aAux==SvmBathymetryData.BATHYMETRY_SOURCE && bAux==SvmBathymetryData.BATHYMETRY_SOURCE){
           n++;
           sumLength.add(e.getLength());
         }
       }
+    }
+    if(n==0){
+      return 0;
     }
     return sumLength.getSum() / n;
   }

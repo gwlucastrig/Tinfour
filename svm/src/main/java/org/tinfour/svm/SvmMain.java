@@ -175,6 +175,15 @@ public class SvmMain {
     SvmProperties prop = SvmProperties.load(args);
     prop.writeSummary(System.out);
 
+        SvmBathymetryModel bathymetryModel = null;
+    if(prop.isBathymetryModelSpecified()){
+      bathymetryModel = prop.getBathymetryModel();
+    }
+    if(bathymetryModel==null){
+      System.err.println("A bathymetry model specification is mandatory");
+      System.exit(-1);
+    }
+
     // Check for missing input or output folders (if specified).
     // This is a frequent source of error, so we try to catch
     // it early.
@@ -192,7 +201,8 @@ public class SvmMain {
 
     long time0 = System.nanoTime();
     // Load the input data ----------------------------------
-    SvmBathymetryData data = new SvmBathymetryData();
+
+    SvmBathymetryData data = new SvmBathymetryData(bathymetryModel);
 
     List<SvmFileSpecification> bathyFiles = prop.getSampleSpecifications();
     for (SvmFileSpecification bathyFile : bathyFiles) {
@@ -234,7 +244,8 @@ public class SvmMain {
     svmComp.processVolume(reportPrintStream, prop, data);
 
     long time1 = System.nanoTime();
-    reportPrintStream.format("%n%nProcessing completed in %5.2f seconds%n%n", ((time1-time0)/1.0e+9));
+    reportPrintStream.format("%n%nProcessing completed in %5.2f seconds%n%n",
+      (time1-time0)/1.0e+9);
     reportPrintStream.flush();
     if (reportOutputStream != null) {
       reportOutputStream.close();

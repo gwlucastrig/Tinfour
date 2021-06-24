@@ -44,6 +44,7 @@ public class SimpleTriangle {
   private final IQuadEdge edgeA;
   private final IQuadEdge edgeB;
   private final IQuadEdge edgeC;
+  private final int index;
   private Circumcircle circumcircle;
 
   /**
@@ -67,6 +68,7 @@ public class SimpleTriangle {
     this.edgeA = a;
     this.edgeB = b;
     this.edgeC = c;
+    index = computeIndex();
   }
 
   /**
@@ -87,6 +89,18 @@ public class SimpleTriangle {
     this.edgeA = a;
     this.edgeB = a.getForward();
     this.edgeC = a.getReverse();
+    index = computeIndex();
+  }
+
+  private int computeIndex() {
+    int aIndex = edgeA.getIndex();
+    int bIndex = edgeB.getIndex();
+    int cIndex = edgeC.getIndex();
+    if (aIndex <= bIndex) {
+      return aIndex < cIndex ? aIndex : cIndex;
+    } else {
+      return bIndex < cIndex ? bIndex : cIndex;
+    }
   }
 
   /**
@@ -287,5 +301,18 @@ public class SimpleTriangle {
     Vertex b = edgeB.getA();
     Vertex c = edgeC.getA();
     return a == null || b == null || c == null;
+  }
+
+  /**
+   * Gets a unique index value associated with the triangle.
+   * <p>
+   * The index value for the triangle is taken from the lowest-value
+   * index of the three edges that comprise the triangle. It will be
+   * stable provided that the underlying Triangulated Irregular Network (TIN)
+   * is not modified.
+   * @return an arbitrary integer value.
+   */
+  public int getIndex(){
+    return index;
   }
 }

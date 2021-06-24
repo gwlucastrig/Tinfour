@@ -40,11 +40,14 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Properties;
 import java.util.Set;
+import org.tinfour.svm.SvmBathymetryModel;
 
 /**
  * Provides parameter and resource specifications for a SVM analysis run.
  */
 public class SvmProperties {
+
+  private final static String bathymetryModelKey = "bathymetryModel";
 
   private final static String unitOfDistanceKey = "unitOfDistance";
   private final static String unitOfAreaKey = "unitOfArea";
@@ -73,12 +76,15 @@ public class SvmProperties {
   private final static String contourRegionShapefileKey = "contourRegionShapefile";
   private final static String contourLineShapefileKey = "contourLineShapefile";
 
+  private final static String anomalyTableFileKey = "anomalyTableFileName";
+
   final Properties properties = new Properties();
   final List<String> keyList = new ArrayList<>();
   private File specificationFile;
   private SvmUnitSpecification unitOfDistance;
   private SvmUnitSpecification unitOfArea;
   private SvmUnitSpecification unitOfVolume;
+
 
   /**
    * Standard constructor
@@ -276,13 +282,14 @@ public class SvmProperties {
   }
 
   private List<SvmFileSpecification> getTargetSpecifications(String target) {
+    SvmBathymetryModel model = getBathymetryModel();
     File folder = getInputFolder();
     List<SvmFileSpecification> specList = new ArrayList<>();
     for (String key : keyList) {
       if (key.startsWith(target)) {
         String value = properties.getProperty(key);
         List<String> splitList = split(value);
-        specList.add(new SvmFileSpecification(key, splitList, folder));
+        specList.add(new SvmFileSpecification(key, model, splitList, folder));
       }
     }
     return specList;
@@ -487,6 +494,13 @@ public class SvmProperties {
     ps.format("Specifications for processing%n");
     if (specificationFile != null) {
       ps.format("Properties file: %s%n", specificationFile.getPath());
+    }
+
+    SvmBathymetryModel model = this.getBathymetryModel();
+    if(model==null){
+      ps.format("Bathymetry model is not specified, no processing is possible");
+    }else{
+      ps.format("%nBathymetry model: %s%n%n",model.name());
     }
     File f = getInputFolder();
     ps.format("Input folder:   %s%n", f == null ? "Not specified" : f.getPath());
@@ -773,6 +787,42 @@ public class SvmProperties {
     }
     throw new IllegalArgumentException(
       "Incomplete specification for dimension: " + key + "=" + s);
+  }
+
+
+  /**
+   * Get the path to a file for writing a table reporting anomalies.
+   * This setting controls whether anomaly analysis is performed.
+   *
+   * @return a valid File instance or a null if not specified.
+   */
+  public File getAnomalyTableFile() {
+    if (properties.containsKey(anomalyTableFileKey)) {
+      return extractFile(outputFolderKey, properties.getProperty(anomalyTableFileKey));
+    }
+    return null;
+  }
+
+  /**
+   * Gets the bathymetry model specified for the soundings.
+   *
+   * @return a valid instance or a null if a value was not properly specified.
+   */
+  public SvmBathymetryModel getBathymetryModel() {
+    String s = properties.getProperty(bathymetryModelKey);
+    return SvmBathymetryModel.lenientValueOf(s);
+  }
+
+  /**
+   * Indicates whether the source data includes a bathymetry model
+   * specification. This method does not reflect whether that specification
+   * included a valid value.
+   *
+   * @return true if a specification was supplied; otherwise, false.
+   */
+  public boolean isBathymetryModelSpecified() {
+    String s = properties.getProperty(bathymetryModelKey);
+    return s != null && !s.trim().isEmpty();
   }
 
 }

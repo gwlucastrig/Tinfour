@@ -92,11 +92,22 @@ public class SvmBathymetryData {
 
   private String prjContent;
 
-  /**
-   * Standard constructor
-   */
-  public SvmBathymetryData() {
+  private final SvmBathymetryModel bathymetryModel;
 
+  private SvmBathymetryData(){
+     bathymetryModel = SvmBathymetryModel.Elevation;
+  }
+
+  /**
+   * Constructs an instance to load and store bathymetry data.
+   * @param model a valid bathymetry model specification
+   */
+  public SvmBathymetryData(SvmBathymetryModel model){
+    if(model==null){
+      throw new IllegalArgumentException(
+        "A null bathymetry model specification is not supported");
+    }
+    this.bathymetryModel = model;
   }
 
   private List<Vertex> loadVertices(
@@ -119,7 +130,10 @@ public class SvmBathymetryData {
               + extension
               + " for input soundings " + vertexFile.getPath());
     }
+    HilbertSort hilbert = new HilbertSort();
+    hilbert.sort(list);
     return list;
+
   }
 
   /**
@@ -599,5 +613,13 @@ public class SvmBathymetryData {
    */
   public String getShapefilePrjContent(){
     return prjContent;
+  }
+
+  /**
+   * Gets the bathymetry defined for the soundings in this instances.
+   * @return a valid enumeration value.
+   */
+  public SvmBathymetryModel getBathymetryModel(){
+    return bathymetryModel;
   }
 }

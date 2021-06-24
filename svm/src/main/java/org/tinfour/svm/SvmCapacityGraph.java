@@ -177,7 +177,7 @@ class SvmCapacityGraph {
     Rectangle2D fontR2D = testLayout.getBounds();
     double axisFontHeight = fontR2D.getHeight();
     double axisFontWidth = fontR2D.getWidth();
-    int yFontAllowance = (int) (axisFontHeight * 1.25);
+    int yFontAllowance = (int) (axisFontHeight * 1.4);
     int xFontAllowance = (int) (axisFontWidth * 1.3);
 
     AffineTransform af = AffineTransform.getQuadrantRotateInstance(3);
