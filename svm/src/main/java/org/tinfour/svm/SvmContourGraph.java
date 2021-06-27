@@ -145,9 +145,6 @@ class SvmContourGraph {
 
   private static Color getColor(double index, double iMin, double iMax) {
     int i = (int) ((paletteB2Y.length - 1) * index / (iMax - iMin));
-    if (i == 72) {
-      System.out.println("merde");
-    }
     return new Color(
       paletteB2Y[i][0],
       paletteB2Y[i][1],
@@ -311,10 +308,24 @@ class SvmContourGraph {
     zBandMin[zContour.length] = zBandMax[zContour.length - 1];
     zBandMax[zContour.length] = shoreReferenceElevation;
 
+    double simplificationFactor;
+    if(contourInterval>0){
+      // the properties specified a contour interval
+      double s = contourInterval/8;
+      simplificationFactor = s*s;
+    }else if (zContour.length>2){
+      // the properties did not specify a contour interval,
+      // so the interval was derived using the axis-interval logic.
+      double s = zContour[1]-zContour[0];
+      simplificationFactor = s*s;
+    }else{
+      simplificationFactor = 0.5;
+    }
+
     ps.println("\nBuilding contours for graph");
     ContourBuilderForTin builder
       = new ContourBuilderForTin(tin, filter, zContour, true);
-    builder.simplify(1);
+    builder.simplify(simplificationFactor);
 
     double areaFactor = properties.getUnitOfArea().getScaleFactor();
     builder.summarize(ps, areaFactor);

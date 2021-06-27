@@ -151,7 +151,7 @@ class SvmFlatFixer {
       Vertex M = tin.splitEdge(edge, mZ, false);
       M.setSynthetic(true);
       M.setAuxiliaryIndex(SvmBathymetryData.FLAT_ADJUSTMENT);
-     fixVertices.add(M);
+      fixVertices.add(M);
 
       //  mean depth(A, M, C) is (0 + zShore-mZ + 0)/3
       //  mean depth(M, B, C) is (zShore-mZ + 0 + 0)/3

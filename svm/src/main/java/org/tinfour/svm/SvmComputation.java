@@ -76,6 +76,8 @@ public class SvmComputation {
     KahanSummation volumeSum = new KahanSummation();
     KahanSummation areaSum = new KahanSummation();
     KahanSummation flatAreaSum = new KahanSummation();
+    KahanSummation depthAreaSum = new KahanSummation();
+    KahanSummation depthAreaWeightedSum = new KahanSummation();
 
     SvmTriangleVolumeStore volumeStore;
 
@@ -126,7 +128,12 @@ public class SvmComputation {
             && nEqual(zC, shoreReferenceElevation)) {
             nFlatTriangles++;
             flatAreaSum.add(area);
-          }
+          }else if(zA<shoreReferenceElevation
+            || zB<shoreReferenceElevation
+            || zC<shoreReferenceElevation){
+            depthAreaSum.add(area);
+            depthAreaWeightedSum.add(area*(shoreReferenceElevation-(zA+zB+zC)/3.0));
+        }
 
           nTriangles++;
           double vtest = (shoreReferenceElevation - zMean) * area;
@@ -165,6 +172,10 @@ public class SvmComputation {
     double getFlatArea() {
       return flatAreaSum.getSum();
     }
+
+    double getAdjustedMeanDepth(){
+      return depthAreaWeightedSum.getSum()/this.depthAreaSum.getSum();
+    }
   }
 
   /**
@@ -180,6 +191,9 @@ public class SvmComputation {
     int nFlatTriangles;
     KahanSummation areaSum = new KahanSummation();
     KahanSummation flatAreaSum = new KahanSummation();
+    KahanSummation depthAreaSum = new KahanSummation();
+    KahanSummation depthAreaWeightedSum = new KahanSummation();
+
     final GeometricOperations geoOp;
 
     /**
@@ -227,7 +241,10 @@ public class SvmComputation {
             && nEqual(zC, shoreReferenceElevation)) {
             nFlatTriangles++;
             flatAreaSum.add(area);
-          }
+          }else if(zA<shoreReferenceElevation || zB<shoreReferenceElevation || zC<shoreReferenceElevation){
+            depthAreaSum.add(area);
+            depthAreaWeightedSum.add(area*(shoreReferenceElevation-(zA+zB+zC)/3.0));
+        }
 
           nTriangles++;
           areaSum.add(area);
@@ -245,6 +262,10 @@ public class SvmComputation {
 
     int getFlatTriangleCount() {
       return nFlatTriangles;
+    }
+
+    double getMeanDepth(){
+      return depthAreaWeightedSum.getSum()/this.depthAreaSum.getSum();
     }
   }
 
@@ -465,10 +486,13 @@ public class SvmComputation {
 
     double rawVolume = lakeConsumer.getVolume();
     double rawSurfArea = lakeConsumer.getSurfaceArea();
+
+    double rawAdjMeanDepth = lakeConsumer.getAdjustedMeanDepth();
     double totalVolume = lakeConsumer.getVolume();
     double volume = lakeConsumer.getVolume() / volumeFactor;
     double surfArea = lakeConsumer.getSurfaceArea() / areaFactor;
     double avgDepth = (rawVolume / rawSurfArea) / lengthFactor;
+    double adjMeanDepth = rawAdjMeanDepth/lengthFactor;
     double vertexSpacing = estimateInteriorVertexSpacing(tin, lakeConsumer);
     double rawFlatArea = lakeConsumer.getFlatArea();
     double flatArea = lakeConsumer.getFlatArea() / areaFactor;
@@ -481,6 +505,7 @@ public class SvmComputation {
     ps.format("  Flat Area           %,18.2f %s     %,28.1f %s^2%n",
       flatArea, areaUnits, rawFlatArea, lengthUnits);
     ps.format("  Avg depth           %,18.2f %s%n", avgDepth, lengthUnits);
+    ps.format("  Adj mean depth      %,18.2f %s%n", adjMeanDepth, lengthUnits);
     ps.format("  Mean Vertex Spacing %,18.2f %s%n", vertexSpacing, lengthUnits);
     ps.format("  N Triangles         %15d%n", lakeConsumer.nTriangles);
     ps.format("  N Flat Triangles    %15d%n", lakeConsumer.nFlatTriangles);
@@ -497,13 +522,13 @@ public class SvmComputation {
     }
 
     ps.format("%n%n%n");
-    ps.format("Time to load data              %7.1f ms%n", data.getTimeToLoadData() / 1.0e+6);
-    ps.format("Time to build TIN              %7.1f ms%n", timeToBuildTin / 1.0e+6);
-    ps.format("Time to add shore constraint   %7.1f ms%n", timeToAddConstraints / 1.0e+6);
-    ps.format("Time to remedy flat triangles: %7.1f ms%n", timeToFixFlats / 1.0e+6);
-    ps.format("Time to compute lake volume    %7.1f ms%n", (time2 - time1) / 1.0e+6);
-    ps.format("Time for all analysis          %7.1f ms%n", (time2 - time0) / 1.0e+6);
-    ps.format("Time for all operations        %7.1f ms%n",
+    ps.format("Time to load data              %9.1f ms%n", data.getTimeToLoadData() / 1.0e+6);
+    ps.format("Time to build TIN              %9.1f ms%n", timeToBuildTin / 1.0e+6);
+    ps.format("Time to add shore constraint   %9.1f ms%n", timeToAddConstraints / 1.0e+6);
+    ps.format("Time to remedy flat triangles  %9.1f ms%n", timeToFixFlats / 1.0e+6);
+    ps.format("Time to compute lake volume    %9.1f ms%n", (time2 - time1) / 1.0e+6);
+    ps.format("Time for all analysis          %9.1f ms%n", (time2 - time0) / 1.0e+6);
+    ps.format("Time for all operations        %9.1f ms%n",
       (data.getTimeToLoadData() + time2 - time0) / 1.0e+6);
 
     ps.format("%n%nVolume Store Triangle Count: %d%n", vStore.getTriangleCount());
