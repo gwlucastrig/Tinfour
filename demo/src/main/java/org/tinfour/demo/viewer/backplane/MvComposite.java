@@ -136,7 +136,7 @@ public class MvComposite {
   private float[] zGrid;
 
   private String modelAndRenderingReport;
-  
+
   private Shape clipMask;
 
   /**
@@ -170,11 +170,11 @@ public class MvComposite {
    * this instance
    */
   public MvComposite(
-          IModel model,
-          ViewOptions view,
-          int width, int height,
-          AffineTransform m2c, AffineTransform c2m,
-          int taskIndex) {
+    IModel model,
+    ViewOptions view,
+    int width, int height,
+    AffineTransform m2c, AffineTransform c2m,
+    int taskIndex) {
     if (model == null) {
       throw new IllegalArgumentException("Null model not allowed");
     }
@@ -229,10 +229,10 @@ public class MvComposite {
    * @param taskIndex the index for the task associated with the composite
    */
   public MvComposite(
-          MvComposite mvComposite,
-          ViewOptions view,
-          boolean preserveTins,
-          int taskIndex) {
+    MvComposite mvComposite,
+    ViewOptions view,
+    boolean preserveTins,
+    int taskIndex) {
     this.taskIndex = taskIndex;
     this.width = mvComposite.width;
     this.height = mvComposite.height;
@@ -482,24 +482,29 @@ public class MvComposite {
 
     timeForRenderWireframe0 = System.currentTimeMillis();
     BufferedImage bImage
-            = new BufferedImage(width, height, BufferedImage.TYPE_4BYTE_ABGR);
+      = new BufferedImage(width, height, BufferedImage.TYPE_4BYTE_ABGR);
     Graphics2D g2d = bImage.createGraphics();
     g2d.setRenderingHint(
-            RenderingHints.KEY_ANTIALIASING,
-            RenderingHints.VALUE_ANTIALIAS_ON);
+      RenderingHints.KEY_ANTIALIASING,
+      RenderingHints.VALUE_ANTIALIAS_ON);
     g2d.setRenderingHint(
-            RenderingHints.KEY_TEXT_ANTIALIASING,
-            RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
+      RenderingHints.KEY_TEXT_ANTIALIASING,
+      RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
     g2d.setColor(view.getForeground());
     double c[] = new double[8];
 
-    double zMin = model.getMinZ();
-    double zMax = model.getMaxZ();
+    double zMinForPalette = model.getMinZ();
+    double zMaxForPalette = model.getMaxZ();
 
     TestPalette palette = null;
     if (view.usePaletteForWireframe()) {
       String paletteName = view.getPaletteName();
       palette = TestPalette.getPaletteByName(paletteName);
+      if (view.useRangeOfValuesForPalette()) {
+        double[] pRange = view.getRangeForPalette();
+        zMinForPalette = pRange[0];
+        zMaxForPalette = pRange[1];
+      }
     }
     g2d.setColor(view.getForeground());
 
@@ -522,7 +527,7 @@ public class MvComposite {
         e2d.setFrame(c[2] - 2, c[3] - 2, 5, 5);
         if (palette != null) {
           double z = a.getZ();
-          Color color = palette.getColor(z, zMin, zMax);
+          Color color = palette.getColor(z, zMinForPalette, zMaxForPalette);
           g2d.setColor(color);
         }
         g2d.fill(e2d);
@@ -555,25 +560,31 @@ public class MvComposite {
 
     timeForRenderWireframe0 = System.currentTimeMillis();
     BufferedImage bImage
-            = new BufferedImage(width, height, BufferedImage.TYPE_4BYTE_ABGR);
+      = new BufferedImage(width, height, BufferedImage.TYPE_4BYTE_ABGR);
     Graphics2D g2d = bImage.createGraphics();
     g2d.setRenderingHint(
-            RenderingHints.KEY_ANTIALIASING,
-            RenderingHints.VALUE_ANTIALIAS_ON);
+      RenderingHints.KEY_ANTIALIASING,
+      RenderingHints.VALUE_ANTIALIAS_ON);
     g2d.setRenderingHint(
-            RenderingHints.KEY_TEXT_ANTIALIASING,
-            RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
+      RenderingHints.KEY_TEXT_ANTIALIASING,
+      RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
     g2d.setColor(view.getForeground());
     double c[] = new double[8];
 
-    double zMin = model.getMinZ();
-    double zMax = model.getMaxZ();
+    double zMinForPalette = model.getMinZ();
+    double zMaxForPalette = model.getMaxZ();
 
     TestPalette palette = null;
     if (view.usePaletteForWireframe()) {
       String paletteName = view.getPaletteName();
       palette = TestPalette.getPaletteByName(paletteName);
+      if (view.useRangeOfValuesForPalette()) {
+        double[] pRange = view.getRangeForPalette();
+        zMinForPalette = pRange[0];
+        zMaxForPalette = pRange[1];
+      }
     }
+
     g2d.setColor(view.getForeground());
 
     // although the TIN classes do provide a method for getting vertices,
@@ -648,11 +659,11 @@ public class MvComposite {
         if (palette != null) {
           double z0 = a.getZ();
           double z1 = a.getZ();
-          Color c0 = palette.getColor(z0, zMin, zMax);
-          Color c1 = palette.getColor(z1, zMin, zMax);
+          Color c0 = palette.getColor(z0, zMinForPalette, zMaxForPalette);
+          Color c1 = palette.getColor(z1, zMinForPalette, zMaxForPalette);
           GradientPaint paint = new GradientPaint( //NOPMD
-                  (float) a.getX(), (float) b.getY(), c0,
-                  (float) a.getX(), (float) b.getY(), c1);
+            (float) a.getX(), (float) b.getY(), c0,
+            (float) a.getX(), (float) b.getY(), c1);
           g2d.setPaint(paint);
         }
         c[0] = a.getX();
@@ -722,7 +733,7 @@ public class MvComposite {
               e2d.setFrame(c[2] - 2, c[3] - 2, 5, 5);
               if (palette != null) {
                 double z = a.getZ();
-                Color color = palette.getColor(z, zMin, zMax);
+                Color color = palette.getColor(z, zMinForPalette, zMaxForPalette);
                 g2d.setColor(color);
               }
               g2d.fill(e2d);
@@ -755,7 +766,7 @@ public class MvComposite {
               e2d.setFrame(c[2] - 2, c[3] - 2, 5, 5);
               if (palette != null) {
                 double z = b.getZ();
-                Color color = palette.getColor(z, zMin, zMax);
+                Color color = palette.getColor(z, zMinForPalette, zMaxForPalette);
                 g2d.setColor(color);
               }
               g2d.fill(e2d);
@@ -795,14 +806,14 @@ public class MvComposite {
     }
 
     BufferedImage bImage
-            = new BufferedImage(width, height, BufferedImage.TYPE_4BYTE_ABGR);
+      = new BufferedImage(width, height, BufferedImage.TYPE_4BYTE_ABGR);
     Graphics2D g2d = bImage.createGraphics();
     g2d.setRenderingHint(
-            RenderingHints.KEY_ANTIALIASING,
-            RenderingHints.VALUE_ANTIALIAS_ON);
+      RenderingHints.KEY_ANTIALIASING,
+      RenderingHints.VALUE_ANTIALIAS_ON);
     g2d.setRenderingHint(
-            RenderingHints.KEY_TEXT_ANTIALIASING,
-            RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
+      RenderingHints.KEY_TEXT_ANTIALIASING,
+      RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
     g2d.setColor(view.getForeground());
     double c[] = new double[8];
 
@@ -876,9 +887,9 @@ public class MvComposite {
       // but will tend to reveal the triangular nature of the underlying TIN
       // in areas of particularly severe gradient.
       double z = interpolator.interpolate(
-              SurfaceModel.QuadraticWithCrossTerms,
-              BandwidthSelectionMethod.FixedProportionalBandwidth, 1.0,
-              mx, my, null);
+        SurfaceModel.QuadraticWithCrossTerms,
+        BandwidthSelectionMethod.FixedProportionalBandwidth, 1.0,
+        mx, my, null);
       if (Double.isNaN(z)) {
         s += " : N/A"; //NOPMD
       } else {
@@ -909,9 +920,9 @@ public class MvComposite {
     Point2D modelPoint = new Point2D.Double(mx, my);
     if (interpolator == null) {
       new MvQueryResult(
-              compositePoint,
-              modelPoint,
-              "<html>Data not available. Model not loaded</html>");
+        compositePoint,
+        modelPoint,
+        "<html>Data not available. Model not loaded</html>");
     }
 
     String units;
@@ -924,7 +935,7 @@ public class MvComposite {
         units = "units";
         break;
     }
-    NearestEdgeResult result = navigator.getNearestEdge(mx, my);   
+    NearestEdgeResult result = navigator.getNearestEdge(mx, my);
     boolean queryIsOutside = !result.isInterior();
     Vertex vNear = result.getNearestVertex();
     double dNear = result.getDistanceToNearestVertex();
@@ -936,8 +947,8 @@ public class MvComposite {
     Formatter fmt = new Formatter(sb);
     fmt.format("<html><strong>Query/Regression Results</strong><br><pre><small>");
     double z = interpolator.interpolate(SurfaceModel.QuadraticWithCrossTerms,
-            BandwidthSelectionMethod.OptimalAICc, 1.0,
-            mx, my, null);
+      BandwidthSelectionMethod.OptimalAICc, 1.0,
+      mx, my, null);
     fmt.format("X:     %s%n", model.getFormattedX(mx));
     fmt.format("Y:     %s%n", model.getFormattedY(my));
     if (queryIsOutside) {
@@ -971,10 +982,10 @@ public class MvComposite {
             double zXY = beta[5];
 
             kP = (zXX * zX * zX + 2 * zXY * zX * zY + zYY * zY * zY)
-                    / ((zX * zX + zY * zY) * Math.pow(zX * zX + zY * zY + 1.0, 1.5));
+              / ((zX * zX + zY * zY) * Math.pow(zX * zX + zY * zY + 1.0, 1.5));
 
             kS = (zX * zY * (zXX - zYY) + (zY * zY - zX * zX) * zXY)
-                    / Math.pow(zX * zX + zY * zY, 1.5);
+              / Math.pow(zX * zX + zY * zY, 1.5);
             break;
           default:
             break;
@@ -1001,7 +1012,7 @@ public class MvComposite {
 
       if (!Double.isNaN(h)) {
         fmt.format("%nRegression used %d samples%n",
-                interpolator.getSampleCount());
+          interpolator.getSampleCount());
       }
     }
     fmt.format("</small></pre></html>");
@@ -1162,10 +1173,10 @@ public class MvComposite {
                 // have valid data.   We can't shade it if we don't have
                 // a complete set of information.
                 if (Double.isNaN(z)
-                        || Double.isNaN(pa.z)
-                        || Double.isNaN(pb.z)
-                        || Double.isNaN(pc.z)
-                        || Double.isNaN(pd.z)) {
+                  || Double.isNaN(pa.z)
+                  || Double.isNaN(pb.z)
+                  || Double.isNaN(pc.z)
+                  || Double.isNaN(pd.z)) {
                   zGrid[index] = Float.NaN;
                 } else {
                   zGrid[index] = (float) z;
@@ -1258,9 +1269,9 @@ public class MvComposite {
             double x = (iCol + 0.5) * dx + x0;
             if (minX <= x && x <= maxX) {
               double z = gwr.interpolate(
-                      SurfaceModel.QuadraticWithCrossTerms,
-                      BandwidthSelectionMethod.FixedProportionalBandwidth, 1.0,
-                      x, y, null);
+                SurfaceModel.QuadraticWithCrossTerms,
+                BandwidthSelectionMethod.FixedProportionalBandwidth, 1.0,
+                x, y, null);
 
               if (gwr.wasTargetExteriorToTin()) {
                 zGrid[index] = Float.NaN;
@@ -1474,7 +1485,7 @@ public class MvComposite {
     }
     units = linearUnits.toString();
     units = units.substring(0, 1).toUpperCase()
-            + units.substring(1, units.length()).toLowerCase();
+      + units.substring(1, units.length()).toLowerCase();
     fmt.format("<html><strong>Model</strong><br><pre><small>");
     fmt.format("  Name: %s%n", model.getName());
     fmt.format("  Type: %s%n", model.getDescription());
@@ -1581,8 +1592,9 @@ public class MvComposite {
    * @return if successful, a valid buffered image; otherwise, a null
    */
   public BufferedImage renderLegend(
-          ViewOptions vx, IModel mx, int width, int height, int margin, Font font, boolean frame) {
-
+    ViewOptions vx, IModel mx,
+    int width, int height, int margin,
+    Font font, boolean frame) {
     int priSpace = 20;
     int secSpace = 5;
     int ticLength = 10;
@@ -1598,8 +1610,14 @@ public class MvComposite {
       return null; // can't do anything
     }
 
+    boolean reverseOrder = v0 > v1;
+    if (reverseOrder) {
+      double vSwap = v0;
+      v0 = v1;
+      v1 = vSwap;
+    }
     AxisIntervals lx = AxisIntervals.computeIntervals(
-            v0, v1, priSpace, secSpace, height);
+      v0, v1, priSpace, secSpace, height);
     if (lx == null) {
       return null;
     }
@@ -1627,13 +1645,13 @@ public class MvComposite {
     int iWidth = (int) (width + 2 * margin + wLabel + ticLength + wZero / 2);
     int iHeight = height + 2 * margin;
     BufferedImage bImage = new BufferedImage(
-            iWidth,
-            iHeight,
-            BufferedImage.TYPE_INT_ARGB);
+      iWidth,
+      iHeight,
+      BufferedImage.TYPE_INT_ARGB);
     Graphics2D g2d = bImage.createGraphics();
     g2d.setRenderingHint(
-            RenderingHints.KEY_ANTIALIASING,
-            RenderingHints.VALUE_ANTIALIAS_ON);
+      RenderingHints.KEY_ANTIALIASING,
+      RenderingHints.VALUE_ANTIALIAS_ON);
     g2d.setColor(vx.getBackground());
     g2d.fillRect(0, 0, iWidth + 1, iHeight + 1);
 
@@ -1667,7 +1685,12 @@ public class MvComposite {
     Line2D l2d = new Line2D.Double();
     String fmt = lx.getLabelFormat();
     for (int i = 0; i < vT.length; i++) {
-      double y = y1 - lx.mapValueToPixel(vT[i]);
+      double y;
+      if (reverseOrder) {
+        y = y0 + lx.mapValueToPixel(vT[i]);
+      } else {
+        y = y1 - lx.mapValueToPixel(vT[i]);
+      }
       l2d.setLine(x1, y, x1 + ticLength, y);
       g2d.draw(l2d);
       String s = String.format(fmt, vT[i]);
@@ -1678,7 +1701,12 @@ public class MvComposite {
     if (cTics.length == 2) {
       vT = cTics[1];
       for (int i = 0; i < vT.length; i++) {
-        double y = y1 - lx.mapValueToPixel(vT[i]);
+        double y;
+        if (reverseOrder) {
+          y = y0 + lx.mapValueToPixel(vT[i]);
+        } else {
+          y = y1 - lx.mapValueToPixel(vT[i]);
+        }
         l2d.setLine(x1, y, x1 + ticLengthShort, y);
         g2d.draw(l2d);
       }
@@ -1735,17 +1763,16 @@ public class MvComposite {
     return clipMask;
   }
 
-  
   private Shape makeClipMask() {
-    if(constraintsForRender==null || constraintsForRender.isEmpty()){
+    if (constraintsForRender == null || constraintsForRender.isEmpty()) {
       return null;
     }
     Path2D clip = new Path2D.Double();
     boolean clipHasData = false;
     for (IConstraint con : constraintsForRender) {
       if (con.isValid()
-              && con.definesConstrainedRegion()
-              && con instanceof PolygonConstraint) {
+        && con.definesConstrainedRegion()
+        && con instanceof PolygonConstraint) {
 
         Path2D path = new Path2D.Double();
         boolean foundStuff = false;

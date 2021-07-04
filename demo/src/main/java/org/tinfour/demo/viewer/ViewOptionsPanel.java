@@ -161,8 +161,12 @@ class ViewOptionsPanel extends javax.swing.JPanel {
       case ExtraFine:
         wireframeSampleThinningComboBox.setSelectedIndex(2);
         break;
+      case AllSamples:
+         wireframeSampleThinningComboBox.setSelectedIndex(3);
+         break;
       default:
         wireframeSampleThinningComboBox.setSelectedIndex(0);
+        break;
     }
     wireframeColorUsingForeground.setSelected(!view.usePaletteForWireframe());
     wireframeColorUsingPalette.setSelected(view.usePaletteForWireframe());
@@ -181,7 +185,7 @@ class ViewOptionsPanel extends javax.swing.JPanel {
     constraintsCheckBox.setSelected(view.isConstraintRenderingSelected());
     constraintsColorButton.setColor(view.getConstraintColor());
     constraintsClippingCheckbox.setSelected(view.isClipOnConstraintsSelected());
-    
+
     rasterCheckBox.setSelected(view.isRasterSelected());
     hillshadeCheckBox.setSelected(view.isHillshadeSelected());
     setDouble(azimuthTextField, "%3.1f", view.getHillshadeAzimuth());
@@ -288,8 +292,12 @@ class ViewOptionsPanel extends javax.swing.JPanel {
       case 2:
         view.setWireframeSampleThinning(ViewOptions.SampleThinning.ExtraFine);
         break;
+      case 3:
+        view.setWireframeSampleThinning(ViewOptions.SampleThinning.AllSamples);
+        break;
       default:
         view.setWireframeSampleThinning(ViewOptions.SampleThinning.Medium);
+        break;
     }
     view.setUsePaletteForWireframe(wireframeColorUsingPalette.isSelected());
     view.setEdgeRenderingSelected(edgesCheckBox.isSelected());
@@ -516,7 +524,7 @@ class ViewOptionsPanel extends javax.swing.JPanel {
 
     jLabel3.setText("Sample Thinning");
 
-    wireframeSampleThinningComboBox.setModel(new javax.swing.DefaultComboBoxModel<>(new String[] { " Medium", "Fine", "Extra Fine" }));
+    wireframeSampleThinningComboBox.setModel(new javax.swing.DefaultComboBoxModel<>(new String[] { "Medium", "Fine", "Extra Fine", "All Samples" }));
 
     lidarPointSelectionGroup.add(lidarFirstReturnButton);
     lidarFirstReturnButton.setText("First Returns Only");
@@ -590,7 +598,7 @@ class ViewOptionsPanel extends javax.swing.JPanel {
               .addGroup(optionsPanelLayout.createSequentialGroup()
                 .addComponent(jLabel3)
                 .addGap(18, 18, 18)
-                .addComponent(wireframeSampleThinningComboBox, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))))
+                .addComponent(wireframeSampleThinningComboBox, javax.swing.GroupLayout.PREFERRED_SIZE, 82, javax.swing.GroupLayout.PREFERRED_SIZE))))
           .addGroup(optionsPanelLayout.createSequentialGroup()
             .addGap(10, 10, 10)
             .addGroup(optionsPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
@@ -630,7 +638,7 @@ class ViewOptionsPanel extends javax.swing.JPanel {
                   .addComponent(lidarGroundPointsButton)
                   .addComponent(lidarFirstReturnButton)
                   .addComponent(lidarLastReturnButton))))))
-        .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+        .addContainerGap(32, Short.MAX_VALUE))
     );
     optionsPanelLayout.setVerticalGroup(
       optionsPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)

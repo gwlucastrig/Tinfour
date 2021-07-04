@@ -68,7 +68,7 @@ public class ViewOptions {
 
   private SampleThinning wireframeSampleThinning = SampleThinning.Medium;
   private LidarPointSelection lidarPointSelection = LidarPointSelection.GroundPoints;
-  
+
   private boolean isClipOnConstraintsSelected;
 
   /**
@@ -77,7 +77,8 @@ public class ViewOptions {
   public enum SampleThinning {
     Medium,
     Fine,
-    ExtraFine;
+    ExtraFine,
+    AllSamples;
   }
 
   public enum RasterInterpolationMethod {
@@ -450,8 +451,8 @@ public class ViewOptions {
   public void setClipOnConstraintsSelected(boolean status) {
     isClipOnConstraintsSelected = status;
   }
-  
-  
+
+
   /**
    * Gets the option for selecting lidar sample points
    *
@@ -516,6 +517,8 @@ public class ViewOptions {
         return 35;  // about 50/sqrt(2)
       case ExtraFine:
         return 24;
+      case AllSamples:
+        return 0;
       default:
         return 50;
     }

@@ -42,6 +42,7 @@ import org.tinfour.common.IMonitorWithCancellation;
 import org.tinfour.common.IPolyline;
 import org.tinfour.common.PolygonConstraint;
 import org.tinfour.common.Vertex;
+import org.tinfour.demo.viewer.backplane.ViewOptions.SampleThinning;
 import org.tinfour.utils.PolylineThinner;
 import org.tinfour.utils.TinInstantiationUtility;
 import org.tinfour.utils.Tincalc;
@@ -73,9 +74,9 @@ class MvTaskBuildTinAndRender implements IModelViewTask {
   private boolean isCancelled;
 
   MvTaskBuildTinAndRender(
-          BackplaneManager backplaneManager,
-          MvComposite composite,
-          int taskIndex) {
+    BackplaneManager backplaneManager,
+    MvComposite composite,
+    int taskIndex) {
     this.backplaneManager = backplaneManager;
     this.composite = composite;
     this.model = this.composite.getModel();
@@ -119,7 +120,6 @@ class MvTaskBuildTinAndRender implements IModelViewTask {
     int reductionForWireframeTin = composite.getReductionForWireframe();
     List<IConstraint> constraintsForRender = null;
 
-
     if (view.isClipOnConstraintsSelected()) {
       // Originally, this logic just used all the polygon constraints
       // taken from the mode.  Unfortunately, we encountered some data
@@ -127,21 +127,21 @@ class MvTaskBuildTinAndRender implements IModelViewTask {
       // performing clipping.  Thus we implemented this code to clean up
       // and reduce the polygons used for clipping.
       //   The PolylineThinner operates by removing features that are
-      // smaller than a specified area value.  We compute that 
+      // smaller than a specified area value.  We compute that
       // area value by starting with a nominal pixel spacing and finding its
       // equivalent scale in the model coordinate system (the constraints
-      // are all in the model coordinate system).  The PolylineThinner 
+      // are all in the model coordinate system).  The PolylineThinner
       // class also has a couple of other considerations.  For example,
       // it operates on objects of type IPolyline, so we have to deal with
       // that.  One of the other things it does is make sure that when
       // it simplifies a polyline's geometry, the result doesn't overlap
-      // with other polylines.  So it needs a list of polylines to test 
+      // with other polylines.  So it needs a list of polylines to test
       // against.  So we maintain a list called testList of poylines.
       // Initially, this list is all the polylines that get through the
       // initial screening (before we start thinning).  But as some of
       // the polylines are changed by the thinning processes, the newly
       // thinned object takes the place of the original in the testList.
-      // 
+      //
       // Possible refinements:  we can probably exclude any polygons that
       // are outside the bounding rectangle of the composite images we
       // are building here.
@@ -149,7 +149,7 @@ class MvTaskBuildTinAndRender implements IModelViewTask {
       // Also, this same logic is performed in the selectVerticesForProcessing.
       // We should consolidate them into a single method call.
       backplaneManager.postStatusMessage(taskIndex,
-              "Preparing clip mask from constraints");
+        "Preparing clip mask from constraints");
       double pixelSpacing = 50;
       double uPerPixel = Math.sqrt(Math.abs(composite.c2m.getDeterminant()));
       double uSpacing = pixelSpacing / uPerPixel;
@@ -211,11 +211,13 @@ class MvTaskBuildTinAndRender implements IModelViewTask {
     SelectionResult result = null;
     if (view.isWireframeSelected()) {
       if (wireframeTin == null) {
+        boolean thinning
+          = view.getWireframeSampleThinning() != SampleThinning.AllSamples;
         result = selectVerticesForProcessing(
-                true,
-                view.getWireframeSampleSpacing(),
-                MAX_VERTICES_FOR_TIN,
-                true);
+          thinning,
+          view.getWireframeSampleSpacing(),
+          MAX_VERTICES_FOR_TIN,
+          true);
         // The select vertices method has the potential
         // of adjusting thje constraints.  It may be a good idea
         // to retire this feature and just handle the constraints
@@ -227,13 +229,13 @@ class MvTaskBuildTinAndRender implements IModelViewTask {
         if (isCancelled) {
           return;
         }
- 
+
         reductionForWireframeTin = result.reduction;
         int n = vList.size();
         backplaneManager.postStatusMessage(taskIndex,
-                "Building wireframe TIN from " + n + " vertices");
+          "Building wireframe TIN from " + n + " vertices");
         TinInstantiationUtility tinOven
-                = new TinInstantiationUtility(MvComposite.tinMemoryUseFraction, n);
+          = new TinInstantiationUtility(MvComposite.tinMemoryUseFraction, n);
         wireframeTin = tinOven.constructInstance(nominalPointSpacing);
         boolean isBootstrapped = wireframeTin.add(vList, null);
         if (result.constraintList != null) {
@@ -259,9 +261,9 @@ class MvTaskBuildTinAndRender implements IModelViewTask {
       backplaneManager.postStatusMessage(taskIndex, "Rendering wireframe image");
       BufferedImage bImage = composite.renderWireframe();
       RenderProduct product = new RenderProduct(
-              RenderProductType.Wireframe,
-              composite,
-              bImage );
+        RenderProductType.Wireframe,
+        composite,
+        bImage);
       backplaneManager.postImageUpdate(this, product);
     }
 
@@ -274,11 +276,13 @@ class MvTaskBuildTinAndRender implements IModelViewTask {
       backplaneManager.postStatusMessage(taskIndex, "Rendering constraint image");
       if (constraintsForRender == null) {
         if (result == null) {
+          boolean thinning
+            = view.getWireframeSampleThinning() != SampleThinning.AllSamples;
           result = selectVerticesForProcessing(
-                  true,
-                  view.getWireframeSampleSpacing(),
-                  MAX_VERTICES_FOR_TIN,
-                  true);
+            thinning,
+            view.getWireframeSampleSpacing(),
+            MAX_VERTICES_FOR_TIN,
+            true);
         }
         constraintsForRender = result.constraintList;
         composite.setConstraintsForRender(constraintsForRender);
@@ -286,9 +290,9 @@ class MvTaskBuildTinAndRender implements IModelViewTask {
       if (constraintsForRender != null) {
         BufferedImage bImage = composite.renderConstraints();
         RenderProduct product = new RenderProduct(
-                RenderProductType.Constraints,
-                composite,
-                bImage );
+          RenderProductType.Constraints,
+          composite,
+          bImage);
         backplaneManager.postImageUpdate(this, product);
         backplaneManager.postStatusMessage(taskIndex, "");
 
@@ -300,7 +304,7 @@ class MvTaskBuildTinAndRender implements IModelViewTask {
     }
     if (!isCancelled && (view.isRasterSelected() || view.isHillshadeSelected())) {
       launchRasterProcessing(
-              nominalPointSpacing, wireframeTin, reductionForWireframeTin);
+        nominalPointSpacing, wireframeTin, reductionForWireframeTin);
     }
 
   }
@@ -325,25 +329,25 @@ class MvTaskBuildTinAndRender implements IModelViewTask {
       boolean thinning = !view.isFullResolutionGridSelected();
 
       SelectionResult result = selectVerticesForProcessing(
-              thinning, spaceInPixelsRaster, MAX_VERTICES_FOR_TIN * 2,
-              false);
+        thinning, spaceInPixelsRaster, MAX_VERTICES_FOR_TIN * 2,
+        false);
       reductionForRasterTin = result.reduction;
 
       List<Vertex> vList = result.list;
       int n = vList.size();
       backplaneManager.postStatusMessage(
-              taskIndex, "Building TIN for raster processing from " + n + " vertices");
+        taskIndex, "Building TIN for raster processing from " + n + " vertices");
       TinInstantiationUtility tinOven
-              = new TinInstantiationUtility(
-                      MvComposite.tinMemoryUseFraction,
-                      n);
+        = new TinInstantiationUtility(
+          MvComposite.tinMemoryUseFraction,
+          n);
       rasterTin = tinOven.constructInstance(nominalPointSpacing);
 
       boolean isBootstrapped = rasterTin.add(vList, monitor);
       if (!isBootstrapped) {
         monitor.reportDone();
         backplaneManager.postStatusMessage(
-                taskIndex, "Failed build TIN, insufficient data");
+          taskIndex, "Failed build TIN, insufficient data");
         return;
       }
       if (isCancelled) {
@@ -381,15 +385,15 @@ class MvTaskBuildTinAndRender implements IModelViewTask {
 
       int nRow = row1 - row0;
       MvTaskBuildRasterBlock blockBuilder
-              = new MvTaskBuildRasterBlock( //NOPMD
-                      backplaneManager,
-                      composite,
-                      blockCounter,
-                      nBlock,
-                      row0,
-                      nRow,
-                      taskIndex,
-                      monitor);
+        = new MvTaskBuildRasterBlock( //NOPMD
+          backplaneManager,
+          composite,
+          blockCounter,
+          nBlock,
+          row0,
+          nRow,
+          taskIndex,
+          monitor);
       backplaneManager.renderPool.queueTask(blockBuilder);
 
     }
@@ -413,10 +417,10 @@ class MvTaskBuildTinAndRender implements IModelViewTask {
    * @return
    */
   private SelectionResult selectVerticesForProcessing(
-          boolean thinningSelected,
-          double pixelSpacing,
-          int nVertexLimit,
-          boolean factorOfTwoSteps) {
+    boolean thinningSelected,
+    double pixelSpacing,
+    int nVertexLimit,
+    boolean factorOfTwoSteps) {
     AffineTransform c2m = composite.c2m;
     int nVertices = model.getVertexCount();
     double mx0 = model.getMinX();
@@ -613,7 +617,7 @@ class MvTaskBuildTinAndRender implements IModelViewTask {
     @Override
     public String toString() {
       return "SelectionResult " + list.size() + " vertices, "
-              + reduction + ":1 reduction";
+        + reduction + ":1 reduction";
     }
 
   }
