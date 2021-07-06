@@ -30,7 +30,7 @@
  * Collecting triangles from constrained regions ------------------
  *  The triangle collector for a constrained region uses a mesh-traversal
  * operation where it traverses from edge to edge, identifying triangles and
- * calling the accept() method from a Java consumer.  In general, this 
+ * calling the accept() method from a Java consumer.  In general, this
  * process is straightforward, though there is one special case.
  *  Recall that in Tinfour, the interior to a constrained region is always to
  * the left of an edge.  Thus, a polygon enclosing a region would be given
@@ -43,12 +43,12 @@
  * Triangulation. The "constrained region" that it establishes is somewhat
  * counterintuitively defined as being outside the polygon and extendending
  * to the perimeter of the overall triangulation.
- *   In this case, if we attempt to use traversal, some of the triangles 
+ *   In this case, if we attempt to use traversal, some of the triangles
  * we collect will actually be the "ghost" triangles that define the
  * exterior to the triangulation. Ghost triangles are those that include
  * the so-called "ghost" vertex.  Tinfour manages the ghost vertex using
  * a null vertex.  Thus it would be possible to collect triangles which
- * contain null vertices.   In order to avoid passing null vertices to 
+ * contain null vertices.   In order to avoid passing null vertices to
  * the accept() method, Tinfour must screen for this condition.
  * -----------------------------------------------------------------------
  */
@@ -146,13 +146,17 @@ public final class TriangleCollector {
    * @param consumer an application-specific consumer.
    */
   public static void visitTrianglesConstrained(
-          final IIncrementalTin tin,
-          final Consumer<Vertex[]> consumer) {
+    final IIncrementalTin tin,
+    final Consumer<Vertex[]> consumer) {
     if (tin.isBootstrapped()) {
-      List<IConstraint> constraintList = tin.getConstraints();
-      for (IConstraint constraint : constraintList) {
-        if (constraint.definesConstrainedRegion()) {
-          visitTrianglesForConstrainedRegion(constraint, consumer);
+      for (SimpleTriangle t : tin.triangles()) {
+        IConstraint constraint = t.getContainingRegion();
+        if (constraint != null && constraint.definesConstrainedRegion()) {
+          Vertex[] v = new Vertex[3];
+          v[0] = t.getVertexA();
+          v[1] = t.getVertexB();
+          v[2] = t.getVertexC();
+          consumer.accept(v);
         }
       }
     }
@@ -168,21 +172,21 @@ public final class TriangleCollector {
    * @param consumer an application-specific consumer.
    */
   public static void visitTrianglesForConstrainedRegion(
-          final IConstraint constraint,
-          final Consumer<Vertex[]> consumer) {
+    final IConstraint constraint,
+    final Consumer<Vertex[]> consumer) {
     final IIncrementalTin tin = constraint.getManagingTin();
     if (tin == null) {
       throw new IllegalArgumentException(
-              "Constraint is not under TIN management");
+        "Constraint is not under TIN management");
     }
     if (!constraint.definesConstrainedRegion()) {
       throw new IllegalArgumentException(
-              "Constraint does not define constrained region");
+        "Constraint does not define constrained region");
     }
     IQuadEdge linkEdge = constraint.getConstraintLinkingEdge();
     if (linkEdge == null) {
       throw new IllegalArgumentException(
-              "Constraint does not have linking edge");
+        "Constraint does not have linking edge");
     }
 
     int maxMapIndex = tin.getMaximumEdgeAllocationIndex() + 2;
@@ -195,9 +199,9 @@ public final class TriangleCollector {
   }
 
   private static void visitTrianglesUsingStack(
-          final IQuadEdge firstEdge,
-          final int[] map,
-          final Consumer<Vertex[]> consumer) {
+    final IQuadEdge firstEdge,
+    final int[] map,
+    final Consumer<Vertex[]> consumer) {
     ArrayDeque<IQuadEdge> deque = new ArrayDeque<>();
     deque.push(firstEdge);
     while (!deque.isEmpty()) {
@@ -215,8 +219,8 @@ public final class TriangleCollector {
         Vertex c = r.getA();
         if (a != null && b != null && c != null) {
           consumer.accept(new Vertex[]{a, b, c}); //NOPMD
-        } 
-        
+        }
+
         IQuadEdge df = f.getDual();
         IQuadEdge dr = r.getDual();
         if (getMarkBit(map, df) == 0 && !f.isConstrainedRegionBorder()) {
@@ -232,8 +236,8 @@ public final class TriangleCollector {
   /**
    * Identify all valid triangles in the specified TIN and
    * provide them to the application-supplied Consumer.
-   * Triangles are provided as an array of three vertices 
-   * given in clockwise order.  If the TIN
+   * Triangles are provided as an array of three vertices
+   * given in clockwise order. If the TIN
    * has not been bootstrapped, this routine exits without further processing.
    * This routine will not call the accept method for "ghost" triangles
    * (those triangles that include the ghost vertex).
@@ -242,8 +246,8 @@ public final class TriangleCollector {
    * @param consumer a valid consumer.
    */
   public static void visitTriangles(
-          final IIncrementalTin tin,
-          final Consumer<Vertex[]> consumer) {
+    final IIncrementalTin tin,
+    final Consumer<Vertex[]> consumer) {
     if (!tin.isBootstrapped()) {
       return;
     }
@@ -256,7 +260,7 @@ public final class TriangleCollector {
       // The duals are not generated by the iterator.
       // Because it is possible that some triangles in the structure
       // may be composed entirely of dual-side edges, it is required.
-      // that this routine test both sides of each edge. 
+      // that this routine test both sides of each edge.
       // When a triangle is identified, all three of the interior edges
       // are marked.  So it is sufficient to test any one of the interior
       // edges to determine if the triangle has previously been visited.
@@ -265,13 +269,13 @@ public final class TriangleCollector {
       // for null vertices before the consumer.accept is invoked.
       IQuadEdge e = iterator.next();
       IQuadEdge d = e.getDual();
-   
+
       // do not collect a triangle if the current edge is a ghost edge.
       // we could attempt to mark the interior edges of the
       // ghost triangle with the hope of saving future processing
       // but my cursory analysis is that it doesn't look like
       // the saving would be worth the extra complexitu
-      if (e.getA() != null && e.getB()!= null) {
+      if (e.getA() != null && e.getB() != null) {
         if (getMarkBit(map, e) == 0) {
           IQuadEdge ef = e.getForward();
           IQuadEdge er = e.getReverse();
@@ -295,11 +299,11 @@ public final class TriangleCollector {
       }
     }
   }
-  
+
   /**
    * Identify all valid triangles in the specified TIN and
    * provide them to the application-supplied Consumer.
-   * Triangles are provided as instances of the SimpleTriangle class.  If the TIN
+   * Triangles are provided as instances of the SimpleTriangle class. If the TIN
    * has not been bootstrapped, this routine exits without further processing.
    * This routine will not call the accept method for "ghost" triangles
    * (those triangles that include the ghost vertex).
@@ -308,8 +312,8 @@ public final class TriangleCollector {
    * @param consumer a valid consumer.
    */
   public static void visitSimpleTriangles(
-          final IIncrementalTin tin,
-          final Consumer<SimpleTriangle> consumer) {
+    final IIncrementalTin tin,
+    final Consumer<SimpleTriangle> consumer) {
     if (!tin.isBootstrapped()) {
       return;
     }
@@ -322,7 +326,7 @@ public final class TriangleCollector {
       // The duals are not generated by the iterator.
       // Because it is possible that some triangles in the structure
       // may be composed entirely of dual-side edges, it is required.
-      // that this routine test both sides of each edge. 
+      // that this routine test both sides of each edge.
       //    When a triangle is identified, all three of the interior edges
       // are marked.  So it is sufficient to test any one of the interior
       // edges to determine if the triangle has previously been visited.
@@ -336,7 +340,7 @@ public final class TriangleCollector {
 
       if (e.getA() == null || e.getB() == null) {
         // the edge is a ghost edge.  all connecting
-        // triangles are also ghosts.  At this point, we 
+        // triangles are also ghosts.  At this point, we
         // could perform a pinwheel and mark all ghost edges
         // with the hope of saving future processing
         // but my cursory analysis is that it doesn't look like
@@ -377,7 +381,4 @@ public final class TriangleCollector {
       }
     }
   }
-
-  
-  
 }
