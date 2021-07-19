@@ -922,7 +922,9 @@ public class MvComposite {
       new MvQueryResult(
         compositePoint,
         modelPoint,
-        "<html>Data not available. Model not loaded</html>");
+        "<html>Data not available. Model not loaded</html>",
+        null
+      );
     }
 
     String units;
@@ -1016,7 +1018,7 @@ public class MvComposite {
       }
     }
     fmt.format("</small></pre></html>");
-    return new MvQueryResult(compositePoint, modelPoint, sb.toString());
+    return new MvQueryResult(compositePoint, modelPoint, sb.toString(), vNear);
 
   }
 

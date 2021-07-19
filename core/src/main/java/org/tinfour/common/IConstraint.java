@@ -59,8 +59,8 @@ import java.util.List;
  * <ul>
  * <li><strong>Border</strong> Edges on the border of the constrained region.
  * These edges are constrained and are defined by the polygon constraint.</li>
- * <li><strong>Interior</strong> Edges that lie within the constrained 
- * region. The edges are not constrained, but are marked as 
+ * <li><strong>Interior</strong> Edges that lie within the constrained
+ * region. The edges are not constrained, but are marked as
  * interior members due to the fact that they lie within the polygon region.</li>
  * <li><strong>Member</strong> Both border and interior edges are classified
  * as members</li>
@@ -72,7 +72,7 @@ import java.util.List;
  * constraint instance. It is possible for two adjacent polygons to share
  * common border edges. In such cases, the edge preserves the index of only one
  * of the constraint polygons. Thus the mapping from border edge to constraint
- * is ambiguous. 
+ * is ambiguous.
  * <p>
  * Tinfour allows non-polygon constraints to be specified with a geometry
  * that lines in the interior of a constrained region polygon. In such cases,
@@ -80,10 +80,10 @@ import java.util.List;
  * the linear constraints as being members of the polygon.  Instead, the
  * operation simply passes over them. A real-world example might include a
  * road (a linear constraint) passing through a forested area (a polygon
- * constraint).  Edges derived from a linear constraint maintain the 
+ * constraint).  Edges derived from a linear constraint maintain the
  * index of the constraint that specified them.
- * 
- *  
+ *
+ *
  */
 public interface IConstraint extends IPolyline {
 
@@ -120,9 +120,9 @@ public interface IConstraint extends IPolyline {
   /**
    * Gets an index value used for internal bookkeeping by Tinfour code.
    * The index value is assigned to a constraint when it is inserted into
-   * a Tinfour IIncrementalTin implementation. If an application used a 
+   * a Tinfour IIncrementalTin implementation. If an application used a
    * getConstraints() call to get a list of the constraints stored in
-   * an IIncrementalTin, the constraint index can be used to get the 
+   * an IIncrementalTin, the constraint index can be used to get the
    * constraint from that list.
    *
    * @return the index of the constraint associated with the edge;
@@ -172,13 +172,13 @@ public interface IConstraint extends IPolyline {
 
 
   /**
-   * Gets the instance of the incremental TIN interface that 
+   * Gets the instance of the incremental TIN interface that
    * is managing this constraint, if any.
    * @return if under management, a valid instance; otherwise, a null.
    */
   IIncrementalTin getManagingTin();
 
-  
+
   /**
    * Indicates if a point at the specified coordinates is unambiguously
    * inside the constraint.  Points on the constraint border are not treated
@@ -192,8 +192,8 @@ public interface IConstraint extends IPolyline {
    */
   boolean isPointInsideConstraint(double x, double y);
 
-  
-    
+
+
   /**
    * Gets a Java Path2D based on the geometry of the constraint mapped through
    * an optional affine transform.
@@ -203,5 +203,17 @@ public interface IConstraint extends IPolyline {
    * @return a valid instance of a Java Path2D
    */
   Path2D getPath2D(AffineTransform transform);
-  
+
+
+  /**
+   * Insert synthetic vertices into the constraint so that the spacing
+   * between vertices does not exceed the specified threshold. Z values
+   * for the inserted vertices are computed using a linear interpolation.
+   * <p>
+   * This method is intended to aid in analysis and computation. The vertices
+   * that are inserted are to be marked as synthetic to indicate that they
+   * are not source data.
+   * @param threshold the spacing threshold.
+   */
+  public void densify(double threshold);
 }

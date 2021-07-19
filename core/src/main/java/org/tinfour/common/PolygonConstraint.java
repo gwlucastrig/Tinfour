@@ -127,7 +127,7 @@ public class PolygonConstraint
         list.remove(list.size() - 1);
       } else {
         // since no closure was supplied, we need to complete the
-        // length calculation to include the lsat segment.
+        // length calculation to include the last segment.
         length += list.get(0).getDistance(list.get(list.size() - 1));
       }
     }

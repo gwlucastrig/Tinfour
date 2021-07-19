@@ -36,6 +36,7 @@ import java.io.FilenameFilter;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.PrintStream;
+import java.nio.charset.StandardCharsets;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.List;
@@ -234,7 +235,7 @@ public class SvmMain {
     if (reportFile != null) {
       reportOutputStream = new FileOutputStream(reportFile);
       BufferedOutputStream bos = new BufferedOutputStream(reportOutputStream);
-      reportPrintStream = new PrintStream(bos, true, "UTF-8");
+      reportPrintStream = new PrintStream(bos, true, StandardCharsets.UTF_8.name());
       writeIntroduction(reportPrintStream, dateOfAnalysis);
       prop.writeSummary(reportPrintStream);
       reportPrintStream.flush();

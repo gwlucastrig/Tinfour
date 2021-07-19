@@ -55,7 +55,7 @@ public class ConstraintLoader {
   private int nPointsTotal;
 
   double xClipMin, xClipMax, yClipMin, yClipMax;
- 
+
   boolean isSourceInGeographicCoordinates;
   ICoordinateTransform coordinateTransform;
 
@@ -102,7 +102,7 @@ public class ConstraintLoader {
     return null;
   }
 
-   
+
   /**
    * Gets the total number of points read from the constraint file; or zero if
    * the content of the constraint file hasn't been read.
@@ -113,14 +113,14 @@ public class ConstraintLoader {
     return nPointsTotal;
   }
 
- 
+
 
   private void processLine(
           DelimitedReader reader,
           int vertexID,
           List<String> sList,
           List<Vertex> vList) throws IOException {
-    if (sList.size() != 3) {
+    if (sList.size() < 3) {
       throw new IOException(
               "Invalid entry where x,y,z coordinates expected "
               + "on line " + reader.getLineNumber());
@@ -129,13 +129,17 @@ public class ConstraintLoader {
       double x = Double.parseDouble(sList.get(0));
       double y = Double.parseDouble(sList.get(1));
       double z = Double.parseDouble(sList.get(2));
+      int vertexIndex = vertexID;
+      if(sList.size()>3){
+          vertexIndex = Integer.parseInt(sList.get(3));
+      }
       if (coordinateTransform !=null ) {
         CoordinatePair cPair = new CoordinatePair();
         coordinateTransform.forward(x, y, cPair);
         x = cPair.x;
         y = cPair.y;
       }
-      Vertex v = new Vertex(x, y, z, vertexID);
+      Vertex v = new Vertex(x, y, z, vertexIndex);
       vList.add(v);
     } catch (NumberFormatException nex) {
       throw new IOException("Invalid entry where x,y,z coordinates expected "
@@ -313,7 +317,7 @@ public class ConstraintLoader {
       }
     }
   }
-  
+
   /**
    * Set a coordinate transform to be applied to the input coordinates.
    * @param transform A valid transform or a null if no transform is to

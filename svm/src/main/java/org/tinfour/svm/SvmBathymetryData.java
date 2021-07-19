@@ -82,6 +82,8 @@ public class SvmBathymetryData {
   private final List<PolygonConstraint> boundaryConstraints = new ArrayList<>();
   private final List<PolygonConstraint> lakeConstraints = new ArrayList<>();
   private final List<PolygonConstraint> islandConstraints = new ArrayList<>();
+  
+  private List<Vertex>surveyPerimeter;
 
   double shoreReferenceElevation;
 
@@ -130,8 +132,8 @@ public class SvmBathymetryData {
               + extension
               + " for input soundings " + vertexFile.getPath());
     }
-    HilbertSort hilbert = new HilbertSort();
-    hilbert.sort(list);
+
+
     return list;
 
   }
@@ -362,6 +364,14 @@ public class SvmBathymetryData {
     ArrayList<Vertex> result = new ArrayList<>(soundings.size());
     result.addAll(soundings);
     return result;
+  }
+
+  /**
+   * Append additional soundings to the soundings collection.
+   * @param extraSoundings a valid list of soundings.
+   */
+  public void addSoundings(List<Vertex>extraSoundings){
+    soundings.addAll(extraSoundings);
   }
 
   /**
@@ -621,5 +631,24 @@ public class SvmBathymetryData {
    */
   public SvmBathymetryModel getBathymetryModel(){
     return bathymetryModel;
+  }
+
+  /**
+   * Provides a means for the model to attach the perimeter of the
+   * triangulation (its convex hull) to the data collection. Intended
+   * as a way of propagating the initial collection perimeter into
+   * other modules once the data is initially triangulated.
+   * @param perimeterVertices a valid list of vertices
+   */
+  public void setSurveyPerimeter(List<Vertex>perimeterVertices){
+    this.surveyPerimeter = perimeterVertices;
+  }
+
+  /**
+   * Gets the survey perimeter.
+   * @return if the perimeter is set, a valid list; otherwise, a null.
+   */
+  public List<Vertex>getSurveyPerimeter(){
+    return surveyPerimeter;
   }
 }

@@ -30,6 +30,7 @@
 package org.tinfour.demo.viewer.backplane;
 
 import java.awt.geom.Point2D;
+import org.tinfour.common.Vertex;
 
 /**
  * Represents the results from a query operation
@@ -39,17 +40,20 @@ public class MvQueryResult {
   final Point2D compositePoint;
   final Point2D modelPoint;
   final String text;
+  final Vertex nearestVertex;
 
   /**
    * Standard constructor
    * @param compositePoint the query point in the composite coordinate system
    * @param modelPoint the query point in the model coordinate system
    * @param text the text result of the query
+   * @param nearestVertex the nearest vertex to the query coordinates
    */
-  MvQueryResult(Point2D compositePoint, Point2D modelPoint, String text) {
+  MvQueryResult(Point2D compositePoint, Point2D modelPoint, String text, Vertex nearestVertex) {
     this.compositePoint = compositePoint;
     this.modelPoint = modelPoint;
     this.text = text;
+    this.nearestVertex = nearestVertex;
   }
 
   /**
@@ -74,6 +78,14 @@ public class MvQueryResult {
    */
   public Point2D getModelPoint() {
     return new Point2D.Double(modelPoint.getX(), modelPoint.getY());
+  }
+
+  /**
+   * Gets the vertex nearest to the query coordinates.
+   * @return if available, a valid vertex; otherwise, a null.
+   */
+  public Vertex getNearestVertex(){
+    return nearestVertex;
   }
 
 }

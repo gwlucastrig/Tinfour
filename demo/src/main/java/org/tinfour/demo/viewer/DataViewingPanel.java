@@ -76,6 +76,7 @@ import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.Timer;
+import org.tinfour.common.Vertex;
 import org.tinfour.gis.shapefile.ShapefileReader;
 import org.tinfour.demo.viewer.backplane.BackplaneManager;
 import org.tinfour.demo.viewer.backplane.CompositeImageScale;
@@ -264,10 +265,10 @@ public class DataViewingPanel extends JPanel {
     this.addMouseListener(new MouseListener() {
       @Override
       public void mouseClicked(MouseEvent e) {
-        if (e.getButton() == MouseEvent.BUTTON1) {
+
           if (mvComposite == null || !mvComposite.isReady()) {
             readoutLabel.setText("");
-          } else {
+          } else if (e.getButton() == MouseEvent.BUTTON1) {{
             double[] c = new double[4];
             c[0] = e.getX();
             c[1] = e.getY();
@@ -275,6 +276,9 @@ public class DataViewingPanel extends JPanel {
             mvQueryResult = mvComposite.performQuery(c[2], c[3]);
             queryPane.setText(mvQueryResult.getText());
             repaint();
+            Vertex v  =mvQueryResult.getNearestVertex();
+            System.out.format("%13.4f,%13.4f,%13.4f,%8d%n",
+              v.getX(), v.getY(), v.getZ(), v.getIndex());
           }
         }
       }
@@ -481,24 +485,24 @@ public class DataViewingPanel extends JPanel {
       }
     }
   }
-  
+
   ExportImage getRenderedImage(boolean transparentBackground, boolean addFrame) {
 
     int iW = getWidth();
     int iH = getHeight();
-    BufferedImage bImage = 
+    BufferedImage bImage =
             new BufferedImage(iW, iH, BufferedImage.TYPE_INT_ARGB);
     Graphics2D g2d = bImage.createGraphics();
     g2d.setRenderingHint(
             RenderingHints.KEY_ANTIALIASING,
             RenderingHints.VALUE_ANTIALIAS_ON);
-    
+
     if (!transparentBackground) {
       Color c = viewOptions.getBackground();
       g2d.setColor(c);
       g2d.fillRect(0, 0, iW + 1, iH + 1);
     }
- 
+
 
 
     if (compositeImage == null) {
@@ -722,7 +726,7 @@ public class DataViewingPanel extends JPanel {
       compositeImage = null;
       return;
     }
- 
+
     compositeImage = new BufferedImage(
             mvComposite.getWidth(),
             mvComposite.getHeight(),

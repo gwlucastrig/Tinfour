@@ -150,7 +150,6 @@ class SvmContourGraph {
       paletteB2Y[i][1],
       paletteB2Y[i][2]
     );
-
   }
 
   private SvmContourGraph() {
@@ -311,7 +310,7 @@ class SvmContourGraph {
     double simplificationFactor;
     if(contourInterval>0){
       // the properties specified a contour interval
-      double s = contourInterval/5;
+      double s = contourInterval/8;
       simplificationFactor = s*s;
     }else if (zContour.length>2){
       // the properties did not specify a contour interval,
@@ -323,7 +322,6 @@ class SvmContourGraph {
     }
 
     ps.println("\nBuilding contours for graph");
-    ps.format("Simplification factor %6.3f%n", simplificationFactor);
     ContourBuilderForTin builder
       = new ContourBuilderForTin(tin, filter, zContour, true);
     builder.simplify(simplificationFactor);

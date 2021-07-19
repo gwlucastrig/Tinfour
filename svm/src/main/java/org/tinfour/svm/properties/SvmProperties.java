@@ -63,6 +63,9 @@ public class SvmProperties {
 
   private final static String gridFileName = "rasterFileName";
   private final static String gridCellSize = "rasterCellSize";
+  private final static String gridImageFileName = "rasterImageFileName";
+
+  private final static String supplementalConstraintsFileKey = "supplementalConstraints";
 
   private final static String capacityGraphFileKey = "capacityGraphFileName";
   private final static String capacityGraphSizeKey = "capacityGraphSize";
@@ -286,7 +289,7 @@ public class SvmProperties {
     File folder = getInputFolder();
     List<SvmFileSpecification> specList = new ArrayList<>();
     for (String key : keyList) {
-      if (key.startsWith(target)) {
+      if (key.startsWith(target) && !key.contains(supplementalConstraintsFileKey)) {
         String value = properties.getProperty(key);
         List<String> splitList = split(value);
         specList.add(new SvmFileSpecification(key, model, splitList, folder));
@@ -615,7 +618,7 @@ public class SvmProperties {
   }
 
   /**
-   * Get the path to a file for writing an output ASC file giving an
+   * Get the path to a file for writing an output data file giving an
    * interpolated grid of water bottom elevations.
    *
    * @return a valid File instance or a null if not specified.
@@ -623,6 +626,41 @@ public class SvmProperties {
   public File getGridFile() {
     return extractFile(outputFolderKey, properties.getProperty(gridFileName));
   }
+
+  /**
+   * Get the path to a file for writing an output image file giving an
+   * interpolated grid of water bottom elevations.  
+   *
+   * @return a valid File instance or a null if not specified.
+   */
+  public File getGridImageFile() {
+    return extractFile(outputFolderKey, properties.getProperty(gridImageFileName));
+  }
+
+
+
+
+  public File getSupplementalConstraintsFile(){
+     return extractFile(inputFolderKey, properties.getProperty(supplementalConstraintsFileKey));
+  }
+
+
+  /**
+   * Get the path to a file for writing an output file  to be used for
+   * processing raster grid.  The properties file is treated as containing
+   * the root name.  An extension is added as appropriate.
+   * @param extension the file extension (including the period).
+   * @return a valid File instance or a null if not specified.
+   */
+  public File getGridFile(String extension) {
+    String rootName = properties.getProperty(gridFileName);
+    if(rootName==null){
+      return null;
+    }
+    String targetName = rootName+extension;
+    return extractFile(outputFolderKey,  targetName);
+  }
+
 
   /**
    * Get the path to a file for writing a graph of the capacity as a function of

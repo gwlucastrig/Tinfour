@@ -59,6 +59,13 @@ public class RenderingSurfaceAid {
    * will be appropriate for drawing graphs within the coordinate domain as
    * large as possible within the bounds of the specified size of the graphics
    * surface based on width, height, and padding allowance.
+   * <p>
+   * Some implementations of the of Java API's ImageIO do not support
+   * creating JPEG image files from a BufferedImage with an alpha channel
+   * When using this class with Java ImageIO to write JPEG images,
+   * the associated BufferedImage should be created without an alpha channel.
+   * An alternate constructor is provided for this purpose.
+   *
    *
    * @param width the width of the drawing surface, in pixels
    * @param height the height of the drawing surface, in pixels
@@ -86,6 +93,57 @@ public class RenderingSurfaceAid {
             RenderingHints.KEY_TEXT_ANTIALIASING,
             RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
   }
+
+
+  /**
+   * Constructs a graphics surface (BufferedImage) and resources for a
+   * coordinate system appropriate for the presentation of a rectangular region
+   * defined by the specified coordinates. The transforms created by this class
+   * will be appropriate for drawing graphs within the coordinate domain as
+   * large as possible within the bounds of the specified size of the graphics
+   * surface based on width, height, and padding allowance.
+   * <p>
+   * When using this class with Java ImageIO to write JPEG images,
+   * the associated BufferedImage should be created without an alpha channel.
+   * Some implementations of the of Java API's ImageIO do not support
+   * creating JPEG image files from a BufferedImage with an alpha channel.
+   *
+   * @param width the width of the drawing surface, in pixels
+   * @param height the height of the drawing surface, in pixels
+   * @param pad an arbitrary padding to be added to each side of the rectangle,
+   * in pixels
+   * @param x0 Cartesian x coordinate for the lower-left corner of the domain
+   * @param y0 Cartesian y coordinate for the lower-left corner of the domain
+   * @param x1 Cartesian x coordinate for the upper-right corner of the domain
+   * @param y1 Cartesian y coordinate for the upper-right corner of the domain
+   * @param alpha indicates if the associated image should be created using
+   * an alpha channel.
+   */
+  public RenderingSurfaceAid(
+          int width, int height, int pad,
+           double x0, double y0, double x1, double y1, boolean alpha) {
+    this.width = width;
+    this.height = height;
+    rta = new RenderingTransformAid(
+            width, height, pad, x0,   y0, x1, y1);
+
+    if (alpha) {
+      bImage = new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB);
+    } else {
+      bImage = new BufferedImage(width, height, BufferedImage.TYPE_INT_RGB);
+    }
+    g2d = bImage.createGraphics();
+    g2d.setRenderingHint(
+            RenderingHints.KEY_ANTIALIASING,
+            RenderingHints.VALUE_ANTIALIAS_ON);
+    g2d.setRenderingHint(
+            RenderingHints.KEY_TEXT_ANTIALIASING,
+            RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
+  }
+
+
+
+
 
   /**
    * Gets the affine transform for mapping Cartesian coordinates to pixel

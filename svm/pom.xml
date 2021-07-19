@@ -15,8 +15,8 @@
 
   <artifactId>TinfourSvm</artifactId>
   <name>Svm</name>
-  <description>Simple Volumetric Model</description>
-
+  <description>The Simple Volumetric Model (SVM) uses bathymetry to
+  estimate the capacity of lakes and reservoirs</description>
   <dependencies>
     <dependency>
       <groupId>junit</groupId>

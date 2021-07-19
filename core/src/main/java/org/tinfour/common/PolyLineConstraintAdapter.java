@@ -187,6 +187,45 @@ public abstract class PolyLineConstraintAdapter
       return true; // unambiguously inside
     }
     return false; // unambiguously outside
+  }
 
+  static int nDense;
+  @Override
+  public void densify(double threshold) {
+    List<Vertex> vList = new ArrayList<>();
+    if (list.size() < 2) {
+      return;
+    }
+    nDense++;
+    vList.add(list.get(0));
+    for (int i0 = 0; i0 < list.size() - 1; i0++) {
+      Vertex v0 = list.get(i0);
+      Vertex v1 = list.get(i0 + 1);
+      double d = v0.getDistance(v1);
+      int n = 0;
+      if (d > threshold) {
+        n = (int) Math.floor(d / threshold)+1;
+        for (int i = 1; i < n; i++) {
+          double t = (double) i / (double) n;
+          double x0 = v0.getX();
+          double y0 = v0.getY();
+          double z0 = v0.getZ();
+          double x1 = v1.getX();
+          double y1 = v1.getY();
+          double z1 = v1.getZ();
+          double x = t * (x1 - x0) + x0;
+          double y = t * (y1 - y0) + y0;
+          double z = t * (z1 - z0) + z0;
+          Vertex v = new Vertex(x, y, z, vList.size());
+          v.setSynthetic(true);
+          v.setConstraintMember(true);
+          vList.add(v);
+        }
+      }
+      vList.add(v1);
+    }
+
+    list.clear();
+    list.addAll(vList);
   }
 }
