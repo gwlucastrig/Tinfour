@@ -36,8 +36,11 @@
  */
 package org.tinfour.gis.shapefile;
 
+import java.io.BufferedInputStream;
 import java.io.Closeable;
+import java.io.DataInputStream;
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
 import org.tinfour.io.BufferedRandomAccessReader;
 
@@ -65,6 +68,9 @@ public class ShapefileReader implements Closeable {
 
   private int nPointsTotal;
   private int nPartsTotal;
+
+  private int[] recordIndex;
+  private int nRecordsInFile; // obtained from SHX file
 
   public ShapefileReader(File file) throws IOException {
     this.file = file;
@@ -102,6 +108,31 @@ public class ShapefileReader implements Closeable {
       maxZ = Double.NEGATIVE_INFINITY;
     }
 
+  }
+
+  private void readShxFile() throws IOException {
+    if (recordIndex != null) {
+      return; // already read.
+    }
+    File shxFile = this.getCoFile("shx");
+    try (FileInputStream fins = new FileInputStream(shxFile);
+      BufferedInputStream bins = new BufferedInputStream(fins);
+      DataInputStream dins = new DataInputStream(bins)) {
+      int fileCode = dins.readInt();
+      if (fileCode != 9994) {
+        throw new IOException("Specified file is not a Shapefile " + file.getPath());
+      }
+      dins.skipBytes(20);
+      int shxFileLength = dins.readInt();
+      int shxFileLengthInBytes = shxFileLength * 2;
+      dins.skip(72);
+      nRecordsInFile = (shxFileLengthInBytes - 100) / 8;
+      recordIndex = new int[nRecordsInFile + 1];
+      for (int i = 1; i <= nRecordsInFile; i++) {
+        recordIndex[i] = dins.readInt() * 2;
+        dins.skip(4);
+      }
+    }
   }
 
   /**
@@ -182,8 +213,9 @@ public class ShapefileReader implements Closeable {
    *
    * @param pRecord a reusable instance to store data, or a null if the method
    * is to allocate a new instance.
-   * @return if successful, a valid instance of ShapefileRecord
-   * @throws IOException in the event of a file format error or unepected I/O
+   * @return if successful, a valid instance of ShapefileRecord; if the end of
+   * the file is reached, a null.
+   * @throws IOException in the event of a file format error or unexpected I/O
    * condition
    */
   @SuppressWarnings("PMD.SwitchDensity")
@@ -191,11 +223,14 @@ public class ShapefileReader implements Closeable {
     ShapefileRecord record = pRecord;
     if (record == null) {
       record = new ShapefileRecord(shapefileType);
-    }else{
-       record.shapefileType = shapefileType;
+    } else {
+      record.shapefileType = shapefileType;
     }
 
     long offset0 = raf.getFilePosition();
+    if (offset0 >= this.fileLengthInBytes) {
+      return null;
+    }
     int recNo = raf.readIntBigEndian();
     int recLen = raf.readIntBigEndian();
     record.recordNumber = recNo;
@@ -203,8 +238,8 @@ public class ShapefileReader implements Closeable {
     int stc = raf.readInt();
     if (stc != shapefileType.getTypeCode()) {
       throw new IOException(
-              "Error reading Shapefile record, typecode mismatch, found " + stc
-              + ", expected " + shapefileType.getTypeCode());
+        "Error reading Shapefile record, typecode mismatch, found " + stc
+        + ", expected " + shapefileType.getTypeCode());
     }
     switch (shapefileType) {
       case Point:
@@ -313,6 +348,42 @@ public class ShapefileReader implements Closeable {
   }
 
   /**
+   * Resets the file position to the first record in the file
+   *
+   * @throws IOException in the event of an unrecoverable I/O error.
+   */
+  public void rewind() throws IOException {
+    raf.seek(100);
+  }
+
+  /**
+   * Reads the specified record in the Shapefile. This method takes a reusable
+   * instance of the ShapefileRecord class. If a null is passed in, it creates a
+   * new instance. If a valid reference is supplied, the method returns the
+   * reference that was supplied.
+   *
+   * @param recordNumber a value in the range 1 to the number of records in
+   * the file.
+   * @param pRecord a reusable instance to store data, or a null if the method
+   * is to allocate a new instance.
+   * @return if successful, a valid instance of ShapefileRecord; if the end of
+   * the file is reached, a null.
+   * @throws IOException in the event of a file format error or unexpected I/O
+   * condition
+   */
+  @SuppressWarnings("PMD.SwitchDensity")
+  public ShapefileRecord readRecord(int recordNumber, ShapefileRecord pRecord) throws IOException {
+    readShxFile();
+    if (recordNumber < 1 || recordNumber > nRecordsInFile) {
+      throw new IOException("Record number out of range: " + recordNumber
+        + " for file containing " + nRecordsInFile + " records");
+    }
+
+    raf.seek(recordIndex[recordNumber]);
+    return readNextRecord(pRecord);
+  }
+
+  /**
    * Checks to see if there are any more records remaining to be read
    *
    * @return true if more records remain; otherwise false.
@@ -373,7 +444,8 @@ public class ShapefileReader implements Closeable {
    * While there are other possible capitalization configurations, writing code
    * to support them seems silly and is not implemented at this time.
    *
-   * @param extension a string giving the target extension (do not include period)
+   * @param extension a string giving the target extension (do not include
+   * period)
    * @return if found, a valid instance; otherwise, a null
    */
   public File getCoFile(String extension) {
@@ -425,13 +497,14 @@ public class ShapefileReader implements Closeable {
 
   /**
    * Get an DBF file reader for the current Shapefile
+   *
    * @return if successful, a valid DbfFileReader instance.
    * @throws IOException if the DBF file cannot be opened
    */
   public DbfFileReader getDbfFileReader() throws IOException {
     File target = getCoFile("DBF");
-    if(target==null){
-      throw new IOException("DBF file not found for "+file.getName());
+    if (target == null) {
+      throw new IOException("DBF file not found for " + file.getName());
     }
 
     return new DbfFileReader(target);
@@ -439,9 +512,10 @@ public class ShapefileReader implements Closeable {
 
   /**
    * Get the file associated with the Shapefile.
+   *
    * @return a valid instance
    */
-  public File getFile(){
+  public File getFile() {
     return file;
   }
 
@@ -450,20 +524,20 @@ public class ShapefileReader implements Closeable {
    *
    * @return A long integer giving file size in bytes.
    */
-  public long getFileSize(){
-    if(raf==null){
-      return  0;
+  public long getFileSize() {
+    if (raf == null) {
+      return 0;
     }
     return raf.getFileSize();
   }
 
-   /**
+  /**
    * Provides the current position within the main Shapefile.
    *
    * @return a long integer value giving offset in bytes from beginning of file.
    */
-  public long getFilePosition(){
-    if(raf==null){
+  public long getFilePosition() {
+    if (raf == null) {
       return 0;
     }
     return raf.getFilePosition();
