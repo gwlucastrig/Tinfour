@@ -493,6 +493,7 @@ class SvmRaster {
     template.append(prefix);
     template.append(data.getShapefilePrjContent());
     template.append(postfix);
+	tempStr = template.toString();
 
     File parent = file.getParentFile();
     String name = file.getName() + ".aux.xml";
