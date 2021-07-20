@@ -199,9 +199,16 @@ class SvmRaster {
       gridParent = new File(".");
     }
 
+
     ps.println("");
     ps.println("Processing raster data");
 
+
+    boolean status = writeAuxiliaryFile(
+      ps, data, gridFile, "SvmRasterTemplate.aux.xml");
+    if (!status) {
+      return;
+    }
 
     KahanSummation sum = new KahanSummation();
     Rectangle2D bounds = tin.getBounds();
@@ -257,11 +264,6 @@ class SvmRaster {
       return;
     }
 
-            boolean status = writeAuxiliaryFile(
-      ps, data, gridFile, "SvmRasterTemplate.aux.xml");
-    if(!status){
-      return;
-    }
 
     double zMin = Double.POSITIVE_INFINITY;
     double zMax = Double.NEGATIVE_INFINITY;
@@ -485,8 +487,10 @@ class SvmRaster {
     String tempStr = template.toString();
     int lenPrefix = tempStr.indexOf("<SRS>");
     int startPostfix = tempStr.indexOf("</SRS>");
+    String prefix = tempStr.substring(0, lenPrefix+5);
     String postfix = tempStr.substring(startPostfix, tempStr.length());
-    template.setLength(lenPrefix+5);
+    template = new StringBuilder();
+    template.append(prefix);
     template.append(data.getShapefilePrjContent());
     template.append(postfix);
 
@@ -505,7 +509,7 @@ class SvmRaster {
       }
       bos.flush();
     } catch (IOException ioex) {
-      ps.println("Serios error: unable to read template " + template + ": " + ioex.getMessage());
+      ps.println("Serious error: unable to read template " + template + ": " + ioex.getMessage());
       return false;
     }
     return true;
