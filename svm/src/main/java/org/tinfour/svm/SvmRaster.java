@@ -199,10 +199,21 @@ class SvmRaster {
       gridParent = new File(".");
     }
 
+        boolean useDepthModel = false;
+    double noDataValue = -9999;
+    if (properties.isBathymetryModelSpecified()) {
+      SvmBathymetryModel bathyModel = properties.getBathymetryModel();
+      if (bathyModel == SvmBathymetryModel.Depth) {
+        useDepthModel = true;
+        noDataValue = 1;
+      } else {
+        useDepthModel = false;
+        noDataValue = -9999;
+      }
+    }
 
     ps.println("");
     ps.println("Processing raster data");
-
 
     boolean status = writeAuxiliaryFile(
       ps, data, gridFile, "SvmRasterTemplate.aux.xml");
@@ -256,7 +267,7 @@ class SvmRaster {
       headerPs.format("XLLCENTER %f%n", xMin);
       headerPs.format("YLLCENTER %f%n", yMin);
       headerPs.format("CELLSIZE %f%n", s);
-      headerPs.format("NODATA_VALUE 1%n");
+      headerPs.format("NODATA_VALUE %f%n", noDataValue);
       headerPs.format("BYTEORDER MSBFIRST%n");
     } catch (IOException ioex) {
       ps.println("Failure: Fatal I/O exception writing grid file "
@@ -277,7 +288,14 @@ class SvmRaster {
       DataOutputStream dos = new DataOutputStream(bos)) {
       IIncrementalTinNavigator navigator = tin.getNavigator();
       NaturalNeighborInterpolator nni = new NaturalNeighborInterpolator(tin);
+      double reportingThreshold = 0;
+
       for (int iRow = 0; iRow < nRows; iRow++) {
+        double percentDone = iRow * 100.0 / nRows;
+        if (percentDone >= reportingThreshold) {
+          System.out.format("Raster processing %3.0f%% done%n", reportingThreshold);
+          reportingThreshold += 10;
+        }
         double y = yMax - iRow * s;
         for (int iCol = 0; iCol < nCols; iCol++) {
           double x = xMin + iCol * s;
@@ -285,13 +303,17 @@ class SvmRaster {
           IConstraint con = tin.getRegionConstraint(edge);
           double zValue = 1;
           if (con == null || !water[con.getConstraintIndex()]) {
-            zValue = 1;
+            zValue = noDataValue;
             nUncovered++;
           } else {
             double z = nni.interpolate(x, y, null);
             if (Double.isFinite(z)) {
-              if (z > 0) {
-                zValue = 0;
+              if (useDepthModel) {
+                if (z > 0) {
+                  zValue = 0;
+                } else {
+                  zValue = z;
+                }
               } else {
                 zValue = z;
               }
@@ -305,6 +327,7 @@ class SvmRaster {
               }
             } else {
               nUncovered++;
+              zValue = noDataValue;
             }
           }
           dos.writeFloat((float) zValue);
@@ -317,15 +340,18 @@ class SvmRaster {
       return;
     }
     long time1 = System.nanoTime();
-    ps.format("Time to Process Raster  %3.1f seconds %n", (time1 - time0) / 1.0e+9);
-        String lengthUnits = properties.getUnitOfDistance().getLabel();
+    ps.format("Time to Process Raster  %3.1f seconds %n",
+      (time1 - time0) / 1.0e+9);
+    System.out.format("Time to Process Raster  %3.1f seconds %n",
+      (time1 - time0) / 1.0e+9);
+    String lengthUnits = properties.getUnitOfDistance().getLabel();
     String areaUnits = properties.getUnitOfArea().getLabel();
     double areaFactor = properties.getUnitOfArea().getScaleFactor();
     String volumeUnits = properties.getUnitOfVolume().getLabel();
     double volumeFactor = properties.getUnitOfVolume().getScaleFactor();
     int n = sum.getSummandCount();
-    double rawSurfArea = n*s*s;
-    double rawVolume = sum.getSum()*s*s;
+    double rawSurfArea = n * s * s;
+    double rawVolume = sum.getSum() * s * s;
     double surfArea = rawSurfArea / areaFactor;
     double volume = rawVolume / volumeFactor;
 
@@ -372,16 +398,16 @@ class SvmRaster {
 
     File worldFile
       = new File(imageFile.getParent(), imageFileRootName + worldFileExtension);
-    if(worldFile.exists()){
+    if (worldFile.exists()) {
       worldFile.delete();
     }
-    if(imageFile.exists()){
+    if (imageFile.exists()) {
       imageFile.delete();
     }
 
     status = writeAuxiliaryFile(
       ps, data, imageFile, "SvmRasterImageTemplate.aux.xml");
-    if(!status){
+    if (!status) {
       return;
     }
     try (
@@ -421,7 +447,7 @@ class SvmRaster {
         for (int iCol = 0; iCol < nCols; iCol++) {
           int index = iRow * nCols + iCol;
           float z = dins.readFloat();
-          if (z == 1) {
+          if (z == noDataValue) {
             if (useAlpha) {
               argb[index] = 0;
             } else {
@@ -470,7 +496,6 @@ class SvmRaster {
     return false;
   }
 
-
   boolean writeAuxiliaryFile(PrintStream ps, SvmBathymetryData data, File file, String target) {
     StringBuilder template = new StringBuilder();
     try (
@@ -478,7 +503,7 @@ class SvmRaster {
       = SvmMain.class.getResourceAsStream(target)) {
       int c;
       while ((c = ins.read()) >= 0) {
-        template.append((char)c);
+        template.append((char) c);
       }
     } catch (IOException ioex) {
       ps.println("Failed to load auxiliary template " + ioex.getMessage());
@@ -487,18 +512,17 @@ class SvmRaster {
     String tempStr = template.toString();
     int lenPrefix = tempStr.indexOf("<SRS>");
     int startPostfix = tempStr.indexOf("</SRS>");
-    String prefix = tempStr.substring(0, lenPrefix+5);
+    String prefix = tempStr.substring(0, lenPrefix + 5);
     String postfix = tempStr.substring(startPostfix, tempStr.length());
     template = new StringBuilder();
     template.append(prefix);
     template.append(data.getShapefilePrjContent());
     template.append(postfix);
-	tempStr = template.toString();
 
     File parent = file.getParentFile();
     String name = file.getName() + ".aux.xml";
     File output = new File(parent, name);
-    if(output.exists()){
+    if (output.exists()) {
       output.delete();
     }
     try (

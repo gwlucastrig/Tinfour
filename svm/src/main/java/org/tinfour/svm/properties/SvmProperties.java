@@ -284,6 +284,26 @@ public class SvmProperties {
     return f;
   }
 
+    private File extractOutputFile(String folderKey, String property) {
+    if (property == null || property.isEmpty()) {
+      return null;
+    }
+    File f = new File(property);
+    File folder = getFolderForKey(folderKey);
+    if (folder != null && !f.isAbsolute()) {
+      f =  new File(folder, property);
+    }
+    File parent = f.getParentFile();
+    if(parent!=null && !parent.exists()){
+      boolean status = parent.mkdirs();
+      if(!status){
+        throw new IllegalArgumentException(
+          "Unable to create file for property "+property+"="+f.getPath());
+      }
+    }
+    return f;
+  }
+
   private List<SvmFileSpecification> getTargetSpecifications(String target) {
     SvmBathymetryModel model = getBathymetryModel();
     File folder = getInputFolder();
@@ -382,7 +402,7 @@ public class SvmProperties {
    * @return a valid File instance or a null if not specified.
    */
   public File getReportFile() {
-    return extractFile(outputFolderKey, properties.getProperty(reportKey));
+    return extractOutputFile(outputFolderKey, properties.getProperty(reportKey));
   }
 
   /**
@@ -394,7 +414,7 @@ public class SvmProperties {
    * @return a valid File instance or a null if not specified.
    */
   public File getTableFile() {
-    return extractFile(outputFolderKey, properties.getProperty(tableKey));
+    return extractOutputFile(outputFolderKey, properties.getProperty(tableKey));
   }
 
   /**
@@ -624,17 +644,17 @@ public class SvmProperties {
    * @return a valid File instance or a null if not specified.
    */
   public File getGridFile() {
-    return extractFile(outputFolderKey, properties.getProperty(gridFileName));
+    return extractOutputFile(outputFolderKey, properties.getProperty(gridFileName));
   }
 
   /**
    * Get the path to a file for writing an output image file giving an
-   * interpolated grid of water bottom elevations.  
+   * interpolated grid of water bottom elevations.
    *
    * @return a valid File instance or a null if not specified.
    */
   public File getGridImageFile() {
-    return extractFile(outputFolderKey, properties.getProperty(gridImageFileName));
+    return extractOutputFile(outputFolderKey, properties.getProperty(gridImageFileName));
   }
 
 
@@ -658,7 +678,7 @@ public class SvmProperties {
       return null;
     }
     String targetName = rootName+extension;
-    return extractFile(outputFolderKey,  targetName);
+    return extractOutputFile(outputFolderKey,  targetName);
   }
 
 
@@ -670,7 +690,7 @@ public class SvmProperties {
    */
   public File getCapacityGraphFile() {
     if (properties.containsKey(capacityGraphFileKey)) {
-      return extractFile(outputFolderKey, properties.getProperty(capacityGraphFileKey));
+      return extractOutputFile(outputFolderKey, properties.getProperty(capacityGraphFileKey));
     }
     return null;
   }
@@ -706,7 +726,7 @@ public class SvmProperties {
    */
   public File getContourGraphFile() {
     if (properties.containsKey(contourGraphFileKey)) {
-      return extractFile(outputFolderKey, properties.getProperty(contourGraphFileKey));
+      return extractOutputFile(outputFolderKey, properties.getProperty(contourGraphFileKey));
     }
     return null;
   }
@@ -836,7 +856,7 @@ public class SvmProperties {
    */
   public File getAnomalyTableFile() {
     if (properties.containsKey(anomalyTableFileKey)) {
-      return extractFile(outputFolderKey, properties.getProperty(anomalyTableFileKey));
+      return extractOutputFile(outputFolderKey, properties.getProperty(anomalyTableFileKey));
     }
     return null;
   }

@@ -114,9 +114,9 @@ class SvmRefinement {
     int nD = asum.getSummandCount();
     double areaStd = Math.sqrt((sumD2 - (sumD / nD) * sumD) / (nD - 1));
 
-    ps.print("Analysis of triangles");
+    ps.println("Analysis of triangles");
     ps.format("   Area mean    %15.5f%n", areaMean);
-    ps.format("   Area std     %15.5f%n", areaStd);
+    ps.format("   Area std dev %15.5f%n", areaStd);
     ps.format("   Area thresh  %15.5f%n", areaThreshold);
     if (areaThreshold < 2 * areaMean) {
       areaThreshold = 2 * areaMean;
@@ -130,9 +130,15 @@ class SvmRefinement {
 
     int nPartitions = k - mIndex;
     ps.println("Subdividing approximately " + nPartitions + " triangles");
+    ps.println("");
+    ps.println("Population percentile and counts for triangles sorted by area.");
+    ps.println("The area column is the base threshold for subset.");
+    ps.println("So the 50% line would give the minimum area for all");
+    ps.println("triangles in the upper 50 percentile");
+    ps.println("Percentile     Area     Count");
     for (int i = 50; i < 100; i += 5) {
       mIndex = (int) ((i / 100.0) * k);
-      ps.format("%3d %% %15.5f %8d%n", i, areaArray[mIndex], k - mIndex);
+      ps.format("%3d %% %16.5f %8d%n", i, areaArray[mIndex], k - mIndex);
     }
 
     int partitionsPerLogEntry = nPartitions / 10;
@@ -158,7 +164,7 @@ class SvmRefinement {
           kPartitions++;
           if (kPartitions % partitionsPerLogEntry == 0) {
             double percentDone = kPartitions * 100.0 / nPartitions;
-            ps.format("Processed %8d triangles, %3.0f %% done%n", kPartitions, percentDone);
+            System.out.format("Subdivided %8d triangles, %3.0f %% done%n", kPartitions, percentDone);
           }
 
         }

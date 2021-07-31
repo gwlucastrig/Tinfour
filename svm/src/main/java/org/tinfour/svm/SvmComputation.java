@@ -280,7 +280,7 @@ public class SvmComputation {
    * @return the instance of the final TIN object created for the processing.
    * @throws java.io.IOException in the event of an unrecoverable I/O exception.
    */
-  public IIncrementalTin processVolume(
+  public void processVolume(
     PrintStream ps,
     SvmProperties properties,
     SvmBathymetryData data) throws IOException {
@@ -352,7 +352,7 @@ public class SvmComputation {
       int nRemediationVertices = 0;
       ps.println("");
       ps.println("Remediating flat triangles");
-      // ps.println("Pass   Remediated        Area     Volume Added    avg. depth");
+      System.out.println("Pass   Remediated        Area     Volume Added    avg. depth");
       for (int iFlat = 0; iFlat < 500; iFlat++) {
         // construct a new flat-fixer each time
         // so we can gather counts
@@ -363,17 +363,17 @@ public class SvmComputation {
         if (fixList.isEmpty()) {
           break;
         }
-        //  if (iFlat % 10 == 0) {
-        //    double fixArea = flatFixer.getRemediatedArea();
-        //    double fixVolume = flatFixer.getRemediatedVolume();
-        //    ps.format("%4d  %8d  %14.3f  %14.3f  %7.3f%n",
-        //      iFlat,
-        //      flatFixer.getRemediationCount(),
-        //      fixArea / areaFactor,
-        //      fixVolume / volumeFactor,
-        //      (fixVolume / fixArea) / lengthFactor
-        //    );
-        //  }
+        if (iFlat % 10 == 0) {
+          double fixArea = flatFixer.getRemediatedArea();
+          double fixVolume = flatFixer.getRemediatedVolume();
+          System.out.format("%4d  %8d  %14.3f  %14.3f  %7.3f%n",
+            iFlat,
+            flatFixer.getRemediationCount(),
+            fixArea / areaFactor,
+            fixVolume / volumeFactor,
+            (fixVolume / fixArea) / lengthFactor
+          );
+        }
         nRemediationVertices += fixList.size();
         soundings.addAll(fixList);
 
@@ -556,7 +556,8 @@ public class SvmComputation {
     double s = properties.getGridCellSize();
     if (gridFile != null && !Double.isNaN(s)) {
       SvmRaster grid = new SvmRaster();
-      grid.buildAndWriteRaster(properties, data, ps, tin, lakeConsumer.water, shoreReferenceElevation);
+      grid.buildAndWriteRaster(
+        properties, data, ps, tin, lakeConsumer.water, shoreReferenceElevation);
     } else {
       // if the user specified an image file, the grid file is mandatory
       File gridImageFile = properties.getGridImageFile();
@@ -603,8 +604,6 @@ public class SvmComputation {
         tin);
     }
 
-    return tin;
-    // testGrid(ps, tin, lakeConsumer.water, 2.0, areaFactor, shoreReferenceElevation);
   }
 
   private double getAreaSum(List<PolygonConstraint> constraints) {
