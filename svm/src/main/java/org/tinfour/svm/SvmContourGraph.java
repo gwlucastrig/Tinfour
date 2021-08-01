@@ -272,7 +272,7 @@ class SvmContourGraph {
       zMax,
       2,
       1,
-      20,
+      40,
       false);
     if (aArray == null) {
       aArray = aIntervals.getLabelCoordinates();
@@ -315,7 +315,7 @@ class SvmContourGraph {
     }else if (zContour.length>2){
       // the properties did not specify a contour interval,
       // so the interval was derived using the axis-interval logic.
-      double s = zContour[1]-zContour[0];
+      double s = (zContour[1]-zContour[0])/8;
       simplificationFactor = s*s;
     }else{
       simplificationFactor = 0.5;
