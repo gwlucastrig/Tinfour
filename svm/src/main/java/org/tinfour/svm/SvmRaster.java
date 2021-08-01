@@ -199,11 +199,11 @@ class SvmRaster {
       gridParent = new File(".");
     }
 
-        boolean useDepthModel = false;
+    boolean useDepthModel = false;
     double noDataValue = -9999;
     if (properties.isBathymetryModelSpecified()) {
       SvmBathymetryModel bathyModel = properties.getBathymetryModel();
-      if (bathyModel == SvmBathymetryModel.Depth) {
+      if (bathyModel.isDepth()) {
         useDepthModel = true;
         noDataValue = 1;
       } else {

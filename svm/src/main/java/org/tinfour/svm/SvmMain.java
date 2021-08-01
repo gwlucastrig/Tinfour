@@ -91,15 +91,15 @@ public class SvmMain {
   private static void checkForTemplate(String[] args) {
     if (isSpecified(args, "-template")) {
       try (
-              InputStream ins
-              = SvmMain.class.getResourceAsStream("SvmTemplate.properties");) {
+        InputStream ins
+        = SvmMain.class.getResourceAsStream("SvmTemplate.properties");) {
         int c;
         while ((c = ins.read()) >= 0) {
           System.out.append((char) c);
         }
         System.out.flush();
       } catch (IOException ioex) {
-        System.err.println("Failed to load template "+ioex.getMessage());
+        System.err.println("Failed to load template " + ioex.getMessage());
       }
       System.exit(0); // NOPMD
     }
@@ -113,7 +113,7 @@ public class SvmMain {
     File target = new File(args[index + 1]);
     if (!target.exists()) {
       throw new IllegalArgumentException("Inspection target does not exist "
-              + target.getPath());
+        + target.getPath());
     }
     performShapefileInspection(target, System.out);
     System.exit(0); // NOPMD
@@ -121,7 +121,7 @@ public class SvmMain {
   }
 
   private static void performShapefileInspection(
-          File target, PrintStream ps) throws IOException {
+    File target, PrintStream ps) throws IOException {
     FilenameFilter filter = new FilenameFilter() {
       @Override
       public boolean accept(File file, String name) {
@@ -140,17 +140,17 @@ public class SvmMain {
         ps.println("\n------------------------------------------------");
         File t = new File(target, name);
         ShapefileMetadataReporter reporter
-                = new ShapefileMetadataReporter(t, true);
+          = new ShapefileMetadataReporter(t, true);
         reporter.printReport(ps);
       }
     } else {
       String name = target.getName();
       if (!filter.accept(target, name)) {
         throw new IllegalArgumentException(
-                "Invalid Shapefile specification " + target.getPath());
+          "Invalid Shapefile specification " + target.getPath());
       }
       ShapefileMetadataReporter reporter
-              = new ShapefileMetadataReporter(target, true);
+        = new ShapefileMetadataReporter(target, true);
       reporter.printReport(ps);
     }
   }
@@ -176,11 +176,11 @@ public class SvmMain {
     SvmProperties prop = SvmProperties.load(args);
     prop.writeSummary(System.out);
 
-        SvmBathymetryModel bathymetryModel = null;
-    if(prop.isBathymetryModelSpecified()){
+    SvmBathymetryModel bathymetryModel = null;
+    if (prop.isBathymetryModelSpecified()) {
       bathymetryModel = prop.getBathymetryModel();
     }
-    if(bathymetryModel==null){
+    if (bathymetryModel == null) {
       System.err.println("A bathymetry model specification is mandatory");
       System.exit(-1);
     }
@@ -208,25 +208,25 @@ public class SvmMain {
     List<SvmFileSpecification> bathyFiles = prop.getSampleSpecifications();
     for (SvmFileSpecification bathyFile : bathyFiles) {
       data.loadSamples(
-              bathyFile.getFile(),
-              bathyFile.getField(),
-              bathyFile.getVerticalTransform());
+        bathyFile.getFile(),
+        bathyFile.getField(),
+        bathyFile.getVerticalTransform());
     }
 
     List<SvmFileSpecification> supplementFiles = prop.getSupplementSpecifications();
     for (SvmFileSpecification supplementFile : supplementFiles) {
       data.loadSupplement(
-              supplementFile.getFile(),
-              supplementFile.getField(),
-              supplementFile.getVerticalTransform());
+        supplementFile.getFile(),
+        supplementFile.getField(),
+        supplementFile.getVerticalTransform());
     }
 
     List<SvmFileSpecification> boundaryFiles = prop.getBoundarySpecifications();
     for (SvmFileSpecification boundaryFile : boundaryFiles) {
       data.loadBoundaryConstraints(
-              boundaryFile.getFile(),
-              boundaryFile.getField(),
-              boundaryFile.getVerticalTransform());
+        boundaryFile.getFile(),
+        boundaryFile.getField(),
+        boundaryFile.getVerticalTransform());
     }
 
     PrintStream reportPrintStream = System.out; // the default
@@ -246,7 +246,7 @@ public class SvmMain {
 
     long time1 = System.nanoTime();
     reportPrintStream.format("%n%nProcessing completed in %5.2f seconds%n%n",
-      (time1-time0)/1.0e+9);
+      (time1 - time0) / 1.0e+9);
     reportPrintStream.flush();
     if (reportOutputStream != null) {
       reportOutputStream.close();
