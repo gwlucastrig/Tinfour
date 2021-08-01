@@ -938,7 +938,7 @@ public class TestOptions {
    * application-supplied defaults will be returned.
    * @param defaultWidth a value greater than zero.
    * @param defaultHeight a value greater than zero.
-   * @return
+   * @return an array of dimension 2 giving width and height
    */
   public int []getImageSize(int defaultWidth, int defaultHeight){
     if(imageSize!=null && imageSize.length==2){

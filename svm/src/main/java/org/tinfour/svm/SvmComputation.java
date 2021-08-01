@@ -277,7 +277,6 @@ public class SvmComputation {
    * @param properties a valid set of properties specification for processing
    * options.
    * @param data a valid instance giving data for processing
-   * @return the instance of the final TIN object created for the processing.
    * @throws java.io.IOException in the event of an unrecoverable I/O exception.
    */
   public void processVolume(
