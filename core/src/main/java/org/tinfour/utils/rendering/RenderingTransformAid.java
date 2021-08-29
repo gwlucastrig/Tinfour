@@ -139,7 +139,7 @@ public class RenderingTransformAid {
     c2p.transform(c, 0, c, 4, 2);
 
     domainRectangle = new Rectangle2D.Double(
-            c[4], c[5], c[6] - c[4], c[7] - c[5]);
+            c[4], c[7], c[6] - c[4], c[5] - c[7]);
 
   }
 
