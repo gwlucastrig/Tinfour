@@ -102,7 +102,7 @@ public class ShapefileWriterSpecification {
    */
   public void addTextField(String name, int fieldLength) {
     String a = checkName(name);
-    fieldList.add(new DbfFieldInt(a, 'C', 0, fieldLength, 0, fieldOffset));
+    fieldList.add(new DbfField(a, 'C', 0, fieldLength, 0, fieldOffset));
     fieldOffset += fieldLength;
   }
 

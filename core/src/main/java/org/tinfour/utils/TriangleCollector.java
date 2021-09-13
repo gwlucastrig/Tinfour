@@ -55,12 +55,10 @@
 package org.tinfour.utils;
 
 import java.util.ArrayDeque;
-import java.util.Iterator;
 import org.tinfour.common.IIncrementalTin;
 import org.tinfour.common.IQuadEdge;
 import org.tinfour.common.Vertex;
 
-import java.util.List;
 import java.util.function.Consumer;
 import org.tinfour.common.IConstraint;
 import org.tinfour.common.SimpleTriangle;
@@ -141,6 +139,11 @@ public final class TriangleCollector {
    * <p>
    * All triangles produced by this method are valid (non-ghost) triangles
    * with valid, non-null vertices.
+   * <p>
+   * <strong>Note:</strong> If no region-based constraints have been
+   * added to the Delaunay triangulation, then none of the triangles in
+   * the TIN are treated as being constrained.  This method will
+   * exit without further processing.
    *
    * @param tin a valid instance
    * @param consumer an application-specific consumer.

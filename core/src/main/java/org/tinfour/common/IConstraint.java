@@ -215,5 +215,5 @@ public interface IConstraint extends IPolyline {
    * are not source data.
    * @param threshold the spacing threshold.
    */
-  public void densify(double threshold);
+  void densify(double threshold);
 }
