@@ -33,6 +33,7 @@ import java.awt.geom.Rectangle2D;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
+import java.util.NoSuchElementException;
 import org.tinfour.common.IPolyline;
 import org.tinfour.common.Vertex;
 
@@ -179,6 +180,9 @@ public class PolylineThinner {
 
     @Override
     public Vertex next() {
+      if(node == null){
+          throw new NoSuchElementException("Attempt to access beyond end of iterator");
+      }
       iNode++;
       Vertex v = node.vertex;
       node = node.next;
