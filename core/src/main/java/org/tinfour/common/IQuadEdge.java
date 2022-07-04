@@ -274,6 +274,31 @@ public interface IQuadEdge {
    *    for(IQuadEdge e: startingEdge.pinwheel()){
    *    }
    * </pre>
+   * <p>
+   * <strong>About the pinwheel operation:</strong> In the Tinfour library,
+   * a pinwheel operation interates over the set of edges that connect to the
+   * initial vertex of the current edge. The initial vertex is the
+   * one returned from a call to getA().  Connected vertices may be obtained
+   * through a call to getB().
+   * <p>
+   * <strong>Null references for vertex:</strong>If vertex A lies on the
+   * perimeter of the Delaunay mesh, one or more of the connected edges
+   * may terminate on the "ghost vertex" which is used by Tinfour to
+   * complete the triangulation.  The ghost vertex is represented by
+   * a null reference.  So applications performing a pinwheel on an
+   * arbitrary edge should include logic to handle a null return from the
+   * getB() method.
+   * <pre>
+   *    for(IQuadEdge e: startingEdge.pinwheel()){
+   *        Vertex B = e.getB();
+   *        if(B == null){
+   *             // skip processing
+   *        }else {
+   *             // perform processing using B
+   *        }
+   *    }
+   * </pre>
+   *
    * @return a valid Iterable.
    */
   Iterable<IQuadEdge>pinwheel();
