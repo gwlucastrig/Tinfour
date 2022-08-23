@@ -186,7 +186,7 @@ public class NaturalNeighborInterpolator implements IInterpolatorOverTin {
     sumSides+=eList.size();
     // The eList contains a series of edges definining the cavity
     // containing the polygon.
-    double[] w = this.getBarycentricCoordinates(eList, x, y);
+    double[] w = this.getSibsonCoordinates(eList, x, y);
     if (w == null) {
       // the coordinate is on the perimeter, no Barycentric coordinates
       // are available.
@@ -212,9 +212,11 @@ public class NaturalNeighborInterpolator implements IInterpolatorOverTin {
    * be an exact match for the query point, errors in implementation
    * or numeric errors due to float-point precision limitations would
    * result in a deviation. Thus, this method provides a diagnostic
-   * on the most recent interpolation. A large non-zero value indicates a
-   * potential implementation problem. A small non-zero value indicates an
-   * error due to numeric issues.
+   * on the most recent interpolation. A large non-zero value would indicate a
+   * potential implementation problem. A consistently small value would be
+   * indicative of a successful implementation.  At this time, tests on
+   * a large number of input data sets have always produced small deviation
+   * values.
    *
    * @return a positive value, ideally zero but usually a small number
    * slightly larger than that.
@@ -228,6 +230,9 @@ public class NaturalNeighborInterpolator implements IInterpolatorOverTin {
    * as part of the Bowyer-Watson insertion algorithm. If the list is empty,
    * it indicates that TIN was not bootstrapped or the query was to the
    * exterior of the TIN.
+   * <p>
+   * The vertices associated with the resulting edge list are the
+   * <i>natural neighbors</i> of the point given by the input coordinates.
    *
    * @param x A Cartesian coordinate in the coordinate system used for the TIN
    * @param y A Cartesian coordinate in the coordinate system used for the TIN
@@ -417,7 +422,7 @@ public class NaturalNeighborInterpolator implements IInterpolatorOverTin {
   }
 
   /**
-   * Note implemented at this time.
+   * Not implemented at this time.
    * Gets the unit normal to the surface at the position of the most
    * recent interpolation. The unit normal is computed based on the
    * partial derivatives of the surface polynomial evaluated at the
@@ -436,24 +441,55 @@ public class NaturalNeighborInterpolator implements IInterpolatorOverTin {
   }
 
   /**
-   * Given a reference point inside a simple, but potentially non-convex
-   * polygon, creates an array of barycentric coordinates for the point. The
-   * coordinates are normalized, so that their sum is 1.0. This method
-   * populates the barycentric deviation member element which may be
-   * used as a figure of merit for evaluating the success of the
-   * coordinate computation. If the point is not inside the polygon or if
-   * the polygon is self-intersecting, the results are undefined
+   * Given a reference point enclosed by a polygon defining its
+   * natural neighbors, computes an array of Sibson's <i>local coordinates</i>
+   * giving the computed weighting factors for the vertices that comprise
+   * the polygon. Sibson coordinates are often represented using the
+   * Greek letter lambda.  The coordinate are normalized so that their sum
+   * is 1.0.
+   * <p>
+   * This method works only if the input polygon represents the set of
+   * natural neighbors of the reference point given in counterclockwise
+   * order. This polygon will be a simple, non-self-intersecting loop.
+   * Other polygons will not necessarily produce correct results.
+   * <p>
+   * <b>Using Sibson's coordinates as a self-test for this implementation</b>
+   * <p>
+   * Sibson's coordinates are generalized Barycentric coordinates
+   * (Bobach, 2009, pg. 7). Consequently,
+   * the weighting factors computed using this method should be able to
+   * compute the Cartesian coordinates of the reference point to a high
+   * degree of accuracy (within the limits of floating-point precision).
+   * Thus, the results of this calculation can be used as a <i>figure of merit</i>
+   * for any interpolation operation using Sibson coordinates. By backward
+   * computing the (x,y) coordinates of the reference point from the
+   * (x,y) coordinates of the natural neighbors and their weights,
+   * and then comparing the result against the original, this method
+   * derives a value that Tinfour calls the "Barycentric deviation".
+   * This deviation is stored internally to instances of this class and
+   * may be fetched after a calculation by calling the
+   * getBarycentricDeviation() method. If the interpolation logic works well,
+   * the deviation would be zero or close to zero, resulting a favorable
+   * figure of merit.
+   * <p>
+   * If the point is not inside the polygon or if
+   * the polygon is not a proper set of natural neighbors, the results are undefined
    * and the method may return a null array or a meaningless result.
    * If the point is on the perimeter of the polygon, this method will
    * return a null array.
+   * <p>
+   * For a rigorous discussion of the equivalence of Sibson's local
+   * coordinates and Barycentric coordinates, see
+   * <cite>Bobach, T (2009). Natural Neighbor Interpolation --
+   * Critical Assessment and New Contributions (Doctoral dissertation).</cite>
    *
    * @param polygon list of edges defining a non-self-intersecting,
-   * potentially non-convex polygon.
+   * potentially non-convex polygon composed of natural neighbor vertices,
    * @param x the x coordinate of the reference point
    * @param y the y coordinate of the reference point
    * @return if successful, a valid array; otherwise a null.
    */
-  public double[] getBarycentricCoordinates(
+  public double[] getSibsonCoordinates(
     List<IQuadEdge> polygon,
     double x,
     double y) {
