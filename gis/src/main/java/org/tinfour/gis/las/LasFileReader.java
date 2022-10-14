@@ -293,27 +293,60 @@ public class LasFileReader {
     p.y = ly * yScaleFactor + yOffset;
     p.z = lz * zScaleFactor + zOffset;
     p.intensity = braf.readUnsignedShort();
-    int mask = braf.readUnsignedByte();
-    p.returnNumber = mask & 0x07;
-    p.numberOfReturns = (mask >> 3) & 0x7;
-    p.scanDirectionFlag = (mask >> 5) & 0x01;
-    p.edgeOfFlightLine = (mask & 0x80) != 0;
 
-    // for record types 0 to 5, the classification
-    // is packed in with some other bit-values, see Table 8
-    mask = braf.readUnsignedByte();
-    p.classification = mask & 0x1f; // bits 0:4, values 0 to 32
-    p.synthetic = (mask & 0x20) != 0;
-    p.keypoint = (mask & 0x40) != 0;
-    p.withheld = (mask & 0x80) != 0;
+    if (this.pointDataRecordFormat != 6) {
+      int mask = braf.readUnsignedByte();
+      p.returnNumber = mask & 0x07;
+      p.numberOfReturns = (mask >> 3) & 0x7;
+      p.scanDirectionFlag = (mask >> 5) & 0x01;
+      p.edgeOfFlightLine = (mask & 0x80) != 0;
 
-    // we currently skip
-    //   scan angle rank  1 byte
-    //   user data        1 byte
-    //   point source ID  2 bytes
-    braf.skipBytes(4); // scan angle rank
+      // for record types 0 to 5, the classification
+      // is packed in with some other bit-values, see Table 8
+      mask = braf.readUnsignedByte();
+      p.classification = mask & 0x1f; // bits 0:4, values 0 to 32
+      p.synthetic = (mask & 0x20) != 0;
+      p.keypoint = (mask & 0x40) != 0;
+      p.withheld = (mask & 0x80) != 0;
 
-    if (pointDataRecordFormat == 1 || pointDataRecordFormat == 3) {
+      // we currently skip
+      //   scan angle rank  1 byte
+      //   user data        1 byte
+      //   point source ID  2 bytes
+      braf.skipBytes(4); // scan angle rank
+
+      if (pointDataRecordFormat == 1 || pointDataRecordFormat == 3) {
+        p.gpsTime = braf.readDouble();
+        // Depending on the gpsTimeType element, the GPS time can be
+        // in one of two formats:
+        //    GPS Week Time  seconds since 12:00 a.m. Sunday
+        //    GPS Satellite Time   seconds since 12 a.m. Jan 6, 1980
+        //                         minus an offset 1.0e+9
+        //    The mapping to a Java time requires information about
+        //    the GPS time type
+      }
+    } else {
+      // record type 6
+      int mask = braf.readUnsignedByte();
+      p.returnNumber = mask & 0x0f; // low order 4 bits
+      p.numberOfReturns = (mask >> 4) & 0x0f;
+
+      mask = braf.readUnsignedByte();
+      p.synthetic = (mask & 0x01) != 0;
+      p.keypoint = (mask & 0x02) != 0;
+      p.withheld = (mask & 0x04) != 0;
+      // overlap = (mask & 0x08) != 0;
+      // int scannerChannel = (mask >> 4) & 0x03;;
+      p.scanDirectionFlag = (mask >> 6) & 0x01;
+      p.edgeOfFlightLine = (mask & 0x80) != 0;
+
+      mask = braf.readUnsignedByte();
+      p.classification = mask & 0xff;
+      // we currently skip
+      //   user data        1 byte
+      //   scan angle       2 byte
+      //   point source ID  2 bytes
+      braf.skipBytes(5); // scan angle rank
       p.gpsTime = braf.readDouble();
       // Depending on the gpsTimeType element, the GPS time can be
       // in one of two formats:
@@ -323,7 +356,6 @@ public class LasFileReader {
       //    The mapping to a Java time requires information about
       //    the GPS time type
     }
-
   }
 
   /**
