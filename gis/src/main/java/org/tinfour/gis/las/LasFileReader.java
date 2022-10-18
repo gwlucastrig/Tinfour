@@ -96,6 +96,7 @@ public class LasFileReader {
   long numberVariableLengthRecords;
   int pointDataRecordFormat;
   int pointDataRecordLength;
+  boolean laszipFlag;
   long legacyNumberOfPointRecords;
   long[] legacyNumberOfPointsByReturn;
   double xScaleFactor;
@@ -178,7 +179,14 @@ public class LasFileReader {
     headerSize = braf.readUnsignedShort();
     offsetToPointData = braf.readUnsignedInt();
     numberVariableLengthRecords = braf.readUnsignedInt();
-    pointDataRecordFormat = braf.readUnsignedByte();
+    int pointDataRecordByte = braf.readUnsignedByte();
+    if((pointDataRecordByte&0x80)==0x80){
+      pointDataRecordFormat = pointDataRecordByte&0x3f;
+      laszipFlag = true;
+    }else{
+      pointDataRecordFormat = pointDataRecordByte;
+      laszipFlag = false;
+    }
     pointDataRecordLength = braf.readUnsignedShort();
     legacyNumberOfPointRecords = braf.readUnsignedInt();
     legacyNumberOfPointsByReturn = new long[5];
@@ -281,7 +289,10 @@ public class LasFileReader {
     if (isClosed) {
       throw new IOException("File is closed");
     }
-
+    if(laszipFlag){
+      throw new IOException("LasFileReader class cannot access LAZ file."
+        +" Please use VertexReaderLas or VertexReaderLaz.");
+    }
     long filePos = this.offsetToPointData
       + recordIndex * this.pointDataRecordLength;
     braf.seek(filePos);
