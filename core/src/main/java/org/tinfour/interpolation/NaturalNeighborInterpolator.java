@@ -155,7 +155,7 @@ public class NaturalNeighborInterpolator implements IInterpolatorOverTin {
   @Override
   public double interpolate(double x, double y, IVertexValuator valuator) {
 
-    // in the logic below, we access the Vertex x and z coordinates directly
+    // in the logic below, we access the Vertex x and y coordinates directly
     // but we use the getZ() method to get the z value.  Some vertices
     // may actually be VertexMergerGroup instances and so the Z value must
     // be selected according to whatever rules were configured for the TIN.
@@ -186,7 +186,7 @@ public class NaturalNeighborInterpolator implements IInterpolatorOverTin {
     sumSides+=eList.size();
     // The eList contains a series of edges definining the cavity
     // containing the polygon.
-    double[] w = this.getSibsonCoordinates(eList, x, y);
+    double[] w = getSibsonCoordinates(eList, x, y);
     if (w == null) {
       // the coordinate is on the perimeter, no Barycentric coordinates
       // are available.
@@ -634,5 +634,47 @@ public class NaturalNeighborInterpolator implements IInterpolatorOverTin {
     nInCircleExtended = 0;
     sumSides = 0;
     sumN = 0;
+  }
+
+
+  /**
+   * Gets an instance containing the natural neighbors and associated
+   * Sibson coordinates for a specified query location.
+   * @param x the x Cartesian coordinate for the query point
+   * @param y the y Cartesian coordinate for the query point
+   * @return a valid instance.
+   */
+   @SuppressWarnings({"PMD.ArrayIsStoredDirectly", "PMD.MethodReturnsInternalArray"})
+   public NaturalNeighborElements getNaturalNeighborElements(double x, double y ) {
+
+    List<IQuadEdge> eList = getBowyerWatsonEnvelope(x, y);
+
+    int nEdge = eList.size();
+    if (nEdge == 0) {
+      // (x,y) is outside defined area
+      return null;
+    } else if (nEdge == 1) {
+      // (x,y) is an exact match with the one edge in the list
+       return null;
+
+    }
+
+    // The eList contains a series of edges definining the cavity
+    // containing the polygon.
+    double[] w = getSibsonCoordinates(eList, x, y);
+    if (w == null) {
+      // the coordinate is on the perimeter, no Barycentric coordinates
+      // are available.
+      return null;
+    }
+
+    Vertex []vArray = new Vertex[nEdge];
+    int k = 0;
+    for (IQuadEdge edge : eList) {
+      vArray[k++] = edge.getA();
+
+    }
+    return new NaturalNeighborElements(x, y, w, vArray);
+
   }
 }
