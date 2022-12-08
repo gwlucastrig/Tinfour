@@ -199,6 +199,7 @@ public class VertexReaderText implements Closeable, IVertexReader {
       int xColumn = 0;
       int yColumn = 1;
       int zColumn = 2;
+      int iColumn = -1;
       int nColumnsRequired = 3;
       boolean geoText = false;
       boolean xFound = false;
@@ -238,6 +239,8 @@ public class VertexReaderText implements Closeable, IVertexReader {
             if (n > nColumnsRequired) {
               nColumnsRequired = n;
             }
+          } else if("i".equalsIgnoreCase(s) || "index".equalsIgnoreCase(s)){
+            iColumn = k;
           }
         }
         k++;
@@ -262,6 +265,9 @@ public class VertexReaderText implements Closeable, IVertexReader {
           double x = Double.parseDouble(sList.get(xColumn));
           double y = Double.parseDouble(sList.get(yColumn));
           double z = Double.parseDouble(sList.get(zColumn));
+          if(iColumn>=0){
+            iVertex = Integer.parseInt(sList.get(iColumn));
+          }
           if (geoText && coordinateTransform == null) {
             coordinateTransform
                     = new SimpleGeographicTransform(y, x, linearUnits);
@@ -294,6 +300,9 @@ public class VertexReaderText implements Closeable, IVertexReader {
           double x = Double.parseDouble(sList.get(xColumn));
           double y = Double.parseDouble(sList.get(yColumn));
           double z = Double.parseDouble(sList.get(zColumn));
+          if (iColumn >= 0) {
+            iVertex = Integer.parseInt(sList.get(iColumn));
+          }
           if (coordinateTransform != null) {
             boolean status = coordinateTransform.forward(x, y, c);
             if (!status) {
