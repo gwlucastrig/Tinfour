@@ -116,7 +116,7 @@ public class VertexReaderShapefile implements IVertexReader, Closeable {
     }
   }
 
-  
+
   /**
    * Sets the vertical coordinate transform to be used when reading the
    * file (if any).
@@ -126,8 +126,8 @@ public class VertexReaderShapefile implements IVertexReader, Closeable {
   public void setVerticalCoordinateTransform(IVerticalCoordinateTransform verticalTransform){
     this.verticalCoordinateTransform = verticalTransform;
   }
-  
-  
+
+
   /**
    * Gets the minimum x coordinate in the sample
    *
@@ -288,6 +288,9 @@ public class VertexReaderShapefile implements IVertexReader, Closeable {
         if (dbfReader != null && zField != null) {
           dbfReader.readField(recNo, zField);
           z = zField.getDouble();
+          if (verticalCoordinateTransform != null) {
+            z = verticalCoordinateTransform.transform(recNo, z);
+          }
         }
 
         for (int i = 0; i < record.nPoints; i++) {
@@ -296,6 +299,9 @@ public class VertexReaderShapefile implements IVertexReader, Closeable {
           double y = xyz[index + 1];
           if (useShapefileZ) {
             z = xyz[index + 2];
+            if (verticalCoordinateTransform != null) {
+               z = verticalCoordinateTransform.transform(recNo, z);
+            }
           }
 
           if (coordinateTransform != null) {
@@ -307,10 +313,6 @@ public class VertexReaderShapefile implements IVertexReader, Closeable {
             }
             x = scratch.x;
             y = scratch.y;
-          }
-
-          if (verticalCoordinateTransform != null) {
-            z = verticalCoordinateTransform.transform(recNo, z);
           }
 
           vList.add(new Vertex(x, y, z, recNo));
@@ -385,10 +387,12 @@ public class VertexReaderShapefile implements IVertexReader, Closeable {
           // definitely geographic
           geographicCoordinates = true;
         }
-        
+
         int indexUnit=content.indexOf("UNIT");
-        if(indexUnit>0 && (content.indexOf("FOOT")>indexUnit || content.indexOf("FEET")>indexUnit)){
+        if(indexUnit>0){
+          if(content.indexOf("FOOT")>indexUnit || content.indexOf("FEET")>indexUnit){
             linearUnits = LinearUnits.FEET;
+          }
         }
 
       } catch (IOException ioex) {
@@ -434,11 +438,11 @@ public class VertexReaderShapefile implements IVertexReader, Closeable {
     coordinateTransform = transform;
     geographicCoordinates = transform instanceof SimpleGeographicTransform;
   }
-  
-  
+
+
   /**
-   * Gets the linear units for the horizontal coordinate system from 
-   * the Shapefile. This value is typically obtained from the 
+   * Gets the linear units for the horizontal coordinate system from
+   * the Shapefile. This value is typically obtained from the
    * PRJ file associated with the Shapefile.
    * @return a valid enumeration instance
    */
