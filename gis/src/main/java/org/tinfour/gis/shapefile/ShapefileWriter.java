@@ -256,6 +256,7 @@ public class ShapefileWriter implements Closeable {
     shapeIndex.seek(24);
     shapeIndex.writeInt((int) (shapeIndex.getFileSize() / 2L));
     shapeIndex.seek(shapeIndex.getFileSize());
+    shapefile.flush();
 
   }
 

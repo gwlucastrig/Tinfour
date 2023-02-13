@@ -205,24 +205,17 @@ public class ShapefileRecord {
     // polygon.   Note then when we store coordinates, the xyz[] output
     // array is always dimensioned to 3*n (even when we don't store z's).
     int nP = nPoints; // record pre-addition point count
-    setSizes(nPoints + n + 1, nParts + 1);
+    setSizes(nPoints + n, nParts + 1);
     this.partStart[nParts - 1] = nP;
     if (reversalRequired) {
       for (int i = 0; i < n; i++) {
         int iOutput = (i + nP) * 3;
         int iInput = (n - 1 - i) * nCoordinates;
-        xyz[iOutput++] = xyzInput[iInput++];
-        xyz[iOutput++] = xyzInput[iInput++];
+        xyz[iOutput++] = xyzInput[iInput];
+        xyz[iOutput++] = xyzInput[iInput + 1];
         if (shapefileType.hasZ()) {
-          xyz[iOutput] = xyz[iInput];
+          xyz[iOutput] = xyzInput[iInput + 2];
         }
-      }
-      int iOuput = (n + nP) * 3;
-      int iInput = (n - 1) * nCoordinates;
-      xyz[iOuput++] = xyzInput[iInput++];
-      xyz[iOuput++] = xyzInput[iInput++];
-      if (shapefileType.hasZ()) {
-        xyz[iOuput] = xyz[iInput];
       }
     } else {
       for (int i = 0; i < n; i++) {
@@ -233,12 +226,6 @@ public class ShapefileRecord {
         if (shapefileType.hasZ()) {
           xyz[iOutput + 2] = xyz[iInput + 2];
         }
-      }
-      int iOutput = (n + nP) * 3;
-      xyz[iOutput] = xyzInput[0];
-      xyz[iOutput + 1] = xyzInput[1];
-      if (shapefileType.hasZ()) {
-        xyz[iOutput + 2] = xyz[2];
       }
     }
   }
@@ -281,6 +268,16 @@ public class ShapefileRecord {
     int nCoordinates = this.shapefileType.hasZ() ? 3 : 2;
     int n = nPointsInput;
 
+    if (nPoints == 0) {
+      x0 = xyzInput[0];
+      y0 = xyzInput[1];
+      x1 = x0;
+      y1 = y0;
+      if (shapefileType.hasZ()) {
+        z0 = xyzInput[2];
+        z1 = z0;
+      }
+    }
     for (int i = 0; i < n; i++) {
       double px = xyzInput[i * nCoordinates];
       double py = xyzInput[i * nCoordinates + 1];
@@ -296,10 +293,6 @@ public class ShapefileRecord {
       }
     }
     if (shapefileType.hasZ()) {
-      if (nPoints == 0) {
-        z0 = xyzInput[2];
-        z1 = z0;
-      }
       for (int i = 0; i < n; i++) {
         double pz = xyzInput[i * nCoordinates + 2];
         if (pz < z0) {
@@ -310,12 +303,12 @@ public class ShapefileRecord {
       }
     }
 
-    // Transcribe the coordinates to the new polygon
+    // Transcribe the coordinates to the new polyline
     // The setSizes will allocate storage and record the indexing for the
     // polygon.   Note then when we store coordinates, the xyz[] output
     // array is always dimensioned to 3*n (even when we don't store z's).
     int nP = nPoints; // record pre-addition point count
-    setSizes(nPoints + n + 1, nParts + 1);
+    setSizes(nPoints + n, nParts + 1);
     this.partStart[nParts - 1] = nP;
 
     for (int i = 0; i < n; i++) {
@@ -324,15 +317,8 @@ public class ShapefileRecord {
       xyz[iOutput] = xyzInput[iInput];
       xyz[iOutput + 1] = xyzInput[iInput + 1];
       if (shapefileType.hasZ()) {
-        xyz[iOutput + 2] = xyz[iInput + 2];
+        xyz[iOutput + 2] = xyzInput[iInput + 2];
       }
-    }
-    int iOutput = (n + nP) * 3;
-    int iInput = nP * nCoordinates;
-    xyz[iOutput] = xyzInput[iInput];
-    xyz[iOutput + 1] = xyzInput[iInput + 1];
-    if (shapefileType.hasZ()) {
-      xyz[iOutput + 2] = xyz[iInput + 2];
     }
   }
 
@@ -347,10 +333,11 @@ public class ShapefileRecord {
 
   /**
    * Gets an array of coordinate points corresponding to the specified part
-   * index.  If the shapefile type has Z coordinates, this array
+   * index. If the shapefile type has Z coordinates, this array
    * is of dimension n*3 where n is the number of points in the part.
    * If the shapefile type does not have Z coordinates, this array
    * is of dimension n*2.
+   *
    * @param iPart the part index
    * @return if successful, a valid array of doubles
    */
