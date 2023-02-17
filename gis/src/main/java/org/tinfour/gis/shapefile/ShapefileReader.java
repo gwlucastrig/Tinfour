@@ -1,5 +1,5 @@
 /* --------------------------------------------------------------------
- * Copyright 2016 Gary W. Lucas.
+ * Copyright 2017 Gary W. Lucas.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -110,7 +110,14 @@ public class ShapefileReader implements Closeable {
 
   }
 
-  private void readShxFile() throws IOException {
+  /**
+   * Reads the content of the .shx "sidecar" file.  Normally, this
+   * method is called internally and does not need to be accessed by
+   * application code. It is provided with public scope as an aid
+   * to testing and debugging.
+   * @throws IOException in the event of a unrecoverable I/O exception.
+   */
+  public void readShxFile() throws IOException {
     if (recordIndex != null) {
       return; // already read.
     }

@@ -229,35 +229,35 @@ public class ShapefileWriter implements Closeable {
    * @throws IOException in the event of an unrecoverable I/O error
    */
   public void flush() throws IOException {
-    shapefile.flush();
-    int fileLength = (int) (shapefile.getFileSize() / 2L);
-    shapefile.seek(24);
-    shapefile.writeInt(fileLength);
+    flushShapeOrIndexFile(shapefile);
+    flushShapeOrIndexFile(shapeIndex);
+  }
+
+  private void flushShapeOrIndexFile(BufferedRandomAccessFile braf) throws IOException {
+    braf.flush();
+    int fileLength = (int) (braf.getFileSize() / 2L);
+    braf.seek(24);
+    braf.writeInt(fileLength);
 
     if (nRecords > 0) {
-      shapefile.seek(36);
-      shapefile.leWriteDouble(xMin); // Xmin, will be overwritten
-      shapefile.leWriteDouble(yMin); // Ymin, will be overwritten
-      shapefile.leWriteDouble(xMax); // Xmax, will be overwritten
-      shapefile.leWriteDouble(yMax); // Ymax, will be overwritten
+      braf.seek(36);
+      braf.leWriteDouble(xMin); // Xmin, will be overwritten
+      braf.leWriteDouble(yMin); // Ymin, will be overwritten
+      braf.leWriteDouble(xMax); // Xmax, will be overwritten
+      braf.leWriteDouble(yMax); // Ymax, will be overwritten
       if (spec.shapefileType.is3D()) {
-        shapefile.leWriteDouble(zMin); // Zmin, may be overwritten
-        shapefile.leWriteDouble(zMax); // Zmax, may be overwritten
+        braf.leWriteDouble(zMin); // Zmin, may be overwritten
+        braf.leWriteDouble(zMax); // Zmax, may be overwritten
       } else {
-        shapefile.seek(84);
+        braf.seek(84);
       }
       if (spec.shapefileType.hasM()) {
-        shapefile.leWriteDouble(mMin); // Mmin, may be overwritten
-        shapefile.leWriteDouble(mMax); // Mmax, will may overwritten
+        braf.leWriteDouble(mMin); // Mmin, may be overwritten
+        braf.leWriteDouble(mMax); // Mmax, will may overwritten
       }
     }
-    shapefile.seek(shapefile.getFileSize());
-
-    shapeIndex.seek(24);
-    shapeIndex.writeInt((int) (shapeIndex.getFileSize() / 2L));
-    shapeIndex.seek(shapeIndex.getFileSize());
-    shapefile.flush();
-
+    braf.seek(braf.getFileSize());
+    braf.flush();
   }
 
   @Override

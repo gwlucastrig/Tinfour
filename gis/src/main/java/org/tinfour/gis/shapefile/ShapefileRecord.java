@@ -1,5 +1,5 @@
 /* --------------------------------------------------------------------
- * Copyright 2016 Gary W. Lucas.
+ * Copyright 2017 Gary W. Lucas.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,6 +22,7 @@
  * Date     Name         Description
  * ------   ---------    -------------------------------------------------
  * 01/2017  G. Lucas     Created
+ * 05/2021  G. Lucas     Expanded to support writing operations
  *
  * Notes:
  *

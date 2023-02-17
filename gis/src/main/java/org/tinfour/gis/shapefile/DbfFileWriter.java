@@ -173,6 +173,7 @@ public class DbfFileWriter implements Closeable {
       long fileSize = braf.getFileSize();
       braf.seek(fileSize);
       braf.write(0x1A); // end-of-file marker
+      braf.flush();
       braf.close();
     }
   }
