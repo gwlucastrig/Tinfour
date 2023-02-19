@@ -828,6 +828,11 @@ public class ContourBuilderForTin {
         A = p.getA();
         contour.add(A.getX(), A.getY());
       }
+      // The perimeter contour will be incomplete because the loop above
+      // only added the first point of the last edge of the permeter.
+      // so add a closure point.
+      A = perimeter.get(0).getA();
+      contour.add(A);
       contour.complete();
       this.perimeterContourList.add(contour);
       ContourRegion region = new ContourRegion(contour);

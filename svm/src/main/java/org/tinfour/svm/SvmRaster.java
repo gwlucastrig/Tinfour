@@ -215,7 +215,7 @@ class SvmRaster {
     ps.println("");
     ps.println("Processing raster data");
 
-    boolean status = writeAuxiliaryFile(
+    boolean status = writeAuxiliaryFiles(
       ps, data, gridFile, "SvmRasterTemplate.aux.xml");
     if (!status) {
       return;
@@ -274,7 +274,6 @@ class SvmRaster {
         + headerFile + ": " + ioex.getMessage());
       return;
     }
-
 
     double zMin = Double.POSITIVE_INFINITY;
     double zMax = Double.NEGATIVE_INFINITY;
@@ -405,11 +404,12 @@ class SvmRaster {
       imageFile.delete();
     }
 
-    status = writeAuxiliaryFile(
-      ps, data, imageFile, "SvmRasterImageTemplate.aux.xml");
+    status = writeAuxiliaryFiles(
+      ps, data, imageFile, "SvmRasterTemplate.aux.xml");
     if (!status) {
       return;
     }
+
     try (
       FileOutputStream worldOutputStream = new FileOutputStream(worldFile);
       BufferedOutputStream bos = new BufferedOutputStream(worldOutputStream);
@@ -496,7 +496,11 @@ class SvmRaster {
     return false;
   }
 
-  boolean writeAuxiliaryFile(PrintStream ps, SvmBathymetryData data, File file, String target) {
+  private boolean writeAuxiliaryFiles(
+    PrintStream ps,
+    SvmBathymetryData data,
+    File file,
+    String target) {
     StringBuilder template = new StringBuilder();
     try (
       InputStream ins
@@ -528,15 +532,33 @@ class SvmRaster {
     try (
       FileOutputStream fos = new FileOutputStream(output);
       BufferedOutputStream bos = new BufferedOutputStream(fos);) {
-      for (int i = 0; i < tempStr.length(); i++) {
-        char c = tempStr.charAt(i);
-        bos.write(c);
-      }
+      byte[] b = template.toString().getBytes(StandardCharsets.ISO_8859_1);
+      bos.write(b);
       bos.flush();
     } catch (IOException ioex) {
-      ps.println("Serious error: unable to read template " + template + ": " + ioex.getMessage());
+      ps.println("Serious error: unable to write auxiliary file "
+        + output.getPath() + ": " + ioex.getMessage());
       return false;
     }
+
+    name = file.getName() + ".prj";
+    output = new File(parent, name);
+    if (output.exists()) {
+      output.delete();
+    }
+    try (
+      FileOutputStream fos = new FileOutputStream(output);
+      BufferedOutputStream bos = new BufferedOutputStream(fos);) {
+      String prjString = data.getShapefilePrjContent();
+      byte[] b = prjString.getBytes(StandardCharsets.ISO_8859_1);
+      bos.write(b);
+      bos.flush();
+    } catch (IOException ioex) {
+      ps.println("Serious error: unable to write .prj file: "
+        + output.getPath() + ": " + ioex.getMessage());
+      return false;
+    }
+
     return true;
   }
 }

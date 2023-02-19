@@ -308,16 +308,16 @@ class SvmContourGraph {
     zBandMax[zContour.length] = shoreReferenceElevation;
 
     double simplificationFactor;
-    if(contourInterval>0){
+    if (contourInterval > 0) {
       // the properties specified a contour interval
-      double s = contourInterval/8;
-      simplificationFactor = s*s;
-    }else if (zContour.length>2){
+      double s = contourInterval / 8;
+      simplificationFactor = s * s;
+    } else if (zContour.length > 2) {
       // the properties did not specify a contour interval,
       // so the interval was derived using the axis-interval logic.
-      double s = (zContour[1]-zContour[0])/8;
-      simplificationFactor = s*s;
-    }else{
+      double s = (zContour[1] - zContour[0]) / 8;
+      simplificationFactor = s * s;
+    } else {
       simplificationFactor = 0.5;
     }
 
@@ -381,9 +381,9 @@ class SvmContourGraph {
       g2d.draw(path);
     }
 
-    // Next, draw the contours in semi-transparent gray
-    g2d.setColor(Color.black); // new Color(128, 128, 128, 128));
-
+    // Next, draw the contours
+    g2d.setColor(Color.darkGray);
+    g2d.setStroke(new BasicStroke(1.0f, BasicStroke.CAP_BUTT, BasicStroke.JOIN_BEVEL));
     List<Contour> contours = builder.getContours();
     for (Contour c : contours) {
       if (c.getContourType() == Contour.ContourType.Interior) {
@@ -392,7 +392,7 @@ class SvmContourGraph {
       }
     }
 
-    // Draw the land-areas in gray
+    // Draw the land-areas
     g2d.setStroke(new BasicStroke(1.0f, BasicStroke.CAP_BUTT, BasicStroke.JOIN_BEVEL));
     g2d.setColor(Color.white);
     for (PolygonConstraint p : boundaryConstraints) {
@@ -404,8 +404,10 @@ class SvmContourGraph {
 
     //Draw the shoreline.  Do this last so that it
     // is on top of all other water features and gives a strong finish
-    // to the rendering.
+    // to the rendering.  Also, in most surveys, the coastline data is much
+    // denser than the other points.  So we use a thinner stroke.
     g2d.setColor(Color.black);
+    g2d.setStroke(new BasicStroke(0.5f, BasicStroke.CAP_BUTT, BasicStroke.JOIN_BEVEL));
     for (IConstraint con : boundaryConstraints) {
       if (con instanceof PolygonConstraint) {
         PolygonConstraint p = (PolygonConstraint) con;
@@ -414,6 +416,8 @@ class SvmContourGraph {
       }
     }
 
+//    This logic draws the TIN.  Uncomment it out
+//    for troubleshooting or other purposes.
 //    g2d.setStroke(new BasicStroke(1.0f));
 //    g2d.setColor(Color.gray);
 //    for(IQuadEdge edge: tin.edges()){
@@ -640,6 +644,7 @@ class SvmContourGraph {
             double dy = xy[i * 2 + 1] - xy[i * 2 - 1];
             dSum += Math.sqrt(dx * dx + dy * dy);
           }
+
           contourWriter.setDbfFieldValue("feature_id", nContour);
           contourWriter.setDbfFieldValue("cntr_idx", cIndex);
           contourWriter.setDbfFieldValue("depth", shoreReferenceElevation - z);

@@ -138,8 +138,15 @@ public class Contour {
     Vertex A = e.getA();
     Vertex B = e.getB();
     double zDelta = zB - zA;
-    xy[n++] = ((z - zA) * B.getX() + (zB - z) * A.getX()) / zDelta;
-    xy[n++] = ((z - zA) * B.getY() + (zB - z) * A.getY()) / zDelta;
+    double x = ((z - zA) * B.getX() + (zB - z) * A.getX()) / zDelta;
+    double y = ((z - zA) * B.getY() + (zB - z) * A.getY()) / zDelta;
+    if (n > 1) {
+      if (xy[n - 2] == x && xy[n - 1] == y) {
+        return;
+      }
+    }
+    xy[n++] = x;
+    xy[n++] = y;
   }
 
   /**
@@ -155,9 +162,15 @@ public class Contour {
     if (n == xy.length) {
       xy = Arrays.copyOf(xy, xy.length + GROWTH_FACTOR);
     }
-
-    xy[n++] = v.getX();
-    xy[n++] = v.getY();
+    double x = v.getX();
+    double y = v.getY();
+    if(n>1){
+      if(xy[n-2] == x && xy[n-1] == y){
+        return;
+      }
+    }
+    xy[n++] = x;
+    xy[n++] = y;
   }
 
   /**
@@ -169,6 +182,11 @@ public class Contour {
   public void add(double x, double y) {
     if (n == xy.length) {
       xy = Arrays.copyOf(xy, xy.length + GROWTH_FACTOR);
+    }
+    if(n>1){
+      if(xy[n-2] == x && xy[n-1] == y){
+        return;
+      }
     }
     xy[n++] = x;
     xy[n++] = y;
@@ -234,19 +252,38 @@ public class Contour {
    * call.
    */
   public void complete() {
-    if (closedLoop && n >= 6) {
+    if (closedLoop && n > 6) {
       double x0 = xy[0];
       double y0 = xy[1];
       double x1 = xy[n - 2];
       double y1 = xy[n - 1];
       if (x0 != x1 || y0 != y1) {
-        add(x0, y0);
+        if (numericallySame(x0, x1) && numericallySame(y0, y1)) {
+          xy[n - 2] = x0;
+          xy[n - 1] = y0;
+        } else {
+          add(x0, y0);
+        }
       }
     }
     if (xy.length > n) {
       xy = Arrays.copyOf(xy, n);
     }
   }
+
+  private boolean numericallySame(double a, double b) {
+    if (Double.isNaN(a) || Double.isNaN(b)) {
+      return false;
+    } else if (a == b) {
+      // this will take care of case where both are zero
+      return true;
+    } else {
+      double threshold = Math.ulp(((Math.abs(a) + Math.abs(b))) / 2.0) * 16;
+      double absDelta = Math.abs(a - b);
+      return absDelta <= threshold;
+    }
+  }
+
 
   /**
    * Gets the serialized identification code for the contour.

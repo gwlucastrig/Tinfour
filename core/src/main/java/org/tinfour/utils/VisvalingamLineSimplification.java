@@ -72,18 +72,32 @@ public class VisvalingamLineSimplification {
       return nPoints;
     }
 
+    int  n = nPoints;
+    // remove duplicates
+     int k = 2;
+    for(int i=2; i<n*2; i+=2){
+      if(xy[i]!=xy[k-2] || xy[i+1]!=xy[k-1]){
+        if(k<i){
+          xy[k] = xy[i];
+          xy[k+1] = xy[i+1];
+        }
+        k+=2;
+      }
+    }
+     n = k/2;
+
+
     // To investigate: It may be possible to expedite this processing
     // by using a priority queue.  The Java PriorityQueue class is
     // promising in this regard.
 
-    int n = nPoints;
     boolean closedLoop = xy[0]==xy[n*2-2] && xy[1] == xy[n*2-1] ;
     int nMin = closedLoop? 4 : 2;
     if(n==nMin){
       return nPoints;
     }
 
-        nOperations++;
+    nOperations++;
     nProcessed+=nPoints;
 
     double[] a = new double[n];
@@ -142,7 +156,19 @@ public class VisvalingamLineSimplification {
       }
     }
 
-       nRemoved+=(nPoints-n);
+    k = 2;
+    for(int i=2; i<n*2; i+=2){
+      if(xy[i]!=xy[k-2] || xy[i+1]!=xy[k-1]){
+        if(k<i){
+          xy[k] = xy[i];
+          xy[k+1] = xy[i+1];
+        }
+        k+=2;
+      }
+    }
+    n = k/2;
+
+    nRemoved+=(nPoints-n);
     return n;
   }
 

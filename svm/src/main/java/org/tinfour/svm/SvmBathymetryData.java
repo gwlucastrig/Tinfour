@@ -82,7 +82,7 @@ public class SvmBathymetryData {
   private final List<PolygonConstraint> boundaryConstraints = new ArrayList<>();
   private final List<PolygonConstraint> lakeConstraints = new ArrayList<>();
   private final List<PolygonConstraint> islandConstraints = new ArrayList<>();
-  
+
   private List<Vertex>surveyPerimeter;
 
   double shoreReferenceElevation;

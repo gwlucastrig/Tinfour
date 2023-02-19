@@ -88,7 +88,6 @@ public class SvmProperties {
   private SvmUnitSpecification unitOfArea;
   private SvmUnitSpecification unitOfVolume;
 
-
   /**
    * Standard constructor
    */
@@ -272,8 +271,12 @@ public class SvmProperties {
     return new SvmUnitSpecification(name, label, scaleFactor);
   }
 
-  private File extractFile(String folderKey, String property) {
-    if (property == null || property.isEmpty()) {
+  private File extractFile(String folderKey, String fileProperty) {
+    if (fileProperty == null) {
+      return null;
+    }
+    String property = fileProperty.trim();
+    if (property.isEmpty()) {
       return null;
     }
     File f = new File(property);
@@ -284,21 +287,25 @@ public class SvmProperties {
     return f;
   }
 
-    private File extractOutputFile(String folderKey, String property) {
-    if (property == null || property.isEmpty()) {
+  private File extractOutputFile(String folderKey, String fileProperty) {
+    if (fileProperty == null) {
+      return null;
+    }
+    String property = fileProperty.trim();
+    if (property.isEmpty()) {
       return null;
     }
     File f = new File(property);
     File folder = getFolderForKey(folderKey);
     if (folder != null && !f.isAbsolute()) {
-      f =  new File(folder, property);
+      f = new File(folder, property);
     }
     File parent = f.getParentFile();
-    if(parent!=null && !parent.exists()){
+    if (parent != null && !parent.exists()) {
       boolean status = parent.mkdirs();
-      if(!status){
+      if (!status) {
         throw new IllegalArgumentException(
-          "Unable to create file for property "+property+"="+f.getPath());
+          "Unable to create file for property " + property + "=" + f.getPath());
       }
     }
     return f;
@@ -520,10 +527,10 @@ public class SvmProperties {
     }
 
     SvmBathymetryModel model = this.getBathymetryModel();
-    if(model==null){
+    if (model == null) {
       ps.format("Bathymetry model is not specified, no processing is possible");
-    }else{
-      ps.format("%nBathymetry model: %s%n%n",model.name());
+    } else {
+      ps.format("%nBathymetry model: %s%n%n", model.name());
     }
     File f = getInputFolder();
     ps.format("Input folder:   %s%n", f == null ? "Not specified" : f.getPath());
@@ -657,30 +664,26 @@ public class SvmProperties {
     return extractOutputFile(outputFolderKey, properties.getProperty(gridImageFileName));
   }
 
-
-
-
-  public File getSupplementalConstraintsFile(){
-     return extractFile(inputFolderKey, properties.getProperty(supplementalConstraintsFileKey));
+  public File getSupplementalConstraintsFile() {
+    return extractFile(inputFolderKey, properties.getProperty(supplementalConstraintsFileKey));
   }
 
-
   /**
-   * Get the path to a file for writing an output file  to be used for
-   * processing raster grid.  The properties file is treated as containing
-   * the root name.  An extension is added as appropriate.
+   * Get the path to a file for writing an output file to be used for
+   * processing raster grid. The properties file is treated as containing
+   * the root name. An extension is added as appropriate.
+   *
    * @param extension the file extension (including the period).
    * @return a valid File instance or a null if not specified.
    */
   public File getGridFile(String extension) {
     String rootName = properties.getProperty(gridFileName);
-    if(rootName==null){
+    if (rootName == null) {
       return null;
     }
-    String targetName = rootName+extension;
-    return extractOutputFile(outputFolderKey,  targetName);
+    String targetName = rootName + extension;
+    return extractOutputFile(outputFolderKey, targetName);
   }
-
 
   /**
    * Get the path to a file for writing a graph of the capacity as a function of
@@ -846,7 +849,6 @@ public class SvmProperties {
     throw new IllegalArgumentException(
       "Incomplete specification for dimension: " + key + "=" + s);
   }
-
 
   /**
    * Get the path to a file for writing a table reporting anomalies.

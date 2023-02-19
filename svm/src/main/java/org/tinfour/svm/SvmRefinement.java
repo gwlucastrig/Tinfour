@@ -153,7 +153,7 @@ class SvmRefinement {
         Object appData = constraint.getApplicationData();
         if (appData instanceof Boolean && (Boolean) appData) {
           double a = trig.getArea();
-          if (a < areaThreshold) {
+          if (a <= areaThreshold) {
             continue;
           }
           partitionTriangle(vertices,
@@ -164,7 +164,8 @@ class SvmRefinement {
           kPartitions++;
           if (kPartitions % partitionsPerLogEntry == 0) {
             double percentDone = kPartitions * 100.0 / nPartitions;
-            System.out.format("Subdivided %8d triangles, %3.0f %% done%n", kPartitions, percentDone);
+            System.out.format("Subdivided %8d triangles, %3.0f %% done%n",
+              kPartitions, percentDone);
           }
 
         }

@@ -36,6 +36,7 @@ import java.awt.Font;
 import java.awt.Graphics2D;
 import java.awt.RenderingHints;
 import java.awt.font.FontRenderContext;
+import java.awt.font.TextAttribute;
 import java.awt.font.TextLayout;
 import java.awt.geom.AffineTransform;
 import java.awt.geom.Line2D;
@@ -45,6 +46,7 @@ import java.awt.geom.Rectangle2D;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
+import java.text.AttributedString;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
@@ -72,7 +74,7 @@ class SvmCapacityGraph {
 
   private static final int defaultImageHeightInPixels = 400;
   private static final double defaultImageHeightInPoints
-          = defaultImageHeightInPixels * 72.0 / 96.0; // assuming 96 DPI
+    = defaultImageHeightInPixels * 72.0 / 96.0; // assuming 96 DPI
   private static final double defaultFontSizeTitle = 14;
   private static final double defaultFontSizeAxis = 12;
 
@@ -101,8 +103,8 @@ class SvmCapacityGraph {
    * shore reference elevation
    */
   SvmCapacityGraph(SvmProperties properties,
-          List<AreaVolumeResult> sourceResultList,
-          double totalVolume) {
+    List<AreaVolumeResult> sourceResultList,
+    double totalVolume) {
     List<AreaVolumeResult> resultList = new ArrayList<>();
     resultList.addAll(sourceResultList);
     Collections.sort(resultList, new Comparator<AreaVolumeResult>() {
@@ -131,6 +133,9 @@ class SvmCapacityGraph {
     unitOfLength = properties.getUnitOfDistance();
   }
 
+  static final Color lineColor = Color.gray;
+  static final Color labColor = Color.black;
+
   /**
    * Write the output to the file specified in the properties.
    *
@@ -148,30 +153,34 @@ class SvmCapacityGraph {
     int width = dimension.width;
     int height = dimension.height;
     BufferedImage bImage
-            = new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB);
+      = new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB);
     Graphics2D g2d = bImage.createGraphics();
     g2d.setRenderingHint(
-            RenderingHints.KEY_ANTIALIASING,
-            RenderingHints.VALUE_ANTIALIAS_ON);
+      RenderingHints.KEY_ANTIALIASING,
+      RenderingHints.VALUE_ANTIALIAS_ON);
     g2d.setRenderingHint(
-            RenderingHints.KEY_TEXT_ANTIALIASING,
-            RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
+      RenderingHints.KEY_TEXT_ANTIALIASING,
+      RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
+     g2d.setRenderingHint(
+      RenderingHints.KEY_FRACTIONALMETRICS,
+      RenderingHints.VALUE_FRACTIONALMETRICS_ON);
     g2d.setRenderingHint(
-            RenderingHints.KEY_RENDERING,
-            RenderingHints.VALUE_RENDER_QUALITY);
+      RenderingHints.KEY_RENDERING,
+      RenderingHints.VALUE_RENDER_QUALITY);
 
     g2d.setColor(Color.white);
     g2d.fillRect(0, 0, width, height);
-    g2d.setColor(Color.gray);
+    g2d.setColor(lineColor);
     g2d.drawRect(0, 0, width - 1, height - 1);
 
     double wInPixels = dimension.getWidth();
     double hInPixels = dimension.getHeight();
-    double titleFontSize = computeFontSize(defaultFontSizeTitle, hInPixels);
-    double axisFontSize = computeFontSize(defaultFontSizeAxis, hInPixels);
+    double mInPixels = Math.min(wInPixels, hInPixels); // the limiting factor
+    double titleFontSize = computeFontSize(defaultFontSizeTitle, mInPixels);
+    double axisFontSize = computeFontSize(defaultFontSizeAxis, mInPixels);
 
-    Font titleFont = new Font("Arial", Font.BOLD, (int) titleFontSize);
-    Font axisFont = new Font("Arial", Font.BOLD, (int) axisFontSize);
+    Font titleFont = new Font("SansSerif", Font.BOLD, (int) titleFontSize);
+    Font axisFont = new Font("SansSerif", Font.BOLD, (int) axisFontSize);
     FontRenderContext frc = new FontRenderContext(null, true, true);
     TextLayout testLayout = new TextLayout("00000", axisFont, frc);
     Rectangle2D fontR2D = testLayout.getBounds();
@@ -198,7 +207,14 @@ class SvmCapacityGraph {
     TextLayout titleLayout = null;
     Rectangle2D titleR2D = null;
     if (title != null) {
-      titleLayout = new TextLayout(title, titleFont, frc);
+      // Here we use an attributed string in an attempt to improve the
+      // character spacing by turning on kerning.  For smaller fonts, this
+      // doesn't seem to help much.  Further investigation is required.
+      AttributedString aTitle = new AttributedString(title);
+      aTitle.addAttribute(TextAttribute.FONT, titleFont);
+      aTitle.addAttribute(TextAttribute.KERNING, TextAttribute.KERNING_ON);
+      titleLayout = new TextLayout(aTitle.getIterator(), frc);
+      //titleLayout = new TextLayout(title, titleFont, frc);
       titleR2D = titleLayout.getBounds();
       gTop = (int) (-3 * titleR2D.getY());
       gdy = gBottom - gTop;
@@ -208,11 +224,11 @@ class SvmCapacityGraph {
     // allowing a little headroom above 100 percent
     double cHead = 110.0;
     AxisIntervals cIntervals = AxisIntervals.computeIntervals(0.0,
-            cHead,
-            yFontAllowance,
-            yFontAllowance / 2,
-            (int) gdy,
-            true);
+      cHead,
+      yFontAllowance,
+      yFontAllowance / 2,
+      (int) gdy,
+      true);
     double cUnitsPerPixel = cIntervals.getUnitsPerPixel();
     double[] cCoords = cIntervals.getLabelCoordinates();
     String[] cLabels = cIntervals.getLabels();
@@ -230,22 +246,22 @@ class SvmCapacityGraph {
     double vWithScale = totalVolume / volumeUnitsAdjustment;
     double vUnitsPerPixel = vWithScale / cDeltaPix100;
     AxisIntervals vIntervals = AxisIntervals.computeIntervals(
-            0,
-            vWithScale * (cHead / 100.0),
-            yFontAllowance,
-            yFontAllowance / 2,
-            (int) gdy,
-            false);
+      0,
+      vWithScale * (cHead / 100.0),
+      yFontAllowance,
+      yFontAllowance / 2,
+      (int) gdy,
+      false);
     double[] vCoords = vIntervals.getLabelCoordinates();
     String[] vLabels = vIntervals.getLabels();
 
     AxisIntervals xIntervals = AxisIntervals.computeIntervals(
-            minLevel,
-            maxLevel,
-            xFontAllowance,
-            xFontAllowance / 2,
-            (int) (gdx - axisFontHeight * 2),
-            true);
+      minLevel,
+      maxLevel,
+      xFontAllowance,
+      xFontAllowance / 2,
+      (int) (gdx - axisFontHeight * 2),
+      true);
     double xUnitsPerPixel = xIntervals.getUnitsPerPixel();
     double[] xCoords = xIntervals.getLabelCoordinates();
     String[] xLabels = xIntervals.getLabels();
@@ -272,12 +288,14 @@ class SvmCapacityGraph {
     double y0 = gTop;
     double y1 = gTop + cDeltaPix;
 
-    g2d.setColor(Color.gray);
+    g2d.setColor(lineColor);
     g2d.setStroke(new BasicStroke(1.0f));
     if (titleLayout != null) {
       xLabel = (x0 + x1) / 2.0 - titleR2D.getCenterX();
       yLabel = -titleR2D.getY() + titleR2D.getHeight();
+      g2d.setColor(labColor);
       titleLayout.draw(g2d, (float) xLabel, (float) yLabel);
+      g2d.setColor(lineColor);
     }
 
     Rectangle2D graphRect = new Rectangle2D.Double(x0, y0, xDeltaPix, cDeltaPix);
@@ -287,13 +305,15 @@ class SvmCapacityGraph {
     double xLabelMin = Double.POSITIVE_INFINITY;
     for (int i = 0; i < cCoords.length; i++) {
       double y = y1 - cCoords[i] / cUnitsPerPixel;
-      l2d.setLine(x0, y, x1, y);
+      l2d.setLine(x0 - 5, y, x0, y);
       g2d.draw(l2d);
       TextLayout tLayout = new TextLayout(cLabels[i], axisFont, frc);
       Rectangle2D r2d = tLayout.getBounds();
       yLabel = y - r2d.getCenterY();
       xLabel = x0 - r2d.getMaxX() - 10;
+      g2d.setColor(labColor);
       tLayout.draw(g2d, (float) xLabel, (float) yLabel);
+      g2d.setColor(lineColor);
       yBoxTop = y;
       if (xLabel < xLabelMin) {
         xLabelMin = xLabel;
@@ -305,7 +325,9 @@ class SvmCapacityGraph {
     Rectangle2D cr2d = cLayout.getBounds();
     xLabel = xLabelMin + cr2d.getWidth() - axisFontHeight * 2;
     yLabel = (y0 + y1) / 2 - cr2d.getCenterY();
+    g2d.setColor(labColor);
     cLayout.draw(g2d, (float) xLabel, (float) yLabel);
+    g2d.setColor(lineColor);
 
     double vMaxTextX = 0;
     for (int i = 0; i < vCoords.length; i++) {
@@ -322,13 +344,15 @@ class SvmCapacityGraph {
       if (y < yBoxTop) {
         break;
       }
-      l2d.setLine(x1, y, x1 + 5, y);
+      l2d.setLine(x0, y, x1 + 5, y);
       g2d.draw(l2d);
       TextLayout tLayout = new TextLayout(vLabels[i], axisFont, frc);
       Rectangle2D r2d = tLayout.getBounds();
       yLabel = y - r2d.getCenterY();
       xLabel = x1 + 10 + vMaxTextX - r2d.getWidth();
+      g2d.setColor(labColor);
       tLayout.draw(g2d, (float) xLabel, (float) yLabel);
+      g2d.setColor(lineColor);
     }
 
     String vLabel = "Computed Volume (" + this.unitOfVolume.getLabel() + ")";
@@ -336,17 +360,20 @@ class SvmCapacityGraph {
     Rectangle2D vr2d = vLayout.getBounds();
     xLabel = x1 + 10 + vMaxTextX - vr2d.getX() + axisFontHeight * 2;
     yLabel = (y0 + y1) / 2 - vr2d.getCenterY();
+    g2d.setColor(labColor);
     vLayout.draw(g2d, (float) xLabel, (float) yLabel);
-
+    g2d.setColor(lineColor);
     yLabel = y1 + axisFontHeight * 2;
     for (int i = 0; i < xCoords.length; i++) {
       double x = x0 + (xCoords[i] - xCoords[0]) / xUnitsPerPixel;
-      l2d = new Line2D.Double(x, y0, x, y1);
+      l2d = new Line2D.Double(x, y0, x, y1+5);
       g2d.draw(l2d);
       TextLayout tLayout = new TextLayout(xLabels[i], axisFont, frc);
       Rectangle2D r2d = tLayout.getBounds();
       xLabel = x - r2d.getCenterX();
+      g2d.setColor(labColor);
       tLayout.draw(g2d, (float) xLabel, (float) yLabel);
+      g2d.setColor(lineColor);
     }
 
     String aLabel = "Water Surface Elevation (" + unitOfLength.getLabel() + ")";
@@ -354,7 +381,9 @@ class SvmCapacityGraph {
     Rectangle2D ar2d = aLayout.getBounds();
     xLabel = (x0 + x1) / 2 - ar2d.getCenterX();
     yLabel = y1 + axisFontHeight * 4 - ar2d.getX();
+    g2d.setColor(labColor);
     aLayout.draw(g2d, (float) xLabel, (float) yLabel);
+    g2d.setColor(lineColor);
 
     g2d.setClip(graphRect);
     float lineWeight = 2.0f;
@@ -363,9 +392,9 @@ class SvmCapacityGraph {
     }
     g2d.setColor(Color.BLUE);
     g2d.setStroke(new BasicStroke(
-            lineWeight,
-            BasicStroke.CAP_BUTT,
-            BasicStroke.JOIN_ROUND));
+      lineWeight,
+      BasicStroke.CAP_BUTT,
+      BasicStroke.JOIN_ROUND));
 
     Path2D path = new Path2D.Double();
     boolean moveFlag = true;
@@ -398,7 +427,6 @@ class SvmCapacityGraph {
 
     return false;
   }
-
 
   private List<Point2D> extrapolate() {
 

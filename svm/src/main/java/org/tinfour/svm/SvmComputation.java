@@ -579,9 +579,11 @@ public class SvmComputation {
 
     File contourOutput = properties.getContourGraphFile();
     if (contourOutput != null) {
+      System.out.println("\nIn preparation for contouring, subdividing large triangles");
       ps.println("\nIn preparation for contouring, subdividing large triangles");
       SvmRefinement refinement = new SvmRefinement();
       List<Vertex> vList = refinement.subdivideLargeTriangles(ps, tin, 0.95);
+      System.out.println("\nCompleted subdividing large triangles");
       if (!vList.isEmpty()) {
         tin.dispose();
         soundings.addAll(vList);
