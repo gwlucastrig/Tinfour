@@ -242,6 +242,13 @@ public class ShapefileReader implements Closeable {
     int recLen = raf.readIntBigEndian();
     record.recordNumber = recNo;
     record.offset = offset0;
+    if(recLen==2){
+        // this would be a deleted or empty record.
+        // the content is meaningless, but should have been zeroed out.
+        raf.seek(offset0 + 8 + recLen * 2);
+        record.setSizes(0,0);
+        return record;
+    }
     int stc = raf.readInt();
     if (stc != shapefileType.getTypeCode()) {
       throw new IOException(
