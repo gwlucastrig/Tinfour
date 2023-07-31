@@ -157,15 +157,22 @@ public class DbfField {
         }
       }
     } else {
-      int lastNonBlank = 0;
-      for (int i = 0; i < getFieldLength(); i++) {
-        char c = (char) brad.readUnsignedByte();
-        if (!Character.isWhitespace(c)) {
-          lastNonBlank = i + 1;
+      byte[] b = new byte[fieldLength];
+      for (int i = 0; i < fieldLength; i++) {
+        b[i] = (byte) brad.readByte();
+      }
+      String s = new String(b, StandardCharsets.UTF_8);
+      int lastNonBlank = -1;
+      for (int i = 0; i < s.length(); i++) {
+        char c = s.charAt(i);
+        if (c == 0) {
+          break;
+        } else if (!Character.isWhitespace(c)) {
+          lastNonBlank = i;
         }
         builder.append((char) c);
       }
-      builder.setLength(lastNonBlank);
+      builder.setLength(lastNonBlank + 1);
     }
   }
 
