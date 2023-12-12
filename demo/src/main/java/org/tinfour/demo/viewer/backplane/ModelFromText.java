@@ -43,21 +43,21 @@ import org.tinfour.utils.loaders.VertexReaderText;
  */
 public class ModelFromText extends ModelAdapter implements IModel {
   final char delimiter;
-  
+
   /**
    * Construct a model tied to the specified file.
    * <p>
    * <strong>Delimiters</strong>
    * Specifications in text files depend on the presence of a delimiter
    * character to separate data fields given on a single line.
-   * Typically delimiters are specified using a space, tab, comma, 
-   * or pipe (vertical bar character). Files with the extension 
+   * Typically delimiters are specified using a space, tab, comma,
+   * or pipe (vertical bar character). Files with the extension
    * ".csv" (for comma-separated-value) are assumed to be comma-delimited.
    * Otherwise, the constructor will attempt to inspect the content
    * of the specified file and determine the delimiter based on internal
    * clues.  If a file includes a mix of potential delimiters,
    * such as both spaces and commas, the delimiter will be determined
-   * on the basis of precedence (in increasing order, space, tab, 
+   * on the basis of precedence (in increasing order, space, tab,
    * comma, and pipe).
    * <p>An application may also override the automatically determined
    * delimiter through the setDelimiter() method.
@@ -83,8 +83,8 @@ public class ModelFromText extends ModelAdapter implements IModel {
    */
   public ModelFromText(File file) {
     super(file);
-    
-    // TO DO:  Right now, this constructur does not throw an IOException,
+
+    // TO DO:  Right now, this constructor does not throw an IOException,
     // but it should.
     char test = 0;
     try (VertexReaderText reader = new VertexReaderText(file)) {
@@ -108,17 +108,17 @@ public class ModelFromText extends ModelAdapter implements IModel {
   @Override
   public void load(IMonitorWithCancellation monitor) throws IOException {
 
- 
+
     if (areVerticesLoaded) {
       System.out.println("Internal error, multiple calls to load model");
       return;
     }
    VertexReaderText reader  = new VertexReaderText(file);
     long time0 = System.currentTimeMillis();
- 
-  
+
+
     List<Vertex>list =reader.read (monitor );
- 
+
     if (list.isEmpty()) {
       monitor.reportDone(); // remove the progress bar
       throw new IOException("Unable to read points from file");
@@ -133,7 +133,7 @@ public class ModelFromText extends ModelAdapter implements IModel {
 
     geographicCoordinates = reader.isSourceInGeographicCoordinates();
     if (geographicCoordinates) {
-   
+        coordinateTransform = reader.getCoordinateTransform();
     }
 
     long time1 = System.currentTimeMillis();

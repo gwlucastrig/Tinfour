@@ -140,6 +140,8 @@ class DataDropTargetListener implements DropTargetListener {
                   return true;
                 } else if (".SHP".equalsIgnoreCase(ext)) {
                   return true;
+                } else if(".XYZ".equalsIgnoreCase(ext)){
+                    return true;
                 }
                 return false;
               }

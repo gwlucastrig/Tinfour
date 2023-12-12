@@ -192,6 +192,10 @@ public class VertexReaderText implements Closeable, IVertexReader {
   List<Vertex> readDelimitedFile(File file, char delimiter)
           throws IOException {
 
+    // The header logic includes special rules for columns giving z
+    // values including "depth" and "elevation".  But "z" is preferred
+    // over depth and elevation. So the z-alternate flag values will be used
+    // only if z values are not set.
     try (DelimitedReader dlim = new DelimitedReader(file, delimiter)) {
       List<String> sList = dlim.readStrings();
       List<Vertex> vList = new ArrayList<>();
@@ -200,16 +204,24 @@ public class VertexReaderText implements Closeable, IVertexReader {
       int yColumn = 1;
       int zColumn = 2;
       int iColumn = -1;
+      int zAltColumn = -1;
       int nColumnsRequired = 3;
       boolean geoText = false;
       boolean xFound = false;
       boolean yFound = false;
+      boolean zFound = false;
+      boolean zAltFound = false;
       int k = 0;
       for (String s : sList) {
+        String sLower = s.toLowerCase();
         char c = s.charAt(0);
         if (Character.isAlphabetic(c) || c == '_') {
           headerRow = true;
           int n = k + 1;
+          if(sLower.contains("acc")||sLower.contains("err")||sLower.contains("certain")){
+              // skip columns that give "accuracy", "error", or "uncertainty"
+              continue;
+          }
           if ("x".equalsIgnoreCase(s)) {
             xFound = true;
             xColumn = k;
@@ -223,17 +235,24 @@ public class VertexReaderText implements Closeable, IVertexReader {
               nColumnsRequired = n;
             }
           } else if ("z".equalsIgnoreCase(s)) {
+            zFound=true;
             zColumn = k;
             if (n > nColumnsRequired) {
               nColumnsRequired = n;
             }
-          } else if (s.toLowerCase().startsWith("lon")) {
+          } else if (sLower.startsWith("depth")|| sLower.startsWith("elev")) {
+            zAltFound=true;
+            zAltColumn = k;
+            if (n > nColumnsRequired) {
+              nColumnsRequired = n;
+            }
+          } else if (sLower.startsWith("lon")) {
             geoText = true;
             xColumn = k;
             if (n > nColumnsRequired) {
               nColumnsRequired = n;
             }
-          } else if (s.toLowerCase().startsWith("lat")) {
+          } else if (sLower.startsWith("lat")) {
             geoText = true;
             yColumn = k;
             if (n > nColumnsRequired) {
@@ -244,6 +263,10 @@ public class VertexReaderText implements Closeable, IVertexReader {
           }
         }
         k++;
+      }
+
+      if(!zFound && zAltFound){
+          zColumn = zAltColumn;
       }
 
       int iVertex = 0;

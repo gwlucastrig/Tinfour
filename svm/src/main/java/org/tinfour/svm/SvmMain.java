@@ -155,6 +155,21 @@ public class SvmMain {
     }
   }
 
+  private static void printLicenseAndDisclaimer(PrintStream ps){
+      try (
+        InputStream ins
+        = SvmMain.class.getResourceAsStream("LicenseAndDisclaimer.txt");) {
+        int c;
+        while ((c = ins.read()) >= 0) {
+          ps.append((char) c);
+        }
+        System.out.flush();
+      } catch (IOException ioex) {
+        System.err.println("Failed to load template " + ioex.getMessage());
+      }
+  }
+
+
   private SvmMain() {
     // constructor scoped to private to deter application code
     // from creating instances of this class.
@@ -171,6 +186,7 @@ public class SvmMain {
     checkForTemplate(args);
     checkForInspection(args);
 
+    printLicenseAndDisclaimer(System.out);
     Date dateOfAnalysis = new Date(); // set to clock time
     writeIntroduction(System.out, dateOfAnalysis);
     SvmProperties prop = SvmProperties.load(args);
@@ -236,6 +252,7 @@ public class SvmMain {
       reportOutputStream = new FileOutputStream(reportFile);
       BufferedOutputStream bos = new BufferedOutputStream(reportOutputStream);
       reportPrintStream = new PrintStream(bos, true, StandardCharsets.UTF_8.name());
+       printLicenseAndDisclaimer(reportPrintStream);
       writeIntroduction(reportPrintStream, dateOfAnalysis);
       prop.writeSummary(reportPrintStream);
       reportPrintStream.flush();
@@ -258,6 +275,7 @@ public class SvmMain {
     Locale locale = Locale.getDefault();
     SimpleDateFormat sdFormat = new SimpleDateFormat("dd MMM yyyy HH:mm", locale);
     sdFormat.setTimeZone(new SimpleTimeZone(0, "UTC"));
+    ps.println("");
     ps.println("Simple Volumetric Model (Version 1.0 beta)");
     ps.println("");
     ps.println("Date of analysis:  " + sdFormat.format(date) + " UTC");

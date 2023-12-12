@@ -30,7 +30,10 @@
 package org.tinfour.demo.viewer.backplane;
 
 import java.awt.geom.AffineTransform;
+import java.io.BufferedInputStream;
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
 import java.util.concurrent.atomic.AtomicInteger;
 import javax.swing.SwingUtilities;
 import org.tinfour.common.IMonitorWithCancellation;
@@ -60,7 +63,7 @@ public class BackplaneManager {
     renderPool = new BackplaneExecutor(0); // size determined by CPU
     loaderQueue = new BackplaneExecutor(1);
   }
- 
+
 
   public void postStatusMessage(int index, final String message) {
     statusPanel.postMessage(index, message);
@@ -170,9 +173,14 @@ public class BackplaneManager {
       model = new ModelFromText(file );
     } else if ("SHP".equalsIgnoreCase(ext)) {
       model = new ModelFromShapefile(file, option);
+    } else if (isTextFile(file)) {
+        // although the file does not hava a recognized extension,
+        // the program may still be able to process it because it is
+        // likely to be a text file.
+        model = new ModelFromText(file);
     } else {
-      postStatusMessage(taskIndex, "Unrecognized file extension " + ext);
-      return null;
+        postStatusMessage(taskIndex, "Unrecognized file extension " + ext);
+        return null;
     }
 
     postStatusMessage(taskIndex, "Loading " + name);
@@ -180,6 +188,41 @@ public class BackplaneManager {
     loaderQueue.queueTask(task);
     return model;
   }
+
+  /**
+   * Performs an inspection of a file to see if it may be a text
+   * file.  The acceptance criteria is limited to European character sets.
+   * Within that context, it accepts alphabetic and punctuation characters
+   * on the theory that these may be labels.  This method does not support
+   * Unicode encodings of more than one byte because it is intended as
+   * a test of data that can be parsed by existing Tinfour classes.
+   * @param file a valid file object
+   * @return true if the file is likely to be a text file; otherwise, false
+   */
+    private boolean isTextFile(File file) {
+        try (
+          FileInputStream fos = new FileInputStream(file);
+          BufferedInputStream bos = new BufferedInputStream(fos)) {
+            int c;
+            while ((c = bos.read()) >= 0) {
+                // the following will accept letters, digits, whitespace,
+                // and punctuation.  It will also accept some other characters,
+                // but we'll allow that in support of text-based labels,
+                // particularly those not given in legacy ASCII.
+                if (!(Character.isWhitespace(c)
+                  || c >= 32 && c <= 127  // Traditional ASCII character set
+                  || c >= 0xA0 && c<=0xFF // ISO 8859-1 European character set
+                  )) {
+                    return false;
+                }
+            }
+        } catch (IOException ioex) {
+            return false;
+        }
+
+        return true;
+    }
+
 
   public MvComposite queueConstraintLoadingTask(
     IModel model, File file, CompositeImageScale ccs, String optionString) {

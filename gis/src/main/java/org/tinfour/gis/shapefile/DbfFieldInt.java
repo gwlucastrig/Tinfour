@@ -86,6 +86,10 @@ public class DbfFieldInt extends DbfField {
         // a non-whitespace character.  at this time,
         // the meaning of this is unknown.
         value = 0;
+        builder.setLength(0);
+        if(b=='*'){
+          return;
+        }
         throw new IOException(
                 "Invalid integer value, unknown character "
                 + ((char) b));
@@ -93,7 +97,9 @@ public class DbfFieldInt extends DbfField {
     }
 
     if (!foundDigit) {
-      throw new IOException("Invalid integer value, blank field");
+      value = 0;
+      builder.setLength(0);
+      return;
     }
 
     // process the non-fractional part

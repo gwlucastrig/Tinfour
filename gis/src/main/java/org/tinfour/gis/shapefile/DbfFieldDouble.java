@@ -97,12 +97,14 @@ public class DbfFieldDouble extends DbfField {
         // a non-whitespace character.  at this time,
         // the meaning of this is unknown.
         value = Double.NaN;
+        builder.setLength(0);
         return;
       }
     }
 
     if(i==fieldLength){
       value = Double.NaN;
+      builder.setLength(0);
       return;
     }
 

@@ -378,25 +378,31 @@ public class ModelAdapter implements IModel {
   @Override
   public String getFormattedX(double x) {
     if (coordinateTransform instanceof SimpleGeographicTransform) {
+       // in the simple-geographic transform, x and y are independent.
+       // So supply an arbitrary value (zero) for unused coordinate.
       CoordinatePair cPair = new CoordinatePair();
       if (coordinateTransform.inverse(x, 0, cPair)) {
         StringBuilder sb = new StringBuilder();
         Formatter fmt = new Formatter(sb);
+        fmt.format("%11.2f  ", x);
         fmtGeo(fmt, cPair.x, false);
         return sb.toString();
       }
     }
     return String.format("%11.2f", x);
   }
-  
-  
+
+
   @Override
   public String getFormattedY(double y) {
     if (coordinateTransform instanceof SimpleGeographicTransform) {
+      // in the simple-geographic transform, x and y are independent.
+      // So supply an arbitrary value (zero) for unused coordinate.
       CoordinatePair cPair = new CoordinatePair();
       if (coordinateTransform.inverse(0, y, cPair)) {
         StringBuilder sb = new StringBuilder();
         Formatter fmt = new Formatter(sb);
+        fmt.format("%11.2f  ", y);
         fmtGeo(fmt, cPair.y, false);
         return sb.toString();
       }
@@ -618,8 +624,8 @@ public class ModelAdapter implements IModel {
   public boolean areConstraintsLoaded() {
     return hasConstraints();  // probably to be deprecated.
   }
- 
-   
+
+
   @Override
   public ICoordinateTransform getCoordinateTransform(){
     return coordinateTransform;
