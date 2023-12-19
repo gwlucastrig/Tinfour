@@ -38,6 +38,7 @@ import java.io.PrintStream;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Locale;
 import java.util.Properties;
 import java.util.Set;
 import org.tinfour.svm.SvmBathymetryModel;
@@ -88,6 +89,9 @@ public class SvmProperties {
   private SvmUnitSpecification unitOfArea;
   private SvmUnitSpecification unitOfVolume;
 
+  private Locale explicitLocale;
+  private boolean usesCommaForDecimal;
+
   /**
    * Standard constructor
    */
@@ -95,6 +99,12 @@ public class SvmProperties {
     unitOfDistance = new SvmUnitSpecification("Distance", "m", 1.0);
     unitOfArea = new SvmUnitSpecification("Area", "m^2", 1.0);
     unitOfVolume = new SvmUnitSpecification("Volume", "m^3", 1.0);
+
+    // see how the Locale formats a string
+    String qf = String.format("%f", 3.14);
+    if (qf.indexOf(',') > 0) {
+      usesCommaForDecimal = true;
+    }
   }
 
   /**
@@ -118,13 +128,16 @@ public class SvmProperties {
             throw new IllegalArgumentException(
               "Missing value for option " + target);
           }
+          // there is another string in the args array, and it may be
+          // a candidate for the required value.  If it starts with a hyphen
+          // it could be a negative numeric value (which might be
+          // wanted by the application), but it could also be another
+          // option specification (which would mean that the parameter
+          // for the target option is missing).  So we need to check.
           String s = args[i + 1];
-          if (s.charAt(0) == '-') {
-            // this could be an option or a negative number
-            if (s.length() > 1 && !Character.isDigit(s.charAt(1))) {
+          if (s.charAt(0) == '-' && s.length() > 1 && !Character.isDigit(s.charAt(1))) {
               throw new IllegalArgumentException(
                 "Missing value for option " + target);
-            }
           }
         }
         return i;
@@ -171,6 +184,40 @@ public class SvmProperties {
   }
 
   /**
+   * Checks to see if the properties object contains an explicit setting
+   * for Locale and, if so, puts it into effect.
+   * @throws IOException in the event of an ill-formatted or unknown setting.
+   */
+  private void checkForLocaleSettings() throws IOException {
+      String q = properties.getProperty("Locale");
+    if(q==null){
+      q = properties.getProperty("locale");
+    }
+
+    if(q!=null){
+      // a specific Locale was provided.  See if it works
+      // in this code, we check for an unchecked
+      // Note that we use an UNCHECKED exception here. When this code was
+      // developed under Java 8, it was unclear what Java would do in the
+      // future for handling ill-formed locales.
+      try{
+        Locale locale = Locale.forLanguageTag(q);
+        if(locale == null){
+            throw new IOException("Unrecognized specification for Locale, \""+q+"\"");
+        }
+        Locale.setDefault(locale);
+        explicitLocale = locale;
+        String qf = String.format("%f", 3.14);
+        if(qf.indexOf(',')>0){
+          usesCommaForDecimal = true;
+        }
+      }catch(RuntimeException rex){
+        throw new IOException("Invalid specification for Locale, \""+q+"\"");
+      }
+    }
+  }
+
+  /**
    * Loads a properties instance using values and paths specified in the
    * indicated file.
    *
@@ -184,6 +231,8 @@ public class SvmProperties {
       properties.load(bins);
     }
 
+    checkForLocaleSettings();
+
     Set<String> nset = properties.stringPropertyNames();
     for (String s : nset) {
       keyList.add(s);
@@ -193,9 +242,27 @@ public class SvmProperties {
     unitOfDistance = extractUnit("Distance", unitOfDistanceKey, unitOfDistance);
     unitOfArea = extractUnit("Area", unitOfAreaKey, getUnitOfArea());
     unitOfVolume = extractUnit("Volume", unitOfVolumeKey, getUnitOfVolume());
-
   }
 
+
+  /**
+   * Gets the explicit value for the locale, if it was set.
+   * @return if explicitly set, a valid instance; otherwise, a null
+   */
+  public Locale getExplicitLocale(){
+    return explicitLocale;
+  }
+
+  /**
+   * Indicates whether the Locale uses the comma character for the
+   * decimal part of floating-point values.
+   * This method is used for formatting numeric strings in SVM.  Many non-English
+   * speaking conventions use the comma rather than the period.
+   * @return  true if the Locale uses periods for decimals; otherwise, false.
+   */
+  public boolean doesLocaleUseCommaForDecimal(){
+    return usesCommaForDecimal;
+  }
   /**
    * Get a list of the SVM file specifications for input samples. The
    * SvmFileSpecification may include metadata such as DBF file field name and

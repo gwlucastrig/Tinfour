@@ -435,25 +435,34 @@ public class SvmComputation {
     Rectangle2D bounds = data.getBounds();
 
     ps.format("%nData from Shapefiles --------------------------------------------------------------%n");
-    ps.format("  Lake area           %,18.2f %s%n", lakeArea, areaUnits);
-    ps.format("  Island area         %,18.2f %s%n", islandArea, areaUnits);
-    ps.format("  Net area (water)    %,18.2f %s%n", netArea, areaUnits);
-    ps.format("  Lake shoreline      %,18.2f %s%n", lakePerimeter, lengthUnits);
-    ps.format("  Island shoreline    %,18.2f %s%n", islandPerimeter, lengthUnits);
-    ps.format("  Total shoreline     %,18.2f %s%n", totalShore, lengthUnits);
+    if (properties.doesLocaleUseCommaForDecimal()) {
+      ps.format("  Lake area           %18.2f %s%n", lakeArea, areaUnits);
+      ps.format("  Island area         %18.2f %s%n", islandArea, areaUnits);
+      ps.format("  Net area (water)    %18.2f %s%n", netArea, areaUnits);
+      ps.format("  Lake shoreline      %18.2f %s%n", lakePerimeter, lengthUnits);
+      ps.format("  Island shoreline    %18.2f %s%n", islandPerimeter, lengthUnits);
+      ps.format("  Total shoreline     %18.2f %s%n", totalShore, lengthUnits);
+    } else {
+      ps.format("  Lake area           %,18.2f %s%n", lakeArea, areaUnits);
+      ps.format("  Island area         %,18.2f %s%n", islandArea, areaUnits);
+      ps.format("  Net area (water)    %,18.2f %s%n", netArea, areaUnits);
+      ps.format("  Lake shoreline      %,18.2f %s%n", lakePerimeter, lengthUnits);
+      ps.format("  Island shoreline    %,18.2f %s%n", islandPerimeter, lengthUnits);
+      ps.format("  Total shoreline     %,18.2f %s%n", totalShore, lengthUnits);
+    }
     ps.format("  N Islands           %18d%n", islandConstraints.size());
     ps.format("  N Soundings         %18d%n", data.getSoundings().size());
     ps.format("  N Supplements       %18d%n", data.getSupplements().size());
     ps.format("  Bounds%n");
-    ps.format("     x:    %12.3f, %12.3f, (%5.3f)%n",
+    ps.format("     x:    %12.3f to %12.3f, (%5.3f)%n",
       bounds.getMinX() / lengthFactor,
       bounds.getMaxX() / lengthFactor,
       bounds.getWidth() / lengthFactor);
-    ps.format("     y:    %12.3f, %12.3f, (%5.3f)%n",
+    ps.format("     y:    %12.3f to %12.3f, (%5.3f)%n",
       bounds.getMinY() / lengthFactor,
       bounds.getMaxY() / lengthFactor,
       bounds.getHeight() / lengthFactor);
-    ps.format("     z:    %12.3f, %12.3f, (%5.3f)%n",
+    ps.format("     z:    %12.3f to %12.3f, (%5.3f)%n",
       data.getMinZ() / lengthFactor,
       data.getMaxZ() / lengthFactor,
       (data.getMaxZ() - data.getMinZ()) / lengthFactor);
@@ -496,16 +505,29 @@ public class SvmComputation {
     double rawFlatArea = lakeConsumer.getFlatArea();
     double flatArea = lakeConsumer.getFlatArea() / areaFactor;
 
+
     ps.format("%nComputations from Constrained Delaunay Triangulation -----------------------------%n");
-    ps.format("  Volume              %,18.2f %s     %,28.1f %s^3%n",
-      volume, volumeUnits, rawVolume, lengthUnits);
-    ps.format("  Surface Area        %,18.2f %s     %,28.1f %s^2%n",
-      surfArea, areaUnits, rawSurfArea, lengthUnits);
-    ps.format("  Flat Area           %,18.2f %s     %,28.1f %s^2%n",
-      flatArea, areaUnits, rawFlatArea, lengthUnits);
-    ps.format("  Avg depth           %,18.2f %s%n", avgDepth, lengthUnits);
-    ps.format("  Adj mean depth      %,18.2f %s%n", adjMeanDepth, lengthUnits);
-    ps.format("  Mean Vertex Spacing %,18.2f %s%n", vertexSpacing, lengthUnits);
+    if (properties.doesLocaleUseCommaForDecimal()) {
+      ps.format("  Volume              %18.2f %s     %28.1f %s^3%n",
+        volume, volumeUnits, rawVolume, lengthUnits);
+      ps.format("  Surface Area        %18.2f %s     %28.1f %s^2%n",
+        surfArea, areaUnits, rawSurfArea, lengthUnits);
+      ps.format("  Flat Area           %18.2f %s     %28.1f %s^2%n",
+        flatArea, areaUnits, rawFlatArea, lengthUnits);
+      ps.format("  Avg depth           %18.2f %s%n", avgDepth, lengthUnits);
+      ps.format("  Adj mean depth      %18.2f %s%n", adjMeanDepth, lengthUnits);
+      ps.format("  Mean Vertex Spacing %18.2f %s%n", vertexSpacing, lengthUnits);
+    } else {
+      ps.format("  Volume              %,18.2f %s     %,28.1f %s^3%n",
+        volume, volumeUnits, rawVolume, lengthUnits);
+      ps.format("  Surface Area        %,18.2f %s     %,28.1f %s^2%n",
+        surfArea, areaUnits, rawSurfArea, lengthUnits);
+      ps.format("  Flat Area           %,18.2f %s     %,28.1f %s^2%n",
+        flatArea, areaUnits, rawFlatArea, lengthUnits);
+      ps.format("  Avg depth           %,18.2f %s%n", avgDepth, lengthUnits);
+      ps.format("  Adj mean depth      %,18.2f %s%n", adjMeanDepth, lengthUnits);
+      ps.format("  Mean Vertex Spacing %,18.2f %s%n", vertexSpacing, lengthUnits);
+    }
     ps.format("  N Triangles         %15d%n", lakeConsumer.nTriangles);
     ps.format("  N Flat Triangles    %15d%n", lakeConsumer.nFlatTriangles);
 
@@ -534,12 +556,25 @@ public class SvmComputation {
 
     File tableFile = properties.getTableFile();
     if (tableFile != null) {
+      String tableFileName = tableFile.getName();
+      boolean csvFlag = tableFileName.toLowerCase().endsWith(".csv");
+      if(csvFlag && properties.doesLocaleUseCommaForDecimal()){
+        System.out.println("\nNote: Using CSV file for table output may conflict with formatting specified by Locale\n");
+      }
+
       try (FileOutputStream tableOutputStream = new FileOutputStream(tableFile);
         BufferedOutputStream bos = new BufferedOutputStream(tableOutputStream);
         PrintStream ts = new PrintStream(bos, true, "UTF-8");) {
-        ts.println("Elevation, Area, Volume, Percent_Capacity");
+        String lineFormat;
+        if (csvFlag) {
+          ts.println("Elevation, Area, Volume, Percent_Capacity");
+          lineFormat = "%12.3f, %12.3f, %12.3f, %6.2f%n";
+        } else {
+          ts.println("Elevation\tArea\tVolume\tPercent_Capacity");
+          lineFormat = "%12.3f\t%12.3f\t%12.3f\t%6.2f%n";
+        }
         for (AreaVolumeResult result : resultList) {
-          ts.format("%12.3f, %12.3f, %12.3f, %6.2f%n",
+          ts.format(lineFormat,
             result.level,
             result.area / areaFactor,
             result.volume / volumeFactor,

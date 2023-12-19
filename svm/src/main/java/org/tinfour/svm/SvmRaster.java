@@ -355,10 +355,17 @@ class SvmRaster {
     double volume = rawVolume / volumeFactor;
 
     ps.format("%nComputations from Raster Methods%n");
-    ps.format("  Volume              %,18.2f %s     %,28.1f %s^3%n",
-      volume, volumeUnits, rawVolume, lengthUnits);
-    ps.format("  Surface Area        %,18.2f %s     %,28.1f %s^2%n",
-      surfArea, areaUnits, rawSurfArea, lengthUnits);
+    if (properties.doesLocaleUseCommaForDecimal()) {
+      ps.format("  Volume              %18.2f %s     %28.1f %s^3%n",
+        volume, volumeUnits, rawVolume, lengthUnits);
+      ps.format("  Surface Area        %18.2f %s     %28.1f %s^2%n",
+        surfArea, areaUnits, rawSurfArea, lengthUnits);
+    } else {
+      ps.format("  Volume              %,18.2f %s     %,28.1f %s^3%n",
+        volume, volumeUnits, rawVolume, lengthUnits);
+      ps.format("  Surface Area        %,18.2f %s     %,28.1f %s^2%n",
+        surfArea, areaUnits, rawSurfArea, lengthUnits);
+    }
     ps.format("  Percent Covered     %4.1f%%%n", 100.0 * nCovered / (double) nCells);
     ps.format("  Percent Uncovered   %4.1f%%%n", 100.0 * nUncovered / (double) nCells);
     ps.println("");

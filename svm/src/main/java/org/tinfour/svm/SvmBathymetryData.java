@@ -42,6 +42,7 @@ import org.tinfour.common.PolygonConstraint;
 import org.tinfour.common.Vertex;
 import org.tinfour.gis.utils.ConstraintReaderShapefile;
 import org.tinfour.gis.utils.IVerticalCoordinateTransform;
+import org.tinfour.gis.utils.VertexReaderLas;
 import org.tinfour.gis.utils.VertexReaderShapefile;
 import org.tinfour.utils.HilbertSort;
 import org.tinfour.utils.Tincalc;
@@ -127,6 +128,9 @@ public class SvmBathymetryData {
       vls.setDbfFieldForZ(dbfBathymetryField);
       vls.setVerticalCoordinateTransform(verticalTransform);
       list = vls.read(null);
+    } else if("las".equalsIgnoreCase(extension) || "laz".equalsIgnoreCase("laz")){
+         VertexReaderLas reader = new VertexReaderLas(vertexFile);
+         list = reader.read(null);
     } else {
       throw new IllegalArgumentException("Unsupported file format "
               + extension

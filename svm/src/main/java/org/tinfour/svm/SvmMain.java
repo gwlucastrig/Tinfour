@@ -157,8 +157,8 @@ public class SvmMain {
 
   private static void printLicenseAndDisclaimer(PrintStream ps){
       try (
-        InputStream ins
-        = SvmMain.class.getResourceAsStream("LicenseAndDisclaimer.txt");) {
+        InputStream ins = SvmMain.class.getResourceAsStream("LicenseAndDisclaimer.txt");)
+      {
         int c;
         while ((c = ins.read()) >= 0) {
           ps.append((char) c);
@@ -182,14 +182,19 @@ public class SvmMain {
    * @throws IOException in the event of an unrecoverable I/O condition.
    */
   public static void main(String[] args) throws IOException {
+
     checkForUsage(args);
     checkForTemplate(args);
     checkForInspection(args);
 
     printLicenseAndDisclaimer(System.out);
+
+    // When the properties are loaded, they will set the default Locale
+    // if it is explicitly included in the properties file.
+    SvmProperties prop = SvmProperties.load(args);
+
     Date dateOfAnalysis = new Date(); // set to clock time
     writeIntroduction(System.out, dateOfAnalysis);
-    SvmProperties prop = SvmProperties.load(args);
     prop.writeSummary(System.out);
 
     SvmBathymetryModel bathymetryModel = null;
