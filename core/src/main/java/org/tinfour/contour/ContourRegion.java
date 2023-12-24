@@ -55,7 +55,7 @@ public class ContourRegion {
      * At least one contour lies on the perimeter of the TIN. Note that
      * primary regions are never enclosed by another region.
      */
-    Primary
+    Perimeter
   }
 
   final ContourRegionType contourRegionType;
@@ -83,7 +83,7 @@ public class ContourRegion {
     ContourRegionType rType = ContourRegionType.Interior;
     for (ContourRegionMember member : memberList) {
       if (member.contour.getContourType() == ContourType.Boundary) {
-        rType = ContourRegionType.Primary;
+        rType = ContourRegionType.Perimeter;
       }
       double s = calculateAreaContribution(member.contour);
       if (member.forward) {
@@ -109,11 +109,11 @@ public class ContourRegion {
    *
    * @param contour a valid instance describing a single, closed-loop contour.
    */
-  ContourRegion(Contour contour) {
+  public ContourRegion(Contour contour) {
     if (contour.getContourType() == ContourType.Interior) {
       contourRegionType = ContourRegionType.Interior;
     } else {
-      contourRegionType = ContourRegionType.Primary;
+      contourRegionType = ContourRegionType.Perimeter;
     }
 
     assert contour.closedLoop : "Single contour constructor requires closed loop";
@@ -213,11 +213,26 @@ public class ContourRegion {
     return xy;
   }
 
-  void addChild(ContourRegion region) {
+  /**
+   * Adds a child (nested) region to the internal list and sets
+   * the child-region's parent link.
+   * @param region a valid reference.
+   */
+  public void addChild(ContourRegion region) {
     children.add(region);
     region.parent = this;
   }
 
+  /**
+   * Removes all child (nested) regions from the internal list and
+   * nullifies any of the child-region parent links.
+   */
+  public void removeChildren(){
+    for(ContourRegion c: children){
+      c.setParent(null);
+    }
+    children.clear();
+  }
   /**
    * Sets the reference to the contour region that encloses the region
    * represented by this class. A null parent reference indicates that the
@@ -225,7 +240,7 @@ public class ContourRegion {
    *
    * @param parent a valid reference; or a null.
    */
-  void setParent(ContourRegion parent) {
+  public void setParent(ContourRegion parent) {
     this.parent = parent;
   }
 
@@ -337,6 +352,13 @@ public class ContourRegion {
     return area;
   }
 
+  /**
+   * Gets the absolute value of the area for this region.
+   * @return a positve value greater than zero
+   */
+  public double getAbsArea(){
+    return absArea;
+  }
   /**
    * Gets the index of the region. The indexing scheme is based on the original
    * values of the zContour array used when the contour regions were built. The
@@ -485,5 +507,13 @@ public class ContourRegion {
    */
   public int getApplicationIndex(){
     return this.applicationIndex;
+  }
+
+  public ContourRegionType getRegionType(){
+    return contourRegionType;
+  }
+
+  public boolean hasChildren(){
+    return !children.isEmpty();
   }
 }

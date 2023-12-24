@@ -100,6 +100,11 @@ public class VisvalingamLineSimplification {
     nOperations++;
     nProcessed+=nPoints;
 
+    if (areaThreshold == 0) {
+      nRemoved += (nPoints - n);
+      return nPoints;
+    }
+
     double[] a = new double[n];
     a[0] = Double.POSITIVE_INFINITY;
     a[nPoints - 1] = Double.POSITIVE_INFINITY;

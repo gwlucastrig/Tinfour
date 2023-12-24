@@ -342,7 +342,7 @@ public class SvmComputation {
       // During the flat-fixer loop, the total count of triangles
       // may bounce around a bit.  In the case of coves and similar
       // features, fixing one layer of flats may expose yet more
-      // flats to be fixed. Also, not that the counts/areas are
+      // flats to be fixed. Also, note that the counts/areas are
       // not the total count/area of flat triangles, but the total
       // of those triangles that were subject to remediation.  Counting
       // the actual flat area would add too much processing for too

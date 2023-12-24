@@ -1003,7 +1003,7 @@ public class ContourBuilderForTin {
       double[] xy = rI.getXY();
       for (int j = i + 1; j < nRegion; j++) {
         ContourRegion rJ = regionList.get(j);
-        if (rJ.contourRegionType == ContourRegionType.Primary) {
+        if (rJ.contourRegionType == ContourRegionType.Perimeter) {
           // regions that include perimeter contours are never
           // enclosed by other regions.
           continue;

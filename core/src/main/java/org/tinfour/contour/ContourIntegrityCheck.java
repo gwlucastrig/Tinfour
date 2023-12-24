@@ -109,7 +109,7 @@ public class ContourIntegrityCheck {
     double adjustedSum = 0;
     for(ContourRegion r: regions){
       ContourRegionType rt = r.getContourRegionType();
-      if(rt == ContourRegionType.Primary){
+      if(rt == ContourRegionType.Perimeter){
         aSum+=r.getArea();
       }
       adjustedSum+=r.getAdjustedArea();
@@ -140,7 +140,7 @@ public class ContourIntegrityCheck {
   private boolean checkContourTraversal(List<ContourRegion> regions) {
     for (ContourRegion r : regions) {
       ContourRegionType rt = r.getContourRegionType();
-      if (rt != ContourRegionType.Primary) {
+      if (rt != ContourRegionType.Perimeter) {
         continue;
       }
       for(ContourRegionMember member: r.memberList){

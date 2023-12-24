@@ -31,6 +31,7 @@ package org.tinfour.gis.shapefile;
 
 import java.io.IOException;
 import java.util.Arrays;
+import java.util.Locale;
 import org.tinfour.io.BufferedRandomAccessFile;
 import org.tinfour.io.BufferedRandomAccessReader;
 
@@ -45,6 +46,7 @@ public class DbfFieldDouble extends DbfField {
 
   private String writingFormat;
 
+
   DbfFieldDouble(
           String name,
           char fieldType,
@@ -56,9 +58,9 @@ public class DbfFieldDouble extends DbfField {
     super(name, fieldType, dataAddress, fieldLength, fieldDecimalCount, offset);
     engineeringNotation = useEngineeringNotation;
     if (useEngineeringNotation) {
-      writingFormat = String.format("%%%d.%de", fieldLength, fieldLength-7);
+      writingFormat = String.format(Locale.US, "%%%d.%de", fieldLength, fieldLength-7);
     } else {
-      writingFormat = String.format("%%%d.%df", fieldLength, fieldDecimalCount);
+      writingFormat = String.format(Locale.US, "%%%d.%df", fieldLength, fieldDecimalCount);
     }
   }
 
@@ -175,12 +177,14 @@ public class DbfFieldDouble extends DbfField {
   @Override
   void write(BufferedRandomAccessFile braf) throws IOException {
 
-    String s = String.format(writingFormat, value);
+    String s = String.format(Locale.US, writingFormat, value);
+
     byte[] b = s.getBytes();
     if(b.length>fieldLength){
       throw new IOException("Formatted output exceeds fieldLength of "
         +fieldLength+": \""+s+"\"");
     }
+
     braf.write(b, 0, fieldLength);
   }
 

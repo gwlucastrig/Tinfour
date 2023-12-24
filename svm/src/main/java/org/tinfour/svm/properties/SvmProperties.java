@@ -79,6 +79,7 @@ public class SvmProperties {
 
   private final static String contourRegionShapefileKey = "contourRegionShapefile";
   private final static String contourLineShapefileKey = "contourLineShapefile";
+  private final static String contourShapefileShorelineEnabledKey = "contourShapefileShorelineEnabled";
 
   private final static String anomalyTableFileKey = "anomalyTableFileName";
 
@@ -829,6 +830,18 @@ public class SvmProperties {
     return null;
   }
 
+
+  /**
+   * Indicates whether the optional shoreline append operation is enabled.
+   * @return true if the append operation is enabled; otherwise, false.
+   */
+  public boolean isContourShapefileShorelineEnabled() {
+    if (properties.containsKey(contourShapefileShorelineEnabledKey)) {
+      String s = properties.getProperty(contourShapefileShorelineEnabledKey);
+      return s.toLowerCase().startsWith("t");
+    }
+    return false;
+  }
   /**
    * Get the dimensions for the contour graph image file.
    *

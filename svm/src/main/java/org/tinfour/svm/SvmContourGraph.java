@@ -39,12 +39,14 @@ import java.awt.font.FontRenderContext;
 import java.awt.font.TextLayout;
 import java.awt.geom.AffineTransform;
 import java.awt.geom.Path2D;
+import java.awt.geom.Point2D;
 import java.awt.geom.Rectangle2D;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
 import java.io.PrintStream;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import javax.imageio.ImageIO;
 import org.tinfour.common.IConstraint;
@@ -57,6 +59,7 @@ import org.tinfour.contour.Contour;
 import org.tinfour.contour.ContourBuilderForTin;
 import org.tinfour.contour.ContourIntegrityCheck;
 import org.tinfour.contour.ContourRegion;
+import org.tinfour.contour.ContourRegion.ContourRegionType;
 import org.tinfour.gis.shapefile.ShapefileRecord;
 import org.tinfour.gis.shapefile.ShapefileType;
 import org.tinfour.gis.shapefile.ShapefileWriter;
@@ -251,7 +254,7 @@ class SvmContourGraph {
     // For different data sets, we will need different contour intervals.
     // Attempt to create a specification with about 10 contour intervals
     // using the axis too.  Then, take the results from the axis tool
-    // and create our zContour array.  Not that the zContours must be
+    // and create our zContour array.  Note that the zContours must be
     // greater than the zMin value and less than the shoreReferenceElevation
     double[] aArray = null;
     double contourInterval = properties.getContourGraphInterval();
@@ -536,16 +539,59 @@ class SvmContourGraph {
         + ", " + ioex.getMessage());
     }
 
-    File shapefileRef = properties.getContourRegionShapefile();
-    if (shapefileRef != null) {
-      removeOldShapefiles(ps, shapefileRef);
 
-      ps.println("Writing shapefile " + shapefileRef.getPath());
 
+    File regionShapefileRef = properties.getContourRegionShapefile();
+    File contourShapefileRef = properties.getContourLineShapefile();
+    boolean appendShoreline = properties.isContourShapefileShorelineEnabled();
+    if(regionShapefileRef==null || contourShapefileRef==null){
+      // nothing more to do.
+      return;
+    }
+
+    List<Contour> shorelineContours = new ArrayList<>();
+    List<ContourRegion> shorelineRegions = new ArrayList<>();
+    if (appendShoreline) {
+      for (PolygonConstraint pc : boundaryConstraints) {
+        double pcArea = pc.getArea();
+        int leftIndex, rightIndex;
+        if (pcArea > 0) {
+          // enclosing polygon
+          leftIndex = zContour.length;
+          rightIndex = zContour.length + 1;
+        } else {
+          leftIndex = zContour.length;
+          rightIndex = zContour.length + 1;
+        }
+
+        Contour contour = new Contour(leftIndex, rightIndex, shoreReferenceElevation, true);
+        List<Vertex> pcvList = pc.getVertices();
+        for (Vertex v : pcvList) {
+          contour.add(v.getX(), v.getY());
+        }
+        contour.complete();
+        ContourRegion cr = new ContourRegion(contour);
+        shorelineRegions.add(cr);
+        shorelineContours.add(contour);
+        contours.add(contour);
+      }
+    }
+
+
+
+    if (regionShapefileRef != null) {
+      removeOldShapefiles(ps, regionShapefileRef);
+
+      ps.println("Writing shapefile " + regionShapefileRef.getPath());
+      if(appendShoreline){
+        organizeNestedRegions(regions, shorelineRegions);
+        regions = shorelineRegions;
+      }
       int iRegion = 0;
       for (ContourRegion region : regions) {
-        int rIndex = region.getRegionIndex();
-        if (rIndex >= iN) {
+        if(region.getContourRegionType()==ContourRegionType.Perimeter){
+          // SVM contouring will produce a perimeter region that is
+          // constructed based on the convex-hull of the TIN.
           continue;
         }
         iRegion++;
@@ -557,17 +603,21 @@ class SvmContourGraph {
       regionSpec.addIntegerField("feature_id", 8);
       regionSpec.addIntegerField("parent_id", 8);
       regionSpec.addIntegerField("band_idx", 4);
-      regionSpec.addFloatingPointField("band_min", 8, 2, false);
-      regionSpec.addFloatingPointField("band_max", 8, 2, false);
-
+      regionSpec.addFloatingPointField("band_min", 9, 3, false);
+      regionSpec.addFloatingPointField("band_max", 9, 3, false);
       regionSpec.addFloatingPointField("Shape_area", 13, 6, true);
       regionSpec.setShapefilePrjContent(data.getShapefilePrjContent());
 
-      try (ShapefileWriter regionWriter = new ShapefileWriter(shapefileRef, regionSpec);) {
+      try (ShapefileWriter regionWriter = new ShapefileWriter(regionShapefileRef, regionSpec);) {
         for (ContourRegion region : regions) {
-          int rIndex = region.getRegionIndex();
-          if (rIndex >= iN) {
+          if (region.getContourRegionType() == ContourRegionType.Perimeter) {
+            // SVM contouring will produce a perimeter region that is
+            // constructed based on the convex-hull of the TIN.
             continue;
+          }
+          int rIndex = region.getRegionIndex();
+          if (rIndex > iN) {
+            continue; // should never happen
           }
           double bandMin = zBandMin[rIndex];
           double bandMax = zBandMax[rIndex];
@@ -608,26 +658,31 @@ class SvmContourGraph {
       }
     }
 
-    shapefileRef = properties.getContourLineShapefile();
-    if (shapefileRef != null) {
-      removeOldShapefiles(ps, shapefileRef);
-      ps.println("Writing shapefile " + shapefileRef.getPath());
+
+    if (contourShapefileRef != null) {
+      removeOldShapefiles(ps, contourShapefileRef);
+      ps.println("Writing shapefile " + contourShapefileRef.getPath());
       ShapefileWriterSpecification contourSpec = new ShapefileWriterSpecification();
       contourSpec.setShapefileType(ShapefileType.PolyLine);
       contourSpec.addIntegerField("feature_id", 8);
       contourSpec.addIntegerField("cntr_idx", 4);
-      contourSpec.addFloatingPointField("depth", 8, 2, false);
+      contourSpec.addFloatingPointField("depth", 9, 3, false);
       if (produceElevations) {
-        contourSpec.addFloatingPointField("elevation", 8, 2, false);
+        contourSpec.addFloatingPointField("elevation", 9, 3, false);
       }
       contourSpec.addFloatingPointField("Shape_len", 13, 6, true);
+      contourSpec.addIntegerField("shore", 1);
       contourSpec.setShapefilePrjContent(data.getShapefilePrjContent());
 
       int nContour = 0;
-      try (ShapefileWriter contourWriter = new ShapefileWriter(shapefileRef, contourSpec);) {
+      try (ShapefileWriter contourWriter = new ShapefileWriter(contourShapefileRef, contourSpec);) {
         for (Contour contour : contours) {
           if (contour.isBoundary()) {
             continue;
+          }
+          int shoreCode = 0;
+          if(shorelineContours.contains(contour)){
+            shoreCode = 1;
           }
           nContour++;
           int cIndex = contour.getLeftIndex();
@@ -652,6 +707,7 @@ class SvmContourGraph {
             contourWriter.setDbfFieldValue("elevation", z);
           }
           contourWriter.setDbfFieldValue("Shape_len", dSum);
+          contourWriter.setDbfFieldValue("shore", shoreCode);
 
           contourWriter.writeRecord(record);
         }
@@ -732,4 +788,69 @@ class SvmContourGraph {
     return sb.toString();
   }
 
+
+
+   static private void organizeNestedRegions(
+     List<ContourRegion> regions, List<ContourRegion> regionList)
+   {
+    // add the regions to the shoreline regions
+    // remove any perimeter regions and nullify the parent reference
+    // of their child regions (by removing children)
+    for (ContourRegion region : regions) {
+       if (region.getContourRegionType() == ContourRegionType.Perimeter) {
+         region.removeChildren();
+         continue;
+       } else {
+         regionList.add(region);
+       }
+     }
+
+    int nRegion = regionList.size();
+    if (nRegion < 2) {
+      return;
+    }
+
+    // The nesting concept organizes the regions to identify which
+    // regions enclose which.  The "parent" of a region is the region
+    // that immediately encloses it. The parent may, in turn, be
+    // enclosed by its own parent region. Metaphorically, this concept
+    // resembles the way traditional Russian nesting dolls are configured.
+    //   To establish the nesting structure, we sort the regions into
+    // descending order of area.  Then, we loop through each region
+    // comparing it to larger regions to see if the larger region encloses
+    // it.  The "parent" reference may be reset multiple times as smaller
+    // and smaller enclosing regions are discovered. At the end of the
+    // process, the parent reference points to the smallest region that
+    // encloses the region of interest.
+    Collections.sort(regionList, (ContourRegion o1, ContourRegion o2)
+      -> Double.compare(o2.getAbsArea(), o1.getAbsArea()) // sort largest to smalles
+    );
+
+    // renumber the regions based on their sorted order
+    int iRegion = 0;
+    for(ContourRegion region: regionList){
+      iRegion++;
+      region.setApplicationIndex(iRegion);
+    }
+
+    // Establish the nesting relationships (parent-child)
+    // for any regions that are not currently connected.
+    // Any existing relationships will be unchanged.
+    for (int i = 0; i < nRegion - 1; i++) {
+      ContourRegion rI = regionList.get(i);
+      if (rI.hasChildren()) {
+        continue;
+      }
+      double[] xy = rI.getXY();
+      for (int j = i + 1; j < nRegion; j++) {
+        ContourRegion rJ = regionList.get(j);
+        if (rJ.getParent() == null) {
+          Point2D testPoint = rJ.getTestPoint();
+          if (rI.isPointInsideRegion(xy, testPoint.getX(), testPoint.getY())) {
+            rI.addChild(rJ);
+          }
+        }
+      }
+    }
+  }
 }

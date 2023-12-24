@@ -253,6 +253,10 @@ public class Contour {
    */
   public void complete() {
     if (closedLoop && n > 6) {
+      // ensure that there is a "closure" vertex included in the contour.
+      // If there existing endpoints are numerically close, they are adjusted
+      // slightly to ensure exact matches.  Otherwise, an additional
+      // vertex is added to the contour.
       double x0 = xy[0];
       double y0 = xy[1];
       double x1 = xy[n - 2];

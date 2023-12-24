@@ -125,11 +125,6 @@ public class ShapefileRecord {
     }
     int nCoordinates = this.shapefileType.hasZ() ? 3 : 2;
     int n = nPointsInput;
-    int index = (nPointsInput - 1) * nCoordinates;
-    if (xyzInput[index] == xyzInput[0] && xyzInput[index + 1] == xyzInput[1]) {
-      // the calling application included a loop-closing point in the specification
-      n--;
-    }
 
     // beacuse we will be subtracting the anchor coordinates
     // from all points, the first and last line segments will drop out
