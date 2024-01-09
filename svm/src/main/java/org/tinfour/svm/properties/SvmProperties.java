@@ -65,6 +65,8 @@ public class SvmProperties {
   private final static String gridFileName = "rasterFileName";
   private final static String gridCellSize = "rasterCellSize";
   private final static String gridImageFileName = "rasterImageFileName";
+  private final static String rasterGeoTiffFileName = "rasterGeoTiffFileName";
+  private final static String rasterGeoTiffProjectionCode = "rasterGeoTiffProjectionCode";
 
   private final static String supplementalConstraintsFileKey = "supplementalConstraints";
 
@@ -732,6 +734,24 @@ public class SvmProperties {
     return extractOutputFile(outputFolderKey, properties.getProperty(gridImageFileName));
   }
 
+
+  /**
+   * Gets the path to a file for writing an output GeoTIFF file containing
+   * the interpolated grid of water bottom elevations.
+   * @return a valid File instance or a null if not specified.
+   */
+  public File getGeoTiffFile(){
+    return extractOutputFile(outputFolderKey, properties.getProperty(rasterGeoTiffFileName));
+  }
+
+
+
+  /**
+   * Get a reference to a supplemental shapefile providing
+   * constraints for SVM processing.
+   *
+   * @return if specified, a valid File instance; otherwise, a null
+   */
   public File getSupplementalConstraintsFile() {
     return extractFile(inputFolderKey, properties.getProperty(supplementalConstraintsFileKey));
   }
@@ -963,6 +983,32 @@ public class SvmProperties {
   public boolean isBathymetryModelSpecified() {
     String s = properties.getProperty(bathymetryModelKey);
     return s != null && !s.trim().isEmpty();
+  }
+
+  /**
+   * Indicates whether the source properties includes a specification
+   * for the GeoTiff Projection code (usually an EPSG projection code).
+   * @return true if a projection code is set; otherwise, false
+   */
+  public boolean isGeoTiffProjectionCodeSpecified(){
+    String s = properties.getProperty(SvmProperties.rasterGeoTiffProjectionCode);
+    return s != null && !s.isBlank();
+  }
+
+  /**
+   * Gets the specified GeoTIFF projection code, if any.
+   * @return if available, a valid integer; otherwise, a zero.
+   */
+  public int getGeoTiffProjectionCode(){
+    String s = properties.getProperty(SvmProperties.rasterGeoTiffProjectionCode);
+    if(s==null || s.isBlank()){
+      return 0;
+    }
+    try{
+      return Integer.parseInt(s.trim());
+    }catch(NumberFormatException nfe){
+      return 0;
+    }
   }
 
 }

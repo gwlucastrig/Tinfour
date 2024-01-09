@@ -32,12 +32,20 @@
       <groupId>org.tinfour</groupId>
       <artifactId>TinfourCore</artifactId>
     </dependency>
-	
+
     <dependency>
       <groupId>org.tinfour</groupId>
       <artifactId>TinfourGis</artifactId>
     </dependency>
+
+    <dependency>
+        <groupId>org.apache.commons</groupId>
+        <artifactId>commons-imaging</artifactId>
+        <version>1.0-alpha3</version>
+    </dependency>
+
   </dependencies>
+
 
   <build>
     <plugins>

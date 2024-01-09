@@ -586,6 +586,9 @@ public class SvmComputation {
       }
     }
 
+    SvmRasterGeoTiff rTiff = new SvmRasterGeoTiff();
+    rTiff.buildAndWriteRaster(properties, data, ps, tin, lakeConsumer.water, shoreReferenceElevation);
+
     File gridFile = properties.getGridFile();
     double s = properties.getGridCellSize();
     if (gridFile != null && !Double.isNaN(s)) {
