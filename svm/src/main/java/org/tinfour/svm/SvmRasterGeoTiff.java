@@ -100,21 +100,34 @@ class SvmRasterGeoTiff {
     // here we use the value -131072 because it results in a bit-format
     // such that the low-order 3 bytes are all zero.
     boolean useDepthModel = false;
-    float noDataValue = -131072;  // raw bytes are 0xc8000000
-    String gdalNoDataString = "-131072";
+
+
     if (properties.isBathymetryModelSpecified()) {
       SvmBathymetryModel bathyModel = properties.getBathymetryModel();
       if (bathyModel.isDepth()) {
         useDepthModel = true;
-        noDataValue = 1;
       } else {
         useDepthModel = false;
-        noDataValue = -131072;
       }
     }
 
+    float noDataValue = -1000000f;  // raw bytes are 0xc8000000
+    String gdalNoDataString = "-1000000";
+    if (properties.isGeoTiffNoDataCodeSpecified()) {
+      noDataValue = properties.getGeoTiffNoDataCode();
+      if (noDataValue == ((int) noDataValue)) {
+        gdalNoDataString = String.format("%d", (int) noDataValue);
+      } else {
+        gdalNoDataString = String.format("%f", noDataValue);
+      }
+    }
+
+    boolean dataCompressionEnabled = properties.isGeoTiffDataCompressionEnabled();
+
     ps.println("");
-    ps.println("Processing GeoTiff data");
+    ps.format("Processing GeoTiff data%n");
+    ps.format("  GDAL no-data code:  %s%n", gdalNoDataString);
+    ps.format("  Data Compression:   %s%n", Boolean.toString(dataCompressionEnabled));
 
     boolean status = writeAuxiliaryFiles(ps, data, geoTiffFile, "SvmRasterTemplate.aux.xml");
     if (!status) {
@@ -184,7 +197,7 @@ class SvmRasterGeoTiff {
     IIncrementalTinNavigator navigator = tin.getNavigator();
     NaturalNeighborInterpolator nni = new NaturalNeighborInterpolator(tin);
     GeoTiffTableBuilder gkTab = new GeoTiffTableBuilder();
-    gkTab.setCompressionEnabled(true);
+    gkTab.setCompressionEnabled(dataCompressionEnabled);
     for (int iTileRow = 0; iTileRow < nRowsOfTiles; iTileRow++) {
       int row0 = iTileRow * tileSize;
       int row1 = row0 + tileSize;
@@ -255,11 +268,13 @@ class SvmRasterGeoTiff {
     int projectionCode = properties.getGeoTiffProjectionCode();
     int unitOfMeasureCode = 9001; // meters
     SvmUnitSpecification unitOfDistance = properties.getUnitOfDistance();
-    if(approxEquals(unitOfDistance.getScaleFactor(), 3.28)){
-      unitOfMeasureCode=9002; // feet;
-    }else if(approxEquals(unitOfDistance.getScaleFactor(),1.093)){
-      unitOfMeasureCode=9012;
+    String uLab = unitOfDistance.getLabel().toLowerCase();
+    if ("ft".equalsIgnoreCase(uLab)) {
+      unitOfMeasureCode = 9002; // feet;
+    } else if (uLab.startsWith("y")) {
+      unitOfMeasureCode = 9012;
     }
+
     try {
       gkTab.addGeoKey(GeoKey.GTModelTypeGeoKey, GtModelType.ProjectedCoordinateSystem.getCode());
       gkTab.addGeoKey(GeoKey.GTRasterTypeGeoKey, 1);

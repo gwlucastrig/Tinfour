@@ -67,6 +67,8 @@ public class SvmProperties {
   private final static String gridImageFileName = "rasterImageFileName";
   private final static String rasterGeoTiffFileName = "rasterGeoTiffFileName";
   private final static String rasterGeoTiffProjectionCode = "rasterGeoTiffProjectionCode";
+  private final static String rasterGeoTiffNoDataCode = "rasterGeoTiffNoDataCode";
+  private final static String rasterGeoTiffDataCompression = "rasterGeoTiffDataCompression";
 
   private final static String supplementalConstraintsFileKey = "supplementalConstraints";
 
@@ -139,8 +141,8 @@ public class SvmProperties {
           // for the target option is missing).  So we need to check.
           String s = args[i + 1];
           if (s.charAt(0) == '-' && s.length() > 1 && !Character.isDigit(s.charAt(1))) {
-              throw new IllegalArgumentException(
-                "Missing value for option " + target);
+            throw new IllegalArgumentException(
+              "Missing value for option " + target);
           }
         }
         return i;
@@ -189,33 +191,34 @@ public class SvmProperties {
   /**
    * Checks to see if the properties object contains an explicit setting
    * for Locale and, if so, puts it into effect.
+   *
    * @throws IOException in the event of an ill-formatted or unknown setting.
    */
   private void checkForLocaleSettings() throws IOException {
-      String q = properties.getProperty("Locale");
-    if(q==null){
+    String q = properties.getProperty("Locale");
+    if (q == null) {
       q = properties.getProperty("locale");
     }
 
-    if(q!=null){
+    if (q != null) {
       // a specific Locale was provided.  See if it works
       // in this code, we check for an unchecked
       // Note that we use an UNCHECKED exception here. When this code was
       // developed under Java 8, it was unclear what Java would do in the
       // future for handling ill-formed locales.
-      try{
+      try {
         Locale locale = Locale.forLanguageTag(q);
-        if(locale == null){
-            throw new IOException("Unrecognized specification for Locale, \""+q+"\"");
+        if (locale == null) {
+          throw new IOException("Unrecognized specification for Locale, \"" + q + "\"");
         }
         Locale.setDefault(locale);
         explicitLocale = locale;
         String qf = String.format("%f", 3.14);
-        if(qf.indexOf(',')>0){
+        if (qf.indexOf(',') > 0) {
           usesCommaForDecimal = true;
         }
-      }catch(RuntimeException rex){
-        throw new IOException("Invalid specification for Locale, \""+q+"\"");
+      } catch (RuntimeException rex) {
+        throw new IOException("Invalid specification for Locale, \"" + q + "\"");
       }
     }
   }
@@ -247,25 +250,27 @@ public class SvmProperties {
     unitOfVolume = extractUnit("Volume", unitOfVolumeKey, getUnitOfVolume());
   }
 
-
   /**
    * Gets the explicit value for the locale, if it was set.
+   *
    * @return if explicitly set, a valid instance; otherwise, a null
    */
-  public Locale getExplicitLocale(){
+  public Locale getExplicitLocale() {
     return explicitLocale;
   }
 
   /**
    * Indicates whether the Locale uses the comma character for the
    * decimal part of floating-point values.
-   * This method is used for formatting numeric strings in SVM.  Many non-English
+   * This method is used for formatting numeric strings in SVM. Many non-English
    * speaking conventions use the comma rather than the period.
-   * @return  true if the Locale uses periods for decimals; otherwise, false.
+   *
+   * @return true if the Locale uses periods for decimals; otherwise, false.
    */
-  public boolean doesLocaleUseCommaForDecimal(){
+  public boolean doesLocaleUseCommaForDecimal() {
     return usesCommaForDecimal;
   }
+
   /**
    * Get a list of the SVM file specifications for input samples. The
    * SvmFileSpecification may include metadata such as DBF file field name and
@@ -734,17 +739,15 @@ public class SvmProperties {
     return extractOutputFile(outputFolderKey, properties.getProperty(gridImageFileName));
   }
 
-
   /**
    * Gets the path to a file for writing an output GeoTIFF file containing
    * the interpolated grid of water bottom elevations.
+   *
    * @return a valid File instance or a null if not specified.
    */
-  public File getGeoTiffFile(){
+  public File getGeoTiffFile() {
     return extractOutputFile(outputFolderKey, properties.getProperty(rasterGeoTiffFileName));
   }
-
-
 
   /**
    * Get a reference to a supplemental shapefile providing
@@ -850,9 +853,9 @@ public class SvmProperties {
     return null;
   }
 
-
   /**
    * Indicates whether the optional shoreline append operation is enabled.
+   *
    * @return true if the append operation is enabled; otherwise, false.
    */
   public boolean isContourShapefileShorelineEnabled() {
@@ -862,6 +865,7 @@ public class SvmProperties {
     }
     return false;
   }
+
   /**
    * Get the dimensions for the contour graph image file.
    *
@@ -988,27 +992,72 @@ public class SvmProperties {
   /**
    * Indicates whether the source properties includes a specification
    * for the GeoTiff Projection code (usually an EPSG projection code).
+   *
    * @return true if a projection code is set; otherwise, false
    */
-  public boolean isGeoTiffProjectionCodeSpecified(){
+  public boolean isGeoTiffProjectionCodeSpecified() {
     String s = properties.getProperty(SvmProperties.rasterGeoTiffProjectionCode);
     return s != null && !s.isBlank();
   }
 
   /**
    * Gets the specified GeoTIFF projection code, if any.
+   *
    * @return if available, a valid integer; otherwise, a zero.
    */
-  public int getGeoTiffProjectionCode(){
+  public int getGeoTiffProjectionCode() {
     String s = properties.getProperty(SvmProperties.rasterGeoTiffProjectionCode);
-    if(s==null || s.isBlank()){
+    if (s == null || s.isBlank()) {
       return 0;
     }
-    try{
+    try {
       return Integer.parseInt(s.trim());
-    }catch(NumberFormatException nfe){
+    } catch (NumberFormatException nfe) {
       return 0;
     }
   }
 
+  /**
+   * Gets a string to be used for the GDAL No-Data element.
+   *
+   * @return if specified, a valid non-blank string; otherwise, a null.
+   */
+  public float getGeoTiffNoDataCode() {
+    String s = properties.getProperty(SvmProperties.rasterGeoTiffNoDataCode);
+    if (s == null || s.isBlank()) {
+      return -1000000f;
+    }
+    try {
+      return Float.parseFloat(s.trim());
+    } catch (NumberFormatException nfe) {
+      return -1000000f;
+    }
+  }
+
+  /**
+   * Indicates whether the properties file specifies a no-data code.
+   *
+   * @return true if a no-data code is specified; otherwise, false.
+   */
+  public boolean isGeoTiffNoDataCodeSpecified() {
+    String s = properties.getProperty(SvmProperties.rasterGeoTiffNoDataCode);
+    return s != null && !s.isBlank();
+  }
+
+  /**
+   * Indicates whether data compression is enabled for GeoTIFF data.
+   *
+   * @return true if data compression is enabled; otherwise, false.
+   */
+  public boolean isGeoTiffDataCompressionEnabled() {
+    String s = properties.getProperty(SvmProperties.rasterGeoTiffDataCompression);
+    if (s != null && !s.isBlank()) {
+      try {
+        return Boolean.parseBoolean(s.trim());
+      } catch (NumberFormatException nfe) {
+        // no action required
+      }
+    }
+    return false;
+  }
 }

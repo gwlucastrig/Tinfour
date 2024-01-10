@@ -42,17 +42,17 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
-import java.util.zip.Deflater;
 import org.apache.commons.imaging.ImageWriteException;
 import org.apache.commons.imaging.PixelDensity;
 import org.apache.commons.imaging.common.RationalNumber;
+import org.apache.commons.imaging.common.mylzw.MyLzwCompressor;
 import org.apache.commons.imaging.formats.tiff.TiffElement;
 import org.apache.commons.imaging.formats.tiff.TiffImageData;
 import static org.apache.commons.imaging.formats.tiff.constants.GdalLibraryTagConstants.EXIF_TAG_GDAL_NO_DATA;
 import org.apache.commons.imaging.formats.tiff.constants.GeoTiffTagConstants;
 import static org.apache.commons.imaging.formats.tiff.constants.GeoTiffTagConstants.EXIF_TAG_MODEL_PIXEL_SCALE_TAG;
 import static org.apache.commons.imaging.formats.tiff.constants.GeoTiffTagConstants.EXIF_TAG_MODEL_TIEPOINT_TAG;
-import static org.apache.commons.imaging.formats.tiff.constants.TiffConstants.TIFF_COMPRESSION_DEFLATE_ADOBE;
+import static org.apache.commons.imaging.formats.tiff.constants.TiffConstants.TIFF_COMPRESSION_LZW;
 import static org.apache.commons.imaging.formats.tiff.constants.TiffConstants.TIFF_COMPRESSION_UNCOMPRESSED;
 import org.apache.commons.imaging.formats.tiff.constants.TiffTagConstants;
 import static org.apache.commons.imaging.formats.tiff.constants.TiffTagConstants.PLANAR_CONFIGURATION_VALUE_CHUNKY;
@@ -222,7 +222,6 @@ public class GeoTiffTableBuilder {
     }
   }
 
-
   /**
    * Stores the GeoKey content and model-pixel coordinate transform data to
    * the TIFF output directory instance
@@ -343,9 +342,9 @@ public class GeoTiffTableBuilder {
   }
 
   /**
-   * Encode a block of floating-point values as a tile.  This method
-   * is supports the storage of 32-bit float-point values.  At present,
-   * it only supports the TIFF tile format (with square tiles).  It may
+   * Encode a block of floating-point values as a tile. This method
+   * is supports the storage of 32-bit float-point values. At present,
+   * it only supports the TIFF tile format (with square tiles). It may
    * be enhanced in the future.
    * <p>
    * To prepare for the Deflater compression,
@@ -425,17 +424,28 @@ public class GeoTiffTableBuilder {
       }
     }
 
-    // apply the Deflate
-    Deflater deflater = new Deflater(6);
-    deflater.setInput(b, 0, b.length);
-    deflater.finish();
-    byte[] deflaterResult = new byte[b.length + 1024];
-    int dN = deflater.deflate(deflaterResult, 0, deflaterResult.length, Deflater.FULL_FLUSH);
-    if (dN <= 0) {
-      // deflate failed
+    try {
+      final int LZW_MINIMUM_CODE_SIZE = 8;
+      MyLzwCompressor compressor = new MyLzwCompressor(
+        LZW_MINIMUM_CODE_SIZE, ByteOrder.BIG_ENDIAN, true);
+      final byte[] compressed = compressor.compress(b);
+      return compressed;
+    } catch (IOException iex) {
       return null;
     }
-    return Arrays.copyOf(deflaterResult, dN);
+
+    //
+    //    // apply the Deflate
+    //    Deflater deflater = new Deflater(6);
+    //    deflater.setInput(b, 0, b.length);
+    //    deflater.finish();
+    //    byte[] deflaterResult = new byte[b.length + 1024];
+    //    int dN = deflater.deflate(deflaterResult, 0, deflaterResult.length, Deflater.FULL_FLUSH);
+    //    if (dN <= 0) {
+    //      // deflate failed
+    //      return null;
+    //    }
+    //    return Arrays.copyOf(deflaterResult, dN);
   }
 
   /**
@@ -458,7 +468,8 @@ public class GeoTiffTableBuilder {
     short planarConfiguration;
 
     if (compressionEnabled) {
-      compression = TIFF_COMPRESSION_DEFLATE_ADOBE;
+      //compression = TIFF_COMPRESSION_DEFLATE_ADOBE;
+      compression = TIFF_COMPRESSION_LZW;
     } else {
       compression = TIFF_COMPRESSION_UNCOMPRESSED;
     }
