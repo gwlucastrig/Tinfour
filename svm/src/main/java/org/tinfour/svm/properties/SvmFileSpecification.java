@@ -83,6 +83,7 @@ public class SvmFileSpecification {
   final String key;
   final File file;
   final String field;
+  final String lasFilter;
   final IVerticalCoordinateTransform verticalTransform;
   final SvmBathymetryModel bathymetryModel;
 
@@ -116,19 +117,33 @@ public class SvmFileSpecification {
       file = new File(folder, path);
     }
 
+    String name = file.getName().toLowerCase();
+    if((name.endsWith(".las") || name.endsWith("laz")) && list.size()>1){
+         String temp  = list.get(1).trim();
+         if(temp.isBlank()){
+           lasFilter = temp;
+         }else{
+           lasFilter = null;
+         }
+    }else{
+      lasFilter = null;
+    }
+
     // see if the specification supplies a fixed value for the
     // vertical coordinate.  In such a case,  the fixedValue variable
     // will be set to a valid floating point value.  Otherwise,
     // it will remain as NaN indicating that standard processing is required.
     double fixedValue = Double.NaN;
-    String s = list.get(1).trim();
-    if (s.length() > 0 && !Character.isAlphabetic(s.charAt(0))) {
-      // see if it's a numeric giving a fixed value specification
-      try {
-        fixedValue = Double.parseDouble(s);
-      } catch (NumberFormatException dontCare) {
-        // it's not a fixed value
-        fixedValue = Double.NaN;
+    if (list.size() > 1) {
+      String s = list.get(1).trim();
+      if (s.length() > 0 && !Character.isAlphabetic(s.charAt(0))) {
+        // see if it's a numeric giving a fixed value specification
+        try {
+          fixedValue = Double.parseDouble(s);
+        } catch (NumberFormatException dontCare) {
+          // it's not a fixed value
+          fixedValue = Double.NaN;
+        }
       }
     }
 
@@ -217,12 +232,25 @@ public class SvmFileSpecification {
 
   /**
    * Get the named data field String from the specification (if supplied)
+   * or the LAS/LAZ filter specification (if supplied).
    *
    * @return if supplied, a valid, non-empty string; otherwise, a null.
    */
   public String getField() {
+    if(lasFilter!=null){
+      return lasFilter;
+    }
     return field;
   }
+
+  /**
+   * Gets a data filter specification if provided for for LAS or LAZ files
+   * @return if specified, a valid string; otherwise, a null.
+   */
+  public String getLasFilter(){
+    return lasFilter;
+  }
+
 
   /**
    * Get the vertical coordinate transform from the specification (if supplied)

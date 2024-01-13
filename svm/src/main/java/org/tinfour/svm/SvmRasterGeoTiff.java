@@ -390,9 +390,4 @@ class SvmRasterGeoTiff {
 
     return true;
   }
-
-  private boolean approxEquals(double v, double d) {
-     return Math.abs(v-d)<0.01;
-  }
-
 }

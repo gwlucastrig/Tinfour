@@ -1055,7 +1055,7 @@ public class SvmProperties {
       try {
         return Boolean.parseBoolean(s.trim());
       } catch (NumberFormatException nfe) {
-        // no action required
+        throw new IllegalArgumentException("Invalid boolean specification for GeoTIFF data compression: "+s);
       }
     }
     return false;
