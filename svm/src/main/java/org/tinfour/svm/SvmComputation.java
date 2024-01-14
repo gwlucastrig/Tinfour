@@ -38,6 +38,7 @@ import java.io.IOException;
 import java.io.PrintStream;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.BitSet;
 import java.util.List;
 import java.util.function.Consumer;
 import org.tinfour.common.GeometricOperations;
@@ -434,7 +435,7 @@ public class SvmComputation {
     double totalShore = lakePerimeter + islandPerimeter;
     Rectangle2D bounds = data.getBounds();
 
-    ps.format("%nData from Shapefiles --------------------------------------------------------------%n");
+    ps.format("%nData from Shapefiles and Source Data --------------------------------------------%n");
     if (properties.doesLocaleUseCommaForDecimal()) {
       ps.format("  Lake area           %18.2f %s%n", lakeArea, areaUnits);
       ps.format("  Island area         %18.2f %s%n", islandArea, areaUnits);
@@ -468,27 +469,43 @@ public class SvmComputation {
       (data.getMaxZ() - data.getMinZ()) / lengthFactor);
 
     if (properties.isSoundingSpacingEnabled()) {
-      List<Vertex> originalSoundings = data.getSoundings();
-      double[] lenArray = new double[originalSoundings.size()];
-      double sumLen = 0;
+      KahanSummation sumLen = new KahanSummation();
+      KahanSummation sumLen2 = new KahanSummation();
+      int nEdgeMax = tin.getMaximumEdgeAllocationIndex();
+      BitSet visited = new BitSet(nEdgeMax);
+      float[] lenArray = new float[nEdgeMax];
       int nLen = 0;
-      Vertex prior = null;
-      for (Vertex v : originalSoundings) {
-        if (prior != null) {
-          double len = v.getDistance(prior);
-          sumLen += len;
-          lenArray[nLen++] = len;
+      for(IQuadEdge edge: tin.edges()){
+        int eIndex = edge.getBaseIndex();
+        if(visited.get(eIndex)){
+          continue;
         }
-        prior = v;
-      }
-      Arrays.sort(lenArray, 0, nLen);
-      double meanLen = sumLen / nLen;
-      double medianLen = lenArray[nLen / 2];
+        visited.set(eIndex);
+        if(edge.isConstrainedRegionBorder()){
+          continue;
+        }
 
-      ps.format("  Mean sounding spacing:   %12.3f %s%n",
-        meanLen / lengthFactor, lengthUnits);
-      ps.format("  Median sounding spacing: %12.3f %s%n",
-        medianLen, lengthUnits);
+        if(lakeConsumer.isWater(edge)){
+          double len = edge.getLength();
+          sumLen.add(len);
+          sumLen2.add(len*len);
+          lenArray[nLen++] = (float)len;
+        }
+      }
+
+      Arrays.sort(lenArray, 0, nLen);
+      double sLen = sumLen.getSum();
+      double sLen2 = sumLen2.getSum();
+      double sigma = Double.NaN;
+      double meanLen = sumLen.getMean();
+      double medianLen = lenArray[nLen / 2];
+      if(nLen>2){
+       sigma = Math.sqrt((sLen2 - (sLen / nLen) * sLen) / (nLen - 1));
+      }
+      ps.format("  Sounding spacing%n");
+      ps.format("     mean     %12.3f %s%n", meanLen / lengthFactor, lengthUnits);
+      ps.format("     std/dev  %12.3f %s%n", sigma/lengthFactor, lengthUnits);
+      ps.format("     median   %12.3f %s%n", medianLen / lengthFactor, lengthUnits);
       ps.format("%n");
     }
 
