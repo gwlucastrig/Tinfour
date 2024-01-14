@@ -504,7 +504,7 @@ public class SvmComputation {
       }
       ps.format("  Sounding spacing%n");
       ps.format("     mean     %12.3f %s%n", meanLen / lengthFactor, lengthUnits);
-      ps.format("     std/dev  %12.3f %s%n", sigma/lengthFactor, lengthUnits);
+      ps.format("     std dev  %12.3f %s%n", sigma/lengthFactor, lengthUnits);
       ps.format("     median   %12.3f %s%n", medianLen / lengthFactor, lengthUnits);
       ps.format("%n");
     }
