@@ -38,7 +38,6 @@ import java.io.IOException;
 import java.io.PrintStream;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.BitSet;
 import java.util.List;
 import java.util.function.Consumer;
 import org.tinfour.common.GeometricOperations;
@@ -270,6 +269,24 @@ public class SvmComputation {
     }
   }
 
+  private static class SampleSpacing{
+    final int nSamples;
+    final double sigma;
+    final double mean;
+    final double median;
+    final double lenMin;
+    final double lenMax;
+
+    SampleSpacing(int nSamples, double mean, double sigma, double median, double lenMin, double lenMax){
+      this.nSamples = nSamples;
+      this.mean = mean;
+      this.sigma = sigma;
+      this.median = median;
+      this.lenMin = lenMin;
+      this.lenMax = lenMax;
+    }
+  }
+
   /**
    * Performs the main process, printing the results to the specified print
    * stream.
@@ -334,6 +351,34 @@ public class SvmComputation {
     long time2 = System.nanoTime();
     long timeToBuildTin = time1 - time0;
     long timeToAddConstraints = time2 - time1;
+
+    long spTime0 = System.nanoTime();
+    SampleSpacing spacing = this.evaluateSampleSpacing(tin);
+    long spTime1 = System.nanoTime();
+    long timeToFindSampleSpacing = spTime1-spTime0;
+
+    // The experimental filter is a non-advertised feature for removing
+    // anomalous points.
+    if(properties.isExperimentalFilterEnabled()){
+      ps.println("Processing experimental filter");
+      spTime0 = System.nanoTime();
+      SvmSinglePointAnomalyFilter filter = new SvmSinglePointAnomalyFilter();
+      int nFilter = filter.process(ps, tin);
+      if(nFilter>0){
+        // some vertices were marked as withheld
+        ArrayList<Vertex> filteredSamples = new ArrayList<>(soundings.size());
+        for(Vertex v: soundings){
+          if(!v.isWithheld()){
+            filteredSamples.add(v);
+          }
+        }
+        soundings = filteredSamples;
+        data.replaceSoundings(filteredSamples);
+        spTime1 = System.nanoTime();
+        long timeToFilter = spTime1-spTime0;
+        ps.format("Time for experimental filter   %9.1f ms%n", timeToFilter/1.0e+6);
+      }
+    }
 
     TriangleSurvey trigSurvey = new TriangleSurvey(tin, shoreReferenceElevation);
     TriangleCollector.visitSimpleTriangles(tin, trigSurvey);
@@ -468,46 +513,14 @@ public class SvmComputation {
       data.getMaxZ() / lengthFactor,
       (data.getMaxZ() - data.getMinZ()) / lengthFactor);
 
-    if (properties.isSoundingSpacingEnabled()) {
-      KahanSummation sumLen = new KahanSummation();
-      KahanSummation sumLen2 = new KahanSummation();
-      int nEdgeMax = tin.getMaximumEdgeAllocationIndex();
-      BitSet visited = new BitSet(nEdgeMax);
-      float[] lenArray = new float[nEdgeMax];
-      int nLen = 0;
-      for(IQuadEdge edge: tin.edges()){
-        int eIndex = edge.getBaseIndex();
-        if(visited.get(eIndex)){
-          continue;
-        }
-        visited.set(eIndex);
-        if(edge.isConstrainedRegionBorder()){
-          continue;
-        }
 
-        if(lakeConsumer.isWater(edge)){
-          double len = edge.getLength();
-          sumLen.add(len);
-          sumLen2.add(len*len);
-          lenArray[nLen++] = (float)len;
-        }
-      }
-
-      Arrays.sort(lenArray, 0, nLen);
-      double sLen = sumLen.getSum();
-      double sLen2 = sumLen2.getSum();
-      double sigma = Double.NaN;
-      double meanLen = sumLen.getMean();
-      double medianLen = lenArray[nLen / 2];
-      if(nLen>2){
-       sigma = Math.sqrt((sLen2 - (sLen / nLen) * sLen) / (nLen - 1));
-      }
-      ps.format("  Sounding spacing%n");
-      ps.format("     mean     %12.3f %s%n", meanLen / lengthFactor, lengthUnits);
-      ps.format("     std dev  %12.3f %s%n", sigma/lengthFactor, lengthUnits);
-      ps.format("     median   %12.3f %s%n", medianLen / lengthFactor, lengthUnits);
-      ps.format("%n");
-    }
+    ps.format("  Sounding spacing%n");
+    ps.format("     mean     %12.3f %s%n", spacing.mean / lengthFactor, lengthUnits);
+    ps.format("     std dev  %12.3f %s%n", spacing.sigma / lengthFactor, lengthUnits);
+    ps.format("     median   %12.3f %s%n", spacing.median/ lengthFactor, lengthUnits);
+    ps.format("     maximim  %12.3f %s%n", spacing.lenMax/ lengthFactor, lengthUnits);
+    ps.format("     minimum  %14.5f %s%n", spacing.lenMin/ lengthFactor, lengthUnits);
+    ps.format("%n");
 
     double rawVolume = lakeConsumer.getVolume();
     double rawSurfArea = lakeConsumer.getSurfaceArea();
@@ -518,7 +531,6 @@ public class SvmComputation {
     double surfArea = lakeConsumer.getSurfaceArea() / areaFactor;
     double avgDepth = (rawVolume / rawSurfArea) / lengthFactor;
     double adjMeanDepth = rawAdjMeanDepth / lengthFactor;
-    double vertexSpacing = estimateInteriorVertexSpacing(tin, lakeConsumer);
     double rawFlatArea = lakeConsumer.getFlatArea();
     double flatArea = lakeConsumer.getFlatArea() / areaFactor;
 
@@ -533,7 +545,7 @@ public class SvmComputation {
         flatArea, areaUnits, rawFlatArea, lengthUnits);
       ps.format("  Avg depth           %18.2f %s%n", avgDepth, lengthUnits);
       ps.format("  Adj mean depth      %18.2f %s%n", adjMeanDepth, lengthUnits);
-      ps.format("  Mean Vertex Spacing %18.2f %s%n", vertexSpacing, lengthUnits);
+      ps.format("  Mean Vertex Spacing %18.2f %s%n", spacing.mean, lengthUnits);
     } else {
       ps.format("  Volume              %,18.2f %s     %,28.1f %s^3%n",
         volume, volumeUnits, rawVolume, lengthUnits);
@@ -543,7 +555,7 @@ public class SvmComputation {
         flatArea, areaUnits, rawFlatArea, lengthUnits);
       ps.format("  Avg depth           %,18.2f %s%n", avgDepth, lengthUnits);
       ps.format("  Adj mean depth      %,18.2f %s%n", adjMeanDepth, lengthUnits);
-      ps.format("  Mean Vertex Spacing %,18.2f %s%n", vertexSpacing, lengthUnits);
+      ps.format("  Mean Vertex Spacing %,18.2f %s%n", spacing.mean, lengthUnits);
     }
     ps.format("  N Triangles         %15d%n", lakeConsumer.nTriangles);
     ps.format("  N Flat Triangles    %15d%n", lakeConsumer.nFlatTriangles);
@@ -563,6 +575,7 @@ public class SvmComputation {
     ps.format("Time to load data              %9.1f ms%n", data.getTimeToLoadData() / 1.0e+6);
     ps.format("Time to build TIN              %9.1f ms%n", timeToBuildTin / 1.0e+6);
     ps.format("Time to add shore constraint   %9.1f ms%n", timeToAddConstraints / 1.0e+6);
+    ps.format("Time to find sample spacing    %9.1f ms%n", timeToFindSampleSpacing/1.0e+6);
     ps.format("Time to remedy flat triangles  %9.1f ms%n", timeToFixFlats / 1.0e+6);
     ps.format("Time to compute lake volume    %9.1f ms%n", (time2 - time1) / 1.0e+6);
     ps.format("Time for all analysis          %9.1f ms%n", (time2 - time0) / 1.0e+6);
@@ -678,35 +691,82 @@ public class SvmComputation {
     return perimeterSum.getSum();
   }
 
+
   /**
-   * Estimates vertex spacing for TIN based exclusively on interior edges.
-   * Constraint edges and perimeter edges are not included.
-   *
-   * @param tin a valid TIN.
-   * @param lakeData a valid instance of input data
-   * @return an estimated vertex spacing
+   * Finds the spacing between samples in the source data, selecting
+   * neighbors based on the Delaunay triangulation. This method
+   * applies logic to exclude constraint edges and edges that
+   * attach samples to constraint vertices.  The rationale
+   * for this exclusion is that the constraints have a different
+   * level of data collection than the samples and would have
+   * different statistics.  The logic below also excludes
+   * perimeter edges
+   * <p>
+   * This logic assumes that the TIN was prepared using the SVM conventions
+   * of populating the auxiliary index of the sample vertices with
+   * a flag indicating that they are depth samples.
+   * @param tin a valid instance
+   * @return a valid instance
    */
-  private double estimateInteriorVertexSpacing(IIncrementalTin tin, LakeData lakeData) {
-    KahanSummation sumLength = new KahanSummation();
-    int n = 0;
-    for (IQuadEdge e : tin.edges()) {
-      if (lakeData.isWater(e)) {
-        // the edge lies in a water area, but we also need
+  private SampleSpacing evaluateSampleSpacing(IIncrementalTin tin){
+
+    List<IConstraint> constraintsFromTin = tin.getConstraints();
+    boolean[] water = new boolean[constraintsFromTin.size()];
+    for (IConstraint con : constraintsFromTin) {
+      water[con.getConstraintIndex()] = (Boolean) con.getApplicationData();
+    }
+    KahanSummation sumLen = new KahanSummation();
+    KahanSummation sumLen2 = new KahanSummation();
+    int nEdgeMax = tin.getMaximumEdgeAllocationIndex();
+    float[] lenArray = new float[nEdgeMax];
+    int nLen = 0;
+    double lenMin = Double.POSITIVE_INFINITY;
+    double lenMax = Double.NEGATIVE_INFINITY;
+
+
+    for (IQuadEdge edge : tin.edges()) {
+      if (!edge.isConstrainedRegionInterior()) {
+        continue;
+      }
+
+      int conIndex = edge.getConstraintIndex();
+      if (water[conIndex]) {
+         // the edge lies in a water area, but we also need
         // to exclude any edges that connect a sounding to
         // a constraint border.
-        Vertex a = e.getA();
+        Vertex a = edge.getA();
+        Vertex b = edge.getB();
         int aAux = a.getAuxiliaryIndex();
-        int bAux = a.getAuxiliaryIndex();
-        if (aAux == SvmBathymetryData.BATHYMETRY_SOURCE && bAux == SvmBathymetryData.BATHYMETRY_SOURCE) {
-          n++;
-          sumLength.add(e.getLength());
+        int bAux = b.getAuxiliaryIndex();
+        if (aAux == SvmBathymetryData.BATHYMETRY_SOURCE
+          && bAux == SvmBathymetryData.BATHYMETRY_SOURCE) {
+          double len = edge.getLength();
+          sumLen.add(len);
+          sumLen2.add(len * len);
+          lenArray[nLen++] = (float) len;
+          if(len<lenMin){
+            lenMin = len;
+          }
+          if(len>lenMax){
+            lenMax = len;
+          }
         }
       }
     }
-    if (n == 0) {
-      return 0;
-    }
-    return sumLength.getSum() / n;
-  }
 
+    Arrays.sort(lenArray, 0, nLen);
+    double sLen = sumLen.getSum();
+    double sLen2 = sumLen2.getSum();
+
+    double sigma = Double.NaN;
+    double mean = sumLen.getMean();
+    double median = lenArray[nLen / 2];
+    if (nLen > 2) {
+      sigma = Math.sqrt((sLen2 - (sLen / nLen) * sLen) / (nLen - 1));
+    }
+
+
+    return new SampleSpacing(nLen, mean, sigma, median, lenMin, lenMax);
+
+  }
 }

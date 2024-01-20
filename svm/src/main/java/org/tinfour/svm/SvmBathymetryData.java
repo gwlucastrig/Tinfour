@@ -655,4 +655,10 @@ public class SvmBathymetryData {
   public List<Vertex>getSurveyPerimeter(){
     return surveyPerimeter;
   }
+
+  void replaceSoundings(List<Vertex>replacements){
+    soundings.clear();
+    supplement.clear();
+    soundings.addAll(replacements);
+  }
 }

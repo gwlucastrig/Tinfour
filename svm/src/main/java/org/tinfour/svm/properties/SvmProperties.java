@@ -58,7 +58,6 @@ public class SvmProperties {
   private final static String tableKey = "table";
   private final static String tableIntervalKey = "tableInterval";
   private final static String flatFixerKey = "remediateFlatTriangles";
-  private final static String soundingSpacingKey = "computeSoundingSpacing";
   private final static String inputFolderKey = "inputFolder";
   private final static String outputFolderKey = "outputFolder";
 
@@ -86,6 +85,8 @@ public class SvmProperties {
   private final static String contourShapefileShorelineEnabledKey = "contourShapefileShorelineEnabled";
 
   private final static String anomalyTableFileKey = "anomalyTableFileName";
+
+  private final static String experimentalFilterKey = "experimentalFilter";
 
   final Properties properties = new Properties();
   final List<String> keyList = new ArrayList<>();
@@ -533,16 +534,6 @@ public class SvmProperties {
     return test;
   }
 
-  /**
-   * Indicates whether the computation of sounding spacing is enabled.
-   *
-   * @return true if computation is to be performed; otherwise, false.
-   */
-  public boolean isSoundingSpacingEnabled() {
-    String s = properties.getProperty(soundingSpacingKey, "false");
-    boolean test = Boolean.parseBoolean(s.trim());
-    return test;
-  }
 
   private int findMaxNameLength(int m0, List<SvmFileSpecification> samples) {
     int m = m0;
@@ -1056,6 +1047,18 @@ public class SvmProperties {
         return Boolean.parseBoolean(s.trim());
       } catch (NumberFormatException nfe) {
         throw new IllegalArgumentException("Invalid boolean specification for GeoTIFF data compression: "+s);
+      }
+    }
+    return false;
+  }
+
+  public boolean isExperimentalFilterEnabled(){
+        String s = properties.getProperty(SvmProperties.experimentalFilterKey);
+    if (s != null && !s.isBlank()) {
+      try {
+        return Boolean.parseBoolean(s.trim());
+      } catch (NumberFormatException nfe) {
+        throw new IllegalArgumentException("Invalid boolean specification for experimentalFilter: "+s);
       }
     }
     return false;

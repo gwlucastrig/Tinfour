@@ -105,6 +105,12 @@ public class Vertex implements ISamplePoint {
   public static final int BIT_CONSTRAINT = 0x02;
 
   /**
+   * A bit flag indicating that the vertex is to be treated as "withheld" and
+   * should not be processed as part of a Delaunay triangulation (TIN).
+   * This flag is used in support of data filtering and similar operations.
+   */
+  public static final int BIT_WITHHELD = 0x04;
+  /**
    * An indexing value assigned to the Vertex. In this package, it is used
    * primary for diagnostic purposes and labeling graphics.
    * Note that unlike the horizontal and vertical coordinates
@@ -365,6 +371,34 @@ public class Vertex implements ISamplePoint {
     }
   }
 
+
+
+  /**
+   * Indicates whether a vertex is marked as withheld. This setting is
+   * typically set by application code or other utilities rather than by Tinfour
+   * internal operations.
+   *
+   * @return true if vertex is withheld; otherwise, false
+   */
+  public boolean isWithheld() {
+    return (status & BIT_WITHHELD) != 0;
+  }
+
+   /**
+   * Sets or clears the is-withheld status of a vertex.
+   *
+   * @param synthetic true if vertex is withheld; otherwise, false
+   */
+  public void setWithheld(boolean synthetic) {
+    if (synthetic) {
+      status |= BIT_WITHHELD;
+    } else {
+      status &= ~BIT_WITHHELD;
+    }
+  }
+
+
+
   /**
    * Sets the status value of the vertex. This method is intended to
    * provide an efficient way of setting multiple status flags at once.
@@ -387,7 +421,7 @@ public class Vertex implements ISamplePoint {
 
   /**
    * Indicates whether a vertex is part of a constraint definition or
-   * lies on the border of an area constraint. 
+   * lies on the border of an area constraint.
    *
    * @return true if vertex is a constraint member; otherwise, false
    */
@@ -396,7 +430,7 @@ public class Vertex implements ISamplePoint {
   }
 
   /**
-   * Gets the auxiliary index for the vertex. The auxiliary index 
+   * Gets the auxiliary index for the vertex. The auxiliary index
    * field is one byte in size and supports integer values in the
    * range 0 to 255.  It is used to support graph-coloring algorithms
    * but is available for other uses as well.
@@ -407,10 +441,10 @@ public class Vertex implements ISamplePoint {
   }
 
   /**
-   * Sets the auxiliary index for the vertex. The auxiliary index 
+   * Sets the auxiliary index for the vertex. The auxiliary index
    * field is one byte in size and supports integer values in the
    * range 0 to 255.  It is used to support graph-coloring algorithms
-   * but is available for other uses as well. 
+   * but is available for other uses as well.
    * @param auxiliaryIndex a value in the range 0 to 255
    */
   public void setAuxiliaryIndex(int auxiliaryIndex) {

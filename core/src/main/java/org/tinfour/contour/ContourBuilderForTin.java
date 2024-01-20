@@ -778,6 +778,9 @@ public class ContourBuilderForTin {
     buildRegionsUsingPerimeter();
 
     for (Contour contour : closedContourList) {
+      if(contour.isEmpty()){
+        continue;
+      }
       ContourRegion region = new ContourRegion(contour);
       regionList.add(region);
     }
