@@ -34,6 +34,7 @@ import java.util.BitSet;
 import org.tinfour.common.IIncrementalTin;
 import org.tinfour.common.IQuadEdge;
 import org.tinfour.common.Vertex;
+import org.tinfour.svm.properties.SvmProperties;
 
 /**
  * Implements logic for removing single-point anomalies from the
@@ -50,7 +51,8 @@ class SvmSinglePointAnomalyFilter {
    */
  int process(
     PrintStream ps,
-    IIncrementalTin tin) {
+    IIncrementalTin tin,
+    SvmProperties properties) {
     int maxEdgeIndex = tin.getMaximumEdgeAllocationIndex();
     BitSet edgeSet = new BitSet(maxEdgeIndex);
     for (IQuadEdge edge : tin.getPerimeter()) {
@@ -59,8 +61,8 @@ class SvmSinglePointAnomalyFilter {
       edgeSet.set(baseIndex | 1);
     }
 
-    double mCutOff = 0.015;
-    double mReject = 0.5;
+    double mCutOff = properties.getExperimentalFilterSlopeOfSupport("0.015");
+    double mReject = properties.getExperimentalFilterSlopeOfAnomaly("0.5");
     double mMax = 0;
     int nNegReject = 0;
     int nPosReject = 0;

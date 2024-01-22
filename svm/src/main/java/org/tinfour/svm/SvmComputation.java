@@ -363,7 +363,7 @@ public class SvmComputation {
       ps.println("Processing experimental filter");
       spTime0 = System.nanoTime();
       SvmSinglePointAnomalyFilter filter = new SvmSinglePointAnomalyFilter();
-      int nFilter = filter.process(ps, tin);
+      int nFilter = filter.process(ps, tin, properties);
       if(nFilter>0){
         // some vertices were marked as withheld
         ArrayList<Vertex> filteredSamples = new ArrayList<>(soundings.size());
@@ -377,6 +377,21 @@ public class SvmComputation {
         spTime1 = System.nanoTime();
         long timeToFilter = spTime1-spTime0;
         ps.format("Time for experimental filter   %9.1f ms%n", timeToFilter/1.0e+6);
+        File filterOutputFile = properties.getExperimentalFilterFile();
+        if (filterOutputFile != null) {
+          try (FileOutputStream tableOutputStream = new FileOutputStream(filterOutputFile);
+            BufferedOutputStream bos = new BufferedOutputStream(tableOutputStream);
+            PrintStream fs = new PrintStream(bos, true, "UTF-8");) {
+            fs.println("x\ty\tz\tindex");
+            for(Vertex v: soundings){
+                fs.format("%12.6f\t%12.6f\t%5.4f\t%d%n",
+                  v.getX(), v.getY(), v.getZ(), v.getIndex());
+            }
+            fs.flush();
+          } catch (IOException ioex) {
+            ps.println("IOException writing filter output "+ioex.getMessage());
+          }
+        }
       }
     }
 

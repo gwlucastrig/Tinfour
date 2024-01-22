@@ -87,6 +87,9 @@ public class SvmProperties {
   private final static String anomalyTableFileKey = "anomalyTableFileName";
 
   private final static String experimentalFilterKey = "experimentalFilter";
+  private final static String experimentalFilterFileKey = "experimentalFilterFileName";
+  private final static String experimentalFilterSlopeOfAnomalyKey = "experimentalFilterSlopeOfAnomaly";
+  private final static String experimentalFilterSlopeOfSupportKey = "experimentalFilterSlopeOfSupport";
 
   final Properties properties = new Properties();
   final List<String> keyList = new ArrayList<>();
@@ -1063,4 +1066,53 @@ public class SvmProperties {
     }
     return false;
   }
+
+  /**
+   * Get the path to a file for writing the output from an experimental filter.
+   *
+   * @return a valid File instance or a null if not specified.
+   */
+  public File getExperimentalFilterFile() {
+    if (properties.containsKey( experimentalFilterFileKey)) {
+      return extractOutputFile(outputFolderKey, properties.getProperty(experimentalFilterFileKey));
+    }
+    return null;
+  }
+
+
+  public Double getExperimentalFilterSlopeOfAnomaly(String defaultValue){
+    String s = properties.getProperty(experimentalFilterSlopeOfAnomalyKey, defaultValue);
+
+    try {
+      double d = Double.parseDouble(s);
+      if (d <= 0) {
+        throw new IllegalArgumentException(
+          "Invalid value for experimental slope anomaly: " + s);
+      }
+      return d;
+    } catch (NumberFormatException nex) {
+      throw new IllegalArgumentException(
+        "Invalid numeric for experimental slope anomaly: " + s);
+    }
+  }
+
+
+
+  public Double getExperimentalFilterSlopeOfSupport(String defaultValue){
+    String s = properties.getProperty(experimentalFilterSlopeOfSupportKey, defaultValue);
+
+    try {
+      double d = Double.parseDouble(s);
+      if (d <= 0) {
+        throw new IllegalArgumentException(
+          "Invalid value for experimental slope support: " + s);
+      }
+      return d;
+    } catch (NumberFormatException nex) {
+      throw new IllegalArgumentException(
+        "Invalid numeric for experimental slope support: " + s);
+    }
+  }
+
+
 }
