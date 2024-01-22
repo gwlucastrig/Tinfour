@@ -364,6 +364,9 @@ public class SvmComputation {
       spTime0 = System.nanoTime();
       SvmSinglePointAnomalyFilter filter = new SvmSinglePointAnomalyFilter();
       int nFilter = filter.process(ps, tin, properties);
+      ps.format("  Slope of anomaly  %10.3f%n", properties.getExperimentalFilterSlopeOfAnomaly("0.5"));
+      ps.format("  Slope of support  %10.3f%n", properties.getExperimentalFilterSlopeOfSupport("0.015"));
+      ps.format("  Points removed    %d%n", nFilter);
       if(nFilter>0){
         // some vertices were marked as withheld
         ArrayList<Vertex> filteredSamples = new ArrayList<>(soundings.size());
