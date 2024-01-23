@@ -1080,8 +1080,11 @@ public class SvmProperties {
   }
 
 
-  public Double getExperimentalFilterSlopeOfAnomaly(String defaultValue){
-    String s = properties.getProperty(experimentalFilterSlopeOfAnomalyKey, defaultValue);
+  public double getExperimentalFilterSlopeOfAnomaly(double defaultValue){
+    String s = properties.getProperty(experimentalFilterSlopeOfAnomalyKey);
+   if(s==null || s.isBlank()){
+      return defaultValue;
+    }
 
     try {
       double d = Double.parseDouble(s);
@@ -1098,8 +1101,11 @@ public class SvmProperties {
 
 
 
-  public Double getExperimentalFilterSlopeOfSupport(String defaultValue){
-    String s = properties.getProperty(experimentalFilterSlopeOfSupportKey, defaultValue);
+  public double getExperimentalFilterSlopeOfSupport(double defaultValue){
+    String s = properties.getProperty(experimentalFilterSlopeOfSupportKey);
+    if(s==null || s.isBlank()){
+      return defaultValue;
+    }
 
     try {
       double d = Double.parseDouble(s);

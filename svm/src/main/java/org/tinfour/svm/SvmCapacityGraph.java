@@ -52,7 +52,7 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 import javax.imageio.ImageIO;
-import org.tinfour.svm.SvmTriangleVolumeStore.AreaVolumeResult;
+import org.tinfour.svm.SvmTriangleVolumeTabulator.AreaVolumeSum;
 import org.tinfour.svm.properties.SvmProperties;
 import org.tinfour.svm.properties.SvmUnitSpecification;
 import org.tinfour.utils.AxisIntervals;
@@ -64,7 +64,7 @@ import org.tinfour.utils.AxisIntervals;
 class SvmCapacityGraph {
 
   private final SvmProperties properties;
-  private final List<AreaVolumeResult> resultList;
+  private final List<AreaVolumeSum> resultList;
   private final double totalVolume;
   private final double minLevel;
   private final double maxLevel;
@@ -103,13 +103,13 @@ class SvmCapacityGraph {
    * shore reference elevation
    */
   SvmCapacityGraph(SvmProperties properties,
-    List<AreaVolumeResult> sourceResultList,
+    List<AreaVolumeSum> sourceResultList,
     double totalVolume) {
-    List<AreaVolumeResult> resultList = new ArrayList<>();
+    List<AreaVolumeSum> resultList = new ArrayList<>();
     resultList.addAll(sourceResultList);
-    Collections.sort(resultList, new Comparator<AreaVolumeResult>() {
+    Collections.sort(resultList, new Comparator<AreaVolumeSum>() {
       @Override
-      public int compare(AreaVolumeResult o1, AreaVolumeResult o2) {
+      public int compare(AreaVolumeSum o1, AreaVolumeSum o2) {
         return Double.compare(o1.level, o2.level);
       }
 
@@ -398,9 +398,9 @@ class SvmCapacityGraph {
 
     Path2D path = new Path2D.Double();
     boolean moveFlag = true;
-    for (AreaVolumeResult avr : resultList) {
+    for (AreaVolumeSum avr : resultList) {
       double level = avr.level;
-      double percent = 100.0 * avr.volume / totalVolume;
+      double percent = 100.0 * avr.getVolume() / totalVolume;
       double x = x0 + (level - xCoords[0]) / xUnitsPerPixel;
       double y = y1 - percent / cUnitsPerPixel;
       if (moveFlag) {
@@ -445,9 +445,9 @@ class SvmCapacityGraph {
     double p1 = 0;  // sum of x * y
     double p2 = 0;  // sum of x^2 * y
 
-    for (AreaVolumeResult avr : resultList) {
+    for (AreaVolumeSum avr : resultList) {
       double x = avr.level - maxLevel;
-      double y = avr.volume / totalVolume - 1;
+      double y = avr.getVolume() / totalVolume - 1;
       double x2 = x * x;
       s2 += x2;
       s3 += x2 * x;

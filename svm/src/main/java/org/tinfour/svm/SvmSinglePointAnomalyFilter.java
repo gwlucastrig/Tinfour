@@ -43,6 +43,16 @@ import org.tinfour.svm.properties.SvmProperties;
  */
 class SvmSinglePointAnomalyFilter {
 
+    private static final double DEFAULT_SLOPE_OF_ANOMALY = 0.5;
+    private static final double DEFAULT_SLOPE_OF_SUPPORT = 0.015;
+
+    private final double slopeOfAnomaly;
+    private final double slopeOfSupport;
+
+    SvmSinglePointAnomalyFilter(SvmProperties properties) {
+      slopeOfAnomaly = properties.getExperimentalFilterSlopeOfAnomaly(DEFAULT_SLOPE_OF_ANOMALY);
+      slopeOfSupport = properties.getExperimentalFilterSlopeOfSupport(DEFAULT_SLOPE_OF_SUPPORT);
+    }
   /**
    * Process the input sample data in the TIN and remove single-point anomalies.
    * @param ps a valid instance to receive results
@@ -51,8 +61,7 @@ class SvmSinglePointAnomalyFilter {
    */
  int process(
     PrintStream ps,
-    IIncrementalTin tin,
-    SvmProperties properties) {
+    IIncrementalTin tin) {
     int maxEdgeIndex = tin.getMaximumEdgeAllocationIndex();
     BitSet edgeSet = new BitSet(maxEdgeIndex);
     for (IQuadEdge edge : tin.getPerimeter()) {
@@ -61,8 +70,8 @@ class SvmSinglePointAnomalyFilter {
       edgeSet.set(baseIndex | 1);
     }
 
-    double mCutOff = properties.getExperimentalFilterSlopeOfSupport("0.015");
-    double mReject = properties.getExperimentalFilterSlopeOfAnomaly("0.5");
+    double mCutOff = slopeOfSupport;
+    double mReject = slopeOfAnomaly;
     double mMax = 0;
     int nNegReject = 0;
     int nPosReject = 0;
@@ -130,9 +139,26 @@ class SvmSinglePointAnomalyFilter {
       }
     }
 
-    ps.println("Rejected " + (nPosReject+nNegReject));
+    ps.println("Single-point Anomaly Filter Rejected " + (nPosReject+nNegReject)+" soundings");
     ps.format("  Pos: %8d%n", nPosReject);
     ps.format("  Neg: %8d%n", nNegReject);
     return nPosReject+nNegReject;
+  }
+
+  /**
+   * Gets the slope criteria used to identify a data point as a potential anomaly.
+   * @return a valid slope
+   */
+   double getSlopeOfAnomaly() {
+    return slopeOfAnomaly;
+  }
+
+  /**
+   * Gets the slope criterial used to identify a data point as a likely member
+   * of a local feature.
+   * @return a valid slope
+   */
+   double getSlopeOfSupport() {
+    return slopeOfSupport;
   }
 }

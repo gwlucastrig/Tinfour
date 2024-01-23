@@ -51,7 +51,7 @@ import org.tinfour.common.Vertex;
 import org.tinfour.svm.properties.SvmProperties;
 import org.tinfour.semivirtual.SemiVirtualIncrementalTin;
 import org.tinfour.standard.IncrementalTin;
-import org.tinfour.svm.SvmTriangleVolumeStore.AreaVolumeResult;
+import org.tinfour.svm.SvmTriangleVolumeTabulator.AreaVolumeSum;
 import org.tinfour.utils.HilbertSort;
 import org.tinfour.utils.TriangleCollector;
 
@@ -60,123 +60,6 @@ import org.tinfour.utils.TriangleCollector;
  * specified input data.
  */
 public class SvmComputation {
-
-  /**
-   * A Java Consumer to collect the contribution from each water triangle in the
-   * Constrained Delaunay Triangulation.
-   */
-  private static class LakeData implements Consumer<SimpleTriangle> {
-
-    double shoreReferenceElevation;
-    boolean[] water;
-    final GeometricOperations geoOp;
-    int nTriangles;
-    int nFlatTriangles;
-
-    KahanSummation volumeSum = new KahanSummation();
-    KahanSummation areaSum = new KahanSummation();
-    KahanSummation flatAreaSum = new KahanSummation();
-    KahanSummation depthAreaSum = new KahanSummation();
-    KahanSummation depthAreaWeightedSum = new KahanSummation();
-
-    SvmTriangleVolumeStore volumeStore;
-
-    /**
-     * Constructs an instance for processing and extracts the water/land values
-     * based on the integer index assigned to the constraints.
-     *
-     * @param tin A valid Constrained Delaunay Triangulation
-     */
-    LakeData(IIncrementalTin tin, double shoreReferenceElevation) {
-      this.shoreReferenceElevation = shoreReferenceElevation;
-      List<IConstraint> constraintsFromTin = tin.getConstraints();
-      water = new boolean[constraintsFromTin.size()];
-      for (IConstraint con : constraintsFromTin) {
-        water[con.getConstraintIndex()] = (Boolean) con.getApplicationData();
-      }
-      Thresholds thresholds = tin.getThresholds();
-      geoOp = new GeometricOperations(thresholds);
-      volumeStore = new SvmTriangleVolumeStore(thresholds);
-    }
-
-    private boolean nEqual(double a, double b) {
-      return Math.abs(a - b) < 1.0e-5;
-    }
-
-    @Override
-    public void accept(SimpleTriangle t) {
-
-      IConstraint constraint = t.getContainingRegion();
-      if (constraint instanceof PolygonConstraint) {
-        Boolean appData = (Boolean) constraint.getApplicationData();
-        if (appData) {
-          IQuadEdge a = t.getEdgeA();
-          IQuadEdge b = t.getEdgeB();
-          IQuadEdge c = t.getEdgeC();
-          Vertex vA = a.getA();
-          Vertex vB = b.getA();
-          Vertex vC = c.getA();
-          double zA = vA.getZ();
-          double zB = vB.getZ();
-          double zC = vC.getZ();
-
-          double zMean = (zA + zB + zC) / 3;
-          double area = geoOp.area(vA, vB, vC);
-
-          if (nEqual(zA, shoreReferenceElevation)
-            && nEqual(zB, shoreReferenceElevation)
-            && nEqual(zC, shoreReferenceElevation)) {
-            nFlatTriangles++;
-            flatAreaSum.add(area);
-          } else if (zA < shoreReferenceElevation
-            || zB < shoreReferenceElevation
-            || zC < shoreReferenceElevation) {
-            depthAreaSum.add(area);
-            depthAreaWeightedSum.add(area * (shoreReferenceElevation - (zA + zB + zC) / 3.0));
-          }
-
-          nTriangles++;
-          double vtest = (shoreReferenceElevation - zMean) * area;
-          volumeStore.addTriangle(vA, vB, vC, vtest);
-          volumeSum.add(vtest);
-          areaSum.add(area);
-        }
-      }
-    }
-
-    boolean hasDepth(IQuadEdge edge) {
-      IQuadEdge e = edge.getReverseFromDual();
-      Vertex v = e.getA();
-      return v != null && v.getZ() < shoreReferenceElevation - 0.1;
-    }
-
-    boolean isWater(IQuadEdge edge) {
-      if (edge.isConstrainedRegionBorder()) {
-        return false;
-      }
-      if (edge.isConstrainedRegionInterior()) {
-        int index = edge.getConstraintIndex();
-        return water[index];
-      }
-      return false;
-    }
-
-    double getVolume() {
-      return Math.abs(volumeSum.getSum());
-    }
-
-    double getSurfaceArea() {
-      return areaSum.getSum();
-    }
-
-    double getFlatArea() {
-      return flatAreaSum.getSum();
-    }
-
-    double getAdjustedMeanDepth() {
-      return depthAreaWeightedSum.getSum() / this.depthAreaSum.getSum();
-    }
-  }
 
   /**
    * A Java Consumer to collect the contribution from each water triangle in the
@@ -269,7 +152,8 @@ public class SvmComputation {
     }
   }
 
-  private static class SampleSpacing{
+  private static class SampleSpacing {
+
     final int nSamples;
     final double sigma;
     final double mean;
@@ -277,7 +161,7 @@ public class SvmComputation {
     final double lenMin;
     final double lenMax;
 
-    SampleSpacing(int nSamples, double mean, double sigma, double median, double lenMin, double lenMax){
+    SampleSpacing(int nSamples, double mean, double sigma, double median, double lenMin, double lenMax) {
       this.nSamples = nSamples;
       this.mean = mean;
       this.sigma = sigma;
@@ -355,44 +239,44 @@ public class SvmComputation {
     long spTime0 = System.nanoTime();
     SampleSpacing spacing = this.evaluateSampleSpacing(tin);
     long spTime1 = System.nanoTime();
-    long timeToFindSampleSpacing = spTime1-spTime0;
+    long timeToFindSampleSpacing = spTime1 - spTime0;
 
     // The experimental filter is a non-advertised feature for removing
     // anomalous points.
-    if(properties.isExperimentalFilterEnabled()){
+    if (properties.isExperimentalFilterEnabled()) {
       ps.println("Processing experimental filter");
       spTime0 = System.nanoTime();
-      SvmSinglePointAnomalyFilter filter = new SvmSinglePointAnomalyFilter();
-      int nFilter = filter.process(ps, tin, properties);
-      ps.format("  Slope of anomaly  %10.3f%n", properties.getExperimentalFilterSlopeOfAnomaly("0.5"));
-      ps.format("  Slope of support  %10.3f%n", properties.getExperimentalFilterSlopeOfSupport("0.015"));
-      ps.format("  Points removed    %d%n", nFilter);
-      if(nFilter>0){
+      SvmSinglePointAnomalyFilter filter = new SvmSinglePointAnomalyFilter(properties);
+      int nFilter = filter.process(ps, tin);
+      ps.format("  Slope of anomaly  %10.3f%n", filter.getSlopeOfAnomaly());
+      ps.format("  Slope of support  %10.3f%n", filter.getSlopeOfSupport());
+      ps.format("  Points removed    %10d%n", nFilter);
+      if (nFilter > 0) {
         // some vertices were marked as withheld
         ArrayList<Vertex> filteredSamples = new ArrayList<>(soundings.size());
-        for(Vertex v: soundings){
-          if(!v.isWithheld()){
+        for (Vertex v : soundings) {
+          if (!v.isWithheld()) {
             filteredSamples.add(v);
           }
         }
         soundings = filteredSamples;
         data.replaceSoundings(filteredSamples);
         spTime1 = System.nanoTime();
-        long timeToFilter = spTime1-spTime0;
-        ps.format("Time for experimental filter   %9.1f ms%n", timeToFilter/1.0e+6);
+        long timeToFilter = spTime1 - spTime0;
+        ps.format("  Time for experimental filter   %9.1f ms%n", timeToFilter / 1.0e+6);
         File filterOutputFile = properties.getExperimentalFilterFile();
         if (filterOutputFile != null) {
           try (FileOutputStream tableOutputStream = new FileOutputStream(filterOutputFile);
             BufferedOutputStream bos = new BufferedOutputStream(tableOutputStream);
             PrintStream fs = new PrintStream(bos, true, "UTF-8");) {
             fs.println("x\ty\tz\tindex");
-            for(Vertex v: soundings){
-                fs.format("%12.6f\t%12.6f\t%5.4f\t%d%n",
-                  v.getX(), v.getY(), v.getZ(), v.getIndex());
+            for (Vertex v : soundings) {
+              fs.format("%12.6f\t%12.6f\t%5.4f\t%d%n",
+                v.getX(), v.getY(), v.getZ(), v.getIndex());
             }
             fs.flush();
           } catch (IOException ioex) {
-            ps.println("IOException writing filter output "+ioex.getMessage());
+            ps.println("IOException writing filter output " + ioex.getMessage());
           }
         }
       }
@@ -464,10 +348,6 @@ public class SvmComputation {
     ps.println("");
     ps.println("Processing data from Delaunay Triangulation");
     time1 = System.nanoTime();
-    LakeData lakeConsumer = new LakeData(tin, shoreReferenceElevation);
-    TriangleCollector.visitSimpleTriangles(tin, lakeConsumer);
-    SvmTriangleVolumeStore vStore = lakeConsumer.volumeStore;
-
     double tableInterval = properties.getTableInterval();
     double zShore = data.shoreReferenceElevation;
     double zMin = data.getMinZ();
@@ -475,15 +355,15 @@ public class SvmComputation {
     if (nStep > 10000) {
       nStep = 10000;
     }
-    List<AreaVolumeResult> resultList = new ArrayList<>(nStep);
+
+    double[] zArray = new double[nStep];
     for (int i = 0; i < nStep; i++) {
-      double zTest = zShore - i * tableInterval;
-      AreaVolumeResult result = vStore.compute(zTest);
-      resultList.add(result);
-      if (result.volume == 0) {
-        break;
-      }
+      zArray[i] = zShore - i * tableInterval;
     }
+
+    SvmTriangleVolumeTabulator volumeTabulator
+      = new SvmTriangleVolumeTabulator(tin, shoreReferenceElevation, zArray);
+    volumeTabulator.process(tin);
 
     time2 = System.nanoTime();
 
@@ -531,27 +411,26 @@ public class SvmComputation {
       data.getMaxZ() / lengthFactor,
       (data.getMaxZ() - data.getMinZ()) / lengthFactor);
 
-
     ps.format("  Sounding spacing%n");
     ps.format("     mean     %12.3f %s%n", spacing.mean / lengthFactor, lengthUnits);
     ps.format("     std dev  %12.3f %s%n", spacing.sigma / lengthFactor, lengthUnits);
-    ps.format("     median   %12.3f %s%n", spacing.median/ lengthFactor, lengthUnits);
-    ps.format("     maximim  %12.3f %s%n", spacing.lenMax/ lengthFactor, lengthUnits);
-    ps.format("     minimum  %14.5f %s%n", spacing.lenMin/ lengthFactor, lengthUnits);
+    ps.format("     median   %12.3f %s%n", spacing.median / lengthFactor, lengthUnits);
+    ps.format("     maximim  %12.3f %s%n", spacing.lenMax / lengthFactor, lengthUnits);
+    ps.format("     minimum  %14.5f %s%n", spacing.lenMin / lengthFactor, lengthUnits);
     ps.format("%n");
 
-    double rawVolume = lakeConsumer.getVolume();
-    double rawSurfArea = lakeConsumer.getSurfaceArea();
+    double rawVolume = volumeTabulator.getVolume();
+    double rawSurfArea = volumeTabulator.getSurfaceArea();
 
-    double rawAdjMeanDepth = lakeConsumer.getAdjustedMeanDepth();
-    double totalVolume = lakeConsumer.getVolume();
-    double volume = lakeConsumer.getVolume() / volumeFactor;
-    double surfArea = lakeConsumer.getSurfaceArea() / areaFactor;
+    double rawAdjMeanDepth = volumeTabulator.getAdjustedMeanDepth();
+    double totalVolume = volumeTabulator.getVolume();
+    double volume = volumeTabulator.getVolume() / volumeFactor;
+    double surfArea = volumeTabulator.getSurfaceArea() / areaFactor;
     double avgDepth = (rawVolume / rawSurfArea) / lengthFactor;
     double adjMeanDepth = rawAdjMeanDepth / lengthFactor;
-    double rawFlatArea = lakeConsumer.getFlatArea();
-    double flatArea = lakeConsumer.getFlatArea() / areaFactor;
-
+    double rawFlatArea = volumeTabulator.getFlatArea();
+    double flatArea = volumeTabulator.getFlatArea() / areaFactor;
+    List<AreaVolumeSum> resultList = volumeTabulator.getResults();
 
     ps.format("%nComputations from Constrained Delaunay Triangulation -----------------------------%n");
     if (properties.doesLocaleUseCommaForDecimal()) {
@@ -575,8 +454,8 @@ public class SvmComputation {
       ps.format("  Adj mean depth      %,18.2f %s%n", adjMeanDepth, lengthUnits);
       ps.format("  Mean Vertex Spacing %,18.2f %s%n", spacing.mean, lengthUnits);
     }
-    ps.format("  N Triangles         %15d%n", lakeConsumer.nTriangles);
-    ps.format("  N Flat Triangles    %15d%n", lakeConsumer.nFlatTriangles);
+    ps.format("  N Triangles         %15d%n", volumeTabulator.nTriangles);
+    ps.format("  N Flat Triangles    %15d%n", volumeTabulator.nFlatTriangles);
 
     if (properties.isFlatFixerEnabled()) {
       int originalTrigCount = trigSurvey.nTriangles;
@@ -593,20 +472,22 @@ public class SvmComputation {
     ps.format("Time to load data              %9.1f ms%n", data.getTimeToLoadData() / 1.0e+6);
     ps.format("Time to build TIN              %9.1f ms%n", timeToBuildTin / 1.0e+6);
     ps.format("Time to add shore constraint   %9.1f ms%n", timeToAddConstraints / 1.0e+6);
-    ps.format("Time to find sample spacing    %9.1f ms%n", timeToFindSampleSpacing/1.0e+6);
+    ps.format("Time to find sample spacing    %9.1f ms%n", timeToFindSampleSpacing / 1.0e+6);
     ps.format("Time to remedy flat triangles  %9.1f ms%n", timeToFixFlats / 1.0e+6);
     ps.format("Time to compute lake volume    %9.1f ms%n", (time2 - time1) / 1.0e+6);
     ps.format("Time for all analysis          %9.1f ms%n", (time2 - time0) / 1.0e+6);
     ps.format("Time for all operations        %9.1f ms%n",
       (data.getTimeToLoadData() + time2 - time0) / 1.0e+6);
 
-    ps.format("%n%nVolume Store Triangle Count: %d%n", vStore.getTriangleCount());
+    ps.format("%n%nVolume Store Triangle Count: %d%n", volumeTabulator.nTriangles);
 
+    ps.flush();
+    
     File tableFile = properties.getTableFile();
     if (tableFile != null) {
       String tableFileName = tableFile.getName();
       boolean csvFlag = tableFileName.toLowerCase().endsWith(".csv");
-      if(csvFlag && properties.doesLocaleUseCommaForDecimal()){
+      if (csvFlag && properties.doesLocaleUseCommaForDecimal()) {
         System.out.println("\nNote: Using CSV file for table output may conflict with formatting specified by Locale\n");
       }
 
@@ -621,12 +502,18 @@ public class SvmComputation {
           ts.println("Elevation\tArea\tVolume\tPercent_Capacity");
           lineFormat = "%12.3f\t%12.3f\t%12.3f\t%6.2f%n";
         }
-        for (AreaVolumeResult result : resultList) {
+
+        for(AreaVolumeSum avSum: resultList){
+          double areaAtLevel = avSum.areaSum.getSum();
+          double volumeAtLevel = avSum.volumeSum.getSum();
           ts.format(lineFormat,
-            result.level,
-            result.area / areaFactor,
-            result.volume / volumeFactor,
-            100 * result.volume / totalVolume);
+            avSum.level,
+            areaAtLevel / areaFactor,
+            volumeAtLevel / volumeFactor,
+            100 * volumeAtLevel / totalVolume);
+          if (volumeAtLevel == 0) {
+            break;
+          }
         }
       } catch (IOException ioex) {
         ps.println("Serious error writing elevation/volume table "
@@ -635,14 +522,13 @@ public class SvmComputation {
     }
 
     SvmRasterGeoTiff rTiff = new SvmRasterGeoTiff();
-    rTiff.buildAndWriteRaster(properties, data, ps, tin, lakeConsumer.water, shoreReferenceElevation);
+    rTiff.buildAndWriteRaster(properties, data, ps, tin, volumeTabulator.water, shoreReferenceElevation);
 
     File gridFile = properties.getGridFile();
     double s = properties.getGridCellSize();
     if (gridFile != null && !Double.isNaN(s)) {
       SvmRaster grid = new SvmRaster();
-      grid.buildAndWriteRaster(
-        properties, data, ps, tin, lakeConsumer.water, shoreReferenceElevation);
+      grid.buildAndWriteRaster(properties, data, ps, tin, volumeTabulator.water, shoreReferenceElevation);
     } else {
       // if the user specified an image file, the grid file is mandatory
       File gridImageFile = properties.getGridImageFile();
@@ -709,24 +595,24 @@ public class SvmComputation {
     return perimeterSum.getSum();
   }
 
-
   /**
    * Finds the spacing between samples in the source data, selecting
    * neighbors based on the Delaunay triangulation. This method
    * applies logic to exclude constraint edges and edges that
-   * attach samples to constraint vertices.  The rationale
+   * attach samples to constraint vertices. The rationale
    * for this exclusion is that the constraints have a different
    * level of data collection than the samples and would have
-   * different statistics.  The logic below also excludes
+   * different statistics. The logic below also excludes
    * perimeter edges
    * <p>
    * This logic assumes that the TIN was prepared using the SVM conventions
    * of populating the auxiliary index of the sample vertices with
    * a flag indicating that they are depth samples.
+   *
    * @param tin a valid instance
    * @return a valid instance
    */
-  private SampleSpacing evaluateSampleSpacing(IIncrementalTin tin){
+  private SampleSpacing evaluateSampleSpacing(IIncrementalTin tin) {
 
     List<IConstraint> constraintsFromTin = tin.getConstraints();
     boolean[] water = new boolean[constraintsFromTin.size()];
@@ -741,7 +627,6 @@ public class SvmComputation {
     double lenMin = Double.POSITIVE_INFINITY;
     double lenMax = Double.NEGATIVE_INFINITY;
 
-
     for (IQuadEdge edge : tin.edges()) {
       if (!edge.isConstrainedRegionInterior()) {
         continue;
@@ -749,7 +634,7 @@ public class SvmComputation {
 
       int conIndex = edge.getConstraintIndex();
       if (water[conIndex]) {
-         // the edge lies in a water area, but we also need
+        // the edge lies in a water area, but we also need
         // to exclude any edges that connect a sounding to
         // a constraint border.
         Vertex a = edge.getA();
@@ -762,10 +647,10 @@ public class SvmComputation {
           sumLen.add(len);
           sumLen2.add(len * len);
           lenArray[nLen++] = (float) len;
-          if(len<lenMin){
+          if (len < lenMin) {
             lenMin = len;
           }
-          if(len>lenMax){
+          if (len > lenMax) {
             lenMax = len;
           }
         }
@@ -782,7 +667,6 @@ public class SvmComputation {
     if (nLen > 2) {
       sigma = Math.sqrt((sLen2 - (sLen / nLen) * sLen) / (nLen - 1));
     }
-
 
     return new SampleSpacing(nLen, mean, sigma, median, lenMin, lenMax);
 
