@@ -299,7 +299,7 @@ public class SvmProperties {
   }
 
   /**
-   * Get a list of the SVM file specifications for teh polygon bounding
+   * Get a list of the SVM file specifications for the polygon bounding
    * constraints of the body of water. The SvmFileSpecification may include
    * metadata such as DBF file field name and unit conversion values.
    *
