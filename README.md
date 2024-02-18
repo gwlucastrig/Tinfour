@@ -108,7 +108,7 @@ and statistical analysis. These modules and dependencies are described in the Ti
 
 
 ### What version of Java is required for Tinfour? ###
-Tinfour is compiled under Java 8.   
+Tinfour is compiled under Java 11 or higher.
 
 ### Configuring Tinfour in an IDE ###
 In terms of its software and package organization, Tinfour has a relatively simple structure, so opening
