@@ -42,7 +42,7 @@ import org.tinfour.common.Vertex;
  * SUCCESS.  In that case, the interpolated value can be computed as shown
  * in the following example code.  This logic is similar to what is
  * used internally by the interpolator.
- * 
+ *
  * <pre>
  *
  *   NaturalNeighborInterpolator nni;  //  defined by application code
@@ -107,6 +107,12 @@ public class NaturalNeighborElements {
   public double y;
 
   /**
+   * The area of the polygon that would be constructed if the query coordinates
+   * were integrated into Delaunay Triangulation or Voronoi Diagram.
+   */
+  double areaOfEmbeddedPolygon;
+
+  /**
    * The Sibson coordinates (vertex weights) for the natural neighbors.
    * If defined, the sum of the lambdas will be 1.
    */
@@ -128,6 +134,7 @@ public class NaturalNeighborElements {
     this.resultType = ResultType.EXTERIOR;
     this.x = x;
     this.y = y;
+    areaOfEmbeddedPolygon = 0;
     lambda = new double[0];
     neighbors = new Vertex[0];
   }
@@ -140,11 +147,14 @@ public class NaturalNeighborElements {
    * @param y the Cartesian coordinate of the query
    * @param lambda the Sibson coordinates (weights) for the natural neighbors
    * @param neighbors the natural neighbors
+   * @param areaOfEmbeddedPolygon the area of the polygon that would be formed
+   * if a point with the specified coordinates were inserted into the structure.
    */
- NaturalNeighborElements(double x, double y, double []lambda, Vertex[]neighbors){
-   this.resultType = ResultType.SUCCESS;
+  NaturalNeighborElements(double x, double y, double[] lambda, Vertex[] neighbors, double areaOfEmbeddedPolygon) {
+    this.resultType = ResultType.SUCCESS;
     this.x = x;
-    this.y =y;
+    this.y = y;
+    this.areaOfEmbeddedPolygon = areaOfEmbeddedPolygon;
     this.lambda = lambda;
     this.neighbors = neighbors;
   }
@@ -160,6 +170,7 @@ public class NaturalNeighborElements {
    this.resultType = ResultType.COLOCATION;
     this.x = x;
     this.y =y;
+    this.areaOfEmbeddedPolygon = 0;
     this.lambda = new double[]{1.0};
     this.neighbors = new Vertex[]{neighbor};
   }
@@ -232,5 +243,42 @@ public class NaturalNeighborElements {
     return x;
   }
 
+  /**
+   * Gets the area of the containing envelope from which natural
+   * neighbor coordinates were derived.  This value is the overall
+   * area of the polygon defined by the set of natural neighbors.
+   * @return a positive, finite floating-point value.
+   */
+  public double getAreaOfEnvelope(){
+    double areaSum = 0;
+    if (neighbors.length > 2) {
+      Vertex a = neighbors[neighbors.length - 1];
+      for (Vertex b : neighbors) {
+        double aX = a.getX() - x;
+        double aY = a.getY() - y;
+        double bX = b.getX() - x;
+        double bY = b.getY() - y;
+        areaSum += aX * bY - aY * bX;
+        a = b;
+      }
+    }
+    return areaSum/2.0;
+  }
 
+  /**
+   * Gets the area of the embedded polygon that was calculated when the
+   * natural neighbor elements were constructed.
+   * @return a valid floating-point number.
+   */
+  public double getAreaOfEmbeddedPolygon(){
+    return areaOfEmbeddedPolygon;
+  }
+
+  /**
+   * Gets a count for the number of elements (neighbors, Sibson coordinates).
+   * @return a positive integer, zero if undefined.
+   */
+  public int getElementCount(){
+    return neighbors.length;
+  }
 }

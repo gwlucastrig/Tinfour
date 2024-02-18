@@ -138,7 +138,7 @@ public class TinRenderingUtility {
    * @return a valid buffered image of specified size
    */
   @SuppressWarnings("PMD.AvoidInstantiatingObjectsInLoops")
-  BufferedImage render(
+  public BufferedImage render(
     AffineTransform af,
     int width, int height,
     double x0, double x1, double y0, double y1,
@@ -292,4 +292,6 @@ public class TinRenderingUtility {
   //    tin.add(vertexList);
   //    TinRenderingUtility.drawTin(tin, 500, 500, new File("tin.png"));
   //}
+
+
 }

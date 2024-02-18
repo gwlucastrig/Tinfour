@@ -81,6 +81,7 @@ public class NaturalNeighborInterpolator implements IInterpolatorOverTin {
   private final VertexValuatorDefault defaultValuator = new VertexValuatorDefault();
 
   private double barycentricCoordinateDeviation;
+  private double areaOfEmbeddedPolygon;
 
   // diagnostic counts
   private long sumN;
@@ -494,6 +495,7 @@ public class NaturalNeighborInterpolator implements IInterpolatorOverTin {
     double x,
     double y) {
 
+    areaOfEmbeddedPolygon = 0;
     int nEdge = polygon.size();
     if (nEdge < 3) {
       return new double[0];
@@ -590,6 +592,8 @@ public class NaturalNeighborInterpolator implements IInterpolatorOverTin {
       weights[i] /= wSum;
     }
 
+    areaOfEmbeddedPolygon = wSum/2;
+
     // Compute the barycentric coordinate deviation. This is a purely diagnostic
     // value and computing it adds some small overhead to the interpolation.
     double xSum = 0;
@@ -674,7 +678,7 @@ public class NaturalNeighborInterpolator implements IInterpolatorOverTin {
       vArray[k++] = edge.getA();
 
     }
-    return new NaturalNeighborElements(x, y, w, vArray);
+    return new NaturalNeighborElements(x, y, w, vArray, areaOfEmbeddedPolygon);
 
   }
 }

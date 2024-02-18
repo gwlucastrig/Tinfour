@@ -64,7 +64,7 @@ import org.apache.commons.math3.linear.SingularMatrixException;
 
 /**
  * Provides an implementation of a weighted polynomial regression
- * for the surface z=p(x, y). A small set of models (cubic, quadradic,
+ * for the surface z=p(x, y). A small set of models (cubic, quadratic,
  * planar) are available for the surface of interest which may
  * be elevation or some other phenomenon. Weights are computed
  * using an inverse distance weighted calculation.
@@ -74,7 +74,7 @@ import org.apache.commons.math3.linear.SingularMatrixException;
  * the current state of the Tinfour GWR implementation.  While I believe
  * that code is implemented correctly, it is not complete.
  * Statistics such as R values and F scores are not yet available.
- * The Tinfour GWR classes also lacks tools for detecting multi-collinearities
+ * The Tinfour GWR classes also lacks tools for detecting multi-collinear features
  * in model coefficients.  These classes were developed with a specific
  * application in mind: the modeling of terrain and bathymetry.
  * And while they can be applied to many other problems, potential
@@ -123,7 +123,7 @@ import org.apache.commons.math3.linear.SingularMatrixException;
  * regression are taken from
  * Leung, Yee; Mei, Chang-Lin; and Zhang, Wen-Xiu (2000). "Statistical
  * tests for spatial nonstationarity based on the geographically
- * weighted regression model", Environment and Planning A 2000, volumn 32,
+ * weighted regression model", Environment and Planning A 2000, volume 32,
  * p. 9-32.
  * <p>
  * Information related to the AICc criteria as applied to a GWR was found
@@ -219,13 +219,15 @@ public class SurfaceGwr {
    * Computes the elevation for a point at the specified query
    * coordinates, by performing a multiple-linear regression using the
    * observed values. A number of statistics are simultaneously computed
-   * and may be obtained using access methods. The more heavy weight
+   * and may be obtained using access methods. The more heavyweight
    * computations (such as the computation of a variance and covariance
    * matrix) are deferred until actually requested by the calling application.
    * <p>
    * <strong>Note:</strong> For efficiency purposes, the arrays for
    * samples and weights passed to this method are stored in the class
-   * directly.
+   * directly. A safe copy is not created. Therefore, application code must not
+   * make changes to the weights array if it intends to make further use of
+   * the elements stored internally in an instance when this method is called.
    * <p>
    * The sample weights matrix is a two dimensional array giving
    * weights based on the distance between samples. It is used when performing

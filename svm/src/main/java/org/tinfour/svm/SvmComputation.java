@@ -160,14 +160,18 @@ public class SvmComputation {
     final double median;
     final double lenMin;
     final double lenMax;
+    final double percentile25;
+    final double percentile75;
 
-    SampleSpacing(int nSamples, double mean, double sigma, double median, double lenMin, double lenMax) {
+    SampleSpacing(int nSamples, double mean, double sigma, double median, double lenMin, double lenMax, double percentile25, double percentile75) {
       this.nSamples = nSamples;
       this.mean = mean;
       this.sigma = sigma;
       this.median = median;
       this.lenMin = lenMin;
       this.lenMax = lenMax;
+      this.percentile25 = percentile25;
+      this.percentile75 = percentile75;
     }
   }
 
@@ -185,6 +189,11 @@ public class SvmComputation {
     PrintStream ps,
     SvmProperties properties,
     SvmBathymetryData data) throws IOException {
+
+    // The nominal point spacing is based on the number of sample points
+    // and the area of the lake data.  It is a rough estimate used to
+    // select significant metrics for the incremental TIN implementations.
+    double nominalPointSpacing = data.getNominalPointSpacing()<1?1:data.getNominalPointSpacing();
 
     String lengthUnits = properties.getUnitOfDistance().getLabel();
     double lengthFactor = properties.getUnitOfDistance().getScaleFactor();
@@ -219,16 +228,23 @@ public class SvmComputation {
       throw new IOException("No boundary constraints availble");
     }
 
+//        SvmClothFilter clothFilter = new SvmClothFilter();
+//    clothFilter.processVolume(ps, properties, data);
+//    soundings = data.getSoundings();
+
+
     IIncrementalTin tin;
 
     long time0 = System.nanoTime();
 
     if (soundings.size() < 500000) {
-      tin = new IncrementalTin(1.0);
+      tin = new IncrementalTin(nominalPointSpacing);
     } else {
-      tin = new SemiVirtualIncrementalTin(1.0);
+      tin = new SemiVirtualIncrementalTin(nominalPointSpacing);
     }
     //ps.println("TIN class: " + (tin.getClass().getName()));
+    HilbertSort hilbert1 = new HilbertSort();
+    hilbert1.sort(soundings);
     tin.add(soundings, null);
     long time1 = System.nanoTime();
     tin.addConstraints(allConstraints, true);
@@ -333,9 +349,9 @@ public class SvmComputation {
       // and will need to be addressed.  But, for now, rebuild the triangulation.
       tin.dispose();
       if (soundings.size() < 500000) {
-        tin = new IncrementalTin(1.0);
+        tin = new IncrementalTin(nominalPointSpacing);
       } else {
-        tin = new SemiVirtualIncrementalTin(1.0);
+        tin = new SemiVirtualIncrementalTin(nominalPointSpacing);
       }
       //ps.println("TIN class: " + (tin.getClass().getName()));
       HilbertSort hilbert = new HilbertSort();
@@ -412,11 +428,13 @@ public class SvmComputation {
       (data.getMaxZ() - data.getMinZ()) / lengthFactor);
 
     ps.format("  Sounding spacing%n");
-    ps.format("     mean     %12.3f %s%n", spacing.mean / lengthFactor, lengthUnits);
-    ps.format("     std dev  %12.3f %s%n", spacing.sigma / lengthFactor, lengthUnits);
-    ps.format("     median   %12.3f %s%n", spacing.median / lengthFactor, lengthUnits);
-    ps.format("     maximim  %12.3f %s%n", spacing.lenMax / lengthFactor, lengthUnits);
-    ps.format("     minimum  %14.5f %s%n", spacing.lenMin / lengthFactor, lengthUnits);
+    ps.format("     mean            %12.3f %s%n", spacing.mean / lengthFactor, lengthUnits);
+    ps.format("     std dev         %12.3f %s%n", spacing.sigma / lengthFactor, lengthUnits);
+    ps.format("     25th percentile %12.3f %s%n", spacing.percentile25/lengthFactor, lengthUnits);
+    ps.format("     median          %12.3f %s%n", spacing.median / lengthFactor, lengthUnits);
+    ps.format("     75th percentile %12.3f %s%n", spacing.percentile75/lengthFactor, lengthUnits);
+    ps.format("     maximim         %12.3f %s%n", spacing.lenMax / lengthFactor, lengthUnits);
+    ps.format("     minimum         %14.5f %s%n", spacing.lenMin / lengthFactor, lengthUnits);
     ps.format("%n");
 
     double rawVolume = volumeTabulator.getVolume();
@@ -482,7 +500,7 @@ public class SvmComputation {
     ps.format("%n%nVolume Store Triangle Count: %d%n", volumeTabulator.nTriangles);
 
     ps.flush();
-    
+
     File tableFile = properties.getTableFile();
     if (tableFile != null) {
       String tableFileName = tableFile.getName();
@@ -562,9 +580,9 @@ public class SvmComputation {
         HilbertSort hilbert = new HilbertSort();
         hilbert.sort(soundings);
         if (soundings.size() < 500000) {
-          tin = new IncrementalTin(1.0);
+          tin = new IncrementalTin(nominalPointSpacing);
         } else {
-          tin = new SemiVirtualIncrementalTin(1.0);
+          tin = new SemiVirtualIncrementalTin(nominalPointSpacing);
         }
         tin.add(soundings, null);
         tin.addConstraints(allConstraints, true);
@@ -667,8 +685,10 @@ public class SvmComputation {
     if (nLen > 2) {
       sigma = Math.sqrt((sLen2 - (sLen / nLen) * sLen) / (nLen - 1));
     }
+    double percentile25 = lenArray[(int)(nLen*0.25+0.5)];
+     double percentile75 = lenArray[(int)(nLen*0.75+0.5)];
 
-    return new SampleSpacing(nLen, mean, sigma, median, lenMin, lenMax);
+    return new SampleSpacing(nLen, mean, sigma, median, lenMin, lenMax, percentile25, percentile75);
 
   }
 }

@@ -174,6 +174,8 @@ class SvmContourGraph {
       hasShorelineElevation = true;
     }
 
+    int smoothingFactor = properties.getContourGraphSmoothingFactor(25);
+
     if (properties.isBathymetryModelSpecified()) {
       SvmBathymetryModel bathyModel = properties.getBathymetryModel();
       if (bathyModel.isDepth()) {
@@ -192,13 +194,23 @@ class SvmContourGraph {
       return;
     }
 
-    ps.println("Constructing smoothing filter");
-    SmoothingFilter filter = new SmoothingFilter(tin);
-    ps.println("Time to construct smoothing filter "
-      + filter.getTimeToConstructFilter() + " ms");
+    SmoothingFilter filter = null;
+    if (smoothingFactor == 0) {
+      ps.println("No contour smoothing applied");
+    } else {
+      ps.println("Constructing smoothing filter");
+      filter = new SmoothingFilter(tin, smoothingFactor);
+      ps.println("Time to construct smoothing filter "
+        + filter.getTimeToConstructFilter() + " ms");
+    }
 
-    double zMin = filter.getMinZ();
-    double zMax = filter.getMaxZ();
+    // The original code took values from the filter.
+    // But it was modified to take data from the data so that
+    // there would be consistent ranges when viewing data.
+    //    double zMin = filter.getMinZ();
+    //    double zMax = filter.getMaxZ();
+    double zMin = data.getMinZ();
+    double zMax = data.getMaxZ();
 
     List<PolygonConstraint> boundaryConstraints = new ArrayList<>();
     List<IConstraint> allConstraints = tin.getConstraints();
@@ -231,7 +243,10 @@ class SvmContourGraph {
     long time0 = System.currentTimeMillis();
     int nOutsiders = 0;
     List<Vertex> vList = tin.getVertices();
-    double[] zArray = filter.getVertexAdjustments();
+    double[] zArray = null;
+    if(filter!=null){
+      filter.getVertexAdjustments();
+    }
     for (Vertex v : vList) {
       int index = v.getIndex();
       double x = v.getX();
@@ -240,28 +255,40 @@ class SvmContourGraph {
       IConstraint con = tin.getRegionConstraint(test);
       if (con == null || !water[con.getConstraintIndex()]) {
         nOutsiders++;
-        if (zArray[index] < shoreReferenceElevation) {
+        if (zArray!=null && zArray[index] < shoreReferenceElevation) {
           zArray[index] = shoreReferenceElevation;
         }
       }
     }
-    filter.setVertexAdjustments(zArray);
+    if (zArray != null && filter != null) {
+      filter.setVertexAdjustments(zArray);
+    }
     long time1 = System.currentTimeMillis();
     ps.println("Found " + nOutsiders
       + " vertices outside constraints,"
       + "check required " + (time1 - time0) + " ms");
 
     // For different data sets, we will need different contour intervals.
-    // Attempt to create a specification with about 10 contour intervals
-    // using the axis too.  Then, take the results from the axis tool
+    // If the specification file set a contour interval, we will try to use
+    // it as requested.  But if the result would be too many contours
+    // or not enough, we will use the automatic selection method instead.
+    //   The automatic method attempts to find a countour interval
+    // that would lead to about 10 contour intervals by using the
+    // Tinfour axis tool.  Then, take the results from the axis tool
     // and create our zContour array.  Note that the zContours must be
     // greater than the zMin value and less than the shoreReferenceElevation
+    //   Even if a valid contour interval is supplied by the specification,
+    // the axis tool is used to obtain a good floating-point label format
+    // for populating attributes in the output shapefile's metadata.
+
     double[] aArray = null;
     double contourInterval = properties.getContourGraphInterval();
     if (contourInterval > 0) {
       long i0 = (long) Math.ceil(zMin / contourInterval);
       long i1 = (long) Math.floor(zMax / contourInterval);
       int nC = (int) (i1 - i0 + 1);
+      // if nC is not a viable value, we will revert to the automatic
+      // selection below.
       if (nC >= 1 && nC <= 100) {
         aArray = new double[nC];
         for (int i = 0; i < nC; i++) {
@@ -277,9 +304,14 @@ class SvmContourGraph {
       1,
       40,
       false);
+
     if (aArray == null) {
+      // The properties did not give a contour-interval value
+      // (or it gave one that could not be used).
+      // So use the values from the interval computation.
       aArray = aIntervals.getLabelCoordinates();
     }
+
     int i0 = -1;
     int i1 = 0;
     for (int i = 0; i < aArray.length; i++) {
@@ -311,7 +343,9 @@ class SvmContourGraph {
     zBandMax[zContour.length] = shoreReferenceElevation;
 
     double simplificationFactor;
-    if (contourInterval > 0) {
+    if(filter==null){
+      simplificationFactor = 0;
+    }else if (contourInterval > 0) {
       // the properties specified a contour interval
       double s = contourInterval / 8;
       simplificationFactor = s * s;

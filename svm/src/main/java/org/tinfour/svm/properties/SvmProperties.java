@@ -79,6 +79,7 @@ public class SvmProperties {
   private final static String contourGraphSizeKey = "contourGraphSize";
   private final static String contourGraphLegendTextKey = "contourGraphLegendText";
   private final static String contourGraphIntervalKey = "contourGraphInterval";
+  private final static String contourGraphSmoothingFactorKey = "contourGraphSmoothingFactor";
 
   private final static String contourRegionShapefileKey = "contourRegionShapefile";
   private final static String contourLineShapefileKey = "contourLineShapefile";
@@ -1120,5 +1121,25 @@ public class SvmProperties {
     }
   }
 
+  /**
+   * Gets the smoothing factor for constructing contours.  The smoothing
+   * factor represents the number of passes the low-pass contour smoothing
+   * algorithm will be applied.  Since the smoothing is cumulative,
+   * more passes result in increased smoothing but lesser detail.
+   * @param defaultValue a positive whole number
+   * @return a positive integer value, zero for no smoothing.
+   */
+  public int getContourGraphSmoothingFactor(int defaultValue){
+        String s = properties.getProperty(SvmProperties.contourGraphSmoothingFactorKey);
+    if (s == null || s.isBlank()) {
+      return defaultValue;
+    }
+    try {
+      return Integer.parseInt(s.trim());
+    } catch (NumberFormatException nfe) {
+      return defaultValue;
+    }
+  }
+ 
 
 }
