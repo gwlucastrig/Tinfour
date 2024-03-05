@@ -1445,7 +1445,7 @@ public class SurfaceGwr {
 
   /**
    * Gets the computed polynomial coefficients from the regression
-   * (the "beta" parameters that). These coefficients can be used
+   * (the "beta" parameters). These coefficients can be used
    * for interpolation or surface modeling purposes. Developers
    * are reminded that the interpolation is based on treating the
    * query point as the origin, so x and y coordinates should be adjusted
