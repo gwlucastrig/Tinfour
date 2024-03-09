@@ -40,7 +40,7 @@ import java.util.SimpleTimeZone;
 import org.tinfour.common.IIncrementalTin;
 import org.tinfour.common.Vertex;
 import org.tinfour.gwr.BandwidthSelectionMethod;
-import org.tinfour.gwr.SurfaceModel;
+import org.tinfour.regression.SurfaceModel;
 import org.tinfour.gwr.GwrTinInterpolator;
 import org.tinfour.interpolation.NaturalNeighborInterpolator;
 import org.tinfour.interpolation.TriangularFacetInterpolator;

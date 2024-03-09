@@ -39,6 +39,7 @@ import org.tinfour.common.Vertex;
 import org.tinfour.interpolation.IInterpolatorOverTin;
 import org.tinfour.interpolation.IVertexValuator;
 import org.tinfour.interpolation.VertexValuatorDefault;
+import org.tinfour.regression.SurfaceModel;
 
 /**
  * Provides methods and elements for performing interpolation over a

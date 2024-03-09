@@ -150,7 +150,7 @@ public class NaturalNeighborElements {
    * @param areaOfEmbeddedPolygon the area of the polygon that would be formed
    * if a point with the specified coordinates were inserted into the structure.
    */
-  NaturalNeighborElements(double x, double y, double[] lambda, Vertex[] neighbors, double areaOfEmbeddedPolygon) {
+  public NaturalNeighborElements(double x, double y, double[] lambda, Vertex[] neighbors, double areaOfEmbeddedPolygon) {
     this.resultType = ResultType.SUCCESS;
     this.x = x;
     this.y = y;

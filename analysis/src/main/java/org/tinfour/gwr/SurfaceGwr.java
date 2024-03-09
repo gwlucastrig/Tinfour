@@ -61,6 +61,7 @@ import org.apache.commons.math3.linear.DiagonalMatrix;
 import org.apache.commons.math3.linear.QRDecomposition;
 import org.apache.commons.math3.linear.RealMatrix;
 import org.apache.commons.math3.linear.SingularMatrixException;
+import org.tinfour.regression.SurfaceModel;
 
 /**
  * Provides an implementation of a weighted polynomial regression
@@ -157,8 +158,7 @@ import org.apache.commons.math3.linear.SingularMatrixException;
  * models based on polynomials p(x, y) of order 3 or less. While this approach
  * is appropriate for the original intent of this class, modeling terrain,
  * there is no reason why the class cannot be adapted to support arbitrary
- * models.
- * Originally, I felt that users interested in other problems might
+ * models. Originally, I felt that users interested in other problems might
  * be better served by R, GWR4, or even the Apache Commons Math
  * GSLMultipleLinearRegression class. But this implementation has
  * demonstrated sufficient utility, that it may be worth considering
@@ -525,7 +525,7 @@ public class SurfaceGwr {
       input[5][3] = input[3][5];
       input[5][4] = input[4][5];
     } else if (model == SurfaceModel.Quadratic) {
-      //  z(x, y) = b0 + b1*x + b2*y +b3*x^2 +b4*y^2+b5*x*y
+      //  z(x, y) = b0 + b1*x + b2*y +b3*x^2 +b4*y^2
       nVariables = 4;
       g = new double[5][1];
       input = new double[5][5];

@@ -25,7 +25,7 @@
  *
  * -----------------------------------------------------------------------
  */
-package org.tinfour.gwr;
+package org.tinfour.regression;
 
 /**
  * An enumeration defining model selections for interpolation.

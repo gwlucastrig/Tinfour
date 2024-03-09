@@ -31,6 +31,7 @@ package org.tinfour.gwr;
 import java.util.Arrays;
 import java.util.Random;
 import org.apache.commons.math3.distribution.TDistribution;
+import org.tinfour.regression.SurfaceModel;
 
 /**
  * Provides methods and elements for performing interpolation over a
