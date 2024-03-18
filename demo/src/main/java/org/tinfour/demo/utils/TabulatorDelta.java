@@ -46,7 +46,7 @@ public class TabulatorDelta {
   double sumD2; // sum of delta^2
   double sumSignedD;
   double maxD = Double.NEGATIVE_INFINITY;  // max signed delta
-  double minD = Double.POSITIVE_INFINITY;  // nim signed delta
+  double minD = Double.POSITIVE_INFINITY;  // min signed delta
 
   double cD; // compensator for Kahan Summation, sum delta
   double cD2;// compensator, sum delta squared
@@ -101,6 +101,8 @@ public class TabulatorDelta {
     double meanE = 0;
     double sigma = 0;
     double rmse = 0;
+    double sigmaSigned=0;
+    double meanSigned = 0;
     if (nD > 1) {
       meanE = sumD / nD;
       // to reduce errors due to loss of precision,
@@ -109,9 +111,12 @@ public class TabulatorDelta {
       // use the form below
       sigma = Math.sqrt((sumD2 - (sumD / nD) * sumD) / (nD - 1));
       rmse = getRMSE();
+       sigmaSigned=this.getStdDevSignedValue();
+       meanSigned = sumSignedD/nD;
     }
-    ps.format("%-25.25s %13.6f %13.6f %13.6f %10.3f %8.3f %9.3f%n",
-      label, rmse, meanE, sigma, minD, maxD, sumSignedD);
+
+    ps.format("%-25.25s %13.6f %13.6f %13.6f %13.6f %13.6f %9.3f %9.3f%n",
+      label, rmse, meanE, sigma, meanSigned, sigmaSigned, minD, maxD);
   }
 
   /**
@@ -125,6 +130,20 @@ public class TabulatorDelta {
     }
     return sumD / nD;
   }
+
+    /**
+   * Get the mean of the signed values of the input sample values.
+   *
+   * @return a valid floating point number, zero if no input has occurred.
+   */
+  public double getMeanSignedValue() {
+    if (nD == 0) {
+      return 0;
+    }
+    return sumD / nD;
+  }
+
+
 
   /**
    * Get an unbiased estimate of the standard deviation of the population
@@ -144,6 +163,28 @@ public class TabulatorDelta {
     // use the form below
     return Math.sqrt((sumD2 - (sumD / nD) * sumD) / (nD - 1));
   }
+
+
+  /**
+   * Get an unbiased estimate of the standard deviation of the population
+   * based on the tabulated samples.
+   *
+   * @return the standard deviation of the signed values of the inputs,
+   * or zero if insufficient data is available.
+   */
+  public double getStdDevSignedValue() {
+    if (nD < 2) {
+      return 0;
+    }
+
+    // to reduce errors due to loss of precision,
+    // rather than using the conventional form for std dev
+    // nE*sumE2-sumE*sumE)/((nE*(nE-1))
+    // use the form below
+    return Math.sqrt((sumD2 - (sumSignedD / nD) * sumSignedD) / (nD - 1));
+  }
+
+
 
   /**
    * Get the signed minimum value of the input samples

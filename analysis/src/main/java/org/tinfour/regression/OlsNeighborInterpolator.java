@@ -37,6 +37,7 @@ import org.apache.commons.math3.linear.RealMatrix;
 import org.tinfour.common.IIncrementalTin;
 import org.tinfour.common.IIncrementalTinNavigator;
 import org.tinfour.common.IQuadEdge;
+import org.tinfour.common.PolygonConstraint;
 import org.tinfour.common.Thresholds;
 import org.tinfour.common.Vertex;
 import org.tinfour.interpolation.IInterpolatorOverTin;
@@ -101,7 +102,7 @@ public class OlsNeighborInterpolator implements IInterpolatorOverTin {
   private PrintStream reportSamples;
 
   private final SurfaceModel surfaceModel;
-  private final List<Vertex>samplesFromRegression = new ArrayList<>();
+  private final List<Vertex> samplesFromRegression = new ArrayList<>();
   private final VertexValuatorDefault defaultValuator = new VertexValuatorDefault();
 
   /**
@@ -199,11 +200,11 @@ public class OlsNeighborInterpolator implements IInterpolatorOverTin {
     return computeRegression(x, y, valuator, edgeQuery, false, computeExtendedStatistics);
   }
 
-
-
   private double computeRegression(final double x, final double y,
-    IVertexValuator valuator, IQuadEdge edgeQuery,
-    boolean crossValidate, boolean computeExtendedStatistics) {
+    final IVertexValuator valuator,
+    final IQuadEdge edgeQuery,
+    final boolean crossValidate,
+    final boolean computeExtendedStatistics) {
     // in the logic below, we access the Vertex x and y coordinates directly
     // but we use the getZ() method to get the z value.  Some vertices
     // may actually be VertexMergerGroup instances and so the Z value must
@@ -267,6 +268,7 @@ public class OlsNeighborInterpolator implements IInterpolatorOverTin {
         innerList.add(e.getB());
       }
 
+      workTin.clear();
       workTin.add(innerList, null);
       if (!workTin.isBootstrapped()) {
         workTin.clear();
@@ -274,7 +276,6 @@ public class OlsNeighborInterpolator implements IInterpolatorOverTin {
       }
       workNni.resetForChangeToTin();
       NaturalNeighborElements innerElements = workNni.getNaturalNeighborElements(x, y);
-      workTin.clear();
       if (innerElements == null) {
         return Double.NaN;
       }
@@ -302,7 +303,7 @@ public class OlsNeighborInterpolator implements IInterpolatorOverTin {
         samplesFromRegression.add(C);
       }
       for (int i = 0; i < vArray.length; i++) {
-         samplesFromRegression.add(vArray[i]);
+        samplesFromRegression.add(vArray[i]);
         samples[k][0] = vArray[i].getX() - x;
         samples[k][1] = vArray[i].getY() - y;
         samples[k][2] = vq.value(vArray[i]);
@@ -310,7 +311,7 @@ public class OlsNeighborInterpolator implements IInterpolatorOverTin {
       }
       vArray = outerElements.getNaturalNeighbors();
       for (int i = 0; i < vArray.length; i++) {
-          samplesFromRegression.add(vArray[i]);
+        samplesFromRegression.add(vArray[i]);
         samples[k][0] = vArray[i].getX() - x;
         samples[k][1] = vArray[i].getY() - y;
         samples[k][2] = vq.value(vArray[i]);
@@ -376,6 +377,35 @@ public class OlsNeighborInterpolator implements IInterpolatorOverTin {
    *
    * @param v a valid reference to a vertex instance currently incorporated
    * into the Delaunay triangulation.
+   * @param computeExtendedStatistics compute the extended statistics such
+   * as the "hat" matrix and R-Student values.
+   * @return a valid floating-point value if the cross validation is successful;
+   * otherwise, NaN.
+   */
+  public double crossValidate(Vertex v, boolean computeExtendedStatistics) {
+    clearResults();
+    xQuery = v.getX();
+    yQuery = v.getY();
+    double x = v.getX();
+    double y = v.getY();
+    IQuadEdge edgeQuery = this.getRelatedEdge(x, y);
+    if (edgeQuery == null) {
+      return Double.NaN;
+    }
+    Vertex A = edgeQuery.getA();
+    if (!A.equals(v)) {
+      // did not match a vertex in the TIN with the input
+      return Double.NaN;
+    }
+    return computeRegression(x, y, null, edgeQuery, true, computeExtendedStatistics);
+  }
+
+  /**
+   * Compute the parameters that would be estimated at the position of the
+   * vertex if it were not incorporated into the Delaunay triangulation.
+   *
+   * @param v a valid reference to a vertex instance currently incorporated
+   * into the Delaunay triangulation.
    * @return a valid floating-point value if the cross validation is successful;
    * otherwise, NaN.
    */
@@ -394,7 +424,7 @@ public class OlsNeighborInterpolator implements IInterpolatorOverTin {
       // did not match a vertex in the TIN with the input
       return Double.NaN;
     }
-    return this.computeRegression(x, y, null, edgeQuery, true, true);
+    return computeRegression(x, y, null, edgeQuery, true, false);
   }
 
   /**
@@ -502,22 +532,40 @@ public class OlsNeighborInterpolator implements IInterpolatorOverTin {
     }
 
     NaturalNeighborElements nne = null;
-    workTin.clear(); // not needed once everything else is correctly implemented
+    workTin.clear();
     workTin.add(list, null);
     if (workTin.isBootstrapped()) {
       workNni.resetForChangeToTin();
       nne = workNni.getNaturalNeighborElements(xQuery, yQuery);
     }
-    workTin.clear();
 
     if (nne == null && list.size() >= 3) {
+      // The NNI class couldn't find an envelope, so we conclude that
+      // the query point must be outside the convex hull of the working TIN.
+      // It was inside the original inner envelope (and main TIN),
+      // but is not inside the outer envelope that we are trying to build here.
+      //   As a fall-back, we attempt to use the points we do have, assigning
+      // them equal weights.   There might be a better way to do this based
+      // on distances or some other criteria.
+      List<IQuadEdge> perimeter = workTin.getPerimeter();
+      PolygonConstraint pc = new PolygonConstraint();
+      for (IQuadEdge iEdge : perimeter) {
+        pc.add(iEdge.getA());
+      }
+      pc.complete();
+
+      double areaOfConvexHull = pc.getArea();
       Vertex[] neighbors = list.toArray(new Vertex[0]);
-      return new NaturalNeighborElements(xQuery, yQuery, new double[list.size()], neighbors, 1.0);
+      double[] lambda = new double[neighbors.length];
+      Arrays.fill(lambda, 1.0 / lambda.length);
+      return new NaturalNeighborElements(
+        xQuery, yQuery, lambda, neighbors, areaOfConvexHull);
     }
+
     return nne;
   }
 
- /**
+  /**
    * Gets a safe copy of the computed polynomial coefficients from the
    * regression (the "beta" parameters). These coefficients can be used
    * for interpolation or surface modeling purposes. Developers
@@ -531,7 +579,7 @@ public class OlsNeighborInterpolator implements IInterpolatorOverTin {
    * array.
    */
   public double[] getBeta() {
-        if (beta == null) {
+    if (beta == null) {
       return new double[0];
     }
     return Arrays.copyOf(beta, beta.length);
@@ -606,7 +654,7 @@ public class OlsNeighborInterpolator implements IInterpolatorOverTin {
    * @param populationFraction a value in the range 0 &lt; factor &lt; 1.
    * @return a positive floating-point value
    */
-  public double getPredictonIntervalHalfSpan(double populationFraction) {
+  public double getPredictionIntervalHalfSpan(double populationFraction) {
     if (!(0 < populationFraction && populationFraction < 1)) {
       throw new IllegalArgumentException("Population fraction is not in the range (0,1): " + populationFraction);
     }
@@ -656,12 +704,13 @@ public class OlsNeighborInterpolator implements IInterpolatorOverTin {
 
   /**
    * Get the array of R-Student values corresponding to the input
-   * sample data.  The R-Student values is often a useful tool in detecting
-   * anomalous points in the input same set.
+   * sample data. The R-Student values set is often a useful tool in detecting
+   * anomalous points in the input samples.
    * The computation of the R-Student values is optional.
    * If the extended-statistics option was not enabled,
    * then this method will return a null.
-   * @return if enabled, a valid array; otherwise, a nukll.
+   *
+   * @return if enabled, a valid array; otherwise, a null.
    */
   public double[] getRStudentValues() {
     return olsSurface.rStudentValues;
@@ -679,15 +728,55 @@ public class OlsNeighborInterpolator implements IInterpolatorOverTin {
   }
 
   /**
+   * Gets a safe copy of the computed standard error for the polynomial
+   * coefficients from the regression (the error of the "beta" parameters).
+   * <p>
+   *
+   * @return a if the last regression computation was successful, a valid array
+   * of standard-error values for the parameters corresponding
+   * to the selected surface model; otherwise, an array of length zero.
+   */
+  public double[] getStandardErrorOfParameters() {
+    return olsSurface.getStandardErrorOfParameters();
+  }
+
+  /**
    * Gets a list containing the vertices used in the most recent regression
-   * operation.  The index of the vertices within the list will correspond
+   * operation. The index of the vertices within the list will correspond
    * to the corresponding positions in the hat matrix and the R-Student Values
    * array (if they were computed).
+   *
    * @return a valid, potentially empty list.
    */
-  public List<Vertex>getVertices(){
-    ArrayList<Vertex>list = new ArrayList();
+  public List<Vertex> getVertices() {
+    ArrayList<Vertex> list = new ArrayList();
     list.addAll(samplesFromRegression);
     return list;
+  }
+
+  /**
+   * Get the r-squared value, also known as the coefficient of multiple
+   * determination.
+   *
+   * @return a value in the range 0 to 1.
+   */
+  public double getRSquared() {
+    return olsSurface.getRSquared();
+  }
+
+  /**
+   * Get the estimated value at the specified coordinates using the
+   * parameters from the most recently completed regression operation.
+   *
+   * @param xEstimate the x coordinate of interest
+   * @param yEstimate the y coordinate of interest
+   * @return if successful, a valid floating-point value; otherwise,
+   * Double&#46;NaN.
+   */
+  public double computeEstimatedValue(double xEstimate, double yEstimate) {
+    if (Double.isFinite(this.zResult)) {
+      return olsSurface.computeEstimatedValue(xEstimate - xQuery, yEstimate - yQuery);
+    }
+    return Double.NaN;
   }
 }

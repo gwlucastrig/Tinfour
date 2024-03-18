@@ -762,26 +762,26 @@ public class OlsSurface {
       // Temporary code to compare results of this class
       // (quadratic model only) with the Apache Math implementation
       //
-      //double[] data = new double[nSamples * (5)];
-      //int k = 0;
-      //for (int i = 0; i < nSamples; i++) {
-      //  data[k++] = samples[i][2];
-      //  double x = samples[i][0];
-      //  double y = samples[i][1];
-      //  data[k++] = x;
-      //  data[k++] = y;
-      //  data[k++] = x * x;
-      //  data[k++] = y * y;
-      //}
-      //OLSMultipleLinearRegression mls = new OLSMultipleLinearRegression();
-      //mls.newSampleData(data, nSamples, 4);
-      //double[] q = mls.estimateRegressionParameters();
-      //double[][] v = mls.estimateRegressionParametersVariance();
-      //double []erp = mls.estimateRegressionParametersStandardErrors();
-      //double erv = mls.estimateRegressandVariance();
-      //double eev = mls.estimateErrorVariance();
-      //double rss = mls.calculateResidualSumOfSquares();
-      //double dummy = rss; // to provide a break point for debugging
+      //  int nVar = model.nCoefficients-1;
+      //  double[] data = new double[nSamples * (nVar+1)];
+      //  double[][] qm = computeDesignMatrix(model, nSamples, samples);
+      //  int k = 0;
+      //  for (int i = 0; i < nSamples; i++) {
+      //    data[k++] = samples[i][2];
+      //    for(int j=0; j<nVar; j++){
+      //      data[k++] = qm[i][j+1];
+      //    }
+      //  }
+      //  OLSMultipleLinearRegression mls = new OLSMultipleLinearRegression();
+      //  mls.newSampleData(data, nSamples, nVar);
+      //  double[] q = mls.estimateRegressionParameters();
+      //  double[][] v = mls.estimateRegressionParametersVariance();
+      //  double []erp = mls.estimateRegressionParametersStandardErrors();
+      //  double erv = mls.estimateRegressandVariance();
+      //  double eev = mls.estimateErrorVariance();
+      //  double rss = mls.calculateResidualSumOfSquares();
+      //  double er2 = mls.calculateRSquared();
+      //  double dummy = rss; // to provide a break point for debugging
     } catch (SingularMatrixException npex) {
       return Double.NaN;
     }
@@ -818,7 +818,7 @@ public class OlsSurface {
    * of standard-error values for the parameters corresponding
    * to the selected surface model; otherwise, an array of length zero.
    */
-  public double[] getStandardErrorOfCoefficients() {
+  public double[] getStandardErrorOfParameters() {
     if (standardErrorOfParameters == null) {
       return new double[0];
     }
@@ -1303,4 +1303,11 @@ public class OlsSurface {
     return r2Sum;
   }
 
+  /**
+   * Get the r-squared value, also known as the coefficient of multiple determination.
+   * @return a value in the range 0 to 1.
+   */
+  public double getRSquared(){
+    return r2;
+  }
 }

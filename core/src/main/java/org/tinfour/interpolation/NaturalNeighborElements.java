@@ -262,7 +262,7 @@ public class NaturalNeighborElements {
         a = b;
       }
     }
-    return areaSum/2.0;
+    return Math.abs(areaSum/2.0);
   }
 
   /**
