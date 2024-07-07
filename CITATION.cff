@@ -4,6 +4,7 @@ authors:
   - family-names: Lucas
     given-names: Gary
     orcid: https://orcid.org/0009-0007-1088-3723
-title: "The Tinfour Software Project"
+title: "Tinfour: high-performance 2D delaunay triangulation software written in Java" 
 version: 2.1.8
 date-released: 2024-02-17
+url: "https://github.com/gwlucastrig/Tinfour"
