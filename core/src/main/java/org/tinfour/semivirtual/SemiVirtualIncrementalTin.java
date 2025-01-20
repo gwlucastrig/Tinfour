@@ -1383,10 +1383,10 @@ public class SemiVirtualIncrementalTin implements IIncrementalTin {
     if (isLocked) {
       if (isDisposed) {
         throw new IllegalStateException(
-          "Unable to add vertex after a call to dispose()");
+          "Unable to remove vertex after a call to dispose()");
       } else {
         throw new IllegalStateException(
-          "Unable to add vertex, TIN is locked");
+          "Unable to remove vertex, TIN is locked");
       }
     }
     if (vRemove == null) {
