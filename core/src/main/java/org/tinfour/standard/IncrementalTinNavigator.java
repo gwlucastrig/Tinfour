@@ -100,6 +100,8 @@ class IncrementalTinNavigator implements IIncrementalTinNavigator{
       return new NearestEdgeResult(e, pMin, x, y, false);
     }
 
+    dX = x - B.getX();
+    dY = y - B.getY();
     vX = C.getX() - B.getX();
     vY = C.getY() - B.getY();
     pX = -vY;  // the perpendicular
@@ -111,6 +113,8 @@ class IncrementalTinNavigator implements IIncrementalTinNavigator{
       e = b;
     }
 
+    dX = x - C.getX();
+    dY = y - C.getY();
     vX = A.getX() - C.getX();
     vY = A.getY() - C.getY();
     pX = -vY;  // the perpendicular
@@ -151,7 +155,7 @@ class IncrementalTinNavigator implements IIncrementalTinNavigator{
     if(e==null){
       return false;  //  the TIN was not initialized
     }
- 
+
     return e.getForward().getB() != null;
   }
 
