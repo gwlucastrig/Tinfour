@@ -460,6 +460,24 @@ public final class SemiVirtualEdge implements IQuadEdge {
             b == null ? "gv" : b.getLabel(),
             f == 0 ? "null" : Integer.toString(f)
     );
+
+      if (isConstrained()) {
+        StringBuilder sb = new StringBuilder(s);
+      sb.append("    constrained ");
+      if (isConstrainedRegionBorder()) {
+        sb.append("region border ");
+      }else if(isConstraintLineMember()){
+        sb.append("line ");
+      }
+      sb.append(Integer.toString(getConstraintIndex()));
+      s = sb.toString();
+    } else if (isConstrainedRegionInterior()) {
+      StringBuilder sb = new StringBuilder(s);
+      sb.append("    constrained region interior ");
+      sb.append(Integer.toString(getConstraintIndex()));
+      s= sb.toString();
+    }
+
     return s;
   }
 

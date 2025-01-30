@@ -433,6 +433,19 @@ public interface IIncrementalTin {
   boolean isBootstrapped();
 
   /**
+   * Indicates whether the triangulated mesh conforms to the Delaunay
+   * criterion. This value is set to true when the triangulated irregular
+   * network (TIN) is successfully bootstrapped. This value is set
+   * to false when constraints are added to the mesh without
+   * the restore-conformity option being enabled.
+   *
+   * @return true if the TIN conforms to the Delaunay criterion;
+   * otherwise, false.
+   */
+  boolean isConformant();
+
+
+  /**
    * Provides a diagnostic print out of the edges comprising the TIN.
    *
    * @param ps A valid print stream.
@@ -443,6 +456,12 @@ public interface IIncrementalTin {
    * Removes the specified vertex from the TIN. If the vertex is part of
    * a merged-group, it is removed from the group by the structure of the
    * TIN is unchanged.
+   * <p>
+   * At this time, vertices cannot be removed from the TIN if constraints
+   * are in place.  When constraints are added to the TIN, the instance
+   * is assumed to be "locked" with regard to vertex removal.  This
+   * behavior is a limitation of the current implementation and may be
+   * revised in future releases.
    *
    * @param vRemove the vertex to be removed
    * @return true if the vertex was found in the TIN and removed.
@@ -464,8 +483,8 @@ public interface IIncrementalTin {
    * <strong>Using Constraints</strong>
    * <p>
    * There are a number of important restrictions to the use of constraints.
-   * Constraints must only be added to the TIN once, after all other vertices
-   * have already been added. Furthermore, the addConstraint method can only
+   * Constraints must only be added to the TIN once, preferably after non-constraint
+   * vertices have already been added. Furthermore, the addConstraint method can only
    * be called once. Logic is implemented as a safety measure to ensure that
    * these restrictions are not accidentally violated.
    * <p>

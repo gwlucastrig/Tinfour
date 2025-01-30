@@ -170,6 +170,13 @@ public class SemiVirtualIncrementalTin implements IIncrementalTin {
   private boolean isLocked;
 
   /**
+   * Indicates that the Delaunay triangulation is conformant.  This value
+   * may be set to false if constraints are added without the restoreConformity
+   * option being applied.
+   */
+  private boolean isConformant;
+
+  /**
    * Indicates that the TIN is disposed. All internal objects
    * associated with the current instance are put out-of-scope
    * and the class is no longer usable.
@@ -274,6 +281,7 @@ public class SemiVirtualIncrementalTin implements IIncrementalTin {
    * Indicates whether the TIN is bootstrapped (initialized).
    */
   private boolean isBootstrapped;
+
   /**
    * Keeps count of the number of vertices inserted into the TIN.
    * This value may be larger than the number of vertices actually stored
@@ -421,6 +429,7 @@ public class SemiVirtualIncrementalTin implements IIncrementalTin {
       vertexList.add(v);
       boolean status = bootstrap(vertexList);
       if (status) {
+         isConformant = true;
         // the bootstrap process uses 3 vertices from
         // the vertex list but does not remove them from
         // the list.   The processVertexInsertion method has the ability
@@ -557,6 +566,8 @@ public class SemiVirtualIncrementalTin implements IIncrementalTin {
         vertexList.addAll(list);
         return false;
       }
+
+      isConformant = true;
       // if the bootstrap succeeded, just fall through
       // and process the remainder of the list.
     }
@@ -1323,6 +1334,7 @@ public class SemiVirtualIncrementalTin implements IIncrementalTin {
     }
     isLocked = false;
     isBootstrapped = false;
+    isConformant = false;
     edgePool.clear();
     searchEdge = null;
     if (vertexList != null) {
@@ -1729,6 +1741,11 @@ public class SemiVirtualIncrementalTin implements IIncrementalTin {
         + QuadEdgeConstants.CONSTRAINT_INDEX_MAX);
     }
 
+    // Step 0 -- assume that conformity is not in place.
+    //           if this add operation is successful, the flag will be set
+    //           to true later on.
+    isConformant = false;
+
     // Step 1 -- add all the vertices from the constraints to the TIN.
     boolean redundantVertex = false;
     for (IConstraint c : constraints) {
@@ -1786,6 +1803,7 @@ public class SemiVirtualIncrementalTin implements IIncrementalTin {
           restoreConformity(sEdge, 1);
         }
       }
+      isConformant = true;
     }
 
     int maxIndex = getMaximumEdgeAllocationIndex();
@@ -2479,7 +2497,7 @@ public class SemiVirtualIncrementalTin implements IIncrementalTin {
     //    There is special logic here for the case where an alternate constraint
     // occurs inside the flood-fill area. For example, a linear constraint
     // might occur inside a polygon (a road might pass through a town).
-    // The logic needs to preserve the constraint index of thecontained
+    // The logic needs to preserve the constraint index of the contained
     // edge from the alternate constraint. In that case, the flood fill
     // passes over the embedded edge, but does not modify it.
     ArrayDeque<IQuadEdge> deque = new ArrayDeque<>();
@@ -2494,7 +2512,9 @@ public class SemiVirtualIncrementalTin implements IIncrementalTin {
       if (!f.isConstrainedRegionBorder() && !visited.get(fIndex)) {
         visited.set(fIndex);
         f.setConstrainedRegionInteriorFlag();
-        f.setConstraintIndex(constraintIndex);
+        if (!f.isConstraintLineMember()) {
+          f.setConstraintIndex(constraintIndex);
+        }
         deque.push(f.getDual());
         continue;
       }
@@ -2503,7 +2523,9 @@ public class SemiVirtualIncrementalTin implements IIncrementalTin {
       if (!r.isConstrainedRegionBorder() && !visited.get(rIndex)) {
         visited.set(rIndex);
         r.setConstrainedRegionInteriorFlag();
-        r.setConstraintIndex(constraintIndex);
+        if (!r.isConstraintLineMember()) {
+          r.setConstraintIndex(constraintIndex);
+        }
         deque.push(r.getDual());
         continue;
       }
@@ -2531,15 +2553,27 @@ public class SemiVirtualIncrementalTin implements IIncrementalTin {
 
   @Override
   public IConstraint getRegionConstraint(IQuadEdge edge) {
-    if (edge.isConstrainedRegionInterior()) {
-      int index = edge.getConstraintIndex();
+    IQuadEdge e = edge;
+    if(e.isConstraintLineMember()){
+      IQuadEdge test = e.getForward();
+      if(!test.isConstraintLineMember() && test.isConstrainedRegionMember()){
+        e = test;
+      }else{
+        test = e.getReverse();
+        if(!test.isConstraintLineMember() && test.isConstrainedRegionMember()){
+          e=test;
+        }
+      }
+    }
+    if (e.isConstrainedRegionInterior()) {
+      int index = e.getConstraintIndex();
       // the test for constraintList.size() should be completely
       // unnecessary, but we do it just in case.
       if (index < constraintList.size()) {
         return constraintList.get(index);
       }
-    } else if (edge.isConstrainedRegionBorder()) {
-      return edgePool.getBorderConstraint(edge);
+    } else if (e.isConstrainedRegionBorder()) {
+      return edgePool.getBorderConstraint(e);
     }
     return null;
   }
@@ -2688,5 +2722,20 @@ public class SemiVirtualIncrementalTin implements IIncrementalTin {
         return vertexIterator;
       }
     };
+  }
+
+
+  /**
+   * Indicates whether the triangulated mesh conforms to the Delaunay
+   * criterion.  This value is set to true when the triangulated irregular
+   * network (TIN) is successfully bootstrapped.  This value is set
+   * to false when constraints are added to the mesh without
+   * the restore-conformity option being enabled.
+   * @return true if the TIN conforms to the Delaunay criterion;
+   * otherwise, false.
+   */
+  @Override
+  public boolean isConformant(){
+    return isConformant;
   }
 }

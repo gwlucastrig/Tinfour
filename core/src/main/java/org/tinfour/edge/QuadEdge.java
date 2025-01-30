@@ -451,10 +451,12 @@ public class QuadEdge implements IQuadEdge {
       fmt.flush();
     }
 
-    if (this.isConstrained()) {
+    if (isConstrained()) {
       sb.append("    constrained ");
-      if (this.isConstrainedRegionBorder()) {
+      if (isConstrainedRegionBorder()) {
         sb.append("region border ");
+      }else if(isConstraintLineMember()){
+        sb.append("line ");
       }
       sb.append(Integer.toString(getConstraintIndex()));
     } else if (isConstrainedRegionInterior()) {

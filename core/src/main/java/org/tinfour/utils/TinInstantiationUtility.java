@@ -155,7 +155,7 @@ public class TinInstantiationUtility {
       pointSpacing = nominalPointSpacing;
     } else {
       // used the default and hope for the best
-      pointSpacing = new Double(1);
+      pointSpacing = Double.valueOf(1.0);
     }
 
     Constructor<?> constructor = null;

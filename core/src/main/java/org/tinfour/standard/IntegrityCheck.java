@@ -144,6 +144,10 @@ public class IntegrityCheck implements IIntegrityCheck {
         message = "Edge has forward reference to itself " + e;
         return false;
       }
+      if(s==null){
+        message = "Edge has no forward reference "+e;
+        return false;
+      }
       s = s.getForward();
       s = s.getForward();
       if (s != e) {
@@ -331,10 +335,10 @@ public class IntegrityCheck implements IIntegrityCheck {
     double area = geoOp.area(a, b, c);
     if (area < 0) {
       message
-        = "Triangle with negative area " + area + " starting at edge " + e
-        + ", vertices: " + a.getIndex()
+        = "Triangle with negative area " + area +  ", vertices: " + a.getIndex()
         + ", " + b.getIndex()
-        + ", " + c.getIndex();
+        + ", " + c.getIndex()
+        + " starting at edge " + e;
       return false;
     }
 

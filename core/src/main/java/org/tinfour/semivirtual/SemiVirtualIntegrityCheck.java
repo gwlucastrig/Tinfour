@@ -316,10 +316,10 @@ class SemiVirtualIntegrityCheck implements IIntegrityCheck {
     double area = geoOp.area(a, b, c);
     if (area < 0) {
       message
-        = "Triangle with negative area " + area + " starting at edge " + e
-        + ", vertices: " + a.getIndex()
+        = "Triangle with negative area " + area +  ", vertices: " + a.getIndex()
         + ", " + b.getIndex()
-        + ", " + c.getIndex();
+        + ", " + c.getIndex()
+        + " starting at edge " + e;
       return false;
     }
 

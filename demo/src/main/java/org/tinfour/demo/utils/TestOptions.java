@@ -97,7 +97,8 @@ public class TestOptions {
     "-palette",
     "-interpolator",
     "-imageSize",
-    "-dbfField"
+    "-dbfField",
+    "-plot"
   };
 
 
@@ -127,6 +128,7 @@ public class TestOptions {
   InterpolationMethod interpolationMethod;
   int [] imageSize;
   String dbfField;
+  Boolean plot;
 
   /**
    * Indicates whether the specified string matches the pattern of a
@@ -603,6 +605,8 @@ public class TestOptions {
 
     dbfField = scanStringOption(args, "-dbfField", matched);
 
+    plot = scanBooleanOption(args, "-plot", matched, plot);
+
     return matched;
   }
 
@@ -752,7 +756,7 @@ public class TestOptions {
    * Indicates whether the vertex list should be Hilbert sorted before
    * insertion into the TIN.
    *
-   * @param defaultEnabled a default value supplied by the applicat
+   * @param defaultEnabled a default value supplied by the application
    * @return true if pre-sort is enabled; otherwise, false
    */
   public boolean isPreSortEnabled(boolean defaultEnabled) {
@@ -1083,5 +1087,19 @@ public class TestOptions {
    */
   String getDbfField(){
     return dbfField;
+  }
+
+  /**
+   * Indicates whether a plot is enabled
+   *
+   * @param defaultEnabled a default value supplied by the application
+   * @return true if plot is enabled; otherwise, false
+   */
+  public boolean isPlotEnabled(boolean defaultEnabled) {
+    if (plot == null) {
+      return defaultEnabled;
+    } else {
+      return plot;
+    }
   }
 }

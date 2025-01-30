@@ -57,7 +57,7 @@ public class VertexMergerGroup extends Vertex {
      * use the maximum z value
      */
     MaxValue
-  };
+  }
 
   List<Vertex> list = new ArrayList<>();
 

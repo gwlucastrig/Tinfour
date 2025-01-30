@@ -1,5 +1,5 @@
 /* --------------------------------------------------------------------
- * Copyright 2015 Gary W. Lucas.
+ * Copyright 2015-2025 Gary W. Lucas.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -46,7 +46,8 @@
  *                       interchangable use with virtual TIN implementation
  * 10/2016 G. Lucas  Implemented ability to add constraint geometries to
  *                       produce a Constrained Delaunay Triangulation (CDT).
- *
+ * 01/2025 G. Lucas  Implemented the ability to add vertices after
+ *                       constraints have been added to TIN.
  * Notes:
  *
  * -----------------------------------------------------------------------
@@ -70,6 +71,7 @@ import org.tinfour.common.IMonitorWithCancellation;
 import org.tinfour.common.INeighborEdgeLocator;
 import org.tinfour.common.INeighborhoodPointsCollector;
 import org.tinfour.common.IQuadEdge;
+import org.tinfour.common.NearestEdgeResult;
 import org.tinfour.common.SimpleTriangle;
 import org.tinfour.common.SimpleTriangleIterator;
 import org.tinfour.common.Thresholds;
@@ -292,10 +294,23 @@ public class IncrementalTin implements IIncrementalTin {
 
   /**
    * Indicates that the TIN is locked and that calls to add or remove vertices
-   * are disabled. This can occur when the TIN is disposed, or when
-   * constraints are added to the TIN.
+   * are disabled. This can occur when the TIN is disposed or a non-recoverable
+   * error is encountered.
    */
   private boolean isLocked;
+
+  /**
+   * Indicates that the TIN is locked only because it includes constraints.
+   */
+  private boolean lockedDueToConstraints;
+
+  /**
+   * Indicates that the Delaunay triangulation is conformant. This value
+   * may be set to false if constraints are added without the restoreConformity
+   * option being applied.
+   */
+  private boolean isConformant;
+
   /**
    * Indicates that the TIN is disposed. All internal objects associated with
    * the current instance are put out-of-scope and the class is no longer
@@ -521,6 +536,9 @@ public class IncrementalTin implements IIncrementalTin {
   @Override
   public boolean add(final Vertex v) {
     if (isLocked) {
+      if (lockedDueToConstraints) {
+        return this.addPostConstraints(v);
+      }
       if (isDisposed) {
         throw new IllegalStateException(
           "Unable to add vertex after a call to dispose()");
@@ -541,6 +559,7 @@ public class IncrementalTin implements IIncrementalTin {
       vertexList.add(v);
       boolean status = bootstrap(vertexList);
       if (status) {
+        isConformant = true;
         // the bootstrap process uses 3 vertices from
         // the vertex list but does not remove them from
         // the list.   The processVertexInsertion method has the ability
@@ -583,7 +602,7 @@ public class IncrementalTin implements IIncrementalTin {
    * <h1>Performance Consideration Related to Location of Vertices</h1>
    *
    * The performance of the insertion process is sensitive to the
-   * relative location of vertices.  An input data set based on
+   * relative location of vertices. An input data set based on
    * <strong>purely random</strong> vertex positions represents one of the
    * worst-case input sets in terms of processing time.
    * <p>
@@ -591,7 +610,7 @@ public class IncrementalTin implements IIncrementalTin {
    * a vertex into the Delaunay triangulation is locating the triangle
    * that contains its coordinates. But Tinfour implements logic to
    * expedite this search operation by taking advantage of a characteristic
-   * that occurs in many data sets:  the location of one vertex in a sequence
+   * that occurs in many data sets: the location of one vertex in a sequence
    * is usually close to the location of the vertex that preceded it.
    * By starting each search at the position in the triangulation where a vertex
    * was most recently inserted, the time-to-search can be reduced dramatically.
@@ -626,7 +645,7 @@ public class IncrementalTin implements IIncrementalTin {
    */
   @Override
   public boolean add(final List<Vertex> list, IMonitorWithCancellation monitor) {
-    if (isLocked) {
+    if (isLocked && !lockedDueToConstraints) {
       if (isDisposed) {
         throw new IllegalStateException(
           "Unable to add vertex after a call to dispose()");
@@ -679,20 +698,32 @@ public class IncrementalTin implements IIncrementalTin {
       }
       // if the bootstrap succeeded, just fall through
       // and process the remainder of the list.
+      isConformant = true;
     }
 
     this.preAllocateEdges(aList.size());
     int nVertexAdded = 0;
-    for (Vertex v : aList) {
-      addWithInsertOrAppend(v);
-      nVertexAdded++;
-      pProgressThreshold++;
-      if (pProgressThreshold == iProgressThreshold) {
-        pProgressThreshold = 0;
-        monitor.reportProgress((int) (0.1 + (100.0 * (nVertexAdded + 1)) / nVertices));
+    if (lockedDueToConstraints) {
+      for (Vertex v : aList) {
+        addPostConstraints(v);
+        nVertexAdded++;
+        pProgressThreshold++;
+        if (pProgressThreshold == iProgressThreshold) {
+          pProgressThreshold = 0;
+          monitor.reportProgress((int) (0.1 + (100.0 * (nVertexAdded + 1)) / nVertices));
+        }
+      }
+    } else {
+      for (Vertex v : aList) {
+        addWithInsertOrAppend(v);
+        nVertexAdded++;
+        pProgressThreshold++;
+        if (pProgressThreshold == iProgressThreshold) {
+          pProgressThreshold = 0;
+          monitor.reportProgress((int) (0.1 + (100.0 * (nVertexAdded + 1)) / nVertices));
+        }
       }
     }
-
     if (vertexList != null) {
       vertexList.clear();
       vertexList = null;
@@ -936,6 +967,7 @@ public class IncrementalTin implements IIncrementalTin {
         n2 = n1.getForward();
         n2.setForward(c.getForward());
         p.setForward(n1);
+        // TO DO: get rid of redundant clear
         c.clear();  // optional, done as a diagnostic
         // we need to get the base reference in order to ensure
         // that any ghost edges we create will start with a
@@ -958,8 +990,9 @@ public class IncrementalTin implements IIncrementalTin {
           // TO DO: is buffer ever not null?
           //        i don't think so because it could only
           //        happen in a case where an insertion decreased
-          //        the number of edge. so the following code
-          //        is probably unnecessary
+          //        the number of edges. so the test for a null buffer
+          //        in the following code is probably unnecessary
+          //        and we could just deallocate the edge without a test.
           if (buffer != null) {
             edgePool.deallocateEdge(buffer);
           }
@@ -986,6 +1019,233 @@ public class IncrementalTin implements IIncrementalTin {
         c.setForward(e.getDual());
         p = e;
         c = n1;
+      }
+    }
+    return true;
+  }
+
+  /**
+   * Performs processing for the public add() methods by adding the vertex to
+   * a fully bootstrapped mesh that includes constraints.
+   * The vertex will be either inserted into the
+   * mesh or the mesh will be extended to include the vertex.
+   *
+   * @param v a valid vertex.
+   * @return true if the vertex was added successfully; otherwise false
+   * (usually in response to redundant vertex specifications).
+   */
+  private boolean addPostConstraints(final Vertex v) {
+    final double x = v.x;
+    final double y = v.y;
+
+    int nReplacements = 0;
+    if (x < boundsMinX) {
+      boundsMinX = x;
+    } else if (x > boundsMaxX) {
+      boundsMaxX = x;
+    }
+    if (y < boundsMinY) {
+      boundsMinY = y;
+    } else if (y > boundsMaxY) {
+      boundsMaxY = y;
+    }
+
+    if (searchEdge == null) {
+      searchEdge = edgePool.getStartingEdge();
+    }
+    searchEdge = walker.findAnEdgeFromEnclosingTriangle(searchEdge, x, y);
+    IncrementalTinNavigator navigator = new IncrementalTinNavigator(this);
+    NearestEdgeResult eResult = navigator.getNearestEdge(searchEdge, x, y);
+    searchEdge = (QuadEdge) eResult.getEdge();
+
+    // the following is a debugging aid when trying to deal with vertex
+    // insertion versus TIN extension.
+    // boolean isVertexInside = (searchEdge.getForward().getB() != null);
+    QuadEdge matchEdge
+      = checkTriangleVerticesForMatch(searchEdge, x, y, vertexTolerance2);
+    if (matchEdge != null) {
+      mergeVertexOrIgnore(matchEdge, v);
+      return false;
+    }
+
+    List<QuadEdge> conEdges = new ArrayList<>();
+    Vertex splitConstraintEnd = null;
+    int splitConstraintIndex = -1;
+    boolean splitConstraintFlag = searchEdge.isConstrained() && eResult.getDistanceToEdge() < 4 * thresholds.getVertexTolerance();
+    if (splitConstraintFlag) {
+      splitConstraintIndex = searchEdge.getConstraintIndex();
+      splitConstraintEnd = searchEdge.getB();
+    }
+
+    // The build buffer provides temporary tracking of edges that are
+    // removed and replaced while building the TIN.  Because the
+    // delete method of the EdgePool has to do a lot of bookkeeping,
+    // we can gain speed by using the buffer.   The buffer is only large
+    // enough to hold one edge. Were it larger, there would be times
+    // when it would hold more than one edge. Tests reveal that the overhead
+    // of maintaining an array rather than a single reference overwhelms
+    // the potential saving. However, the times for the two approaches are quite
+    // close and it is hard to remove the effect of measurement error.
+    Vertex anchor = searchEdge.getA();
+
+    QuadEdge buffer = null;
+    QuadEdge c, n0, n1, n2;
+    QuadEdge pStart = edgePool.allocateEdge(v, anchor);
+    if (splitConstraintFlag) {
+      pStart.setConstrained(splitConstraintIndex);
+    }
+    QuadEdge p = pStart;
+    p.setForward(searchEdge);
+    n1 = searchEdge.getForward();
+    n2 = n1.getForward();
+    n2.setForward(p.getDual());
+    c = searchEdge;
+    searchEdge = pStart;
+    if (splitConstraintFlag) {
+      // special case.  The insertion vertex lies on a constrained edge.
+      // ordinarily, a constrained edge is not removed and the
+      // Delaunay-edge test below applies logic to ensure that the
+      // edge is preserved.  But in this case, the initial edge must
+      // be removed and replaced by a pair of split edges.
+      // So the Delaynay-edge test would not work properly.  Instead,
+      // we handle the removal condition before beginning the ordinary loop.
+      n0 = c.getDual();
+      n1 = n0.getForward();
+      n2 = n1.getForward();
+      n2.setForward(c.getForward());
+      p.setForward(n1);
+      edgePool.deallocateEdge(c);
+      c = n1;
+    }
+    while (true) {
+      n0 = c.getDual();
+      n1 = n0.getForward();
+
+      // check for the Delaunay in-circle criterion.  In the original
+      // implementation, this was accomplished through a call to
+      // a method in another class (GeometricOperations), but testing
+      // revealed that we could gain nearly 10 percent throughput
+      // by embedding the logic in this loop.
+      // the three vertices of the neighboring triangle are, in order,
+      //    n0.getA(), n1.getA(), n1.getB()
+      double h;
+      Vertex vA = n0.getA();
+      Vertex vB = n1.getA();
+      Vertex vC = n1.getB();
+      if (vC == null) {
+        h = inCircleWithGhosts(vA, vB, v);
+      } else if (vA == null) {
+        h = inCircleWithGhosts(vB, vC, v);
+      } else if (vB == null) {
+        h = inCircleWithGhosts(vC, vA, v);
+      } else {
+        nInCircle++;
+        double a11 = vA.x - x;
+        double a21 = vB.x - x;
+        double a31 = vC.x - x;
+
+        // column 2
+        double a12 = vA.y - y;
+        double a22 = vB.y - y;
+        double a32 = vC.y - y;
+
+        h = (a11 * a11 + a12 * a12) * (a21 * a32 - a31 * a22)
+          + (a21 * a21 + a22 * a22) * (a31 * a12 - a11 * a32)
+          + (a31 * a31 + a32 * a32) * (a11 * a22 - a21 * a12);
+        if (inCircleThresholdNeg < h && h < inCircleThreshold) {
+          nInCircleExtendedPrecision++;
+          double h2 = h;
+          h = geoOp.inCircleQuadPrecision(
+            vA.x, vA.y,
+            vB.x, vB.y,
+            vC.x, vC.y,
+            x, y);
+          if (h == 0) {
+            if (h2 != 0) {
+              nInCircleExtendedPrecisionConflicts++;
+            }
+          } else if (h * h2 <= 0) {
+            nInCircleExtendedPrecisionConflicts++;
+          }
+        }
+      }
+
+      // The value of h tells where the vertex to be added
+      // lies relative to the circumcircle
+      //       h<0, outside
+      //       h>0, inside
+      //       h = 0, on the circumcircle
+      boolean edgeViolatesDelaunay = h >= 0;
+      if (edgeViolatesDelaunay && c.isConstrained()) {
+        edgeViolatesDelaunay = false;
+      }
+      if (edgeViolatesDelaunay) {
+        n2 = n1.getForward();
+        n2.setForward(c.getForward());
+        p.setForward(n1);
+        // we need to get the base reference in order to ensure
+        // that any ghost edges we create will start with a
+        // non-null vertex and end with a null.
+        c = c.getBaseReference();
+        if (buffer == null) {
+          c.clear();
+          buffer = c;
+        } else {
+          edgePool.deallocateEdge(c);
+        }
+
+        c = n1;
+        nReplacements++;
+      } else {
+        // check for completion
+        if (c.isConstrained()) {
+          conEdges.add(c);
+        }
+        if (c.getB() == anchor) {
+          pStart.getDual().setForward(p);
+          searchEdge = pStart;
+          // TO DO: is buffer ever not null?
+          //        i don't think so because it could only
+          //        happen in a case where an insertion decreased
+          //        the number of edges. so the following code
+          //        is probably unnecessary
+          if (buffer != null) {
+            edgePool.deallocateEdge(buffer);
+          }
+
+          nEdgesReplacedDuringBuild += nReplacements;
+          if (nReplacements > maxEdgesReplacedDuringBuild) {
+            maxEdgesReplacedDuringBuild = nReplacements;
+          }
+
+          break;
+        }
+
+        n1 = c.getForward();
+        QuadEdge e;
+        Vertex B = c.getB();
+        if (buffer == null) {
+          e = edgePool.allocateEdge(v, B);
+        } else {
+          buffer.setVertices(v, B);
+          e = buffer;
+          buffer = null;
+        }
+        if (splitConstraintFlag && B == splitConstraintEnd) {
+          e.setConstrained(splitConstraintIndex);
+          conEdges.add(e);
+        }
+        e.setForward(n1);
+        e.getDual().setForward(p);
+        c.setForward(e.getDual());
+        p = e;
+        c = n1;
+      }
+    }
+
+    if (isConformant) {
+      for (QuadEdge e : conEdges) {
+        restoreConformity(e, 1);
       }
     }
     return true;
@@ -1401,6 +1661,7 @@ public class IncrementalTin implements IIncrementalTin {
   public void dispose() {
     if (!isDisposed) {
       isLocked = true;
+      lockedDueToConstraints = false;
       isDisposed = true;
       edgePool.dispose();
       searchEdge = null;
@@ -1426,7 +1687,9 @@ public class IncrementalTin implements IIncrementalTin {
       return;
     }
     isLocked = false;
+    lockedDueToConstraints = false;
     isBootstrapped = false;
+    isConformant = false;
     edgePool.clear();
     searchEdge = null;
     if (vertexList != null) {
@@ -1485,6 +1748,9 @@ public class IncrementalTin implements IIncrementalTin {
       if (isDisposed) {
         throw new IllegalStateException(
           "Unable to remove vertex after a call to dispose()");
+      } else if (lockedDueToConstraints) {
+        throw new IllegalStateException(
+          "Unable to remove vertices because TIN includes constraints");
       } else {
         throw new IllegalStateException(
           "Unable to remove vertex, TIN is locked");
@@ -1823,6 +2089,7 @@ public class IncrementalTin implements IIncrementalTin {
   public void addConstraints(
     List<IConstraint> constraints,
     boolean restoreConformity) {
+
     if (isLocked) {
       if (isDisposed) {
         throw new IllegalStateException(
@@ -1846,6 +2113,11 @@ public class IncrementalTin implements IIncrementalTin {
         "The maximum number of constraints is "
         + QuadEdgeConstants.CONSTRAINT_INDEX_MAX);
     }
+
+    // Step 0 -- assume that conformity is not in place.
+    //           if this add operation is successful, the flag will be set
+    //           to true later on.
+    isConformant = false;
 
     // Step 1 -- add all the vertices from the constraints to the TIN.
     boolean redundantVertex = false;
@@ -1885,6 +2157,7 @@ public class IncrementalTin implements IIncrementalTin {
     ArrayList<ArrayList<IQuadEdge>> efcList = new ArrayList<>();
 
     isLocked = true;
+    lockedDueToConstraints = true;
     int k = 0;
     for (IConstraint c : constraintList) {
       c.setConstraintIndex(this, k);
@@ -1902,6 +2175,7 @@ public class IncrementalTin implements IIncrementalTin {
           restoreConformity((QuadEdge) e, 1);
         }
       }
+      isConformant = true;
     }
 
     int maxIndex = getMaximumEdgeAllocationIndex();
@@ -2618,7 +2892,7 @@ public class IncrementalTin implements IIncrementalTin {
     //    There is special logic here for the case where an alternate constraint
     // occurs inside the flood-fill area. For example, a linear constraint
     // might occur inside a polygon (a road might pass through a town).
-    // The logic needs to preserve the constraint index of thecontained
+    // The logic needs to preserve the constraint index of the contained
     // edge from the alternate constraint. In that case, the flood fill
     // passes over the embedded edge, but does not modify it.
     ArrayDeque<IQuadEdge> deque = new ArrayDeque<>();
@@ -2633,7 +2907,9 @@ public class IncrementalTin implements IIncrementalTin {
       if (!f.isConstrainedRegionBorder() && !visited.get(fIndex)) {
         visited.set(fIndex);
         f.setConstrainedRegionInteriorFlag();
-        f.setConstraintIndex(constraintIndex);
+        if (!f.isConstraintLineMember()) {
+          f.setConstraintIndex(constraintIndex);
+        }
         deque.push(f.getDual());
         continue;
       }
@@ -2642,7 +2918,9 @@ public class IncrementalTin implements IIncrementalTin {
       if (!r.isConstrainedRegionBorder() && !visited.get(rIndex)) {
         visited.set(rIndex);
         r.setConstrainedRegionInteriorFlag();
-        r.setConstraintIndex(constraintIndex);
+        if (!r.isConstraintLineMember()) {
+          r.setConstraintIndex(constraintIndex);
+        }
         deque.push(r.getDual());
         continue;
       }
@@ -2667,15 +2945,27 @@ public class IncrementalTin implements IIncrementalTin {
 
   @Override
   public IConstraint getRegionConstraint(IQuadEdge edge) {
-    if (edge.isConstrainedRegionInterior()) {
-      int index = edge.getConstraintIndex();
+    IQuadEdge e = edge;
+    if (e.isConstraintLineMember()) {
+      IQuadEdge test = e.getForward();
+      if (!test.isConstraintLineMember() && test.isConstrainedRegionMember()) {
+        e = test;
+      } else {
+        test = e.getReverse();
+        if (!test.isConstraintLineMember() && test.isConstrainedRegionMember()) {
+          e = test;
+        }
+      }
+    }
+    if (e.isConstrainedRegionInterior()) {
+      int index = e.getConstraintIndex();
       // the test for constraintList.size() should be completely
       // unnecessary, but we do it just in case.
       if (index < constraintList.size()) {
         return constraintList.get(index);
       }
-    } else if (edge.isConstrainedRegionBorder()) {
-      return edgePool.getBorderConstraint(edge);
+    } else if (e.isConstrainedRegionBorder()) {
+      return edgePool.getBorderConstraint(e);
     }
     return null;
   }
@@ -2816,4 +3106,18 @@ public class IncrementalTin implements IIncrementalTin {
     };
   }
 
+  /**
+   * Indicates whether the triangulated mesh conforms to the Delaunay
+   * criterion. This value is set to true when the triangulated irregular
+   * network (TIN) is successfully bootstrapped. This value is set
+   * to false when constraints are added to the mesh without
+   * the restore-conformity option being enabled.
+   *
+   * @return true if the TIN conforms to the Delaunay criterion;
+   * otherwise, false.
+   */
+  @Override
+  public boolean isConformant() {
+    return isConformant;
+  }
 }
