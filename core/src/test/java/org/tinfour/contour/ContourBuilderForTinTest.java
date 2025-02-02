@@ -54,8 +54,7 @@ import org.tinfour.contour.ContourIntegrityCheck;
 import org.tinfour.standard.IncrementalTin;
 
 /**
- * Performs round-trip tests for coding and decoding integers using the
- * M32 codec.
+ * Exercises contouring for ordinary and special-case geometries
  */
 public class ContourBuilderForTinTest {
 
