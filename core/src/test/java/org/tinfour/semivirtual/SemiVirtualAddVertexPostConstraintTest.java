@@ -55,14 +55,16 @@ import org.tinfour.common.IIntegrityCheck;
 import org.tinfour.common.LinearConstraint;
 import org.tinfour.common.PolygonConstraint;
 import org.tinfour.common.Vertex;
-import org.tinfour.standard.IncrementalTin;
+import org.tinfour.semivirtual.SemiVirtualIncrementalTin;
 
 /**
  * Exercises the ability to add vertices after constraints are in place.
+ * This unit test is identical to the one for the standard TIN class
+ * except that the TIN type has been changed to semivirtual.
  */
-public class AddVertexPostConstraintTest {
+public class SemiVirtualAddVertexPostConstraintTest {
 
-  public AddVertexPostConstraintTest() {
+  public SemiVirtualAddVertexPostConstraintTest() {
   }
 
   @BeforeAll
@@ -82,7 +84,7 @@ public class AddVertexPostConstraintTest {
   }
 
   private IIncrementalTin initTIN() {
-    IIncrementalTin tin = new IncrementalTin(1.0);
+    IIncrementalTin tin = new SemiVirtualIncrementalTin(1.0);
 
     List<IConstraint> conList = new ArrayList<>();
     List<Vertex> polygonVertices = new ArrayList<>();

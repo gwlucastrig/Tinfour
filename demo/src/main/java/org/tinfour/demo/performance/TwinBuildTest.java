@@ -150,7 +150,7 @@ public class TwinBuildTest implements IDevelopmentTest {
     ps.println("\n" + sdFormat.format(date) + " UTC");
 
     ps.println(
-      "run,          build1,   avg_build1,          build2,    avg_build2");
+      "run,         build_a,  avg_build_a,          build_b,  avg_build_b");
 
     IIncrementalTin tinA;
     IIncrementalTin tinB;

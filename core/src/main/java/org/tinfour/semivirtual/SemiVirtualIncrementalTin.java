@@ -1,5 +1,5 @@
 /* --------------------------------------------------------------------
- * Copyright 2015 Gary W. Lucas.
+ * Copyright 2015-2025 Gary W. Lucas.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,6 +26,8 @@
  * 11/2015  G. Lucas     Completed implementation using virtual edges.
  * 12/2016  G. Lucas     Implemented ability to add constraint geometries to
  *                         produce a Constrained Delaunay Triangulation (CDT).
+ * 01/2025 G. Lucas      Implemented the ability to add vertices after
+ *                         constraints have been added to TIN.
  *
  * Notes:
  *
@@ -50,6 +52,7 @@ import org.tinfour.common.IMonitorWithCancellation;
 import org.tinfour.common.INeighborEdgeLocator;
 import org.tinfour.common.INeighborhoodPointsCollector;
 import org.tinfour.common.IQuadEdge;
+import org.tinfour.common.NearestEdgeResult;
 import org.tinfour.common.SimpleTriangle;
 import org.tinfour.common.SimpleTriangleIterator;
 import org.tinfour.common.Thresholds;
@@ -169,8 +172,14 @@ public class SemiVirtualIncrementalTin implements IIncrementalTin {
    */
   private boolean isLocked;
 
+
   /**
-   * Indicates that the Delaunay triangulation is conformant.  This value
+   * Indicates that the TIN is locked only because it includes constraints.
+   */
+  private boolean lockedDueToConstraints;
+
+  /**
+   * Indicates that the Delaunay triangulation is conformant. This value
    * may be set to false if constraints are added without the restoreConformity
    * option being applied.
    */
@@ -409,6 +418,9 @@ public class SemiVirtualIncrementalTin implements IIncrementalTin {
   @Override
   public boolean add(final Vertex v) {
     if (isLocked) {
+      if (lockedDueToConstraints) {
+        return this.addPostConstraints(v);
+      }
       if (isDisposed) {
         throw new IllegalStateException(
           "Unable to add vertex after a call to dispose()");
@@ -514,7 +526,7 @@ public class SemiVirtualIncrementalTin implements IIncrementalTin {
    */
   @Override
   public boolean add(final List<Vertex> list, IMonitorWithCancellation monitor) {
-    if (isLocked) {
+    if (isLocked && !lockedDueToConstraints) {
       if (isDisposed) {
         throw new IllegalStateException(
           "Unable to add vertex after a call to dispose()");
@@ -574,13 +586,25 @@ public class SemiVirtualIncrementalTin implements IIncrementalTin {
 
     this.preAllocateEdges(aList.size());
     int nVertexAdded = 0;
-    for (Vertex v : aList) {
-      addWithInsertOrAppend(v);
-      nVertexAdded++;
-      pProgressThreshold++;
-      if (pProgressThreshold == iProgressThreshold) {
-        pProgressThreshold = 0;
-        monitor.reportProgress((int) (0.1 + (100.0 * (nVertexAdded + 1)) / nVertices));
+    if (lockedDueToConstraints) {
+      for (Vertex v : aList) {
+        addPostConstraints(v);
+        nVertexAdded++;
+        pProgressThreshold++;
+        if (pProgressThreshold == iProgressThreshold) {
+          pProgressThreshold = 0;
+          monitor.reportProgress((int) (0.1 + (100.0 * (nVertexAdded + 1)) / nVertices));
+        }
+      }
+    } else {
+      for (Vertex v : aList) {
+        addWithInsertOrAppend(v);
+        nVertexAdded++;
+        pProgressThreshold++;
+        if (pProgressThreshold == iProgressThreshold) {
+          pProgressThreshold = 0;
+          monitor.reportProgress((int) (0.1 + (100.0 * (nVertexAdded + 1)) / nVertices));
+        }
       }
     }
 
@@ -1333,6 +1357,7 @@ public class SemiVirtualIncrementalTin implements IIncrementalTin {
       return;
     }
     isLocked = false;
+    lockedDueToConstraints = false;
     isBootstrapped = false;
     isConformant = false;
     edgePool.clear();
@@ -1783,6 +1808,7 @@ public class SemiVirtualIncrementalTin implements IIncrementalTin {
     // Step 2 -- Construct new edges for constraint and mark any existing
     //           edges with the constraint index.
     isLocked = true;
+    lockedDueToConstraints = true;
     IntCollector []icArray = new IntCollector[constraintList.size()];
     int k = 0;
     for (IConstraint c : constraintList) {
@@ -2738,4 +2764,271 @@ public class SemiVirtualIncrementalTin implements IIncrementalTin {
   public boolean isConformant(){
     return isConformant;
   }
+
+
+  /**
+   * Tests the vertices of the triangle that includes the reference edge to
+   * see if any of them are an exact match for the specified coordinates.
+   * Typically, this method is employed after a search has obtained a
+   * neighboring edge for the coordinates. If one of the vertices is an exact
+   * match, within tolerance, for the specified coordinates, this method will
+   * return the edge that starts with the vertex.
+   *
+   * @param x the x coordinate of interest
+   * @param y the y coordinate of interest
+   * @param baseEdge an edge from the triangle containing (x,y)
+   * @param distanceTolerance2 the square of a tolerance specification for
+   * accepting a vertex as a match for the coordinates
+   * @return true if a match is found; otherwise, false
+   */
+  private SemiVirtualEdge checkTriangleVerticesForMatch(
+    final SemiVirtualEdge baseEdge,
+    final double x,
+    final double y,
+    final double distanceTolerance2) {
+    SemiVirtualEdge sEdge = baseEdge;
+    if (sEdge.getA().getDistanceSq(x, y) < distanceTolerance2) {
+      return sEdge;
+    } else if (sEdge.getB().getDistanceSq(x, y) < distanceTolerance2) {
+      return sEdge.getDual();
+    } else {
+      Vertex v2 = sEdge.getForward().getB();
+      if (v2 != null && v2.getDistanceSq(x, y) < distanceTolerance2) {
+        return sEdge.getReverse();
+      }
+    }
+    return null;
+  }
+
+  /**
+   * Performs processing for the public add() methods by adding the vertex to
+   * a fully bootstrapped mesh that includes constraints.
+   * The vertex will be either inserted into the
+   * mesh or the mesh will be extended to include the vertex.
+   *
+   * @param v a valid vertex.
+   * @return true if the vertex was added successfully; otherwise false
+   * (usually in response to redundant vertex specifications).
+   */
+  private boolean addPostConstraints(final Vertex v) {
+    final double x = v.x;
+    final double y = v.y;
+
+    // The build buffer provides temporary tracking of edges that are
+    // removed and replaced while building the TIN.  Because the
+    // delete method of the EdgePool has to do a lot of bookkeeping,
+    // we can gain speed by using the buffer.   The buffer is only large
+    // enough to hold one edge. Were it larger, there would be times
+    // when it would hold more than one edge. Tests reveal that the overhead
+    // of maintaining an array rather than a single integer overwhelms
+    // the potential saving. However, the times for the two approaches are quite
+    // close and it is hard to remove the effect of measurement error.
+    int buffer = -1;
+    int nReplacements = 0;
+
+    if (x < boundsMinX) {
+      boundsMinX = x;
+    } else if (x > boundsMaxX) {
+      boundsMaxX = x;
+    }
+    if (y < boundsMinY) {
+      boundsMinY = y;
+    } else if (y > boundsMaxY) {
+      boundsMaxY = y;
+    }
+
+    if (searchEdge == null) {
+      searchEdge = edgePool.getStartingEdge();
+    }
+    walker.findAnEdgeFromEnclosingTriangleInternal(searchEdge, x, y);
+    SemiVirtualIncrementalTinNavigator navigator = new SemiVirtualIncrementalTinNavigator(this);
+    NearestEdgeResult eResult = navigator.getNearestEdge(searchEdge, x, y);
+    searchEdge = (SemiVirtualEdge) eResult.getEdge();
+
+    // the following is a debugging aid when trying to deal with vertex
+    // insertion versus TIN extension.
+    // boolean isVertexInside = (searchEdge.getForward().getB() != null);
+    SemiVirtualEdge matchEdge
+      = checkTriangleVerticesForMatch(searchEdge, x, y, vertexTolerance2);
+    if (matchEdge != null) {
+      mergeVertexOrIgnore(matchEdge, v);
+      return false;
+    }
+
+    List<SemiVirtualEdge> conEdges = new ArrayList<>();
+    Vertex splitConstraintEnd = null;
+    int splitConstraintIndex = -1;
+    boolean splitConstraintFlag = searchEdge.isConstrained() && eResult.getDistanceToEdge() < 4 * thresholds.getVertexTolerance();
+    if (splitConstraintFlag) {
+      splitConstraintIndex = searchEdge.getConstraintIndex();
+      splitConstraintEnd = searchEdge.getB();
+    }
+
+    Vertex anchor = searchEdge.getA();
+
+    final SemiVirtualEdge e = edgePool.allocateUnassignedEdge();
+    final SemiVirtualEdge pStart = edgePool.allocateEdge(v, anchor);
+    if (splitConstraintFlag) {
+      pStart.setConstrained(splitConstraintIndex);
+    }
+    final SemiVirtualEdge p = pStart.copy();
+    p.setForward(searchEdge);
+    final SemiVirtualEdge n0 = p.getDual();
+    final SemiVirtualEdge n1 = searchEdge.getForward();
+    final SemiVirtualEdge n2 = n1.getForward();
+    n2.setForward(n0);
+    final SemiVirtualEdge c = searchEdge.copy();
+
+    if(splitConstraintFlag){
+            // special case.  The insertion vertex lies on a constrained edge.
+      // ordinarily, a constrained edge is not removed and the
+      // Delaunay-edge test below applies logic to ensure that the
+      // edge is preserved.  But in this case, the initial edge must
+      // be removed and replaced by a pair of split edges.
+      // So the Delaynay-edge test would not work properly.  Instead,
+      // we handle the removal condition before beginning the ordinary loop.
+       n0.loadDualFromEdge(c);     //n0 = c.getDual();
+       n1.loadForwardFromEdge(n0); // n1 = n0.getForward();
+       n2.loadForwardFromEdge(n1); // n2 = n1.getForward();
+       n2.setForward(c.getForward());
+       p.setForward(n1);
+       edgePool.deallocateEdge(c);
+       c.loadFromEdge(n1);  // c = n1;
+     }
+
+    while (true) {
+      n0.loadDualFromEdge(c);   //n0 = c.getDual();
+      n1.loadForwardFromEdge(n0); // = n0.getForward();
+
+      // check for the Delaunay in-circle criterion.  In the original
+      // implementation, this was accomplished through a call to
+      // a method in another class (GeometricOperations), but testing
+      // revealed that we could gain nearly 10 percent throughput
+      // by embedding the logic in this loop.
+      // the three vertices of the neighboring triangle are, in order,
+      //    n0.getA(), n1.getA(), n1.getB()
+      double h;
+      Vertex vA = n0.getA();
+      Vertex vB = n1.getA();
+      Vertex vC = n1.getB();
+      if (vC == null) {
+        h = inCircleWithGhosts(vA, vB, v);
+      } else if (vA == null) {
+        h = inCircleWithGhosts(vB, vC, v);
+      } else if (vB == null) {
+        h = inCircleWithGhosts(vC, vA, v);
+      } else {
+        nInCircle++;
+        double a11 = vA.x - x;
+        double a21 = vB.x - x;
+        double a31 = vC.x - x;
+
+        // column 2
+        double a12 = vA.y - y;
+        double a22 = vB.y - y;
+        double a32 = vC.y - y;
+
+        h = (a11 * a11 + a12 * a12) * (a21 * a32 - a31 * a22)
+          + (a21 * a21 + a22 * a22) * (a31 * a12 - a11 * a32)
+          + (a31 * a31 + a32 * a32) * (a11 * a22 - a21 * a12);
+        if (inCircleThresholdNeg < h && h < inCircleThreshold) {
+          nInCircleExtendedPrecision++;
+          double h2 = h;
+          h = geoOp.inCircleQuadPrecision(
+            vA.x, vA.y,
+            vB.x, vB.y,
+            vC.x, vC.y,
+            x, y);
+          if (h == 0) {
+            if (h2 != 0) {
+              nInCircleExtendedPrecisionConflicts++;
+            }
+          } else if (h * h2 <= 0) {
+            nInCircleExtendedPrecisionConflicts++;
+          }
+        }
+      }
+
+      // The value of h tells where the vertex to be added
+      // lies relative to the circumcircle
+      //       h<0, outside
+      //       h>0, inside
+      //       h = 0, on the circumcircle
+      boolean edgeViolatesDelaunay = h >= 0;
+      if (edgeViolatesDelaunay && c.isConstrained()) {
+        edgeViolatesDelaunay = false;
+      }
+
+      if (edgeViolatesDelaunay) {
+        n2.loadForwardFromEdge(n1); //  = n1.getForward();
+        n0.loadForwardFromEdge(c); // just use n0 as a temp
+        n2.setForward(n0);  // n2.setForward(c.getForward());
+        p.setForward(n1);
+        // we need to get the base reference in order to ensure
+        // that any ghost edges we create will start with a
+        // non-null vertex and end with a null.
+        nReplacements++;
+        if (buffer == -1) {
+          buffer = c.getBaseIndex();
+        } else {
+          edgePool.deallocateEdge(c);
+        }
+
+        c.loadFromEdge(n1);  // c = n1;
+      } else {
+        if(c.isConstrained()){
+          conEdges.add(c.copy());
+        }
+        // check for completion
+        if (c.getB() == anchor) {
+          n0.loadDualFromEdge(pStart);
+          n0.setForward(p);
+          searchEdge.loadFromEdge(pStart);
+          // TO DO: is buffer ever not empty?
+          //        i don't think so because it could only
+          //        happen in a case where an insertion decreased
+          //        the number of edge. so the following code
+          //        is probably unnecessary
+          if (buffer != -1) {
+            edgePool.deallocateEdge(buffer);
+          }
+
+          nEdgesReplacedDuringBuild += nReplacements;
+          if (nReplacements > maxEdgesReplacedDuringBuild) {
+            maxEdgesReplacedDuringBuild = nReplacements;
+          }
+          break;
+        }
+
+        n1.loadForwardFromEdge(c); // n1 = c.getForward()
+        Vertex B = c.getB();
+        if (buffer == -1) {
+          edgePool.allocateEdgeWithReceiver(e, v, B);
+        } else {
+          edgePool.getEdgeForIndexWithReceiver(e, buffer, v, B);
+          buffer = -1;
+        }
+        if (splitConstraintFlag && B == splitConstraintEnd) {
+          e.setConstrained(splitConstraintIndex);
+          conEdges.add(e.copy());
+        }
+        e.setForward(n1);
+        n0.loadDualFromEdge(e); //  e.getDual().setForward(p);
+        n0.setForward(p);
+        c.setForward(n0);  //  c.setForward(e.getDual());
+        p.loadFromEdge(e);  // p = e;
+        c.loadFromEdge(n1); // c = n1;
+      }
+    }
+
+    if(isConformant){
+      for(SemiVirtualEdge edge: conEdges){
+        restoreConformity(edge, 1);
+      }
+    }
+
+    return true;
+  }
+
+
 }

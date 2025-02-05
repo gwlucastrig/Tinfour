@@ -967,8 +967,6 @@ public class IncrementalTin implements IIncrementalTin {
         n2 = n1.getForward();
         n2.setForward(c.getForward());
         p.setForward(n1);
-        // TO DO: get rid of redundant clear
-        c.clear();  // optional, done as a diagnostic
         // we need to get the base reference in order to ensure
         // that any ghost edges we create will start with a
         // non-null vertex and end with a null.

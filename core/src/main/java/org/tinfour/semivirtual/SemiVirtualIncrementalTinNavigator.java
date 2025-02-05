@@ -163,4 +163,85 @@ class SemiVirtualIncrementalTinNavigator implements IIncrementalTinNavigator{
     neighborEdge = null;
   }
 
+
+  private double edgeDistance(Vertex A, Vertex B, double x, double y) {
+    double dX = x - A.getX();
+    double dY = y - A.getY();
+    double vX = B.getX() - A.getX();
+    double vY = B.getY() - A.getY();
+    double vM = Math.sqrt(vX * vX + vY * vY);  // magnitude of vector (vX, vY)
+    double t = (dX * vX + dY * vY) / vM;
+    if (t < 0) {
+      // (x,y) is positioned before the start of the edge.
+      // report the distance from the starting vertex.
+      return Math.sqrt(dX * dX + dY * dY);
+    } else if (t > vM) {
+      // (x,y) is beyond the end of the edge.
+      // report the distance from the ending vertex.
+      double bX = x - B.getX();
+      double bY = y - B.getY();
+      return Math.sqrt(bX * bX + bY * bY);
+    }
+    // report the perpendicular distance from the line.
+    double pX = -vY;
+    double pY = vX;
+    return Math.abs(dX * pX + dY * pY) / vM;
+  }
+
+
+  /**
+   * Gets the edge closest to the specified coordinates where (x,y) is a
+   * point known to be within the bounds of a triangle containing edge e
+   * or in the proximity of an exterior edge (in which case, the opposite
+   * vertex will be the ghost vertex (null).
+   * Typically, edge e is discovered using a stochastic Lawson's walk or
+   * similar algorithm, but other approaches are feasible.
+   * The nearest edge to the coordinates may be any of a, a.getForward(), or
+   * a.getReverse().
+   *
+   * @param a an edge belonging to a triangle that contains coordinates (x,y).
+   * @param x Cartesian coordinate of a point within the associated triangle.
+   * @param y Cartesian coordinate of a point within the associated triangle.
+   * @return if successful, a valid result; otherwise, a null.
+   */
+  public NearestEdgeResult getNearestEdge(IQuadEdge a, double x, double y) {
+    if (a == null) {
+      return null;  //  the TIN was not initialized
+    }
+    IQuadEdge b = a.getForward();
+    IQuadEdge c = a.getReverse();
+
+    Vertex A = a.getA();
+    Vertex B = b.getA();
+    Vertex C = c.getA();
+
+    // NOTE: in the following computations, we assume that x and y are
+    //       inside the triangle ABC.  Thus, when we compute the
+    //       perpendicular distance it will always be positive.
+    //       Even so, we call math.abs to account for round-off.
+    double test;
+    double pMin = edgeDistance(A, B, x, y);
+    IQuadEdge e = a;
+
+    if (C == null) {
+      // point is outside TIN, C is the ghost vertex.  we're done.
+      return new NearestEdgeResult(e, pMin, x, y, false);
+    }
+
+    test = edgeDistance(B, C, x, y);
+    if (test < pMin) {
+      pMin = test;
+      e = b;
+    }
+
+    test = edgeDistance(C, A, x, y);
+    if (test < pMin) {
+      pMin = test;
+      e = c;
+    }
+
+    return new NearestEdgeResult(e, pMin, x, y, true);
+  }
+
+
 }

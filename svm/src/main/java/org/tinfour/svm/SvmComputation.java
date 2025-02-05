@@ -22,6 +22,10 @@
  * Date     Name         Description
  * ------   ---------    -------------------------------------------------
  * 11/2018  G. Lucas     Created
+ * 01/2024  G. Lucas     Extend output formats to use Java Locale for
+ *                       European-style number formatting.  Improvements
+ *                       to filtering for anomalous soundings using the
+ *                       experimental SvmSinglePointAnomalyFilter
  *
  * Notes:
  *
@@ -61,6 +65,7 @@ import org.tinfour.utils.TriangleCollector;
  */
 public class SvmComputation {
 
+  private final static int N_VERTICES_FOR_SEMI_VIRTUAL=100000;
   /**
    * A Java Consumer to collect the contribution from each water triangle in the
    * Constrained Delaunay Triangulation.
@@ -237,7 +242,7 @@ public class SvmComputation {
 
     long time0 = System.nanoTime();
 
-    if (soundings.size() < 500000) {
+    if (soundings.size() < N_VERTICES_FOR_SEMI_VIRTUAL) {
       tin = new IncrementalTin(nominalPointSpacing);
     } else {
       tin = new SemiVirtualIncrementalTin(nominalPointSpacing);
@@ -348,7 +353,7 @@ public class SvmComputation {
       // resulting triangulation may have crossing edges.  This is a bug,
       // and will need to be addressed.  But, for now, rebuild the triangulation.
       tin.dispose();
-      if (soundings.size() < 500000) {
+      if (soundings.size() < N_VERTICES_FOR_SEMI_VIRTUAL) {
         tin = new IncrementalTin(nominalPointSpacing);
       } else {
         tin = new SemiVirtualIncrementalTin(nominalPointSpacing);
@@ -579,7 +584,7 @@ public class SvmComputation {
         soundings.addAll(vList);
         HilbertSort hilbert = new HilbertSort();
         hilbert.sort(soundings);
-        if (soundings.size() < 500000) {
+        if (soundings.size() < N_VERTICES_FOR_SEMI_VIRTUAL) {
           tin = new IncrementalTin(nominalPointSpacing);
         } else {
           tin = new SemiVirtualIncrementalTin(nominalPointSpacing);
