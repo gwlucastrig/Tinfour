@@ -164,6 +164,7 @@ public class SvmMain {
           ps.append((char) c);
         }
         System.out.flush();
+        System.err.flush();
       } catch (IOException ioex) {
         System.err.println("Failed to load template " + ioex.getMessage());
       }
@@ -212,12 +213,14 @@ public class SvmMain {
     File inputFolder = prop.getInputFolder();
     if (inputFolder != null && !inputFolder.exists()) {
       System.err.println("\nInput folder not found for " + inputFolder.getPath());
+      System.err.println("Terminating due to unrecoverable error condition\n");
       System.exit(-1);
     }
 
     File outputFolder = prop.getOutputFolder();
     if (outputFolder != null && !outputFolder.exists()) {
       System.err.println("\nOutput folder not found for " + outputFolder.getPath());
+      System.err.println("Terminating due to unrecoverable error condition\n");
       System.exit(-1);
     }
 

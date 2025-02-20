@@ -61,7 +61,7 @@ import org.tinfour.utils.AxisIntervals;
  * Provides data elements and methods for plotting a capacity graph.
  *
  */
-class SvmCapacityGraph {
+class SvmDrawdownGraph {
 
   private final SvmProperties properties;
   private final List<AreaVolumeSum> resultList;
@@ -80,9 +80,9 @@ class SvmCapacityGraph {
   private static final double defaultFontSizeAxis = 12;
 
   private static final double fLeft = 0.1;
-  private static final double fTop = 0.08;
+  private static final double fTop = 0.125;
   private static final double fRight = 0.9;
-  private static final double fBottom = 0.85;
+  private static final double fBottom = 0.875;
 
   private double computeFontSize(double dSize, double dHeight) {
     // assume 72 points per inch and a 96 DPI graphics resolution
@@ -103,7 +103,7 @@ class SvmCapacityGraph {
    * @param totalVolume the total computed elevation of the body of water at the
    * shore reference elevation
    */
-  SvmCapacityGraph(SvmProperties properties,
+  SvmDrawdownGraph(SvmProperties properties,
     List<AreaVolumeSum> sourceResultList,
     double totalVolume) {
     List<AreaVolumeSum> resultList = new ArrayList<>();
@@ -134,9 +134,9 @@ class SvmCapacityGraph {
     unitOfLength = properties.getUnitOfDistance();
 
     SvmBathymetryModel model = properties.getBathymetryModel();
-    if (model == SvmBathymetryModel.Depth || model == SvmBathymetryModel.DepthNegative) {
+    if(model==SvmBathymetryModel.Depth || model==SvmBathymetryModel.DepthNegative){
       levelOffset = properties.getShorelineReferenceElevation();
-    } else {
+    }else{
       levelOffset = 0;
     }
   }
@@ -151,12 +151,12 @@ class SvmCapacityGraph {
    * @throws IOException in the event of an unrecoverable IO condition
    */
   boolean writeOutput() throws IOException {
-    File outputFile = properties.getCapacityGraphFile();
+    File outputFile = properties.getDrawdownGraphFile();
     if (outputFile == null) {
       return false;
     }
-    Dimension dimension = properties.getCapacityGraphDimensions();
-    String title = properties.getCapacityGraphTitle();
+    Dimension dimension = properties.getDrawdownGraphDimensions();
+    String title = properties.getDrawdownGraphTitle();
 
     int width = dimension.width;
     int height = dimension.height;
@@ -188,7 +188,7 @@ class SvmCapacityGraph {
     double axisFontSize = computeFontSize(defaultFontSizeAxis, mInPixels);
 
     Font titleFont = new Font("SansSerif", Font.BOLD, (int) titleFontSize);
-    Font axisFont = new Font("SansSerif", Font.BOLD, (int) axisFontSize);
+    Font axisFont = new Font("SansSerif", Font.PLAIN, (int) axisFontSize);
     FontRenderContext frc = new FontRenderContext(null, true, true);
     TextLayout testLayout = new TextLayout("00000", axisFont, frc);
     Rectangle2D fontR2D = testLayout.getBounds();
@@ -214,7 +214,7 @@ class SvmCapacityGraph {
 
     TextLayout titleLayout = null;
     Rectangle2D titleR2D = null;
-    if (title != null) {
+    if (title != null && ! title.isBlank()) {
       // Here we use an attributed string in an attempt to improve the
       // character spacing by turning on kerning.  For smaller fonts, this
       // doesn't seem to help much.  Further investigation is required.
@@ -224,12 +224,11 @@ class SvmCapacityGraph {
       titleLayout = new TextLayout(aTitle.getIterator(), frc);
       //titleLayout = new TextLayout(title, titleFont, frc);
       titleR2D = titleLayout.getBounds();
-      gTop = (int) (-3 * titleR2D.getY());
+      gTop += (int)titleR2D.getHeight()+10;
       gdy = gBottom - gTop;
     }
 
     // compute the intervals for the y axis based on percent capacity
-    // allowing a little headroom above 100 percent
     double cHead = 110.0;
     AxisIntervals cIntervals = AxisIntervals.computeIntervals(0.0,
       cHead,
@@ -275,6 +274,19 @@ class SvmCapacityGraph {
     String[] xLabels = xIntervals.getLabels();
     double xDelta = xCoords[xCoords.length - 1] - xCoords[0];
     double xDeltaPix = xDelta / xUnitsPerPixel;
+
+    //Compute the depth intervals.  During plotting, the X coordinates
+    //For the tic marks and label placement will be computed based on
+    //the scale values derived for xIntervals.
+    AxisIntervals dIntervals = AxisIntervals.computeIntervals(levelMin-levelMax,
+      0,
+      xFontAllowance,
+      xFontAllowance / 2,
+      (int) (gdx - axisFontHeight * 2),
+      false);
+    double[] dCoords = dIntervals.getLabelCoordinates();
+    String[] dLabels = dIntervals.getLabels();
+
 
     // The Volume labels may have more digits that the percentage
     // capacity label.  So we may have to slide everything to the
@@ -373,7 +385,7 @@ class SvmCapacityGraph {
     g2d.setColor(lineColor);
     yLabel = y1 + axisFontHeight * 2;
     for (int i = 0; i < xCoords.length; i++) {
-      double x = x0 + (xCoords[i] - xCoords[0]) / xUnitsPerPixel;
+      double x = x1 - (xCoords[i] - xCoords[0]) / xUnitsPerPixel;
       l2d = new Line2D.Double(x, y0, x, y1+5);
       g2d.draw(l2d);
       TextLayout tLayout = new TextLayout(xLabels[i], axisFont, frc);
@@ -384,13 +396,36 @@ class SvmCapacityGraph {
       g2d.setColor(lineColor);
     }
 
-    String aLabel = "Water Surface Elevation (" + unitOfLength.getLabel() + ")";
+    yLabel = y0-7;
+    for(int i=0; i<dLabels.length; i++){
+      double level = levelMax + levelOffset + dCoords[i];
+      double x = x1 - (level - xCoords[0]) / xUnitsPerPixel;
+      l2d = new Line2D.Double(x, y0, x, y0-5);
+      g2d.draw(l2d);
+            TextLayout tLayout = new TextLayout(dLabels[i], axisFont, frc);
+      Rectangle2D r2d = tLayout.getBounds();
+      xLabel = x - r2d.getCenterX();
+      g2d.setColor(labColor);
+      tLayout.draw(g2d, (float) xLabel, (float) yLabel);
+      g2d.setColor(lineColor);
+    }
+
+    String aLabel  = "Surface Elevation (" + unitOfLength.getLabel() + ")";
     TextLayout aLayout = new TextLayout(aLabel, axisFont, frc);
     Rectangle2D ar2d = aLayout.getBounds();
     xLabel = (x0 + x1) / 2 - ar2d.getCenterX();
     yLabel = y1 + axisFontHeight * 4 - ar2d.getX();
     g2d.setColor(labColor);
     aLayout.draw(g2d, (float) xLabel, (float) yLabel);
+    g2d.setColor(lineColor);
+
+    String bLabel = "Water level change (" + unitOfLength.getLabel() + ")";
+    TextLayout bLayout = new TextLayout(bLabel, axisFont, frc);
+    Rectangle2D br2d = bLayout.getBounds();
+    xLabel = (x0 + x1) / 2 - br2d.getCenterX();
+    yLabel = y0 - 7 - axisFontHeight*2;
+    g2d.setColor(labColor);
+    bLayout.draw(g2d, (float) xLabel, (float) yLabel);
     g2d.setColor(lineColor);
 
     g2d.setClip(graphRect);
@@ -409,7 +444,7 @@ class SvmCapacityGraph {
     for (AreaVolumeSum avr : resultList) {
       double level = avr.level + levelOffset;
       double percent = 100.0 * avr.getVolume() / totalVolume;
-      double x = x0 + (level - xCoords[0]) / xUnitsPerPixel;
+      double x = x1 - (level - xCoords[0]) / xUnitsPerPixel;
       double y = y1 - percent / cUnitsPerPixel;
       if (moveFlag) {
         moveFlag = false;
@@ -423,7 +458,7 @@ class SvmCapacityGraph {
     for (Point2D p2d : eList) {
       double level = p2d.getX() + levelOffset;
       double percent = p2d.getY();
-      double x = x0 + (level - xCoords[0]) / xUnitsPerPixel;
+      double x = x1 - (level - xCoords[0]) / xUnitsPerPixel;
       double y = y1 - percent / cUnitsPerPixel;
       path.lineTo(x, y);
     }

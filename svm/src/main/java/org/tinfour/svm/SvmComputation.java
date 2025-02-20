@@ -372,11 +372,17 @@ public class SvmComputation {
     double tableInterval = properties.getTableInterval();
     double zShore = data.shoreReferenceElevation;
     double zMin = data.getMinZ();
+    double zMax = data.getMaxZ();
     int nStep = (int) (Math.ceil(zShore - zMin) / tableInterval) + 1;
     if (nStep > 10000) {
       nStep = 10000;
     }
 
+    if(nStep<0){
+      String gripe = "Error in elevation or data extraction model and attribute settings";
+      ps.println(gripe);
+      throw new IllegalArgumentException(gripe);
+    }
     double[] zArray = new double[nStep];
     for (int i = 0; i < nStep; i++) {
       zArray[i] = zShore - i * tableInterval;
@@ -563,22 +569,37 @@ public class SvmComputation {
       }
     }
 
-    SvmCapacityGraph capacityGraph = new SvmCapacityGraph(
-      properties,
-      resultList,
-      totalVolume);
-    boolean wroteGraph = capacityGraph.writeOutput();
-    if (wroteGraph) {
-      ps.println("Capacity graph written to " + properties.getCapacityGraphFile());
+    if (properties.isCapacityGraphEnabled()) {
+      SvmCapacityGraph capacityGraph = new SvmCapacityGraph(
+        properties,
+        resultList,
+        totalVolume);
+      boolean wroteGraph = capacityGraph.writeOutput();
+      if (wroteGraph) {
+        ps.println("Capacity graph written to " + properties.getCapacityGraphFile());
+      }
+    }
+
+    if (properties.isDrawdownGraphEnabled()) {
+      SvmDrawdownGraph drawdownGraph = new SvmDrawdownGraph(
+        properties,
+        resultList,
+        totalVolume);
+      boolean wroteGraph = drawdownGraph.writeOutput();
+      if (wroteGraph) {
+        ps.println("Drawdown graph written to " + properties.getDrawdownGraphFile());
+      }
     }
 
     File contourOutput = properties.getContourGraphFile();
     if (contourOutput != null) {
+      long subtime0 = System.currentTimeMillis();
       System.out.println("\nIn preparation for contouring, subdividing large triangles");
       ps.println("\nIn preparation for contouring, subdividing large triangles");
       SvmRefinement refinement = new SvmRefinement();
       List<Vertex> vList = refinement.subdivideLargeTriangles(ps, tin, 0.95);
-      System.out.println("\nCompleted subdividing large triangles");
+      long subtime1 = System.currentTimeMillis();
+      System.out.println("\nCompleted subdividing large triangles in "+(subtime1-subtime0+" ms"));
       if (!vList.isEmpty()) {
         tin.dispose();
         soundings.addAll(vList);

@@ -75,6 +75,10 @@ public class SvmProperties {
   private final static String capacityGraphSizeKey = "capacityGraphSize";
   private final static String capacityGraphTitleKey = "capacityGraphTitle";
 
+  private final static String drawdownGraphFileKey = "drawdownGraphFileName";
+  private final static String drawdownGraphSizeKey = "drawdownGraphSize";
+  private final static String drawdownGraphTitleKey = "drawdownGraphTitle";
+
   private final static String contourGraphFileKey = "contourGraphFileName";
   private final static String contourGraphSizeKey = "contourGraphSize";
   private final static String contourGraphLegendTextKey = "contourGraphLegendText";
@@ -772,6 +776,14 @@ public class SvmProperties {
   }
 
   /**
+   * Indicates whether the capacity graph function is enabled
+   * @return true if the graph is enabled; otherwise, false.
+   */
+  public boolean isCapacityGraphEnabled(){
+    return properties.containsKey(capacityGraphFileKey);
+  }
+
+  /**
    * Get the path to a file for writing a graph of the capacity as a function of
    * water level. .
    *
@@ -806,6 +818,56 @@ public class SvmProperties {
     }
     return s.trim();
   }
+
+
+
+  /**
+   * Indicates whether the drawdown graph function is enabled
+   * @return true if the graph is enabled; otherwise, false.
+   */
+  public boolean isDrawdownGraphEnabled(){
+    return properties.containsKey(drawdownGraphFileKey);
+  }
+
+  /**
+   * Get the path to a file for writing a graph of the drawdown as a function of
+   * water level. .
+   *
+   * @return a valid File instance or a null if not specified.
+   */
+  public File getDrawdownGraphFile() {
+    if (properties.containsKey(drawdownGraphFileKey)) {
+      return extractOutputFile(outputFolderKey, properties.getProperty(drawdownGraphFileKey));
+    }
+    return null;
+  }
+
+  /**
+   * Get the dimensions for the drawdown graph image file.
+   *
+   * @return a valid instance of non-trivial size.
+   */
+  public Dimension getDrawdownGraphDimensions() {
+    return extractDimension(drawdownGraphSizeKey, 650, 400);
+  }
+
+  /**
+   * Gets the title for the drawdown graph image
+   *
+   * @return if defined, a valid non-empty string instance;
+   * if undefined, a null.
+   */
+  public String getDrawdownGraphTitle() {
+    String s = properties.getProperty(drawdownGraphTitleKey);
+    if (s == null || s.trim().isEmpty()) {
+      return null;
+    }
+    return s.trim();
+  }
+
+
+
+
 
   /**
    * Get the path to a file for writing an image file showing a contour
@@ -1140,6 +1202,6 @@ public class SvmProperties {
       return defaultValue;
     }
   }
- 
+
 
 }
