@@ -58,8 +58,8 @@ import org.tinfour.utils.KahanSummation;
  * to be unique. Thus, if the polygon represents a triangle, the
  * getVertices and Vertex iterator methods will return exactly three vertices.
  */
-public class PolygonConstraint 
-        extends PolyLineConstraintAdapter 
+public class PolygonConstraint
+        extends PolyLineConstraintAdapter
         implements IConstraint {
 
   private double squareArea;
@@ -120,7 +120,7 @@ public class PolygonConstraint
       // adding the same vertex to both the start and end of the polygon.
       // That approach is not in keeping with the requirement that all
       // vertices in the list be unique.  The following logic provides
-      // a bit of forgiveness to the applicaiton by removing the extra vertex.
+      // a bit of forgiveness to the application by removing the extra vertex.
       Vertex a = list.get(0);
       Vertex b = list.get(list.size() - 1);
       if (a.getX() == b.getX() && a.getY() == b.getY()) {
@@ -144,10 +144,10 @@ public class PolygonConstraint
     }
     xCenter/=list.size();
     yCenter/=list.size();
-    
+
     KahanSummation lenSum = new KahanSummation();
     KahanSummation areaSum = new KahanSummation();
-    
+
     squareArea = 0;
     length = 0;
     Vertex a = list.get(list.size() - 1);
@@ -231,7 +231,7 @@ public class PolygonConstraint
   }
 
 
-  
+
   @Override
   public boolean isValid() {
     if (list.size() < 3) {
@@ -245,8 +245,8 @@ public class PolygonConstraint
     }
     return true;
   }
-  
-  
+
+
   /**
    * Gets a Java Path2D based on the geometry of the constraint mapped through
    * an optional affine transform.
@@ -278,9 +278,9 @@ public class PolygonConstraint
     path.closePath();
     return path;
   }
-  
-  
-  
+
+
+
   @Override
   public String toString() {
     String appStr = "";
