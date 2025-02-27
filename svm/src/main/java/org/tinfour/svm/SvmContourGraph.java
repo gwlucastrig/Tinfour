@@ -598,7 +598,13 @@ class SvmContourGraph {
           rightIndex = zContour.length + 1;
         }
 
-        Contour contour = new Contour(leftIndex, rightIndex, shoreReferenceElevation, true);
+        double zShore;
+        if(useDepthModel){
+          zShore = 0;
+        }else{
+          zShore = shoreReferenceElevation;
+        }
+        Contour contour = new Contour(leftIndex, rightIndex, zShore, true);
         List<Vertex> pcvList = pc.getVertices();
         for (Vertex v : pcvList) {
           contour.add(v.getX(), v.getY());
@@ -734,11 +740,20 @@ class SvmContourGraph {
             dSum += Math.sqrt(dx * dx + dy * dy);
           }
 
+          double zDepth;
+          double zElevation;
+          if (useDepthModel) {
+            zDepth = Math.abs(z);
+            zElevation = shoreReferenceElevation + z;
+          } else {
+            zDepth = shoreReferenceElevation - z;
+            zElevation = z;
+          }
           contourWriter.setDbfFieldValue("feature_id", nContour);
           contourWriter.setDbfFieldValue("cntr_idx", cIndex);
-          contourWriter.setDbfFieldValue("depth", shoreReferenceElevation - z);
+          contourWriter.setDbfFieldValue("depth", zDepth);
           if (produceElevations) {
-            contourWriter.setDbfFieldValue("elevation", z);
+            contourWriter.setDbfFieldValue("elevation", zElevation);
           }
           contourWriter.setDbfFieldValue("Shape_len", dSum);
           contourWriter.setDbfFieldValue("shore", shoreCode);
