@@ -2166,12 +2166,13 @@ public class IncrementalTin implements IIncrementalTin {
       k++;
     }
 
+    // Because processConstraint method does not respect the Delaunay criterion,
+    // many of the constraint edges in proximity to the constraints may
+    // be non-compliant.  Even non-constraint edges may have been affected.
+    // To Investigate:  is one pass truly sufficient to restore conformity?
     if (restoreConformity) {
-      List<IQuadEdge> eList = edgePool.getEdges();
-      for (IQuadEdge e : eList) {
-        if (e.isConstrained()) {
+      for (IQuadEdge e : this.edges()) {
           restoreConformity((QuadEdge) e, 1);
-        }
       }
       isConformant = true;
     }
