@@ -60,6 +60,10 @@ public class ShapefileRecord {
   void setSizes(int nPoints, int nParts) {
     this.nPoints = nPoints;
     this.nParts = nParts;
+    if(nPoints==0){
+      // the record is empty.  Do not adjust the memory use
+      return;
+    }
     if (partStart == null) {
       partStart = new int[nParts + 1];
       xyz = new double[nPoints * 3];

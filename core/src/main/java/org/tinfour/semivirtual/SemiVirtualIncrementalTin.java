@@ -1823,7 +1823,7 @@ public class SemiVirtualIncrementalTin implements IIncrementalTin {
     // many of the constraint edges in proximity to the constraints may
     // be non-compliant.  Even non-constraint edges may have been affected.
     // To Investigate:  is one pass truly sufficient to restore conformity?
-    if (restoreConformity) {;
+    if (restoreConformity) {
       for (IQuadEdge e : this.edges()) {
           SemiVirtualEdge sEdge = (SemiVirtualEdge) e;
           restoreConformity(sEdge, 1);

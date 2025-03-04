@@ -80,6 +80,43 @@ public class SvmFileSpecification {
     }
   }
 
+
+  /**
+   * The DepthValueTransform class performs a transform based on
+   * the absolute value of the z value.  The assumption is that non-zero depth
+   * values will always be uniformly negative or uniformly positive.
+   * We will never see a case where samples are given as positive depths
+   * with a few negative values indicating that the sample is above the
+   * surface of the water.  If that happens, the user can always specify
+   * their own transform parameters.  But we don't anticipate anyone actually
+   * wanting to do that.
+   */
+  private static class DepthValueTransform implements IVerticalCoordinateTransform {
+
+    final double scale;
+
+    DepthValueTransform() {
+      this.scale = 1.0;
+    }
+
+    DepthValueTransform(double scale) {
+      this.scale = scale;
+    }
+
+    @Override
+    public double transform(int recordIndex, double z) {
+      return -Math.abs(scale * z);
+    }
+
+    @Override
+    public String toString() {
+      return "Depth value transform z = -Math.abs(" + scale + "*z)";
+    }
+  }
+
+
+
+
   final String key;
   final File file;
   final String field;
@@ -162,9 +199,7 @@ public class SvmFileSpecification {
         verticalTransform = interpretVtrans(list.get(2));
       } else {
         if (bathymetryModel == SvmBathymetryModel.Depth) {
-          verticalTransform = new LinearValueTransform(-1, 0);
-        } else if (bathymetryModel == SvmBathymetryModel.DepthNegative) {
-          verticalTransform = new LinearValueTransform(1, 0);
+          verticalTransform = new DepthValueTransform();
         } else {
           verticalTransform = null;
         }

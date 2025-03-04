@@ -134,7 +134,7 @@ class SvmDrawdownGraph {
     unitOfLength = properties.getUnitOfDistance();
 
     SvmBathymetryModel model = properties.getBathymetryModel();
-    if(model==SvmBathymetryModel.Depth || model==SvmBathymetryModel.DepthNegative){
+    if(model==SvmBathymetryModel.Depth){
       levelOffset = properties.getShorelineReferenceElevation();
     }else{
       levelOffset = 0;

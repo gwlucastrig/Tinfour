@@ -51,6 +51,7 @@ class SvmFlatFixer {
   private final IIncrementalTin tin;
   private final double zShore;
 
+  private int nFlats;
   private int nRemediations;
   private double remediatedArea;
   private double remediatedVolume;
@@ -103,10 +104,12 @@ class SvmFlatFixer {
           continue;  // not anticipated to happen
         }
         if (isEquiv(C.getZ(), zShore)) {
+          nFlats++;
           if (!isEquiv(D.getZ(), zShore)) {
             fixList.add(edge);
           }
         } else if (isEquiv(D.getZ(), zShore)) {
+          nFlats++;
           // we've already established that C.getZ() != zShore
           fixList.add(dual);
         }
@@ -170,7 +173,15 @@ class SvmFlatFixer {
   }
 
   /**
-   * Gets a count for the number of remediations that were performed.
+   * Gets the number of flat triangles that were encountered in
+   * the source file.  Not all of these may have been remediated.
+   * @return a valid count.
+   */
+  int getFlatCount(){
+    return nFlats;
+  }
+  /**
+   * Gets the number of remediations that were performed.
    *
    * @return a positive integer value
    */

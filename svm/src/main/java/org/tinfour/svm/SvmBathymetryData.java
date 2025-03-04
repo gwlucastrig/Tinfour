@@ -38,12 +38,12 @@ import java.io.PrintStream;
 import java.util.ArrayList;
 import java.util.List;
 import org.tinfour.common.IConstraint;
+import org.tinfour.common.LinearConstraint;
 import org.tinfour.common.PolygonConstraint;
 import org.tinfour.common.Vertex;
 import org.tinfour.gis.utils.ConstraintReaderShapefile;
 import org.tinfour.gis.utils.IVerticalCoordinateTransform;
 import org.tinfour.gis.utils.VertexReaderLas;
-import org.tinfour.gis.utils.VertexReaderShapefile;
 import org.tinfour.utils.HilbertSort;
 import org.tinfour.utils.Tincalc;
 import org.tinfour.utils.loaders.VertexReaderText;
@@ -83,6 +83,7 @@ public class SvmBathymetryData {
   private final List<PolygonConstraint> boundaryConstraints = new ArrayList<>();
   private final List<PolygonConstraint> lakeConstraints = new ArrayList<>();
   private final List<PolygonConstraint> islandConstraints = new ArrayList<>();
+  private final List<LinearConstraint> interiorConstraints = new ArrayList<>();
 
   private List<Vertex>surveyPerimeter;
 
@@ -124,10 +125,12 @@ public class SvmBathymetryData {
       VertexReaderText vertexReader = new VertexReaderText(vertexFile);
       list = vertexReader.read(null);
     } else if ("shp".equalsIgnoreCase(extension)) {
-      VertexReaderShapefile vls = new VertexReaderShapefile(vertexFile);
+      SvmShapefileVertexReader vls = new SvmShapefileVertexReader(vertexFile);
       vls.setDbfFieldForZ(dbfBathymetryField);
       vls.setVerticalCoordinateTransform(verticalTransform);
       list = vls.read(null);
+      List<LinearConstraint> cList = vls.getLinearConstraints();
+      interiorConstraints.addAll(cList);
     } else if("las".equalsIgnoreCase(extension) || "laz".equalsIgnoreCase("laz")){
          VertexReaderLas reader = new VertexReaderLas(vertexFile);
          list = reader.read(null);
@@ -660,5 +663,9 @@ public class SvmBathymetryData {
     soundings.clear();
     supplement.clear();
     soundings.addAll(replacements);
+  }
+  
+  List<LinearConstraint>getInteriorConstraints(){
+    return interiorConstraints;
   }
 }

@@ -219,8 +219,15 @@ public class SimpleTriangle {
    */
   public IConstraint getContainingRegion() {
     // The triangle is an interior triangle if any one edge is
-    // asspciated with a region
-    return tin.getRegionConstraint(edgeA);
+    // associated with a region
+    IConstraint con = tin.getRegionConstraint(edgeA);
+    if(con==null){
+       con = tin.getRegionConstraint(edgeB);
+       if(con==null){
+          con = tin.getRegionConstraint(edgeC);
+       }
+    }
+    return con;
   }
 
   /**

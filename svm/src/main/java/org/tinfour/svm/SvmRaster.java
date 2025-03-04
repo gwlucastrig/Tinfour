@@ -182,6 +182,14 @@ class SvmRaster {
       return;
     }
 
+    // A diagnostic integrity check to verify that the TIN is correctly
+    // constructed.  In particular, whether the addition of constrained edges
+    // did not break the Delaunay criterion.
+    //  IIntegrityCheck iCheck = tin.getIntegrityCheck();
+    //  boolean inspectStatus = iCheck.inspect();
+    //  System.out.println("Diagnostic integrity check "+inspectStatus);
+    //  iCheck.printSummary(System.out);
+
     String gridRootName = gridFile.getName();
     if (gridRootName.length() > 4) {
       int k = gridRootName.length() - 4;

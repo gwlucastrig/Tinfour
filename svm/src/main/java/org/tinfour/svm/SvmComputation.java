@@ -48,6 +48,7 @@ import org.tinfour.common.GeometricOperations;
 import org.tinfour.common.IConstraint;
 import org.tinfour.common.IIncrementalTin;
 import org.tinfour.common.IQuadEdge;
+import org.tinfour.common.LinearConstraint;
 import org.tinfour.common.PolygonConstraint;
 import org.tinfour.common.SimpleTriangle;
 import org.tinfour.common.Thresholds;
@@ -90,7 +91,7 @@ public class SvmComputation {
      *
      * @param tin A valid Constrained Delaunay Triangulation
      */
-    TriangleSurvey(IIncrementalTin tin, double shoreReferenceElevation) {
+    TriangleSurvey(IIncrementalTin tin, double shoreReferenceElevation ) {
       this.shoreReferenceElevation = shoreReferenceElevation;
       List<IConstraint> constraintsFromTin = tin.getConstraints();
       water = new boolean[constraintsFromTin.size()];
@@ -102,7 +103,7 @@ public class SvmComputation {
     }
 
     private boolean nEqual(double a, double b) {
-      return Math.abs(a - b) < 1.0e-5;
+      return Math.abs(a - b) < 1.0e-3;
     }
 
     @Override
@@ -195,6 +196,8 @@ public class SvmComputation {
     SvmProperties properties,
     SvmBathymetryData data) throws IOException {
 
+    SvmBathymetryModel bathymetryModel = properties.getBathymetryModel();
+
     // The nominal point spacing is based on the number of sample points
     // and the area of the lake data.  It is a rough estimate used to
     // select significant metrics for the incremental TIN implementations.
@@ -217,8 +220,10 @@ public class SvmComputation {
 
     List<Vertex> soundings = data.getSoundingsAndSupplements();
     List<PolygonConstraint> boundaryConstraints = data.getBoundaryConstraints();
+    List<LinearConstraint> interiorConstraints = data.getInteriorConstraints();
 
     List<IConstraint> allConstraints = new ArrayList<>();
+    allConstraints.addAll(interiorConstraints);
     allConstraints.addAll(boundaryConstraints);
 
     if (soundings.isEmpty()) {
@@ -303,7 +308,19 @@ public class SvmComputation {
       }
     }
 
-    TriangleSurvey trigSurvey = new TriangleSurvey(tin, shoreReferenceElevation);
+    // the two bathymetry models, elevation and depth, result in the
+    // source vertices being assigned different treatments of the z
+    // value.  For the elevation model, the z values at the shore naturally
+    // will be the shoreReferenceElevation.  But, for the depth model,
+    // shorelines vertices will be assigned a z value of zero.
+    // Flat-fixing logic depends on this criteria being specified.
+    double zFlatShore = shoreReferenceElevation;
+    if (bathymetryModel == SvmBathymetryModel.Depth) {
+      zFlatShore = 0;
+    }
+
+
+    TriangleSurvey trigSurvey = new TriangleSurvey(tin, zFlatShore);
     TriangleCollector.visitSimpleTriangles(tin, trigSurvey);
 
     long timeToFixFlats = 0;
@@ -320,16 +337,30 @@ public class SvmComputation {
       int nRemediationVertices = 0;
       ps.println("");
       ps.println("Remediating flat triangles");
-      System.out.println("Pass   Remediated        Area     Volume Added    avg. depth");
+
       for (int iFlat = 0; iFlat < 500; iFlat++) {
         // construct a new flat-fixer each time
         // so we can gather counts
         SvmFlatFixer flatFixer = new SvmFlatFixer(
           tin,
-          shoreReferenceElevation);
+          zFlatShore);
         List<Vertex> fixList = flatFixer.fixFlats(ps);
         if (fixList.isEmpty()) {
+          if (iFlat == 0) {
+            if (flatFixer.getFlatCount() == 0) {
+              ps.println("No flat triangles were detected");
+              System.out.println("No flat triangles were detected");
+            } else {
+              ps.println("Insufficient data to fix flat triangles for "
+                + flatFixer.getFlatCount() + " found");
+              System.out.println("Insufficient data to fix flat triangles for "
+                + flatFixer.getFlatCount() + " found");
+            }
+          }
           break;
+        }
+        if(iFlat==0){
+          System.out.println("Pass   Remediated        Area     Volume Added    avg. depth");
         }
         if (iFlat % 10 == 0) {
           double fixArea = flatFixer.getRemediatedArea();

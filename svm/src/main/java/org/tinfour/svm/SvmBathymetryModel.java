@@ -37,16 +37,11 @@ package org.tinfour.svm;
  */
 public enum SvmBathymetryModel {
   /**
-   * Soundings are specified as depth given as positive numbers
-   * below the surface.  A value of zero indicates the surface.
+   * Soundings are specified as depth given as either uniformly positive
+   * or uniformly negative numbers indicating depths below the surface.
+   * A value of zero indicates the surface.
    */
   Depth,
-
-  /**
-   * Soundings are specified as depth given as negative numbers
-   * below the surface. A value of zero indicates the surface.
-   */
-  DepthNegative,
 
   /**
    * Soundings are specified as elevations referenced to
@@ -65,7 +60,9 @@ public enum SvmBathymetryModel {
     if (s != null) {
       String target = s.trim().toLowerCase();
       if (target.startsWith("depthneg")) {
-        return DepthNegative;
+        // Depth negative is no longer used because we've introduced
+        // the DepthValueTransform class
+        return Depth;
       }else if (target.startsWith("depth")) {
         return Depth;
       } else if (target.startsWith("elev")) {
@@ -80,6 +77,6 @@ public enum SvmBathymetryModel {
    * @return true if the model represents depth values; otherwise, false.
    */
   public  boolean isDepth(){
-    return this==Depth || this==DepthNegative;
+    return this==Depth;
   }
 }
