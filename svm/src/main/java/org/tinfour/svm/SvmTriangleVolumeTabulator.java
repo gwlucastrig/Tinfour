@@ -197,7 +197,8 @@ class SvmTriangleVolumeTabulator {
       || bZ < shoreReferenceElevation
       || cZ < shoreReferenceElevation) {
       depthAreaSum.add(area);
-      depthAreaWeightedSum.add(area * (shoreReferenceElevation - (aZ + bZ + cZ) / 3.0));
+      double deltaZ = shoreReferenceElevation - (aZ + bZ + cZ) / 3.0;
+      depthAreaWeightedSum.add(area * deltaZ);
     }
 
     for (int i = 0; i < avSumArray.length; i++) {
@@ -313,7 +314,7 @@ class SvmTriangleVolumeTabulator {
   }
 
   double getAdjustedMeanDepth() {
-    return depthAreaWeightedSum.getSum() / this.depthAreaSum.getSum();
+    return depthAreaWeightedSum.getSum() / depthAreaSum.getSum();
   }
 
   void summarize(SvmProperties properties, PrintStream ps) {

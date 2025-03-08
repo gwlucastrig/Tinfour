@@ -426,7 +426,7 @@ public class SvmComputation {
     }
 
     SvmTriangleVolumeTabulator volumeTabulator
-      = new SvmTriangleVolumeTabulator(tin, shoreReferenceElevation, zArray);
+      = new SvmTriangleVolumeTabulator(tin, zShore, zArray);
     volumeTabulator.process(tin);
 
     time2 = System.nanoTime();
@@ -563,11 +563,11 @@ public class SvmComputation {
         PrintStream ts = new PrintStream(bos, true, "UTF-8");) {
         String lineFormat;
         if (csvFlag) {
-          ts.println("Elevation, Drawdown, Area, Percent_area, Volume, Percent_volume");
-          lineFormat = "%12.3f, %12.3f, %12.3f, %6.2f, %12.3f, %6.2f%n";
+          ts.println("Elevation, Drawdown, Area, Percent_area, Volume, Volume_loss, Percent_volume");
+          lineFormat = "%12.3f, %12.3f, %12.3f, %6.2f, %12.3f, %12.3f, %6.2f%n";
         } else {
-          ts.println("Elevation\tDrawdown\tArea\tPercent_area\tVolume\tPercent_volume");
-          lineFormat = "%12.3f\t%12.3f\t%12.3f\t%6.2f\t%12.3f\t%6.2f%n";
+          ts.println("Elevation\tDrawdown\tArea\tPercent_area\tVolume\tVolume_loss\tPercent_volume");
+          lineFormat = "%12.3f\t%12.3f\t%12.3f\t%6.2f\t%12.3f\t%12.3f\t%6.2f%n";
         }
 
         for(AreaVolumeSum avSum: resultList){
@@ -588,6 +588,7 @@ public class SvmComputation {
             areaAtLevel / areaFactor,
             100*areaAtLevel/totalArea,
             volumeAtLevel / volumeFactor,
+            (totalVolume-volumeAtLevel)/volumeFactor,
             100 * volumeAtLevel / totalVolume);
           if (volumeAtLevel == 0) {
             break;
