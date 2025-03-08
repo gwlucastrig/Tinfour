@@ -209,7 +209,7 @@ class SvmTriangleVolumeTabulator {
       // if (z <= z0), we can trivially exclude the triangle
       // from the calculation because all vertices are above water level.
       if (z <= z0) {
-        if (z == z0 && z0 == z1 && z1 == z0) {
+        if (z == z0 && z0 == z1 && z1 == z2) {
           // a flat triangle at the level z, does not contribute
           // volume, but does contribute to the area calculation.
           avc.addTriangleArea(area);

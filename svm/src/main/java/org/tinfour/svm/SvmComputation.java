@@ -403,7 +403,13 @@ public class SvmComputation {
     double tableInterval = properties.getTableInterval();
     double zShore = data.shoreReferenceElevation;
     double zMin = data.getMinZ();
-    double zMax = data.getMaxZ();
+    //  Diagnostic to support future development
+    //  double zMax = data.getMaxZ();
+    //  int i0 = (int)Math.floor(zMin/tableInterval);
+    //  int i1 = (int)Math.floor(zShore/tableInterval+1.0e-6);
+    //  double z0 = (double)i0*tableInterval;
+    //  double z1 = (double)i1*tableInterval;
+    //  int nI = i1-i0+1;
     int nStep = (int) (Math.ceil(zShore - zMin) / tableInterval) + 1;
     if (nStep > 10000) {
       nStep = 10000;
@@ -486,6 +492,7 @@ public class SvmComputation {
     double totalVolume = volumeTabulator.getVolume();
     double volume = volumeTabulator.getVolume() / volumeFactor;
     double surfArea = volumeTabulator.getSurfaceArea() / areaFactor;
+    double totalArea = volumeTabulator.getSurfaceArea();
     double avgDepth = (rawVolume / rawSurfArea) / lengthFactor;
     double adjMeanDepth = rawAdjMeanDepth / lengthFactor;
     double rawFlatArea = volumeTabulator.getFlatArea();
@@ -556,19 +563,30 @@ public class SvmComputation {
         PrintStream ts = new PrintStream(bos, true, "UTF-8");) {
         String lineFormat;
         if (csvFlag) {
-          ts.println("Elevation, Area, Volume, Percent_Capacity");
-          lineFormat = "%12.3f, %12.3f, %12.3f, %6.2f%n";
+          ts.println("Elevation, Drawdown, Area, Percent_area, Volume, Percent_volume");
+          lineFormat = "%12.3f, %12.3f, %12.3f, %6.2f, %12.3f, %6.2f%n";
         } else {
-          ts.println("Elevation\tArea\tVolume\tPercent_Capacity");
-          lineFormat = "%12.3f\t%12.3f\t%12.3f\t%6.2f%n";
+          ts.println("Elevation\tDrawdown\tArea\tPercent_area\tVolume\tPercent_volume");
+          lineFormat = "%12.3f\t%12.3f\t%12.3f\t%6.2f\t%12.3f\t%6.2f%n";
         }
 
         for(AreaVolumeSum avSum: resultList){
+          double elevation;
+          double drawdown;
+          if(bathymetryModel == SvmBathymetryModel.Elevation){
+            elevation = avSum.level;
+            drawdown = elevation-shoreReferenceElevation;
+          }else{
+            elevation = avSum.level+shoreReferenceElevation;
+            drawdown = avSum.level;
+          }
           double areaAtLevel = avSum.areaSum.getSum();
           double volumeAtLevel = avSum.volumeSum.getSum();
           ts.format(lineFormat,
-            avSum.level,
+            elevation,
+            drawdown,
             areaAtLevel / areaFactor,
+            100*areaAtLevel/totalArea,
             volumeAtLevel / volumeFactor,
             100 * volumeAtLevel / totalVolume);
           if (volumeAtLevel == 0) {

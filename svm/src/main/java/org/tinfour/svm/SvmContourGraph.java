@@ -765,6 +765,49 @@ class SvmContourGraph {
         ps.println("Encounted IOException while writing contour-line shapefile " + ioex.getMessage());
         return;
       }
+
+      // -------------------------------------------------------------
+      // Diagnostic to write TIN to a Shapefile (rather inefficiently)
+      //  File tinOutFile = new File(contourShapefileRef.getParentFile(), "Tin.shp");
+      //  removeOldShapefiles(ps, tinOutFile);
+      //  ps.println("Writing shapefile " + tinOutFile.getPath());
+      //  ShapefileWriterSpecification tinSpec = new ShapefileWriterSpecification();
+      //  tinSpec.setShapefileType(ShapefileType.PolyLine);
+      //  tinSpec.addIntegerField("feature_id", 8);
+      //  tinSpec.setShapefilePrjContent(data.getShapefilePrjContent());
+      //
+      //  try (ShapefileWriter tinWriter = new ShapefileWriter(tinOutFile, tinSpec)) {
+      //    for(IQuadEdge e: tin.edges()){
+      //      Vertex A = e.getA();
+      //      Vertex B = e.getB();
+      //      if(A==null || B==null){
+      //        continue;
+      //      }
+      //
+      //      if(e.isConstrainedRegionBorder() || e.isConstrainedRegionMember()){
+      //
+      //      ShapefileRecord record = tinWriter.createRecord();
+      //
+      //      double[] xy = new double[4];
+      //      xy[0] = A.getX();
+      //      xy[1] = A.getY();
+      //      xy[2] = B.getX();
+      //      xy[3] = B.getY();
+      //      record.addPolyLine(xy.length / 2, xy);
+      //
+      //      tinWriter.setDbfFieldValue("feature_id", e.getIndex());
+      //      tinWriter.writeRecord(record);
+      //    }
+      //    }
+      //  } catch (IOException ioex) {
+      //    ps.println("Encounted IOException while writing tin-line shapefile " + ioex.getMessage());
+      //    return;
+      //  }
+
+      // -----------------------------------------------------
+
+
+
     }
 
   }
