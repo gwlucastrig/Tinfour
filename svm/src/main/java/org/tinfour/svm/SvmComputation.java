@@ -501,21 +501,21 @@ public class SvmComputation {
 
     ps.format("%nComputations from Constrained Delaunay Triangulation -----------------------------%n");
     if (properties.doesLocaleUseCommaForDecimal()) {
-      ps.format("  Volume              %18.2f %s     %28.1f %s^3%n",
+      ps.format("  Volume              %18.2f %-12s     %24.1f %s^3%n",
         volume, volumeUnits, rawVolume, lengthUnits);
-      ps.format("  Surface Area        %18.2f %s     %28.1f %s^2%n",
+      ps.format("  Surface Area        %18.2f %-12s     %24.1f %s^2%n",
         surfArea, areaUnits, rawSurfArea, lengthUnits);
-      ps.format("  Flat Area           %18.2f %s     %28.1f %s^2%n",
+      ps.format("  Flat Area           %18.2f %-12s     %24.1f %s^2%n",
         flatArea, areaUnits, rawFlatArea, lengthUnits);
       ps.format("  Avg depth           %18.2f %s%n", avgDepth, lengthUnits);
       ps.format("  Adj mean depth      %18.2f %s%n", adjMeanDepth, lengthUnits);
       ps.format("  Mean Vertex Spacing %18.2f %s%n", spacing.mean, lengthUnits);
     } else {
-      ps.format("  Volume              %,18.2f %s     %,28.1f %s^3%n",
+      ps.format("  Volume              %,18.2f %-12s     %,24.1f %s^3%n",
         volume, volumeUnits, rawVolume, lengthUnits);
-      ps.format("  Surface Area        %,18.2f %s     %,28.1f %s^2%n",
+      ps.format("  Surface Area        %,18.2f %-12s     %,24.1f %s^2%n",
         surfArea, areaUnits, rawSurfArea, lengthUnits);
-      ps.format("  Flat Area           %,18.2f %s     %,28.1f %s^2%n",
+      ps.format("  Flat Area           %,18.2f %-12s     %,24.1f %s^2%n",
         flatArea, areaUnits, rawFlatArea, lengthUnits);
       ps.format("  Avg depth           %,18.2f %s%n", avgDepth, lengthUnits);
       ps.format("  Adj mean depth      %,18.2f %s%n", adjMeanDepth, lengthUnits);

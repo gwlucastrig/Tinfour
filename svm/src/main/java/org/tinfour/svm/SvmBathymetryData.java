@@ -46,6 +46,7 @@ import org.tinfour.gis.utils.IVerticalCoordinateTransform;
 import org.tinfour.gis.utils.VertexReaderLas;
 import org.tinfour.utils.HilbertSort;
 import org.tinfour.utils.Tincalc;
+import org.tinfour.utils.loaders.ICoordinateTransform;
 import org.tinfour.utils.loaders.VertexReaderText;
 
 /**
@@ -117,7 +118,8 @@ public class SvmBathymetryData {
   private List<Vertex> loadVertices(
           File vertexFile,
           String dbfBathymetryField,
-          IVerticalCoordinateTransform verticalTransform)
+          IVerticalCoordinateTransform verticalTransform,
+          ICoordinateTransform horizontalTransform)
           throws IOException {
     String extension = this.getFileExtension(vertexFile);
     List<Vertex> list;
@@ -128,6 +130,7 @@ public class SvmBathymetryData {
       SvmShapefileVertexReader vls = new SvmShapefileVertexReader(vertexFile);
       vls.setDbfFieldForZ(dbfBathymetryField);
       vls.setVerticalCoordinateTransform(verticalTransform);
+      vls.setCoordinateTransform(horizontalTransform);
       list = vls.read(null);
       List<LinearConstraint> cList = vls.getLinearConstraints();
       interiorConstraints.addAll(cList);
@@ -153,14 +156,17 @@ public class SvmBathymetryData {
    * @param dbfBathymetryField the optional string giving the name of the DBF
    * field to be used to extracting data from the input file (used for
    * Shapefiles).
-   * @param verticalTransform the optional\transform used to map vertical
+   * @param verticalTransform the optional transform used to map vertical
    * coordinates to a new value; or null if no transform is to be applied.
+   * @param horizontalTransform the optional transform used to map
+   * horizontal coordinates to new values; or null if no transform is to be applied.
    * @throws IOException in the event of an unrecoverable I/O condition
    */
   public void loadSamples(
           File inputSoundingsFile,
           String dbfBathymetryField,
-          IVerticalCoordinateTransform verticalTransform)
+          IVerticalCoordinateTransform verticalTransform,
+          ICoordinateTransform horizontalTransform)
           throws IOException {
 
     long time0 = System.nanoTime();
@@ -168,7 +174,8 @@ public class SvmBathymetryData {
     List<Vertex> list = loadVertices(
             inputSoundingsFile,
             dbfBathymetryField,
-            verticalTransform);
+            verticalTransform,
+            horizontalTransform);
 
     for (Vertex v : list) {
       v.setAuxiliaryIndex(BATHYMETRY_SOURCE);
@@ -232,12 +239,15 @@ public class SvmBathymetryData {
    * field to be used to extracting data.
    * @param verticalTransform the optional\transform used to map vertical
    * coordinates to a new value; or null if no transform is to be applied.
+   * @param horizontalTransform the optional transform used to map
+   * horizontal coordinates to new values; or null if no transform is to be applied.
    * @throws IOException in the event of an unrecoverable I/O condition
    */
   public void loadSupplement(
           File inputSupplementFile,
           String dbfBathymetryField,
-          IVerticalCoordinateTransform verticalTransform)
+          IVerticalCoordinateTransform verticalTransform,
+          ICoordinateTransform horizontalTransform)
           throws IOException {
 
     long time0 = System.nanoTime();
@@ -245,7 +255,8 @@ public class SvmBathymetryData {
     List<Vertex> list = this.loadVertices(
             inputSupplementFile,
             dbfBathymetryField,
-            verticalTransform);
+            verticalTransform,
+            horizontalTransform);
     for (Vertex v : list) {
       v.setAuxiliaryIndex(SvmBathymetryData.SUPPLEMENTAL_SOURCE);
     }
@@ -271,10 +282,12 @@ public class SvmBathymetryData {
   public void loadBoundaryConstraints(
           File inputBoundaryFile,
           String dbfFieldForZ,
-          IVerticalCoordinateTransform verticalTransform) throws IOException {
+          IVerticalCoordinateTransform verticalTransform,
+          ICoordinateTransform horizontalTransform) throws IOException {
     long time0 = System.nanoTime();
     try (ConstraintReaderShapefile reader
             = new ConstraintReaderShapefile(inputBoundaryFile)) {
+      reader.setCoordinateTransform(horizontalTransform);
       reader.setDbfFieldForZ(dbfFieldForZ);
       reader.setVerticalCoordinateTransform(verticalTransform);
       List<IConstraint> list = reader.read();
@@ -664,7 +677,7 @@ public class SvmBathymetryData {
     supplement.clear();
     soundings.addAll(replacements);
   }
-  
+
   List<LinearConstraint>getInteriorConstraints(){
     return interiorConstraints;
   }

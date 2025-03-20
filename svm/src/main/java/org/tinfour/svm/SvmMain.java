@@ -45,6 +45,7 @@ import java.util.SimpleTimeZone;
 import org.tinfour.gis.utils.ShapefileMetadataReporter;
 import org.tinfour.svm.properties.SvmFileSpecification;
 import org.tinfour.svm.properties.SvmProperties;
+import org.tinfour.utils.loaders.ICoordinateTransform;
 
 /**
  * Provides the main method for running the Simple Volumetric Model (SVM).
@@ -229,12 +230,15 @@ public class SvmMain {
 
     SvmBathymetryData data = new SvmBathymetryData(bathymetryModel);
 
+    ICoordinateTransform horizontalTransform = prop.getHorizontalTransform();
+
     List<SvmFileSpecification> bathyFiles = prop.getSampleSpecifications();
     for (SvmFileSpecification bathyFile : bathyFiles) {
       data.loadSamples(
         bathyFile.getFile(),
         bathyFile.getField(),
-        bathyFile.getVerticalTransform());
+        bathyFile.getVerticalTransform(),
+        horizontalTransform);
     }
 
     List<SvmFileSpecification> supplementFiles = prop.getSupplementSpecifications();
@@ -242,7 +246,8 @@ public class SvmMain {
       data.loadSupplement(
         supplementFile.getFile(),
         supplementFile.getField(),
-        supplementFile.getVerticalTransform());
+        supplementFile.getVerticalTransform(),
+        horizontalTransform);
     }
 
     List<SvmFileSpecification> boundaryFiles = prop.getBoundarySpecifications();
@@ -250,7 +255,8 @@ public class SvmMain {
       data.loadBoundaryConstraints(
         boundaryFile.getFile(),
         boundaryFile.getField(),
-        boundaryFile.getVerticalTransform());
+        boundaryFile.getVerticalTransform(),
+        horizontalTransform);
     }
 
     PrintStream reportPrintStream = System.out; // the default

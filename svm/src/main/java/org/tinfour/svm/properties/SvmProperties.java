@@ -42,6 +42,7 @@ import java.util.Locale;
 import java.util.Properties;
 import java.util.Set;
 import org.tinfour.svm.SvmBathymetryModel;
+import org.tinfour.utils.loaders.ICoordinateTransform;
 
 /**
  * Provides parameter and resource specifications for a SVM analysis run.
@@ -95,6 +96,8 @@ public class SvmProperties {
   private final static String experimentalFilterFileKey = "experimentalFilterFileName";
   private final static String experimentalFilterSlopeOfAnomalyKey = "experimentalFilterSlopeOfAnomaly";
   private final static String experimentalFilterSlopeOfSupportKey = "experimentalFilterSlopeOfSupport";
+
+  private final static String horizontalTransformKey = "horizontalTransform";
 
   final Properties properties = new Properties();
   final List<String> keyList = new ArrayList<>();
@@ -1203,5 +1206,39 @@ public class SvmProperties {
     }
   }
 
+  /**
+   * Gets a horizontal coordinate scaling transform.
+   * @return if a valid property exists, a transform instance;
+   * otherwise, a null.
+   */
+  public ICoordinateTransform getHorizontalTransform() {
+    String string = properties.getProperty(SvmProperties.horizontalTransformKey);
+    if (string != null && !string.isBlank()) {
+      List<String> sList = split(string);
+      int n = 0;
+      double[] d = new double[sList.size()];
+      for (String s : sList) {
+        try {
+          d[n++] = Double.parseDouble(s);
+        } catch (NumberFormatException nex) {
+          throw new IllegalArgumentException(
+            "Invalid entry where numeric expected for "
+            + string.trim());
+        }
+      }
+      if (n == 0) {
+        return null;
+      } else if (n == 1) {
+        return new SvmHorizontalTransform(d[0], 0);
+      } else if (n == 2) {
+        return new SvmHorizontalTransform(d[0], d[1]);
+      } else {
+        throw new IllegalArgumentException("Too many specifications for "
+          + string.trim());
+      }
+    }
+
+    return null;
+  }
 
 }
