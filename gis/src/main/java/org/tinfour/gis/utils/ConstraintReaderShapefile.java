@@ -30,6 +30,7 @@
  */
 package org.tinfour.gis.utils;
 
+import org.tinfour.utils.loaders.IVerticalCoordinateTransform;
 import java.io.BufferedWriter;
 import java.io.Closeable;
 import java.io.File;

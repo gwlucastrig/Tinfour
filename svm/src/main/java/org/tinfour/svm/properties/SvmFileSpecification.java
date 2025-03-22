@@ -32,7 +32,7 @@ package org.tinfour.svm.properties;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
-import org.tinfour.gis.utils.IVerticalCoordinateTransform;
+import org.tinfour.utils.loaders.IVerticalCoordinateTransform;
 import org.tinfour.svm.SvmBathymetryModel;
 
 /**

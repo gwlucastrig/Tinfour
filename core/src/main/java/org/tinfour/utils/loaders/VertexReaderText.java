@@ -91,7 +91,7 @@ import org.tinfour.utils.LinearUnits;
  * </code></pre>
  * <p>
  * Note, however that if both geographic and Cartesian coordinates are
- * provided, the Cartesian coordinates will take precedence.  The rationale,
+ * provided, the Cartesian coordinates will take precedence. The rationale,
  * for this design decision is that specifications of this type are usually
  * encountered in cases where data from geographic sources have be projected
  * to a planar coordinate system.
@@ -113,7 +113,19 @@ public class VertexReaderText implements Closeable, IVertexReader {
   boolean isSourceInGeographicCoordinates;
   LinearUnits linearUnits = LinearUnits.UNKNOWN;
   ICoordinateTransform coordinateTransform;
+  IVerticalCoordinateTransform verticalCoordinateTransform;
 
+  String[] targetHeaders;
+
+  /**
+   * Constructs an instance of a text-based vertex reader for
+   * the specified file and determines the delimiter to be used for
+   * separating columns.
+   *
+   * @param file a reference to the file containing the text from which
+   * vertices are to be parsed.
+   * @throws IOException in the event of an unrecoverable I/O error.
+   */
   public VertexReaderText(File file) throws IOException {
     if (file == null) {
       throw new NullPointerException("Null file specification");
@@ -137,6 +149,25 @@ public class VertexReaderText implements Closeable, IVertexReader {
     if (delimiter == 0) {
       delimiter = scanFileForDelimiter(file);
     }
+  }
+
+  public void setVerticalCoordinateTransform(
+    IVerticalCoordinateTransform verticalCoordinateTransform) {
+    this.verticalCoordinateTransform = verticalCoordinateTransform;
+  }
+
+  public void setTargetHeaders(String[] targetHeaders) {
+    if (targetHeaders == null || targetHeaders.length != 3) {
+      throw new IllegalArgumentException("Invalid target headers specification, argument is not of length 3");
+    }
+    String[] a = new String[3];
+    for (int i = 0; i < 3; i++) {
+      if (targetHeaders[i] == null || targetHeaders[i].isBlank()) {
+        throw new IllegalArgumentException(("Invalid target header is null or blank"));
+      }
+      a[i] = targetHeaders[i].trim();
+    }
+    this.targetHeaders = a;
   }
 
   @Override
@@ -189,8 +220,19 @@ public class VertexReaderText implements Closeable, IVertexReader {
 
   }
 
+  int matchHeader(String header, List<String> sList) throws IOException {
+    int k = 0;
+    for (String s : sList) {
+      if (header.equalsIgnoreCase(s)) {
+        return k;
+      }
+      k++;
+    }
+    throw new IOException("Specified header not found: \"" + header + "\"");
+  }
+
   List<Vertex> readDelimitedFile(File file, char delimiter)
-          throws IOException {
+    throws IOException {
 
     // The header logic includes special rules for columns giving z
     // values including "depth" and "elevation".  But "z" is preferred
@@ -212,68 +254,100 @@ public class VertexReaderText implements Closeable, IVertexReader {
       boolean zFound = false;
       boolean zAltFound = false;
       int k = 0;
-      for (String s : sList) {
-        String sLower = s.toLowerCase();
-        char c = s.charAt(0);
-        if (Character.isAlphabetic(c) || c == '_') {
-          headerRow = true;
-          int n = k + 1;
-          if(sLower.contains("acc")||sLower.contains("err")||sLower.contains("certain")){
-              // skip columns that give "accuracy", "error", or "uncertainty"
-              continue;
-          }
-          if ("x".equalsIgnoreCase(s)) {
-            xFound = true;
-            xColumn = k;
-            if (n > nColumnsRequired) {
-              nColumnsRequired = n;
-            }
-          } else if ("y".equalsIgnoreCase(s)) {
-            yFound = true;
-            yColumn = k;
-            if (n > nColumnsRequired) {
-              nColumnsRequired = n;
-            }
-          } else if ("z".equalsIgnoreCase(s)) {
-            zFound=true;
-            zColumn = k;
-            if (n > nColumnsRequired) {
-              nColumnsRequired = n;
-            }
-          } else if (sLower.startsWith("depth")|| sLower.startsWith("elev")) {
-            zAltFound=true;
-            zAltColumn = k;
-            if (n > nColumnsRequired) {
-              nColumnsRequired = n;
-            }
-          } else if (sLower.startsWith("lon")) {
+      if (targetHeaders != null) {
+        // we've already confirmed that targetHeaders contains 3 well-formed
+        // strings.  Now see the headers were all matched by the first line
+        // of the file
+        if (targetHeaders[0].toLowerCase().startsWith("lat")) {
+          // special logic for latitude, longitude case
+          geoText = true;
+          int xIndex = matchHeader(targetHeaders[1], sList);
+          int yIndex = matchHeader(targetHeaders[0], sList);
+          xFound = true;
+          xColumn = xIndex;
+          yFound = true;
+          yColumn = yIndex;
+        } else {
+          int index = matchHeader(targetHeaders[0], sList);
+          xColumn = index;
+          xFound = true;
+          index = matchHeader(targetHeaders[1], sList);
+          yColumn = index;
+          yFound = true;
+        }
+        int index = matchHeader(targetHeaders[2], sList);
+        zColumn = index;
+        zFound = true;
+        for (int i = 0; i < targetHeaders.length; i++) {
+          if (targetHeaders[i].toLowerCase().startsWith("lat")
+            || targetHeaders[i].toLowerCase().startsWith("lon")) {
             geoText = true;
-            xColumn = k;
-            if (n > nColumnsRequired) {
-              nColumnsRequired = n;
-            }
-          } else if (sLower.startsWith("lat")) {
-            geoText = true;
-            yColumn = k;
-            if (n > nColumnsRequired) {
-              nColumnsRequired = n;
-            }
-          } else if("i".equalsIgnoreCase(s) || "index".equalsIgnoreCase(s)){
-            iColumn = k;
           }
         }
-        k++;
+      } else {
+        for (String s : sList) {
+          String sLower = s.toLowerCase();
+          char c = s.charAt(0);
+          if (Character.isAlphabetic(c) || c == '_') {
+            headerRow = true;
+            int n = k + 1;
+            if (sLower.contains("acc") || sLower.contains("err") || sLower.contains("certain")) {
+              // skip columns that give "accuracy", "error", or "uncertainty"
+              continue;
+            }
+            if ("x".equalsIgnoreCase(s)) {
+              xFound = true;
+              xColumn = k;
+              if (n > nColumnsRequired) {
+                nColumnsRequired = n;
+              }
+            } else if ("y".equalsIgnoreCase(s)) {
+              yFound = true;
+              yColumn = k;
+              if (n > nColumnsRequired) {
+                nColumnsRequired = n;
+              }
+            } else if ("z".equalsIgnoreCase(s)) {
+              zFound = true;
+              zColumn = k;
+              if (n > nColumnsRequired) {
+                nColumnsRequired = n;
+              }
+            } else if (sLower.startsWith("depth") || sLower.startsWith("elev")) {
+              zAltFound = true;
+              zAltColumn = k;
+              if (n > nColumnsRequired) {
+                nColumnsRequired = n;
+              }
+            } else if (sLower.startsWith("lon")) {
+              geoText = true;
+              xColumn = k;
+              if (n > nColumnsRequired) {
+                nColumnsRequired = n;
+              }
+            } else if (sLower.startsWith("lat")) {
+              geoText = true;
+              yColumn = k;
+              if (n > nColumnsRequired) {
+                nColumnsRequired = n;
+              }
+            } else if ("i".equalsIgnoreCase(s) || "index".equalsIgnoreCase(s)) {
+              iColumn = k;
+            }
+          }
+          k++;
+        }
       }
 
-      if(!zFound && zAltFound){
-          zColumn = zAltColumn;
+      if (!zFound && zAltFound) {
+        zColumn = zAltColumn;
       }
 
       int iVertex = 0;
       // The first row gets special processing.  If there was a header
       // row, we still haven't read any data (just the header)
       if (headerRow) {
-        if(xFound && yFound && geoText){
+        if (xFound && yFound && geoText) {
           // if both  cartesian specifications and geographic coordinates
           // were provided, we assume that the (x,y) gives data in a projected
           // coordinate system and takes precedence.
@@ -282,24 +356,27 @@ public class VertexReaderText implements Closeable, IVertexReader {
         sList = dlim.readStrings();
         if (sList.size() < nColumnsRequired) {
           throw new IOException("Insufficient columns in line "
-                  + dlim.getLineNumber());
+            + dlim.getLineNumber());
         }
         try {
           double x = Double.parseDouble(sList.get(xColumn));
           double y = Double.parseDouble(sList.get(yColumn));
           double z = Double.parseDouble(sList.get(zColumn));
-          if(iColumn>=0){
+          if (iColumn >= 0) {
             iVertex = Integer.parseInt(sList.get(iColumn));
+          }
+          if (verticalCoordinateTransform != null) {
+            z = verticalCoordinateTransform.transform(iVertex, z);
           }
           if (geoText && coordinateTransform == null) {
             coordinateTransform
-                    = new SimpleGeographicTransform(y, x, linearUnits);
+              = new SimpleGeographicTransform(y, x, linearUnits);
             isSourceInGeographicCoordinates = true;
             CoordinatePair c = new CoordinatePair();
             boolean status = coordinateTransform.forward(x, y, c);
             if (!status) {
               throw new IOException("Invalid transformation for coordinates in line "
-                      + dlim.getLineNumber());
+                + dlim.getLineNumber());
             }
             x = c.x;
             y = c.y;
@@ -308,7 +385,7 @@ public class VertexReaderText implements Closeable, IVertexReader {
           iVertex++;
         } catch (NumberFormatException nex) {
           throw new IOException("Invalid numeric format in "
-                  + dlim.getLineNumber(), nex);
+            + dlim.getLineNumber(), nex);
         }
       }
 
@@ -318,7 +395,7 @@ public class VertexReaderText implements Closeable, IVertexReader {
         while (!(sList = dlim.readStrings()).isEmpty()) {
           if (sList.size() < nColumnsRequired) {
             throw new IOException("Insufficient columns in line "
-                    + dlim.getLineNumber());
+              + dlim.getLineNumber());
           }
           double x = Double.parseDouble(sList.get(xColumn));
           double y = Double.parseDouble(sList.get(yColumn));
@@ -326,11 +403,14 @@ public class VertexReaderText implements Closeable, IVertexReader {
           if (iColumn >= 0) {
             iVertex = Integer.parseInt(sList.get(iColumn));
           }
+          if (verticalCoordinateTransform != null) {
+            z = verticalCoordinateTransform.transform(iVertex, z);
+          }
           if (coordinateTransform != null) {
             boolean status = coordinateTransform.forward(x, y, c);
             if (!status) {
               throw new IOException("Undefined coordinates in line "
-                      + dlim.getLineNumber() + ": " + x + ", " + y);
+                + dlim.getLineNumber() + ": " + x + ", " + y);
             }
             x = c.x;
             y = c.y;
@@ -341,7 +421,7 @@ public class VertexReaderText implements Closeable, IVertexReader {
         }
       } catch (NumberFormatException nex) {
         throw new IOException("Invalid numeric format in "
-                + dlim.getLineNumber(), nex);
+          + dlim.getLineNumber(), nex);
       }
 
       return vList;
@@ -433,8 +513,8 @@ public class VertexReaderText implements Closeable, IVertexReader {
           }
 
           if (c == '#' && !textFound) {
-              commentLine = true;
-              continue;
+            commentLine = true;
+            continue;
           }
           textFound = true;
           if (c == '\\') {

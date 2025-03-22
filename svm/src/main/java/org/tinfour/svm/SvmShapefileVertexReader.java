@@ -33,7 +33,6 @@
  */
 package org.tinfour.svm;
 
-import org.tinfour.gis.utils.*;
 import java.io.Closeable;
 import java.io.File;
 import java.io.FileInputStream;
@@ -52,6 +51,7 @@ import org.tinfour.utils.LinearUnits;
 import org.tinfour.utils.loaders.CoordinatePair;
 import org.tinfour.utils.loaders.ICoordinateTransform;
 import org.tinfour.utils.loaders.IVertexReader;
+import org.tinfour.utils.loaders.IVerticalCoordinateTransform;
 import org.tinfour.utils.loaders.SimpleGeographicTransform;
 
 /**
@@ -72,6 +72,7 @@ public class SvmShapefileVertexReader implements IVertexReader, Closeable {
   LinearUnits linearUnits = LinearUnits.UNKNOWN;
   ICoordinateTransform coordinateTransform;
   IVerticalCoordinateTransform verticalCoordinateTransform;
+  
   String dbfFieldForZ;
 
   List<Vertex> vertexList = new ArrayList<>();

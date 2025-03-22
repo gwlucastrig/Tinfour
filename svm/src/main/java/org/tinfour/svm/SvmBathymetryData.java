@@ -42,7 +42,7 @@ import org.tinfour.common.LinearConstraint;
 import org.tinfour.common.PolygonConstraint;
 import org.tinfour.common.Vertex;
 import org.tinfour.gis.utils.ConstraintReaderShapefile;
-import org.tinfour.gis.utils.IVerticalCoordinateTransform;
+import org.tinfour.utils.loaders.IVerticalCoordinateTransform;
 import org.tinfour.gis.utils.VertexReaderLas;
 import org.tinfour.utils.HilbertSort;
 import org.tinfour.utils.Tincalc;
@@ -123,8 +123,20 @@ public class SvmBathymetryData {
           throws IOException {
     String extension = this.getFileExtension(vertexFile);
     List<Vertex> list;
-    if ("csv".equalsIgnoreCase(extension) || ".txt".equalsIgnoreCase(extension)) {
+    if ("csv".equalsIgnoreCase(extension) || "txt".equalsIgnoreCase(extension) || "tab".equalsIgnoreCase(extension)) {
       VertexReaderText vertexReader = new VertexReaderText(vertexFile);
+      vertexReader.setVerticalCoordinateTransform(verticalTransform);
+      vertexReader.setCoordinateTransform(horizontalTransform);
+      if(dbfBathymetryField!=null && ! dbfBathymetryField.isBlank()){
+        String []a = dbfBathymetryField.split(",");
+        if(a.length!=3){
+          a = dbfBathymetryField.split("\t");
+          if(a.length!=3){
+             a = dbfBathymetryField.split(" ");
+          }
+        }
+        vertexReader.setTargetHeaders(a);
+      }
       list = vertexReader.read(null);
     } else if ("shp".equalsIgnoreCase(extension)) {
       SvmShapefileVertexReader vls = new SvmShapefileVertexReader(vertexFile);
