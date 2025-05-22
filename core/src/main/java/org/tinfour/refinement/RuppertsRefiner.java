@@ -4,6 +4,7 @@ import org.tinfour.common.IIncrementalTin;
 import org.tinfour.common.SimpleTriangle;
 import org.tinfour.common.IQuadEdge;
 import org.tinfour.common.Vertex;
+import org.tinfour.common.Circumcircle;
 import org.tinfour.common.IConstraint;
 import org.tinfour.utils.TriangleUtility;
 import org.tinfour.utils.SegmentUtility;
@@ -151,7 +152,7 @@ public class RuppertsRefiner {
                 // The populateQueue method handles not re-adding already processed items from *previous* TIN states.
                 // Here, we are processing an item pulled from the queue.
 
-                Circle circumcircle = poorTriangle.getCircumcircle();
+                Circumcircle circumcircle = poorTriangle.getCircumcircle();
                 if (circumcircle == null) { // Should not happen for non-ghost triangles
                     continue;
                 }

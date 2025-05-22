@@ -1,5 +1,6 @@
 package org.tinfour.utils;
 
+import org.tinfour.common.Circumcircle;
 import org.tinfour.common.IQuadEdge;
 import org.tinfour.common.SimpleTriangle;
 import org.tinfour.common.Vertex;
@@ -14,7 +15,7 @@ import static java.lang.Math.toDegrees;
  */
 public final class TriangleUtility {
 
-    private static final double EPSILON = 1e-9; // Used for small floating point comparisons
+    static final double EPSILON = 1e-9; // Used for small floating point comparisons
 
     /**
      * Private constructor to prevent instantiation of this utility class.
@@ -188,7 +189,7 @@ public final class TriangleUtility {
             return Double.POSITIVE_INFINITY;
         }
 
-        Circle circumcircle = triangle.getCircumcircle();
+        Circumcircle circumcircle = triangle.getCircumcircle();
         if (circumcircle == null) { // Should not happen for non-ghost SimpleTriangles from TIN
             return Double.POSITIVE_INFINITY;
         }
