@@ -21,6 +21,10 @@ public class SegmentUtilityTest {
         double length;
         int index;
         int baseIndex;
+        // boolean constrained; // Example if we were to store state
+        // int constraintIdx;   // Example if we were to store state
+        // boolean synthetic;   // Example if we were to store state
+
 
         MockEdge(Vertex a, Vertex b, int index) {
             this.a = a;
@@ -32,7 +36,8 @@ public class SegmentUtilityTest {
                 this.length = 0;
             }
             this.index = index;
-            this.baseIndex = (index % 2 == 0) ? index : index - 1;
+            // Ensure baseIndex is unique and typically even for one side of an edge pair
+            this.baseIndex = (index / 2) * 2;
         }
 
         @Override public Vertex getA() { return a; }
@@ -40,30 +45,37 @@ public class SegmentUtilityTest {
         @Override public double getLength() { return length; }
         @Override public int getIndex() { return index; }
         @Override public int getBaseIndex() { return baseIndex; }
+
+        // Default implementations for other IQuadEdge methods
         @Override public IQuadEdge getBaseReference() { return this; }
-
-
-        // --- Stub other IQuadEdge methods ---
+        @Override public IQuadEdge getDual() { return null; }
+        @Override public IQuadEdge getForwardFromDual() { return null; }
+        @Override public IQuadEdge getReverseFromDual() { return null; }
+        @Override public int getSide() { return index % 2; } // Differentiate sides for an edge pair
         @Override public IQuadEdge getForward() { return null; }
         @Override public IQuadEdge getReverse() { return null; }
-        @Override public IQuadEdge getDual() { return null; }
-        @Override public int getSide() { return 0; }
-        @Override public boolean isConstrained() { return false; }
-        @Override public void setConstrained(boolean constrained) { /* no-op */ }
-        @Override public void setConstraintIndex(int constraintIndex) { /* no-op */ }
+        @Override public IQuadEdge getDualFromReverse() { return null; }
         @Override public int getConstraintIndex() { return 0; }
-        @Override public boolean isConstraintAreaEdge() { return false;}
-        @Override public void setConstraintAreaEdge(boolean isAreaEdge) { /* no-op */}
-        @Override public int getConstraintAreaMember() {return 0;}
-        @Override public void setConstraintAreaMember(int areaVal) { /* no-op */}
+        @Override public void setConstraintIndex(int constraintIndex) { /* no-op */ }
+        @Override public boolean isConstrained() { return false; }
+        @Override public void setConstrained(int constraintIndex) { /* no-op */ } // Corrected signature
+        @Override public boolean isConstrainedRegionMember() { return false; }
+        @Override public boolean isConstraintLineMember() { return false; }
+        @Override public void setConstraintLineMemberFlag() { /* no-op */ }
+        @Override public boolean isConstrainedRegionInterior() { return false; }
+        @Override public boolean isConstrainedRegionBorder() { return false; }
+        @Override public void setConstrainedRegionBorderFlag() { /* no-op */ }
+        @Override public void setConstrainedRegionInteriorFlag() { /* no-op */ }
         @Override public void setSynthetic(boolean status) { /* no-op */ }
-        @Override public boolean isSynthetic() { return false;}
-        @Override public Iterable<IQuadEdge> pinwheel() { return Collections.emptyList(); } // Return empty list
-        @Override public String toString() { return "MockEdge " + index; }
-        @Override public Vertex getVertex(int i) { return (i==0) ? a:b;}
-        @Override public double getDx() { return (a != null && b != null) ? b.getX() - a.getX() : 0; }
-        @Override public double getDy() { return (a != null && b != null) ? b.getY() - a.getY() : 0; }
-        @Override public double getDz() { return (a != null && b != null) ? b.getZ() - a.getZ() : 0; }
+        @Override public boolean isSynthetic() { return false; }
+        @Override public Iterable<IQuadEdge> pinwheel() { return java.util.Collections.emptyList(); }
+        @Override public void setLine2D(java.awt.geom.AffineTransform transform, java.awt.geom.Line2D l2d) { /* no-op */ }
+
+        @Override public String toString() {
+            String aStr = a == null ? "null" : "V"+a.getIndex();
+            String bStr = b == null ? "null" : "V"+b.getIndex();
+            return "MockEdge " + index + " (base " + baseIndex + ", side " + (index%2) + "): " + aStr + " -> " + bStr;
+        }
     }
 
 
