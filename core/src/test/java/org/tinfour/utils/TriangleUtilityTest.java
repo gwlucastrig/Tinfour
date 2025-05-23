@@ -414,46 +414,62 @@ public class TriangleUtilityTest {
         Vertex a, b;
         double length;
         int index;
-        IQuadEdge forward, reverse; // For SimpleTriangle(tin, edge) constructor compatibility
+        int baseIndex;
+        IQuadEdge forward;
+        IQuadEdge reverse;
+        IQuadEdge dual; // Optional, can be null or set via setter
 
         MockEdge(Vertex a, Vertex b, int index) {
             this.a = a;
             this.b = b;
-            this.length = Math.sqrt(Math.pow(a.x - b.x, 2) + Math.pow(a.y - b.y, 2) + Math.pow(a.z - b.z, 2));
+            this.length = (a != null && b != null) ? Math.sqrt(Math.pow(a.x - b.x, 2) + Math.pow(a.y - b.y, 2)) : 0;
             this.index = index;
-            // Default forward/reverse to self to avoid nulls if not set, though this is not realistic.
-            this.forward = this;
+            this.baseIndex = (index / 2) * 2;
+            // Initialize to prevent NPE in SimpleTriangle if not explicitly set by test
+            this.forward = this; 
             this.reverse = this;
+            this.dual = null; // Or new MockEdge(b, a, index +1) for a basic dual pair
         }
 
         public void setForward(IQuadEdge forward) { this.forward = forward; }
         public void setReverse(IQuadEdge reverse) { this.reverse = reverse; }
+        public void setDual(IQuadEdge dual) { this.dual = dual; }
 
         @Override public Vertex getA() { return a; }
         @Override public Vertex getB() { return b; }
         @Override public double getLength() { return length; }
         @Override public int getIndex() { return index; }
+        @Override public int getBaseIndex() { return baseIndex; }
         @Override public IQuadEdge getForward() { return forward; }
         @Override public IQuadEdge getReverse() { return reverse; }
-        @Override public IQuadEdge getDual() { return null; }
-        @Override public int getSide() { return 0; }
+        @Override public IQuadEdge getDual() { return dual; }
+
         @Override public IQuadEdge getBaseReference() { return this; }
-        @Override public int getBaseIndex() { return index % 2 == 0 ? index : index - 1; }
-        @Override public boolean isConstrained() { return false; }
-        @Override public void setConstrained(boolean constrained) { /* no-op */ }
-        @Override public void setConstraintIndex(int constraintIndex) { /* no-op */ }
+        @Override public IQuadEdge getForwardFromDual() { return null; }
+        @Override public IQuadEdge getReverseFromDual() { return null; }
+        @Override public int getSide() { return index % 2; }
+        @Override public IQuadEdge getDualFromReverse() { return null; }
         @Override public int getConstraintIndex() { return 0; }
-        @Override public boolean isConstraintAreaEdge() { return false; }
-        @Override public void setConstraintAreaEdge(boolean isAreaEdge) { /* no-op */ }
-        @Override public int getConstraintAreaMember() { return 0; }
-        @Override public void setConstraintAreaMember(int areaVal) { /* no-op */ }
-        @Override public String toString() { return "MockEdge " + index + " (" + a + " to " + b + ")"; }
-         // Implement other IQuadEdge methods with default/stub values if they get called
-        @Override public Vertex getVertex(int i){ return i==0 ? a : b;}
-        @Override public boolean isSynthetic(){ return false;}
-        @Override public void setSynthetic(boolean synthetic){ /* no-op */ }
-        @Override public double getDx() { return b.getX() - a.getX(); }
-        @Override public double getDy() { return b.getY() - a.getY(); }
-        @Override public double getDz() { return b.getZ() - a.getZ(); }
+        @Override public void setConstraintIndex(int constraintIndex) { /* no-op */ }
+        @Override public boolean isConstrained() { return false; }
+        @Override public void setConstrained(int constraintIndex) { /* no-op */ }
+        @Override public boolean isConstrainedRegionMember() { return false; }
+        @Override public boolean isConstraintLineMember() { return false; }
+        @Override public void setConstraintLineMemberFlag() { /* no-op */ }
+        @Override public boolean isConstrainedRegionInterior() { return false; }
+        @Override public boolean isConstrainedRegionBorder() { return false; }
+        @Override public void setConstrainedRegionBorderFlag() { /* no-op */ }
+        @Override public void setConstrainedRegionInteriorFlag() { /* no-op */ }
+        @Override public void setSynthetic(boolean status) { /* no-op */ }
+        @Override public boolean isSynthetic() { return false; }
+        @Override public Iterable<IQuadEdge> pinwheel() { return java.util.Collections.emptyList(); }
+        @Override public void setLine2D(java.awt.geom.AffineTransform transform, java.awt.geom.Line2D l2d) { /* no-op */ }
+        
+        // toString is kept as it's useful for debugging and not part of the interface removal criteria
+        @Override public String toString() {
+            String aStr = a == null ? "null" : "V"+a.getIndex();
+            String bStr = b == null ? "null" : "V"+b.getIndex();
+            return "MockEdge " + index + " (base " + baseIndex + ", side " + (index%2) + "): " + aStr + " -> " + bStr;
+        }
     }
 }
