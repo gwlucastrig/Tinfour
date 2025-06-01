@@ -10,10 +10,13 @@ package org.tinfour.demo.examples.alphashape;
 import java.awt.BasicStroke;
 import java.awt.Color;
 import java.awt.Font;
+import java.awt.Graphics2D;
 import java.awt.Shape;
 import java.awt.font.FontRenderContext;
 import java.awt.font.TextLayout;
 import java.awt.geom.AffineTransform;
+import java.awt.geom.Ellipse2D;
+import java.awt.geom.Line2D;
 import java.awt.geom.Path2D;
 import java.awt.geom.PathIterator;
 import java.awt.geom.Rectangle2D;
@@ -32,6 +35,7 @@ import org.tinfour.utils.alphashape.AlphaCircle;
 import org.tinfour.utils.alphashape.AlphaPart;
 import org.tinfour.utils.alphashape.AlphaShape;
 import org.tinfour.utils.rendering.RendererForTinInspection;
+import org.tinfour.utils.rendering.RenderingSurfaceAid;
 
 /**
  * Demonstrates the use of the Tinfour AlphaShape class.
@@ -43,10 +47,11 @@ public class AlphaShapeDemoImage {
 
   /**
    * Creates an image file containing a depiction of a Delaunay triangulation
-   * and the associated alpha shape. Developers may configure this
+   * and the associated alpha shape.Developers may configure this
    * demonstration by adjusting the parameters found in the main method.
    *
    * @param args the command line arguments (not used at this time)
+   * @throws java.io.IOException in the event of an unrecoverable I/O error.
    */
   public static void main(String[] args) throws IOException {
     // ------------------------------------------------------------
@@ -73,9 +78,12 @@ public class AlphaShapeDemoImage {
     boolean fillAlphaShape = true;
     boolean fillInputShape = false;
     boolean showAlphaClassificationForEdges = false;
+    boolean drawReferenceCircle = true;
+
+    // Other settings related to output
     boolean printDiagnosticText = false;
     String outputFileName = "AlphaShapeTestImage.png";
-    int outputImageWidth = 500;
+    int outputImageWidth = 700;
     int outputImageHeight = 500;
 
     // -----------------------------------------------------------------
@@ -95,6 +103,7 @@ public class AlphaShapeDemoImage {
 
     verifyCircleTestPlausibility(tin, alphaRadius, vertices);
 
+    // Configure the renderer based on options specifed above  ----------------
     RendererForTinInspection renderer = new RendererForTinInspection(tin);
     renderer.setEdgeLabelEnabled(labelEdges);
     renderer.setVertexLabelEnabledToShowIndex(labelVertices);
@@ -124,8 +133,47 @@ public class AlphaShapeDemoImage {
       showAlphaClassifications(tin, alphaRadius, renderer);
     }
 
-    BufferedImage image
-      = renderer.renderImage(outputImageWidth, outputImageHeight, 50);
+    // The renderer is now configured according to parameters specified above.
+    // Uses it to render an image.  The return value, the RenderingSurfaceAid
+    // includes both the image, an associated Graphics2D object, and metadata.
+    RenderingSurfaceAid rsa = renderer.render(outputImageWidth, outputImageHeight, 50);
+    BufferedImage image = rsa.getBufferedImage();
+    Graphics2D g2d = rsa.getGraphics2D();
+
+    if (drawReferenceCircle) {
+      // To illustrate the size of the alpha circle, draw a circle
+      // with the alpha radius on the right side of the image.
+      //
+      // Get the coordinatates to be used for the upper-left corner
+      // of the circle.
+      Rectangle2D r2d = rsa.getDomainRectangle();
+      double px0 = r2d.getMaxX() + 20;
+      double py0 = r2d.getMinY();
+      // The pixelsPerUnit value relates the scale of the Cartesian coordinate
+      // system associated with the Delaunay triangulation to the scale of
+      // pixel coordinates.
+      double pixelsPerUnit = rsa.getPixelsPerUnit();
+      double rPixel = alphaRadius * pixelsPerUnit;
+      Ellipse2D e2d = new Ellipse2D.Double(px0, py0, rPixel * 2, rPixel * 2);
+      g2d.setStroke(new BasicStroke(2.0f));
+      g2d.setColor(Color.blue);
+      g2d.draw(e2d);
+      double xCenter = px0 + rPixel;
+      double yCenter = py0 + rPixel;
+      Line2D l2d = new Line2D.Double(xCenter, yCenter, xCenter, yCenter + rPixel);
+      g2d.draw(l2d);
+      g2d.setStroke(new BasicStroke(1.0f));
+      e2d = new Ellipse2D.Double(xCenter - 3, yCenter - 3, 6, 6);
+      g2d.fill(e2d);
+      g2d.draw(e2d);
+      g2d.setFont(new Font("SANS_SERIF", Font.BOLD, 14));
+      String label = String.format("Radius %6.3f", alphaRadius);
+      int xLab = (int) px0;
+      int yLab = (int) (py0 + 2 * rPixel + 20);
+      g2d.drawString(label, xLab, yLab);
+    }
+
+
     File output = new File(outputFileName);
     if (output.exists()) {
       output.delete();
