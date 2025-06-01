@@ -24,8 +24,8 @@
  * 08/2019  G. Lucas     Created
  *
  * Notes:
- *    The idea of this test is that we create a number of adjacent 
- *    polygon constraints given as square regions organized in a 
+ *    The idea of this test is that we create a number of adjacent
+ *    polygon constraints given as square regions organized in a
  *    regular grid.  Given a random (x,y) coordinate point, we can compute
  *    which polygon it outght to be inside.  We then look it up using
  *    the TIN structure and see if it matches.
@@ -144,7 +144,7 @@ public class MultiSquareConstraintTest implements IDevelopmentTest {
         continue;
       }
 
-      IQuadEdge e = navigator.getNeighborEdge(x, y);   
+      IQuadEdge e = navigator.getNeighborEdge(x, y);
       if (e == null) {
         kError++;
         continue;
@@ -188,9 +188,9 @@ public class MultiSquareConstraintTest implements IDevelopmentTest {
       ps.format("%12d %12d %12d %12d%n", kTests, kInterior, kBorderEven, kBorderOdd, kError);
     }
     if (kError == 0) {
-      ps.format("%nNo errors encountered, test passes");
+      ps.format("%nNo errors encountered, test passes%n");
     } else {
-      ps.format("%nErrors encountered, test fails");
+      ps.format("%nErrors encountered, test fails%n");
     }
   }
 }

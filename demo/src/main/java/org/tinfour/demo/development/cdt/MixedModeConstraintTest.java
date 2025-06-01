@@ -24,8 +24,8 @@
  * 08/2019  G. Lucas     Created
  *
  * Notes:
- *    The idea of this test is that we create a pair of adjacent 
- *    polygon constraints given as square regions organized in a 
+ *    The idea of this test is that we create a pair of adjacent
+ *    polygon constraints given as square regions organized in a
  *    regular grid.  Then we add overlapping linear constraints.
  *
  * -----------------------------------------------------------------------
@@ -209,15 +209,19 @@ public class MixedModeConstraintTest implements IDevelopmentTest {
     }
 
     try {
-      ImageIO.write(bImage, "PNG", new File("test.png"));
+      File output = new File("MixedModeConstraintTest.png");
+      if(output.exists()){
+        output.delete();
+      }
+      ImageIO.write(bImage, "PNG", output);
     } catch (IOException ioex) {
       ioex.printStackTrace(ps);
     }
 
-    
+
     //   Perform exhaustive testing on the edge collection to verify
     // that each edge has been assigned the appropriate constraint
-    // settings.  
+    // settings.
     //   At some time in the future, this logic may be refactored
     // to serve as a unit test.
     int maxAllocIndex = tin.getMaximumEdgeAllocationIndex();
@@ -248,14 +252,14 @@ public class MixedModeConstraintTest implements IDevelopmentTest {
     // First, check for linear constraints
     if (isHorizontal(edge) && iY == 1 || iY == 3) {
       String test = "H" + iY;
-      assert edge.isConstraintLineMember() : 
+      assert edge.isConstraintLineMember() :
               fail(edge, "Not a linear constratint where expecting " + test);
       IConstraint c = tin.getLinearConstraint(edge);
       if (c == null) {
         assert c != null :
                 fail(edge, "Null linear constraint where expecting " + test);
       }
-      assert test.equals(c.getApplicationData()) : 
+      assert test.equals(c.getApplicationData()) :
               fail(edge, "Incorrect constraint association where expecting " + test);
 
     } else if (isVertical(edge) && iX == 1 || iX == 3) {
@@ -279,22 +283,22 @@ public class MixedModeConstraintTest implements IDevelopmentTest {
     }
 
     // check to see if the edge is a border
-    if ((isVertical(edge) && (iX == 0 || iX == 2 || iX == 4)) 
-            || (isHorizontal(edge) && (iY == 0 || iY == 2 || iY == 4))) 
+    if ((isVertical(edge) && (iX == 0 || iX == 2 || iX == 4))
+            || (isHorizontal(edge) && (iY == 0 || iY == 2 || iY == 4)))
     {
       assert edge.isConstrainedRegionBorder() :
               fail(edge, "Polygon edge not assigned to region");
     } else {
-      assert !edge.isConstrainedRegionBorder() : 
+      assert !edge.isConstrainedRegionBorder() :
               fail(edge, "Non-polygon edge treated as border");
     }
 
     IConstraint rCon = tin.getRegionConstraint(edge);
-    assert rCon != null : 
+    assert rCon != null :
             fail(edge, "Region constraint not set for interior edge");
 
     if (iX < 2) {
-      assert "L".equals(rCon) : 
+      assert "L".equals(rCon) :
               fail(edge, "Invalid application data for left polygon edge");
     } else if (iX > 2) {
       assert "R".equals(rCon) :
@@ -305,7 +309,7 @@ public class MixedModeConstraintTest implements IDevelopmentTest {
         assert "L".equals(rCon) :
                 fail(edge, "Invalid application data for left polygon edge");
       } else if (dY < 0) {
-        assert "R".equals(rCon) : 
+        assert "R".equals(rCon) :
                 fail(edge, "Invalid application data for right polygon edge");
       }
     }
@@ -314,7 +318,7 @@ public class MixedModeConstraintTest implements IDevelopmentTest {
   private String fail(IQuadEdge edge, String message) {
     return "Edge +(" + edge.getIndex() + "): " + message;
   }
- 
+
 
   PolygonConstraint makePoly(String label, int xMin, int yMin, int xMax, int yMax) {
     PolygonConstraint p = new PolygonConstraint();
