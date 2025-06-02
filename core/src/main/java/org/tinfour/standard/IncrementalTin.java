@@ -1218,6 +1218,8 @@ public class IncrementalTin implements IIncrementalTin {
         // non-null vertex and end with a null.
         c = c.getBaseReference();
         if (buffer == null) {
+          edgePool.removeBorderConstraintFromMap(c);
+          edgePool.removeBorderConstraintFromMap(c.getDual());
           c.clear();
           buffer = c;
         } else {

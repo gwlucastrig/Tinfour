@@ -258,6 +258,8 @@ public class EdgePool implements Iterable<IQuadEdge> {
     // Note: Although there is a sanity check method that can
     //       be used to verify that the input edge belongs to this
     //       edge pool, it is not used here for performance purposes.
+    removeBorderConstraintFromMap(e);
+    removeBorderConstraintFromMap(e.getDual());
     int iPage = e.getIndex() / pageSize2;
     Page page = pages[iPage];
     if (page.isFullyAllocated()) {
@@ -561,7 +563,7 @@ public class EdgePool implements Iterable<IQuadEdge> {
     if (e.isConstrainedRegionBorder()) {
       IConstraint c = borderConstraintMap.get(e.getIndex());
       if (c != null) {
-        this.addBorderConstraintToMap(p, c);
+        addBorderConstraintToMap(p, c);
       }
       c = borderConstraintMap.get(d.getIndex());
       if (c != null) {
