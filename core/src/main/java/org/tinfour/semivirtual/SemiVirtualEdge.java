@@ -112,7 +112,6 @@ public final class SemiVirtualEdge implements IQuadEdge {
     this.page = e.page;
     this.index = e.index;
     this.indexOnPage = e.indexOnPage;
-
   }
 
   /**

@@ -1294,6 +1294,10 @@ public class IncrementalTin implements IIncrementalTin {
       }
     }
 
+    // This logic is similar to the logic in sweepForConstraintAssignments()
+    // except that it does not need to look at the forward references
+    // to the edges in the pinwheel operation.  They would either be undisturbed
+    // or would have been updated by restoreConformity() above.
     if(vertexIsInConstraintRegion){
       int constraintIndex = vertexConstraintIndex;
       for(IQuadEdge e: searchEdge.pinwheel()){
