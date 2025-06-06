@@ -1137,7 +1137,7 @@ public class IncrementalTin implements IIncrementalTin {
       // Delaunay-edge test below applies logic to ensure that the
       // edge is preserved.  But in this case, the initial edge must
       // be removed and replaced by a pair of split edges.
-      // So the Delaynay-edge test would not work properly.  Instead,
+      // So the Delaunay-edge test would not work properly.  Instead,
       // we handle the removal condition before beginning the ordinary loop.
       n0 = c.getDual();
       n1 = n0.getForward();
