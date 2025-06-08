@@ -257,7 +257,7 @@ public class AlphaCircle {
    *
    * @param x a valid real-valued coordinate
    * @param y a valid real-valued coordinate
-   * @return
+   * @return a positive, potentially zero value
    */
   public double getDistance(double x, double y) {
     double dMin = Double.POSITIVE_INFINITY;

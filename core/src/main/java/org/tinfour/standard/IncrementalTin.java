@@ -1137,7 +1137,7 @@ public class IncrementalTin implements IIncrementalTin {
       // Delaunay-edge test below applies logic to ensure that the
       // edge is preserved.  But in this case, the initial edge must
       // be removed and replaced by a pair of split edges.
-      // So the Delaynay-edge test would not work properly.  Instead,
+      // So the Delaunay-edge test would not work properly.  Instead,
       // we handle the removal condition before beginning the ordinary loop.
       n0 = c.getDual();
       n1 = n0.getForward();
@@ -1218,6 +1218,8 @@ public class IncrementalTin implements IIncrementalTin {
         // non-null vertex and end with a null.
         c = c.getBaseReference();
         if (buffer == null) {
+          edgePool.removeBorderConstraintFromMap(c);
+          edgePool.removeBorderConstraintFromMap(c.getDual());
           c.clear();
           buffer = c;
         } else {
@@ -1292,6 +1294,10 @@ public class IncrementalTin implements IIncrementalTin {
       }
     }
 
+    // This logic is similar to the logic in sweepForConstraintAssignments()
+    // except that it does not need to look at the forward references
+    // to the edges in the pinwheel operation.  They would either be undisturbed
+    // or would have been updated by restoreConformity() above.
     if(vertexIsInConstraintRegion){
       int constraintIndex = vertexConstraintIndex;
       for(IQuadEdge e: searchEdge.pinwheel()){
