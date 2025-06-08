@@ -129,6 +129,25 @@ public class SimpleTriangle {
   public IQuadEdge getEdgeC() {
     return edgeC;
   }
+  
+  /**
+   * Get the shortest edge of the triangle.
+   *
+   * @return the shortest edge (by squared length)
+   */
+  public IQuadEdge getShortestEdge() {
+      double lenA = edgeA.getLengthSq();
+      double lenB = edgeB.getLengthSq();
+      double lenC = edgeC.getLengthSq();
+
+      if (lenA <= lenB && lenA <= lenC) {
+          return edgeA;
+      } else if (lenB <= lenA && lenB <= lenC) {
+          return edgeB;
+      } else {
+          return edgeC;
+      }
+  }
 
   /**
    * Gets vertex A of the triangle. The method names used in this class follow
@@ -321,5 +340,31 @@ public class SimpleTriangle {
    */
   public int getIndex(){
     return index;
+  }
+  
+  @Override
+  public String toString() {
+    StringBuilder sb = new StringBuilder("SimpleTriangle{");
+    sb.append("index=").append(index);
+
+    // Vertices A, B, C
+    Vertex A = getVertexA();
+    Vertex B = getVertexB();
+    Vertex C = getVertexC();
+    sb.append(", vertices=[")
+      .append(A != null ? A : "null").append(", ")
+      .append(B != null ? B : "null").append(", ")
+      .append(C != null ? C : "null").append("]");
+
+    // Signed area
+    sb.append(", area=").append(String.format("%.4f", getArea()));
+
+    // Ghost?
+    if (isGhost()) {
+      sb.append(", ghost");
+    }
+
+    sb.append("}");
+    return sb.toString();
   }
 }

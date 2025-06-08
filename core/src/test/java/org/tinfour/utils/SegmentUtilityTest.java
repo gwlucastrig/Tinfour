@@ -43,6 +43,7 @@ public class SegmentUtilityTest {
         @Override public Vertex getA() { return a; }
         @Override public Vertex getB() { return b; }
         @Override public double getLength() { return length; }
+        @Override public double getLengthSq() { return length*length; }
         @Override public int getIndex() { return index; }
         @Override public int getBaseIndex() { return baseIndex; }
 

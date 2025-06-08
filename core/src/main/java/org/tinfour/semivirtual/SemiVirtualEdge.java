@@ -352,6 +352,17 @@ public final class SemiVirtualEdge implements IQuadEdge {
     return a.getDistance(b);
 
   }
+  
+  @Override
+  public double getLengthSq() {
+	  Vertex a = getA();
+	  Vertex b = getB();
+	  if (a == null || b == null) {
+		  return Double.NaN;
+	  }
+	  return a.getDistanceSq(b);
+	  
+  }
 
   /**
    * Gets the low-order bit of the index of the current edge

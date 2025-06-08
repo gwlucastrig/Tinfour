@@ -481,6 +481,21 @@ public class QuadEdge implements IQuadEdge {
     double dy = v.y - dual.v.y;
     return Math.sqrt(dx * dx + dy * dy);
   }
+  
+  /**
+   * Gets the squared length of the edge.
+   *
+   * @return a positive floating point value
+   */
+  @Override
+  public double getLengthSq() {
+	  if (v == null || dual.v == null) {
+		  return Double.NaN;
+	  }
+	  double dx = v.x - dual.v.x;
+	  double dy = v.y - dual.v.y;
+	  return dx * dx + dy * dy;
+  }
 
   /**
    * Indicates which side of an edge a particular QuadEdge instance is
