@@ -57,7 +57,7 @@ import org.tinfour.common.Vertex;
 import org.tinfour.standard.IncrementalTin;
 import org.tinfour.utils.TriangleCollector;
 import org.tinfour.utils.rendering.RenderingSurfaceAid;
- 
+
 /**
  * Provides an example implementation of region-based constraints
  * using the PolygonConstraint class.
@@ -117,7 +117,7 @@ public class ConstraintStarDemo extends JPanel {
     //    2)   the constraint polygon in the form of a five-pointed star
     //    3)   the 5 wedge-shaped polygons bordering the star
     //    4)   a circular constraint enclosing the figure
-    //  
+    //
     addGrid(vertices);
     addConstraintStar(constraints);
     addConstraintWedges(constraints);
@@ -127,14 +127,14 @@ public class ConstraintStarDemo extends JPanel {
     tin = new IncrementalTin(1.0);
     tin.add(vertices, null);
     tin.addConstraints(constraints, true);
-    
+
     int nInside = 0;
     int nBorder = 0;
     int nOutside = 0;
     for(IQuadEdge edge: tin.edges()){
-      if(edge.isConstrainedRegionBorder()){
+      if(edge.isConstraintRegionBorder()){
         nBorder++;
-      }else if(edge.isConstrainedRegionInterior()){
+      }else if(edge.isConstraintRegionInterior()){
         nInside++;
       }else {
         nOutside++;
@@ -309,7 +309,7 @@ public class ConstraintStarDemo extends JPanel {
     // region to the left side of the edges is actually OUTSIDE the polygon.
     // Thus, a clockwise polygon defines a "hole" within a region.
 
-    // Step 1.  Construct the outer circle of the ring, a polygon 
+    // Step 1.  Construct the outer circle of the ring, a polygon
     //          of a larger radius oriented counter-clockwise.  This circle
     //          encloses a constrained region.
     PolygonConstraint c1 = new PolygonConstraint();
@@ -371,21 +371,21 @@ public class ConstraintStarDemo extends JPanel {
     g2d.setColor(new Color(160, 160, 160));  // lighter gray
     Line2D l2d = new Line2D.Double();
     for (IQuadEdge e : tin.edges()) {
-      if (!e.isConstrainedRegionBorder()) {
+      if (!e.isConstraintRegionBorder()) {
         e.setLine2D(af, l2d);
         g2d.draw(l2d);
       }
     }
-    
+
     g2d.setColor(Color.black);
     for (IQuadEdge e : tin.edges()) {
-      if (e.isConstrainedRegionBorder()) {
+      if (e.isConstraintRegionBorder()) {
         e.setLine2D(af, l2d);
         g2d.draw(l2d);
       }
     }
-    
-    
+
+
 
     return bImage;
   }

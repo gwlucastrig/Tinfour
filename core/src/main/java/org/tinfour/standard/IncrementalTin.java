@@ -1069,7 +1069,7 @@ public class IncrementalTin implements IIncrementalTin {
     boolean vertexIsInConstraintRegion = false;
     int vertexConstraintIndex = -1;
     if (this.maxLengthOfQueueInFloodFill > 0) {
-      if (eResult.isInterior() && searchEdge.isConstrainedRegionMember()) {
+      if (eResult.isInterior() && searchEdge.isConstraintRegionMember()) {
         vertexIsInConstraintRegion = true;
         IConstraint con = this.getRegionConstraint(searchEdge);
         if (con != null) {
@@ -1081,17 +1081,36 @@ public class IncrementalTin implements IIncrementalTin {
     Vertex splitConstraintEnd = null;
     int splitConstraintIndex = -1;
     boolean splitConstraintIsBorder = false;
+    boolean splitConstraintIsLine = false;
+    boolean splitConstraintIsRegionInterior = false;
     IConstraint splitConstraintLeft = null;
     IConstraint splitConstraintRight = null;
+    IConstraint splitConstraintLine = null;
     boolean splitConstraintFlag = searchEdge.isConstrained() && eResult.getDistanceToEdge() < 4 * thresholds.getVertexTolerance();
     if (splitConstraintFlag) {
-      splitConstraintIndex = searchEdge.getConstraintIndex();
       splitConstraintEnd = searchEdge.getB();
-      if(searchEdge.isConstrainedRegionBorder()){
+      if(searchEdge.isConstraintRegionBorder()){
         splitConstraintIsBorder = true;
-        splitConstraintLeft = edgePool.getBorderConstraint(searchEdge);
-        splitConstraintRight = edgePool.getBorderConstraint(searchEdge.getDual());
+        splitConstraintLeft = getBorderConstraint(searchEdge);
+        splitConstraintRight = getBorderConstraint(searchEdge.getDual());
+        splitConstraintIndex = searchEdge.getConstraintBorderIndex();
+      }else{
+        // it must be a line constraint.
+        splitConstraintIndex = searchEdge.getConstraintLineIndex();
       }
+      // it is possible for a constraint to be BOTH a border constraint
+      // and a line constraint. So we need to perform an independent access.
+      splitConstraintIsLine= searchEdge.isConstraintLineMember();
+      if(splitConstraintIsLine){
+          splitConstraintLine = getLinearConstraint(searchEdge);
+      }
+    }
+
+    // region-interior edges are usually not constrained, unless
+    // they are also a line feature.
+    splitConstraintIsRegionInterior = searchEdge.isConstraintRegionInterior();
+    if(splitConstraintIsRegionInterior && splitConstraintIndex == -1){
+      splitConstraintIndex = searchEdge.getConstraintRegionInteriorIndex();
     }
 
     // The build buffer provides temporary tracking of edges that are
@@ -1109,19 +1128,21 @@ public class IncrementalTin implements IIncrementalTin {
     QuadEdge c, n0, n1, n2;
     QuadEdge pStart = edgePool.allocateEdge(v, anchor);
     if (splitConstraintFlag) {
-      pStart.setConstrained(splitConstraintIndex);
       if (splitConstraintIsBorder) {
         // The edge pStart is the opposite direction as the original
         // split constraint edge.  So we need to apply the bordering
         // constraints in the reversed sides from how they were stored
         // in the original.
-        pStart.setConstrainedRegionBorderFlag();
+        pStart.setConstraintRegionBorderFlag();
         if (splitConstraintRight != null) {
-          edgePool.addBorderConstraintToMap(pStart, splitConstraintRight);
+          pStart.setConstraintBorderIndex(splitConstraintRight.getConstraintIndex());
         }
         if (splitConstraintLeft != null) {
-          edgePool.addBorderConstraintToMap(pStart.getDual(), splitConstraintLeft);
+          pStart.getDual().setConstraintBorderIndex(splitConstraintLeft.getConstraintIndex());
         }
+      }
+      if(splitConstraintIsLine){
+        pStart.setConstraintLineIndex(splitConstraintLine.getConstraintIndex());
       }
     }
     QuadEdge p = pStart;
@@ -1264,20 +1285,28 @@ public class IncrementalTin implements IIncrementalTin {
           buffer = null;
         }
         if (splitConstraintFlag && B == splitConstraintEnd) {
-          e.setConstrained(splitConstraintIndex);
           conEdges.add(e);
+          // recall that edges can be part of a regional constraint
+          // (a border or an interior) or a line constraint
+          // or BOTH.
           if (splitConstraintIsBorder) {
             // This edge is the same direction as the original
             // split constraint edge.  So we need to apply the bordering
             // constraints as they were stored in the original. This approach
             // is just the opposite of the above code for pStart.
-            e.setConstrainedRegionBorderFlag();
+            e.setConstraintRegionBorderFlag();
             if (splitConstraintLeft != null) {
-              edgePool.addBorderConstraintToMap(e, splitConstraintLeft);
+             e.setConstraintBorderIndex(splitConstraintLeft.getConstraintIndex());
             }
             if (splitConstraintRight != null) {
-              edgePool.addBorderConstraintToMap(e.getDual(), splitConstraintRight);
+              e.getDual().setConstraintBorderIndex(splitConstraintRight.getConstraintIndex());
             }
+          }else if(splitConstraintIsRegionInterior){
+            e.setConstraintRegionInteriorIndex(splitConstraintIndex);
+          }
+          if(splitConstraintIsLine){
+            e.setConstraintLineIndex(splitConstraintLine.getConstraintIndex());
+            edgePool.addLinearConstraintToMap(e, splitConstraintLine);
           }
         }
         e.setForward(n1);
@@ -1301,13 +1330,12 @@ public class IncrementalTin implements IIncrementalTin {
     if(vertexIsInConstraintRegion){
       int constraintIndex = vertexConstraintIndex;
       for(IQuadEdge e: searchEdge.pinwheel()){
-        if(e.isConstrainedRegionBorder()){
-          IConstraint con = edgePool.getBorderConstraint(e);
+        if(e.isConstraintRegionBorder()){
+          IConstraint con = getBorderConstraint(e);
           constraintIndex = con ==null ? -1 : con.getConstraintIndex();
         }
-        if(constraintIndex>=0 && !e.isConstrained() && !e.isConstrainedRegionMember()){
-          e.setConstrainedRegionInteriorFlag();
-          e.setConstraintIndex(constraintIndex);
+        if(constraintIndex>=0 && !e.isConstrained() && !e.isConstraintRegionMember()){
+          e.setConstraintRegionInteriorIndex(constraintIndex);
         }
       }
     }
@@ -2170,11 +2198,11 @@ public class IncrementalTin implements IIncrementalTin {
       return;
     }
 
-    // the max number of constraints is (2^20)-1
-    if (constraints.size() > QuadEdgeConstants.CONSTRAINT_INDEX_MAX) {
+    // the max number of constraints is (2^13)-2
+    if (constraints.size() > QuadEdgeConstants.CONSTRAINT_INDEX_VALUE_MAX) {
       throw new IllegalArgumentException(
         "The maximum number of constraints is "
-        + QuadEdgeConstants.CONSTRAINT_INDEX_MAX);
+        + QuadEdgeConstants.CONSTRAINT_INDEX_VALUE_MAX);
     }
 
     // Step 0 -- assume that conformity is not in place.
@@ -2183,7 +2211,13 @@ public class IncrementalTin implements IIncrementalTin {
     isConformant = false;
 
     // Step 1 -- add all the vertices from the constraints to the TIN.
+    //           Also, collect constraints in order with polygon constraints
+    //           first followed by line constraints.
+    List<IConstraint>polygonConstraints = new ArrayList<>();
+    List<IConstraint>linearConstraints = new ArrayList<>();
+
     boolean redundantVertex = false;
+    int kConstraint = 0;
     for (IConstraint c : constraints) {
       c.complete();
       IConstraint reference = c;
@@ -2212,8 +2246,19 @@ public class IncrementalTin implements IIncrementalTin {
         }
         reference = c.getConstraintWithNewGeometry(replacementList);
       }
+      if(reference.definesConstrainedRegion()){
+        polygonConstraints.add(reference);
+      }else{
+        linearConstraints.add(reference);
+      }
+      reference.setConstraintIndex(this, kConstraint++);
       constraintList.add(reference);
     }
+
+
+    List<IConstraint>processList = new ArrayList<>();
+    processList.addAll(polygonConstraints);
+    processList.addAll(linearConstraints);
 
     // Step 2 -- Construct new edges for constraint and mark any existing
     //           edges with the constraint index.
@@ -2221,14 +2266,12 @@ public class IncrementalTin implements IIncrementalTin {
 
     isLocked = true;
     lockedDueToConstraints = true;
-    int k = 0;
-    for (IConstraint c : constraintList) {
-      c.setConstraintIndex(this, k);
+    
+    for (IConstraint c : processList) {
       ArrayList<IQuadEdge> edgesForConstraint = new ArrayList<>(); //NOPMD
       efcList.add(edgesForConstraint);
       processConstraint(c, edgesForConstraint);
       edgesForConstraint.trimToSize();
-      k++;
     }
 
     // Because processConstraint method does not respect the Delaunay criterion,
@@ -2244,8 +2287,8 @@ public class IncrementalTin implements IIncrementalTin {
 
     int maxIndex = getMaximumEdgeAllocationIndex();
     BitSet visited = new BitSet(maxIndex + 1);
-    for (int i = 0; i < constraintList.size(); i++) {
-      IConstraint c = constraintList.get(i);
+    for (int i = 0; i <processList.size(); i++) {
+      IConstraint c = processList.get(i);
       if (c.definesConstrainedRegion()) {
         ArrayList<IQuadEdge> edgesForConstraint = efcList.get(i);
         floodFillConstrainedRegion(c, edgesForConstraint, visited);
@@ -2280,13 +2323,20 @@ public class IncrementalTin implements IIncrementalTin {
     QuadEdge edge,
     IConstraint constraint,
     ArrayList<IQuadEdge> edgesForConstraint) {
-    edge.setConstrained(constraint.getConstraintIndex());
     if (constraint.definesConstrainedRegion()) {
       edgesForConstraint.add(edge);
-      edge.setConstrainedRegionBorderFlag();
-      edgePool.addBorderConstraintToMap(edge, constraint);
+      edge.setConstraintBorderIndex(constraint.getConstraintIndex());
     } else {
-      edge.setConstraintLineMemberFlag();
+      // The constraint is a line feature.  The addConstraints() method
+      // sorts the constraints so that regions are processed first,
+      // followed by the line features.  Because regions take precedence
+      // over line features, we only set the constraint index value if
+      // the edge isn't already specified as a region border.
+      if (edge.isConstraintRegionMember()) {
+        edge.setConstraintLineMemberFlag();
+      } else {
+        edge.setConstraintLineIndex(constraint.getConstraintIndex());
+      }
       edgePool.addLinearConstraintToMap(edge, constraint);
     }
   }
@@ -2947,18 +2997,16 @@ public class IncrementalTin implements IIncrementalTin {
         con = getRegionConstraint(e);
         constraintIndex = con == null ? -1 : con.getConstraintIndex();
       }
-      if (e.isConstrainedRegionBorder()) {
-        con = edgePool.getBorderConstraint(e);
+      if (e.isConstraintRegionBorder()) {
+        con = getBorderConstraint(e);
         constraintIndex = con == null ? -1 : con.getConstraintIndex();
       } else if (con != null && constraintIndex >= 0) {
-        e.setConstrainedRegionInteriorFlag();
-        e.setConstraintIndex(constraintIndex);
+        e.setConstraintRegionInteriorIndex(constraintIndex);
       }
       if (constraintIndex >= 0) {
         IQuadEdge f = e.getForward();
-        if (!f.isConstrainedRegionBorder()) {
-          f.setConstrainedRegionInteriorFlag();
-          f.setConstraintIndex(constraintIndex);
+        if (!f.isConstraintRegionBorder()) {
+          f.setConstraintRegionInteriorIndex(constraintIndex);
         }
       }
     }
@@ -2982,7 +3030,7 @@ public class IncrementalTin implements IIncrementalTin {
 
     int constraintIndex = c.getConstraintIndex();
     for (IQuadEdge e : edgeList) {
-      if (e.isConstrainedRegionBorder()) {
+      if (e.isConstraintRegionBorder()) {
         floodFillConstrainedRegionsQueue(constraintIndex, visited, e);
       }
     }
@@ -3011,23 +3059,17 @@ public class IncrementalTin implements IIncrementalTin {
       IQuadEdge e = deque.peek();
       IQuadEdge f = e.getForward();
       int fIndex = f.getIndex();
-      if (!f.isConstrainedRegionBorder() && !visited.get(fIndex)) {
+      if (!f.isConstraintRegionBorder() && !visited.get(fIndex)) {
         visited.set(fIndex);
-        f.setConstrainedRegionInteriorFlag();
-        if (!f.isConstraintLineMember()) {
-          f.setConstraintIndex(constraintIndex);
-        }
+        f.setConstraintRegionInteriorIndex(constraintIndex);
         deque.push(f.getDual());
         continue;
       }
       IQuadEdge r = e.getReverse();
       int rIndex = r.getIndex();
-      if (!r.isConstrainedRegionBorder() && !visited.get(rIndex)) {
+      if (!r.isConstraintRegionBorder() && !visited.get(rIndex)) {
         visited.set(rIndex);
-        r.setConstrainedRegionInteriorFlag();
-        if (!r.isConstraintLineMember()) {
-          r.setConstraintIndex(constraintIndex);
-        }
+        r.setConstraintRegionInteriorIndex(constraintIndex);
         deque.push(r.getDual());
         continue;
       }
@@ -3055,26 +3097,35 @@ public class IncrementalTin implements IIncrementalTin {
     IQuadEdge e = edge;
     if (e.isConstraintLineMember()) {
       IQuadEdge test = e.getForward();
-      if (!test.isConstraintLineMember() && test.isConstrainedRegionMember()) {
+      if (!test.isConstraintLineMember() && test.isConstraintRegionMember()) {
         e = test;
       } else {
         test = e.getReverse();
-        if (!test.isConstraintLineMember() && test.isConstrainedRegionMember()) {
+        if (!test.isConstraintLineMember() && test.isConstraintRegionMember()) {
           e = test;
         }
       }
     }
-    if (e.isConstrainedRegionInterior()) {
-      int index = e.getConstraintIndex();
+
+    if (e.isConstraintRegionBorder()) {
+      return getBorderConstraint(e);
+    } else if (e.isConstraintRegionInterior()) {
+      int index = e.getConstraintRegionInteriorIndex();
       // the test for constraintList.size() should be completely
       // unnecessary, but we do it just in case.
       if (index>=0 && index < constraintList.size()) {
         return constraintList.get(index);
       }
-    } else if (e.isConstrainedRegionBorder()) {
-      return edgePool.getBorderConstraint(e);
     }
     return null;
+  }
+
+  IConstraint getBorderConstraint(IQuadEdge edge){
+    int index = edge.getConstraintBorderIndex();
+    if(index<0 || index>=constraintList.size()){
+      return null;
+    }
+    return constraintList.get(index);
   }
 
   @Override

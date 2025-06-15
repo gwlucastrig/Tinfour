@@ -205,12 +205,14 @@ public class Vertex implements ISamplePoint {
 
   @Override
   public String toString() {
-    String s = (isSynthetic() ? "S" : " ")
-      + index + ": "
-      + "x=" + x + ", "
-      + "y=" + y + ", "
-      + "z=" + z;
-    return s;
+    String flagString = ""; // vertex flags
+    if (isSynthetic() || isConstraintMember()) {
+      flagString = String.format("    %c%c",
+        isSynthetic() ? 'S' : ' ',
+        isConstraintMember() ? 'C' : ' ');
+    }
+    return String.format("%7d%16f%16f%16f%s",
+      index, x, y, z, flagString);
   }
 
   /**

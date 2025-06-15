@@ -181,14 +181,14 @@ class LogoPanel extends JPanel {
 
     g2d.setColor(Color.lightGray);
     for (IQuadEdge e : tin.edges()) {
-      if (e.isConstrainedRegionInterior()) {
+      if (e.isConstraintRegionInterior()) {
         mapEdge(e, af, p0, p1, l2d);
         g2d.draw(l2d);
       }
     }
     g2d.setColor(Color.black);
     for (IQuadEdge e : tin.edges()) {
-      if (e.isConstrainedRegionBorder()) {
+      if (e.isConstraintRegionBorder()) {
         mapEdge(e, af, p0, p1, l2d);
         g2d.draw(l2d);
       }
@@ -255,7 +255,7 @@ class LogoPanel extends JPanel {
     // pleasing line.
     g2d.setColor(new Color(64, 64, 64, 128));
     for (IQuadEdge e : tin.edges()) {
-      if (e.isConstrainedRegionInterior()) {
+      if (e.isConstraintRegionInterior()) {
         mapEdge(e, af, p0, p1, l2d);
         g2d.draw(l2d);
       }

@@ -287,7 +287,9 @@ public class SvmBathymetryData {
    * @param dbfFieldForZ the optional string giving the name of the DBF
    * field to be used to extracting data from the input file (used for
    * Shapefiles).
-   * @param verticalTransform the optional\transform used to map vertical
+   * @param verticalTransform the optional transform used to map vertical
+   * coordinates to a new value; or null if no transform is to be applied.
+   * @param horizontalTransform the optional transform used to map horizontal
    * coordinates to a new value; or null if no transform is to be applied.
    * @throws IOException in the event of an unrecoverable I/O condition
    */

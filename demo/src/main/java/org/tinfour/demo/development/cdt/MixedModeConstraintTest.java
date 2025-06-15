@@ -75,6 +75,7 @@ public class MixedModeConstraintTest implements IDevelopmentTest {
     private final AffineTransform af;
     Graphics2D g2d;
     IIncrementalTin tin;
+    int k;
 
     TriangleRenderer(Graphics2D g2d, AffineTransform af, IIncrementalTin tin) {
       this.g2d = g2d;
@@ -85,8 +86,10 @@ public class MixedModeConstraintTest implements IDevelopmentTest {
     @Override
     public void accept(SimpleTriangle t) {
       IQuadEdge a = t.getEdgeA();
+      IQuadEdge b = t.getEdgeB();
+      IQuadEdge c = t.getEdgeC();
       Color color = Color.white;
-      IConstraint con = tin.getRegionConstraint(a);
+      IConstraint con = t.getContainingRegion();
       if (con != null) {
         Object obj = con.getApplicationData();
         if ("L".equals(obj)) {
@@ -100,6 +103,20 @@ public class MixedModeConstraintTest implements IDevelopmentTest {
       g2d.setColor(color);
       g2d.fill(path2d);
       g2d.draw(path2d);
+
+      // Logic to draw a number at center of triangle.
+      // Useful for debugging and diagnostic
+      //String s = Integer.toString(k);
+      //double []xy = new double[4];
+      //Vertex v = t.getCentroid();
+      //xy[0] = v.getX();
+      //xy[1] = v.getY();
+      //af.transform(xy, 0, xy, 2, 1);
+      //g2d.setColor(Color.black);
+      //g2d.drawString(s, (int)xy[2], (int)xy[3]);
+
+      // increment count of triangles (intended for diagnostic use)
+      k++;
     }
   }
 
@@ -128,7 +145,7 @@ public class MixedModeConstraintTest implements IDevelopmentTest {
     Date date = new Date();
     SimpleDateFormat sdFormat = new SimpleDateFormat("dd MMM yyyy HH:mm", locale);
     sdFormat.setTimeZone(new SimpleTimeZone(0, "UTC"));
-    ps.println("Multi-square Constraint Test");
+    ps.println("Mixed-mode Constraint Test");
     ps.format("Date of test:       %s UTC%n", sdFormat.format(date));
     ps.format("TIN class:          %s%n", tinClass.getName());
 
@@ -277,7 +294,7 @@ public class MixedModeConstraintTest implements IDevelopmentTest {
     }
 
     if (outside) {
-      assert !edge.isConstrainedRegionMember() :
+      assert !edge.isConstraintRegionMember() :
               fail(edge, "Outside edge is assigned to region");
       return;
     }
@@ -286,10 +303,10 @@ public class MixedModeConstraintTest implements IDevelopmentTest {
     if ((isVertical(edge) && (iX == 0 || iX == 2 || iX == 4))
             || (isHorizontal(edge) && (iY == 0 || iY == 2 || iY == 4)))
     {
-      assert edge.isConstrainedRegionBorder() :
+      assert edge.isConstraintRegionBorder() :
               fail(edge, "Polygon edge not assigned to region");
     } else {
-      assert !edge.isConstrainedRegionBorder() :
+      assert !edge.isConstraintRegionBorder() :
               fail(edge, "Non-polygon edge treated as border");
     }
 

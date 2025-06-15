@@ -36,7 +36,7 @@ class SemiVirtualEdgePage {
 
   /** The number of pairs per page is limited to the range of the
    * short integer used for the freePairs array, so the maximum
-   * value is 2.  Making the number of pairs a power of 2
+   * value is 2^16.  Making the number of pairs a power of 2
    * allows for a efficient computation of the index within the page
    * by bit-masking (rather than using modulus).  */
   static final int PAIRS_PER_PAGE_SCALE = 10;

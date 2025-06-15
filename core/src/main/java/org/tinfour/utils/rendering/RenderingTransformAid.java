@@ -21,7 +21,7 @@
  * Revision History:
  * Date     Name         Description
  * ------   ---------    -------------------------------------------------
- * 07/2019  G. Lucas     Created  
+ * 07/2019  G. Lucas     Created
  *
  * Notes:
  *
@@ -108,7 +108,7 @@ public class RenderingTransformAid {
     if (rAspect >= 1) {
       // the shape of the image is fatter than that of the
       // data, the limiting factor is the vertical extent
-      unitPerPixel = (y1 - y0) / (height - pad);
+      unitPerPixel = Math.abs(y1 - y0) / (height - pad);
     } else { // r<1
       // the shape of the image is skinnier than that of the
       // data, the limiting factor is the horizontal extent
@@ -116,12 +116,24 @@ public class RenderingTransformAid {
     }
     double scale = 1.0 / unitPerPixel;
 
+    // Pixel coordinates place the origin at the top of the display
+    // surface and increase y in the direction of the bottom.  If the
+    // input y0 and y1 are based on Cartesian conventions, we will have
+    // y0<y1.  In that case, the affine transform will need to flip
+    // the coordinate system in order to get the "correct" depiction
+    // for a human eye.
+    double yScale = scale;
+    if (y0 < y1) {
+      yScale = -scale;
+    }
+
     double xCenter = (x0 + x1) / 2.0;
     double yCenter = (y0 + y1) / 2.0;
     double xOffset = (width - pad) / 2 - scale * xCenter + pad / 2;
-    double yOffset = (height - pad) / 2 + scale * yCenter + pad / 2;
+    double yOffset = (height - pad) / 2 - yScale * yCenter + pad / 2;
 
-    c2p = new AffineTransform(scale, 0, 0, -scale, xOffset, yOffset);
+
+    c2p = new AffineTransform(scale, 0, 0, yScale, xOffset, yOffset);
     try {
       p2c = c2p.createInverse();
     } catch (NoninvertibleTransformException ex) {
@@ -185,8 +197,8 @@ public class RenderingTransformAid {
   public double getUnitsPerPixel() {
     return unitPerPixel;
   }
-  
-  
+
+
   /**
    * Gets the distance in pixels across one unit of distance in
    * the Cartesian coordinate system.

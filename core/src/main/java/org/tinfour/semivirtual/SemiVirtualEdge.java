@@ -32,18 +32,23 @@ package org.tinfour.semivirtual;
 
 import java.awt.geom.AffineTransform;
 import java.awt.geom.Line2D;
+import java.util.Formatter;
 import org.tinfour.common.IQuadEdge;
 import org.tinfour.common.Vertex;
 import static org.tinfour.edge.QuadEdgeConstants.CONSTRAINT_EDGE_FLAG;
-import static org.tinfour.edge.QuadEdgeConstants.CONSTRAINT_INDEX_MASK;
-import static org.tinfour.edge.QuadEdgeConstants.CONSTRAINT_INDEX_MAX;
+import static org.tinfour.edge.QuadEdgeConstants.CONSTRAINT_FLAG_MASK;
+import static org.tinfour.edge.QuadEdgeConstants.CONSTRAINT_INDEX_BIT_SIZE;
+import static org.tinfour.edge.QuadEdgeConstants.CONSTRAINT_INDEX_VALUE_MAX;
 import static org.tinfour.edge.QuadEdgeConstants.CONSTRAINT_LINE_MEMBER_FLAG;
+import static org.tinfour.edge.QuadEdgeConstants.CONSTRAINT_LOWER_INDEX_MASK;
+import static org.tinfour.edge.QuadEdgeConstants.CONSTRAINT_LOWER_INDEX_ZERO;
+import static org.tinfour.edge.QuadEdgeConstants.CONSTRAINT_REGION_BORDER_FLAG;
+import static org.tinfour.edge.QuadEdgeConstants.CONSTRAINT_REGION_INTERIOR_FLAG;
+import static org.tinfour.edge.QuadEdgeConstants.CONSTRAINT_UPPER_INDEX_MASK;
+import static org.tinfour.edge.QuadEdgeConstants.CONSTRAINT_UPPER_INDEX_ZERO;
+import org.tinfour.edge.QuadEdgePinwheel;
 import static org.tinfour.semivirtual.SemiVirtualEdgePage.INDEX_MASK;
 import static org.tinfour.semivirtual.SemiVirtualEdgePage.INDICES_PER_PAGE;
-import static org.tinfour.edge.QuadEdgeConstants.CONSTRAINT_REGION_INTERIOR_FLAG;
-import static org.tinfour.edge.QuadEdgeConstants.CONSTRAINT_REGION_BORDER_FLAG;
-import static org.tinfour.edge.QuadEdgeConstants.CONSTRAINT_REGION_MEMBER_FLAGS;
-import org.tinfour.edge.QuadEdgePinwheel;
 
 /**
  * Provides methods and elements implementing the QuadEdge data structure using
@@ -62,7 +67,7 @@ public final class SemiVirtualEdge implements IQuadEdge {
   int indexOnPage;
 
   /**
-   * Constructs a virtual edge tied to the specifed edge pool.
+   * Constructs a virtual edge tied to the specified edge pool.
    *
    * @param pool A valid instance
    * @param page The page on which this edge is to be tied
@@ -295,7 +300,6 @@ public final class SemiVirtualEdge implements IQuadEdge {
     return getEdgeForIndex(index & MASK_LOW_BIT_CLEAR);
   }
 
-
   @Override
   public int getBaseIndex() {
     return index & MASK_LOW_BIT_CLEAR;
@@ -451,32 +455,52 @@ public final class SemiVirtualEdge implements IQuadEdge {
     }
     int r = page.links[indexOnPage * 2 + 1];
     int f = page.links[indexOnPage * 2];
-    String s = String.format("%9d  %9s <-- (%9s,%9s) --> %9s",
-            index,
-            r == 0 ? "null" : Integer.toString(r),
-            a == null ? "gv" : a.getLabel(),
-            b == null ? "gv" : b.getLabel(),
-            f == 0 ? "null" : Integer.toString(f)
-    );
 
-      if (isConstrained()) {
-        StringBuilder sb = new StringBuilder(s);
-      sb.append("    constrained ");
-      if (isConstrainedRegionBorder()) {
-        sb.append("region border ");
-      }else if(isConstraintLineMember()){
-        sb.append("line ");
-      }
-      sb.append(Integer.toString(getConstraintIndex()));
-      s = sb.toString();
-    } else if (isConstrainedRegionInterior()) {
-      StringBuilder sb = new StringBuilder(s);
-      sb.append("    constrained region interior ");
-      sb.append(Integer.toString(getConstraintIndex()));
-      s= sb.toString();
+    StringBuilder sb = new StringBuilder();
+    try (Formatter fmt = new Formatter(sb)) {
+      fmt.format("%9d  %9s <-- (%9s,%9s) --> %9s",
+        index,
+        r == 0 ? "null" : Integer.toString(r),
+        a == null ? "gv" : a.getLabel(),
+        b == null ? "gv" : b.getLabel(),
+        f == 0 ? "null" : Integer.toString(f)
+      );
+      fmt.flush();
     }
 
-    return s;
+    if (isConstrained()) {
+      sb.append("    constraint");
+      if (isConstraintRegionBorder()) {
+        sb.append(" region border ");
+        sb.append(Integer.toString(getConstraintBorderIndex()));
+        sb.append("/");
+        sb.append(Integer.toString(getDualBorderConstraintIndex()));
+        if (isConstraintLineMember()) {
+          sb.append(", line (index unavailable)");
+        }
+      } else {
+        if (isConstraintRegionInterior()) {
+          // the edge itself is not constrained, but it might
+          // be part of a region
+          sb.append("    constraint region interior ");
+          sb.append(Integer.toString(this.getConstraintRegionInteriorIndex()));
+        }
+        if (isConstraintLineMember()) {
+          if (isConstraintRegionInterior()) {
+            sb.append(", ");
+          }
+          sb.append(" line ");
+          sb.append(Integer.toString(getConstraintLineIndex()));
+        }
+      }
+    } else if (isConstraintRegionInterior()) {
+      // the edge itself is not constrained, but it might
+      // be part of a region
+      sb.append("    constraint region interior ");
+      sb.append(Integer.toString(this.getConstraintRegionInteriorIndex()));
+    }
+
+    return sb.toString();
   }
 
   @Override
@@ -494,21 +518,38 @@ public final class SemiVirtualEdge implements IQuadEdge {
     return false;
   }
 
+  private void checkConstraintIndex(int lowValue, int constraintIndex){
+      if (constraintIndex < lowValue || constraintIndex > CONSTRAINT_INDEX_VALUE_MAX) {
+      throw new IllegalArgumentException(
+        "Constraint index " + constraintIndex
+        + " is out of range ["+lowValue+".." + CONSTRAINT_INDEX_VALUE_MAX + "]");
+    }
+  }
+
   @Override
   public int getConstraintIndex() {
     if (page.constraints == null) {
-      return 0;
+      return -1;
     }
-    int test = page.constraints[indexOnPage / 2];
-    return test & CONSTRAINT_INDEX_MASK;
+    if (isConstraintRegionBorder()) {
+      return getConstraintBorderIndex();
+    }
+    if (isConstraintRegionInterior()) {
+      return getLowerConstraintIndex(page.constraints);
+    }
+    // it must be a constraint line
+    return getUpperConstraintIndex(page.constraints);
   }
 
   @Override
   public void setConstraintIndex(int constraintIndex) {
-    if (constraintIndex < 0 || constraintIndex > CONSTRAINT_INDEX_MAX) {
+    if(isConstraintRegionMember()){
+      checkConstraintIndex(-1, constraintIndex);
+    } else if(this.isConstraintLineMember()){
+      checkConstraintIndex(0, constraintIndex);
+    }else{
       throw new IllegalArgumentException(
-              "Constraint index " + constraintIndex
-              + " is out of range [0.." + CONSTRAINT_INDEX_MAX + "]");
+        "Unable to set constraint index for an edge that is not assigned a constraint type");
     }
 
     // this one sets the constraint index, but does not affect
@@ -516,25 +557,24 @@ public final class SemiVirtualEdge implements IQuadEdge {
     // a constraint-area member may have a constraint index even if
     // it is not a constrained edge.
     int ix = indexOnPage / 2;
+    int iSide = indexOnPage&1;
     int c[] = page.readyConstraints();
-    c[ix] = (c[ix] & ~CONSTRAINT_INDEX_MASK) | constraintIndex;
-  }
-
-  @Override
-  public void setConstrained(int constraintIndex) {
-    if (constraintIndex < 0 || constraintIndex > CONSTRAINT_INDEX_MAX) {
-      throw new IllegalArgumentException(
-              "Constraint index " + constraintIndex
-              + " is out of range [0.." + CONSTRAINT_INDEX_MAX + "]");
+    if (isConstraintRegionBorder()) {
+      if(iSide==0){
+        setLowerConstraintIndex(c, constraintIndex);
+      }else{
+        setUpperConstraintIndex(c, constraintIndex);
+      }
+    } else if (isConstraintLineMember()) {
+      setUpperConstraintIndex(c, constraintIndex);
+    } else {
+      setLowerConstraintIndex(c, constraintIndex);
     }
 
-    int ix = indexOnPage / 2; // both sides of the edge are constrained.
-    int c[] = page.readyConstraints();
-    c[ix] = CONSTRAINT_EDGE_FLAG
-            | (c[ix] & ~CONSTRAINT_INDEX_MASK)
-            | constraintIndex;
-
+    c[ix] = (c[ix] & CONSTRAINT_LOWER_INDEX_ZERO) | (constraintIndex + 1);
   }
+
+
 
   @Override
   public boolean isConstrained() {
@@ -547,7 +587,7 @@ public final class SemiVirtualEdge implements IQuadEdge {
   }
 
   @Override
-  public boolean isConstrainedRegionBorder() {
+  public boolean isConstraintRegionBorder() {
     if (page.constraints == null) {
       return false;
     } else {
@@ -560,7 +600,7 @@ public final class SemiVirtualEdge implements IQuadEdge {
   }
 
   @Override
-  public boolean isConstrainedRegionInterior() {
+  public boolean isConstraintRegionInterior() {
     if (page.constraints == null) {
       return false;
     } else {
@@ -571,29 +611,31 @@ public final class SemiVirtualEdge implements IQuadEdge {
   }
 
   @Override
-  public boolean isConstrainedRegionMember() {
+  public boolean isConstraintRegionMember() {
     if (page.constraints == null) {
       return false;
     } else {
       // this tests to see if the edge is a constrained-area member
       // and doesn't care whether or not it is a constraint edge.
       return (page.constraints[indexOnPage / 2]
-              & (CONSTRAINT_REGION_BORDER_FLAG | CONSTRAINT_REGION_INTERIOR_FLAG)) != 0;
+        & (CONSTRAINT_REGION_BORDER_FLAG | CONSTRAINT_REGION_INTERIOR_FLAG)) != 0;
     }
   }
 
   @Override
-  public void setConstrainedRegionBorderFlag() {
+  public void setConstraintRegionBorderFlag() {
     int ix = indexOnPage / 2;
     int c[] = page.readyConstraints();
-    c[ix] |= CONSTRAINT_REGION_BORDER_FLAG;
-  }
 
-  @Override
-  public void setConstrainedRegionInteriorFlag() {
-    int ix = indexOnPage / 2;
-    int c[] = page.readyConstraints();
-    c[ix] |= CONSTRAINT_REGION_INTERIOR_FLAG;
+    if (!isConstraintRegionBorder()) {
+      // The edge was not previously populated as a border.
+      // Because border constraint settings supercede settings such as
+      // linear or interior constraint values, clear out
+      // any existing constraint values (the flags are preserved)
+      c[ix] &= CONSTRAINT_FLAG_MASK;
+    }
+
+    c[ix] |= CONSTRAINT_REGION_BORDER_FLAG;
   }
 
   @Override
@@ -601,11 +643,9 @@ public final class SemiVirtualEdge implements IQuadEdge {
     if (page.constraints == null) {
       return false;
     } else {
-      // this tests to see if the edge is a constrained-area member
-      // and doesn't care whether or not it is a constraint edge.
+      // this tests to see if the edge is a constrained-line member
       int flags = page.constraints[indexOnPage / 2];
-      return (flags & CONSTRAINT_EDGE_FLAG) != 0
-              && (index & CONSTRAINT_REGION_MEMBER_FLAGS) == 0;
+      return  (flags & CONSTRAINT_LINE_MEMBER_FLAG) != 0;
     }
   }
 
@@ -645,7 +685,6 @@ public final class SemiVirtualEdge implements IQuadEdge {
     return (c[cIndex] & cMask) != 0;
   }
 
-
   public void setLine2D(AffineTransform transform, Line2D l2d) {
     Vertex A = getA();
     Vertex B = getB();
@@ -672,6 +711,150 @@ public final class SemiVirtualEdge implements IQuadEdge {
     }
     transform.transform(c, 0, c, 4, 2);
     l2d.setLine(c[4], c[5], c[6], c[7]);
+  }
+
+  @Override
+  public void setConstraintBorderIndex(int constraintIndex) {
+    checkConstraintIndex(-1, constraintIndex);
+
+    // the constraint array is allocated to half the size of the number
+    // of edges per page.  The bit/byte values for both an edge and its dual
+    // are packed into a single integer.
+    int[] c = page.readyConstraints();
+    int ix = indexOnPage / 2;
+    int iSide = indexOnPage & 1;
+
+     if(!isConstraintRegionBorder()){
+      // The edge was not previously populated as a border.
+      // Because border constraint settings supercede settings such as
+      // linear or interior constraint values, clear out
+      // any existing constraint values (the flags are preserved)
+      c[ix] &= CONSTRAINT_FLAG_MASK;
+    }
+      c[ix] |= CONSTRAINT_EDGE_FLAG | CONSTRAINT_REGION_BORDER_FLAG;
+    if (iSide == 0) {
+      // the base side
+      setLowerConstraintIndex(c, constraintIndex);
+    } else {
+      // the partner side
+      setUpperConstraintIndex(c, constraintIndex);
+    }
+  }
+
+  @Override
+  public int getConstraintBorderIndex() {
+    int ix = indexOnPage / 2;
+    int iSide = indexOnPage & 1;
+    int[] c = page.constraints;
+
+    if (c == null || (c[ix] & CONSTRAINT_REGION_BORDER_FLAG) == 0) {
+      return -1;  // in implementation, this condition should be avoided
+    }
+
+    if (iSide == 0) {
+      // base side
+      return getLowerConstraintIndex(c);
+    } else {
+      return getUpperConstraintIndex(c);
+    }
+  }
+
+
+  private int getDualBorderConstraintIndex() {
+    int ix = indexOnPage / 2;
+    int iSide = (~indexOnPage) & 1;
+    int[] c = page.constraints;
+
+    if (c == null || (c[ix] & CONSTRAINT_REGION_BORDER_FLAG) == 0) {
+      return -1;  // in implementation, this condition should be avoided
+    }
+
+    if (iSide == 0) {
+      // base side
+      return getLowerConstraintIndex(c);
+    } else {
+      return getUpperConstraintIndex(c);
+    }
+  }
+
+
+  @Override
+  public void setConstraintLineIndex(int constraintIndex) {
+    checkConstraintIndex(0, constraintIndex);
+
+    // the constraint array is allocated to half the size of the number
+    // of edges per page.  The bit/byte values for both an edge and its dual
+    // are packed into a single integer.
+    int[] c = page.readyConstraints();
+    int ix = indexOnPage / 2;
+
+    if (isConstraintRegionBorder()) {
+      // Unfortunately, there is not room to store the constraint line index.
+      // Just set the constraint line flag.
+      c[ix] |= (CONSTRAINT_EDGE_FLAG | CONSTRAINT_LINE_MEMBER_FLAG);
+    } else {
+      c[ix] |= (CONSTRAINT_EDGE_FLAG | CONSTRAINT_LINE_MEMBER_FLAG);
+      setUpperConstraintIndex(c, constraintIndex);
+    }
+
+  }
+
+  @Override
+  public void setConstraintRegionInteriorIndex(int constraintIndex) {
+    checkConstraintIndex(-1, constraintIndex);
+    int[] c = page.readyConstraints();
+    int ix = indexOnPage/2;
+    if (isConstraintRegionBorder()) {
+      // Not an appropriate operation, no action supported
+      return;
+    } else {
+      // note that a constraint region interior is not a constrainde edge
+      c[ix] |= CONSTRAINT_REGION_INTERIOR_FLAG;
+      setLowerConstraintIndex(c, constraintIndex);
+    }
+  }
+
+  @Override
+  public int getConstraintRegionInteriorIndex() {
+    if (isConstraintRegionInterior()) {
+      int[] c = page.readyConstraints();
+      return getLowerConstraintIndex(c);
+    }
+    return -1;
+  }
+
+  @Override
+  public int getConstraintLineIndex() {
+    if (isConstraintLineMember() && !isConstraintRegionBorder()) {
+      int[] c = page.readyConstraints();
+      return getUpperConstraintIndex(c);
+    }
+    return -1;
+  }
+
+  private void setUpperConstraintIndex(int[] c, int constraintIndex) {
+    int ix = indexOnPage / 2;
+    c[ix] = (c[ix] & CONSTRAINT_UPPER_INDEX_ZERO) | ((constraintIndex + 1) << CONSTRAINT_INDEX_BIT_SIZE);
+  }
+
+  private int getUpperConstraintIndex(int[] c) {
+    int ix = indexOnPage / 2;
+    return ((c[ix] & CONSTRAINT_UPPER_INDEX_MASK) >> CONSTRAINT_INDEX_BIT_SIZE) - 1;
+  }
+
+  private void setLowerConstraintIndex(int[] c, int constraintIndex) {
+    int ix = indexOnPage / 2;
+    c[ix] = (c[ix] & CONSTRAINT_LOWER_INDEX_ZERO) | (constraintIndex + 1);
+  }
+
+  private int getLowerConstraintIndex(int[] c) {
+    int ix = indexOnPage / 2;
+    return (c[ix] & CONSTRAINT_LOWER_INDEX_MASK) - 1;
+  }
+
+  @Override
+  public void setConstrained(int constraintIndex) {
+    throw new UnsupportedOperationException("generic setConstrained() method is not supported");
   }
 
 }

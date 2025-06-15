@@ -722,7 +722,7 @@ public class SvmComputation {
     double lenMax = Double.NEGATIVE_INFINITY;
 
     for (IQuadEdge edge : tin.edges()) {
-      if (!edge.isConstrainedRegionInterior()) {
+      if (!edge.isConstraintRegionInterior()) {
         continue;
       }
 

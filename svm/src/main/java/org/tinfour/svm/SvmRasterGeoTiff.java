@@ -308,17 +308,17 @@ class SvmRasterGeoTiff {
   }
 
   boolean testWater(IQuadEdge edge, boolean[] water) {
-    if (edge.isConstrainedRegionInterior()) {
+    if (edge.isConstraintRegionInterior()) {
       int index = edge.getConstraintIndex();
       return water[index];
     }
     IQuadEdge fwd = edge.getForward();
-    if (fwd.isConstrainedRegionInterior()) {
+    if (fwd.isConstraintRegionInterior()) {
       int index = fwd.getConstraintIndex();
       return water[index];
     }
     IQuadEdge rev = edge.getReverse();
-    if (rev.isConstrainedRegionInterior()) {
+    if (rev.isConstraintRegionInterior()) {
       int index = rev.getConstraintIndex();
       return water[index];
     }

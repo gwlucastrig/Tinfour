@@ -357,7 +357,7 @@ class SvmTriangleVolumeTabulator {
         if (!appData) {
           continue;
         }
-        if (edge.isConstrainedRegionBorder()) {
+        if (edge.isConstraintRegionBorder()) {
           if (C == null) {
             // perimeter edge, no further consideration required
             continue;
@@ -371,7 +371,7 @@ class SvmTriangleVolumeTabulator {
             // edge is to the left of the opposite vertex, so area is interior
             this.addTriangle(A, B, C);
           }
-        } else if (edge.isConstrainedRegionInterior()) {
+        } else if (edge.isConstraintRegionInterior()) {
           this.addTriangle(A, B, C);
         }
       }

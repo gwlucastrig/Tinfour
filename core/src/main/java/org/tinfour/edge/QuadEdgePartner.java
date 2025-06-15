@@ -40,12 +40,17 @@ package org.tinfour.edge;
 
 import org.tinfour.common.Vertex;
 import static org.tinfour.edge.QuadEdgeConstants.CONSTRAINT_EDGE_FLAG;
-import static org.tinfour.edge.QuadEdgeConstants.CONSTRAINT_INDEX_MASK;
-import static org.tinfour.edge.QuadEdgeConstants.CONSTRAINT_INDEX_MAX;
+import static org.tinfour.edge.QuadEdgeConstants.CONSTRAINT_FLAG_MASK;
+import static org.tinfour.edge.QuadEdgeConstants.CONSTRAINT_INDEX_BIT_SIZE;
+import static org.tinfour.edge.QuadEdgeConstants.CONSTRAINT_INDEX_VALUE_MAX;
 import static org.tinfour.edge.QuadEdgeConstants.CONSTRAINT_LINE_MEMBER_FLAG;
+import static org.tinfour.edge.QuadEdgeConstants.CONSTRAINT_LOWER_INDEX_MASK;
+import static org.tinfour.edge.QuadEdgeConstants.CONSTRAINT_LOWER_INDEX_ZERO;
+import static org.tinfour.edge.QuadEdgeConstants.CONSTRAINT_REGION_BORDER_FLAG;
 import static org.tinfour.edge.QuadEdgeConstants.CONSTRAINT_REGION_INTERIOR_FLAG;
 import static org.tinfour.edge.QuadEdgeConstants.CONSTRAINT_REGION_MEMBER_FLAGS;
-import static org.tinfour.edge.QuadEdgeConstants.CONSTRAINT_REGION_BORDER_FLAG;
+import static org.tinfour.edge.QuadEdgeConstants.CONSTRAINT_UPPER_INDEX_MASK;
+import static org.tinfour.edge.QuadEdgeConstants.CONSTRAINT_UPPER_INDEX_ZERO;
 import static org.tinfour.edge.QuadEdgeConstants.SYNTHETIC_EDGE_FLAG;
 
 
@@ -146,7 +151,14 @@ class QuadEdgePartner extends QuadEdge {
    */
   @Override
   public int getConstraintIndex() {
-    return index & CONSTRAINT_INDEX_MASK;
+     if(isConstraintRegionBorder()){
+        return getUpperConstraintIndex();
+    }
+    if(isConstraintRegionInterior()){
+      return getLowerConstraintIndex();
+    }
+    // it must be a constraint line
+    return getUpperConstraintIndex();
   }
 
   /**
@@ -154,23 +166,29 @@ class QuadEdgePartner extends QuadEdge {
    * index does not necessarily set an edge to a constrained status.
    * In some cases it may be used to indicate the constraint with which a
    * non-constrained edge is associated. Index values must be in the range
-   * 0 to QuadEdge&#46;CONSTAINT_INDEX_MAX (1048575).
+   * 0 to QuadEdge&#46;CONSTAINT_INDEX_MAX (8190).
    *
-   * @param constraintIndex a positive number in the range 0 to 1048575
+   * @param constraintIndex a positive number in the range 0 to 8190
    * indicating the constraint with which the edge is associated.
    */
   @Override
   public void setConstraintIndex(int constraintIndex) {
-    if (constraintIndex < 0 || constraintIndex >  CONSTRAINT_INDEX_MAX) {
+    if (isConstraintRegionMember()) {
+      checkConstraintIndex(-1, constraintIndex);
+    } else if (this.isConstraintLineMember()) {
+      checkConstraintIndex(0, constraintIndex);
+    } else {
       throw new IllegalArgumentException(
-        "Constraint index " + constraintIndex
-        + " is out of range [0.." +  CONSTRAINT_INDEX_MAX + "]");
+        "Unable to set constraint index for an edge that is not assigned a constraint type");
     }
-    // this one sets the constraint index, but does not affect
-    // whether the edge is constrained or not.  An edge that is
-    // a constraint-area member may have a constraint index even if
-    // it is not a constrained edge.
-    index = (index & ~CONSTRAINT_INDEX_MASK) | constraintIndex;
+
+    if(isConstraintRegionBorder()){
+      setUpperConstraintIndex(constraintIndex);
+    }else if(isConstraintLineMember()){
+      setUpperConstraintIndex(constraintIndex);
+    }else{
+      setLowerConstraintIndex(constraintIndex);
+    }
   }
 
 
@@ -179,19 +197,23 @@ class QuadEdgePartner extends QuadEdge {
    * Sets an edge as constrained and sets its constraint index. Note that
    * once an edge is constrained, it cannot be set to a non-constrained
    * status. Constraint index values must be positive integers in
-   * the range 0 to QuadEdge&#46;CONSTAINT_INDEX_MAX (1048575).
+   * the range 0 to QuadEdge&#46;CONSTAINT_INDEX_MAX (8190).
    *
    * @param constraintIndex positive number indicating which constraint
-   * a particular edge is associated with, in the range 0 to 1048575.
+   * a particular edge is associated with, in the range 0 to 8190.
    */
   @Override
   public void setConstrained(int constraintIndex) {
-    if (constraintIndex < 0 || constraintIndex >  CONSTRAINT_INDEX_MAX) {
+    if(constraintIndex == -1){
+      index = 0;
+      return;
+    }
+    if (constraintIndex < 0 || constraintIndex >  CONSTRAINT_INDEX_VALUE_MAX) {
       throw new IllegalArgumentException(
         "Constraint index " + constraintIndex
-        + " is out of range [0.." +  CONSTRAINT_INDEX_MAX + "]");
+        + " is out of range [0.." +  CONSTRAINT_INDEX_VALUE_MAX + "]");
     }
-    index = CONSTRAINT_EDGE_FLAG | ((index & ~CONSTRAINT_INDEX_MASK) | constraintIndex);
+    index = CONSTRAINT_EDGE_FLAG | ((index & CONSTRAINT_LOWER_INDEX_ZERO) | (constraintIndex+1));
   }
 
   /**
@@ -205,23 +227,32 @@ class QuadEdgePartner extends QuadEdge {
   }
 
   @Override
-  public boolean isConstrainedRegionBorder() {
+  public boolean isConstraintRegionBorder() {
     return (index & CONSTRAINT_REGION_BORDER_FLAG) !=0;
   }
 
   @Override
-  public boolean isConstrainedRegionInterior() {
+  public boolean isConstraintRegionInterior() {
     return (index & CONSTRAINT_REGION_INTERIOR_FLAG) != 0;
   }
 
     @Override
-  public boolean isConstrainedRegionMember() {
+  public boolean isConstraintRegionMember() {
     return (index & CONSTRAINT_REGION_MEMBER_FLAGS) != 0;
   }
 
 
     @Override
-  public void setConstrainedRegionBorderFlag() {
+  public void setConstraintRegionBorderFlag() {
+
+    if (!isConstraintRegionBorder()) {
+      // The edge was not previously populated as a border.
+      // Because border constraint settings supercede settings such as
+      // linear or interior constraint values, clear out
+      // any existing constraint values (the flags are preserved)
+      index &= CONSTRAINT_FLAG_MASK;
+    }
+
     index |= CONSTRAINT_REGION_BORDER_FLAG;
   }
 
@@ -237,13 +268,6 @@ class QuadEdgePartner extends QuadEdge {
   }
 
 
-
-  @Override
-  public void setConstrainedRegionInteriorFlag() {
-    index |= CONSTRAINT_REGION_INTERIOR_FLAG;
-  }
-
-
   @Override
   public void setSynthetic(boolean status) {
     if (status) {
@@ -256,5 +280,106 @@ class QuadEdgePartner extends QuadEdge {
   @Override
   public boolean isSynthetic() {
     return (index & SYNTHETIC_EDGE_FLAG) != 0;
+  }
+
+  @Override
+  public void setConstraintBorderIndex(int constraintIndex) {
+    if (constraintIndex < -1 || constraintIndex > CONSTRAINT_INDEX_VALUE_MAX) {
+      throw new IllegalArgumentException(
+        "Constraint index " + constraintIndex
+        + " is out of range [0.." + CONSTRAINT_INDEX_VALUE_MAX + "]");
+    }
+
+    if (!isConstraintRegionBorder()) {
+      // The edge was not previously populated as a border.
+      // Because border constraint settings supercede settings such as
+      // linear or interior constraint values, clear out
+      // any existing constraint values (the flags are preserved)
+      index &= CONSTRAINT_FLAG_MASK;
+    }
+
+    index
+      = (CONSTRAINT_EDGE_FLAG | CONSTRAINT_REGION_BORDER_FLAG)
+      | (index & CONSTRAINT_UPPER_INDEX_ZERO)
+      | ((constraintIndex + 1) << CONSTRAINT_INDEX_BIT_SIZE);
+  }
+
+
+
+  @Override
+  public int getConstraintBorderIndex() {
+    if ((index & CONSTRAINT_REGION_BORDER_FLAG) == 0) {
+      return -1;
+    } else {
+      return ((index >> CONSTRAINT_INDEX_BIT_SIZE) & CONSTRAINT_LOWER_INDEX_MASK) - 1;
+    }
+  }
+
+  @Override
+  public void setConstraintLineIndex(int constraintIndex) {
+     checkConstraintIndex(0, constraintIndex);
+
+    if (isConstraintRegionBorder()) {
+      // Unfortunately, there is not room to store the constraint line index.
+      // Just set the constraint line flag.
+      index |= (CONSTRAINT_EDGE_FLAG | CONSTRAINT_LINE_MEMBER_FLAG);
+    } else {
+      index
+        = (CONSTRAINT_EDGE_FLAG | CONSTRAINT_LINE_MEMBER_FLAG)
+        | (index & CONSTRAINT_UPPER_INDEX_ZERO)
+        | ((constraintIndex + 1) << CONSTRAINT_INDEX_BIT_SIZE);
+    }
+  }
+
+  @Override
+  public void setConstraintRegionInteriorIndex(int constraintIndex) {
+    checkConstraintIndex(-1, constraintIndex);
+    if (isConstraintRegionBorder()) {
+      // Not an appropriate operation. No action supported.
+      return;
+    } else {
+      index
+        = CONSTRAINT_REGION_INTERIOR_FLAG
+        | (index & CONSTRAINT_LOWER_INDEX_ZERO)
+        | (constraintIndex + 1);
+    }
+  }
+
+  @Override
+  protected void setUpperConstraintIndex(int constraintIndex) {
+    index = (index & CONSTRAINT_UPPER_INDEX_ZERO)
+      | ((constraintIndex + 1) << CONSTRAINT_INDEX_BIT_SIZE);
+  }
+
+  @Override
+  protected int getUpperConstraintIndex() {
+    return ((index & CONSTRAINT_UPPER_INDEX_MASK) >> CONSTRAINT_INDEX_BIT_SIZE) - 1;
+  }
+
+  @Override
+  protected void setLowerConstraintIndex(int constraintIndex) {
+    index = (index & CONSTRAINT_LOWER_INDEX_ZERO)
+      | (constraintIndex + 1);
+  }
+
+  @Override
+  protected int getLowerConstraintIndex() {
+    return (index & CONSTRAINT_LOWER_INDEX_MASK) - 1;
+  }
+
+  @Override
+  public int getConstraintRegionInteriorIndex() {
+    if (isConstraintRegionInterior()) {
+      return getLowerConstraintIndex();
+    }
+    return -1;
+  }
+
+  @Override
+  public int getConstraintLineIndex() {
+    if (isConstraintLineMember()) {
+      return getUpperConstraintIndex();
+    }
+    return -1;
   }
 }

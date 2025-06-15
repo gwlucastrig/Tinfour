@@ -226,10 +226,10 @@ public final class TriangleCollector {
 
         IQuadEdge df = f.getDual();
         IQuadEdge dr = r.getDual();
-        if (getMarkBit(map, df) == 0 && !f.isConstrainedRegionBorder()) {
+        if (getMarkBit(map, df) == 0 && !f.isConstraintRegionBorder()) {
           deque.push(df);
         }
-        if (getMarkBit(map, dr) == 0 && !r.isConstrainedRegionBorder()) {
+        if (getMarkBit(map, dr) == 0 && !r.isConstraintRegionBorder()) {
           deque.push(dr);
         }
       }

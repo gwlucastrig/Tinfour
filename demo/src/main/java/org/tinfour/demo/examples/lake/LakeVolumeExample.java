@@ -176,10 +176,10 @@ public class LakeVolumeExample {
     }
 
     boolean isWater(IQuadEdge edge) {
-      if (edge.isConstrainedRegionBorder()) {
+      if (edge.isConstraintRegionBorder()) {
         return false;
       }
-      if (edge.isConstrainedRegionInterior()) {
+      if (edge.isConstraintRegionInterior()) {
         int index = edge.getConstraintIndex();
         return water[index];
       }
