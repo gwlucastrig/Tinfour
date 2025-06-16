@@ -188,19 +188,6 @@ public interface IQuadEdge {
    */
   boolean isConstrained();
 
-
-  /**
-   * Sets an edge as constrained and sets its constraint index. Note that
-   * once an edge is constrained, it cannot be set to a non-constrained
-   * status.  Constraint index values must be positive integers. The
-   * range of supported values will depend on the specific class that
-   * implements this interface. Please refer to the class documentation
-   * for specific values.
-   * @param  constraintIndex positive number indicating which constraint
-   * a particular edge is associated with.
-   */
-  void setConstrained(int constraintIndex);
-
   /**
    * Indicates whether the edge is a member of a constrained region
    * (is in the interior or serves as the border of a polygon-based constraint).

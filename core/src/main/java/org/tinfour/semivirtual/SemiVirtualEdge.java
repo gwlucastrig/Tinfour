@@ -635,7 +635,7 @@ public final class SemiVirtualEdge implements IQuadEdge {
       c[ix] &= CONSTRAINT_FLAG_MASK;
     }
 
-    c[ix] |= CONSTRAINT_REGION_BORDER_FLAG;
+    c[ix] |= CONSTRAINT_EDGE_FLAG | CONSTRAINT_REGION_BORDER_FLAG;
   }
 
   @Override
@@ -850,11 +850,6 @@ public final class SemiVirtualEdge implements IQuadEdge {
   private int getLowerConstraintIndex(int[] c) {
     int ix = indexOnPage / 2;
     return (c[ix] & CONSTRAINT_LOWER_INDEX_MASK) - 1;
-  }
-
-  @Override
-  public void setConstrained(int constraintIndex) {
-    throw new UnsupportedOperationException("generic setConstrained() method is not supported");
   }
 
 }

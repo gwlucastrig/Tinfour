@@ -419,18 +419,13 @@ public class QuadEdge implements IQuadEdge {
   }
 
   /**
-   * Gets the index of the constrain associated with
+   * Indicates whether the edge is constrained.
    *
    * @return true if the edge is constrained; otherwise, false.
    */
   @Override
   public boolean isConstrained() {
     return dual.isConstrained();
-  }
-
-  @Override
-  public void setConstrained(int constraintIndex) {
-       throw new UnsupportedOperationException("generic setConstrained() method is not supported");
   }
 
   /**

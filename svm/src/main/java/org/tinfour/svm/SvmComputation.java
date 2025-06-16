@@ -726,7 +726,7 @@ public class SvmComputation {
         continue;
       }
 
-      int conIndex = edge.getConstraintIndex();
+      int conIndex = edge.getConstraintRegionInteriorIndex();
       if (water[conIndex]) {
         // the edge lies in a water area, but we also need
         // to exclude any edges that connect a sounding to
