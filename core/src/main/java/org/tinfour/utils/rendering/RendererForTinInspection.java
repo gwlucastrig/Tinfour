@@ -44,6 +44,7 @@ import java.awt.geom.Rectangle2D;
 import java.awt.image.BufferedImage;
 import java.util.ArrayList;
 import java.util.List;
+import org.tinfour.common.IConstraint;
 import org.tinfour.common.IIncrementalTin;
 import org.tinfour.common.IQuadEdge;
 import org.tinfour.common.Vertex;
@@ -96,6 +97,7 @@ public class RendererForTinInspection {
   private boolean vertexLabelEnableIndex = true;
   private boolean vertexLabelEnableZ = false;
   private String vertexLabelFormatZ = "%f";
+  private boolean coordinateSystemIsPixels;
 
   private Color edgeColor = Color.lightGray;
 
@@ -204,9 +206,16 @@ public class RendererForTinInspection {
     }
 
     Rectangle2D r2d = tin.getBounds();
+    double yLower = r2d.getMinY();
+    double yUpper = r2d.getMaxY();
+    if (this.coordinateSystemIsPixels) {
+      yUpper = r2d.getMinY();
+      yLower = r2d.getMaxY();
+    }
+
     RenderingSurfaceAid rsa = new RenderingSurfaceAid(
       width, height, pad,
-      r2d.getMinX(), r2d.getMinY(), r2d.getMaxX(), r2d.getMaxY(),
+      r2d.getMinX(), yLower, r2d.getMaxX(), yUpper,
       true);
 
     Graphics2D g2d = rsa.getGraphics2D();
@@ -452,9 +461,32 @@ public class RendererForTinInspection {
     if (edge.isConstrained()) {
       font = constraintFont;
       g2d.setFont(constraintFont);
-      s += "c" + edge.getConstraintIndex();
+      if (edge.isConstraintRegionBorder()) {
+        int condex = edge.getConstraintBorderIndex();
+        if (condex < 0) {
+          s += "c--";
+        } else {
+          s += "c" + condex;
+        }
+
+      }
+      if(edge.isConstraintLineMember()){
+        // edge is a constrained line.  If this edge is also a border
+        // then the associated constraint index will not be available from
+        // the edge itself and must be obtained from the TIN. It should never
+        // be null, but we check anyway just to be sure
+        IConstraint constraint = tin.getLinearConstraint(edge);
+        if(constraint!=null){
+          int condex = constraint.getConstraintIndex();
+          s += "n" + condex;
+        }
+      }
     } else {
       g2d.setFont(labelFont);
+      if(edge.isConstraintRegionInterior()){
+        int condex = edge.getConstraintRegionInteriorIndex();
+        s+="i"+condex;
+      }
     }
 
     FontRenderContext frc = new FontRenderContext(null, true, true);
@@ -552,4 +584,22 @@ public class RendererForTinInspection {
 
     return path;
   }
+
+  /**
+   * Indicates that the coordinate system associated with the Delaunay
+   * triangulation should be rendered as if the coordinates were based on
+   * pixels rather than a Cartesian coordinate system.  In a pixel system
+   * y coordinates are defined to be increasing downward (so that the origin
+   * would be the upper-left corner of the display surface).  Setting the
+   * coordinate system to be based on pixels has the effect of flipping the
+   * rendering upside down.
+   * @param coordinateSystemIsPixels true if the coordinate system is to be
+   * treated as based on pixels; false if the corrdinate system is to be treated
+   * as Cartesian.
+   */
+  public void setCoordinateSystemIsPixels(boolean coordinateSystemIsPixels){
+    this.coordinateSystemIsPixels = coordinateSystemIsPixels;
+  }
+
+
 }

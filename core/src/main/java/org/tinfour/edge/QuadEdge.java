@@ -116,7 +116,15 @@ import java.awt.geom.Line2D;
 import java.util.Formatter;
 import org.tinfour.common.IQuadEdge;
 import org.tinfour.common.Vertex;
-
+import static org.tinfour.edge.QuadEdgeConstants.CONSTRAINT_EDGE_FLAG;
+import static org.tinfour.edge.QuadEdgeConstants.CONSTRAINT_FLAG_MASK;
+import static org.tinfour.edge.QuadEdgeConstants.CONSTRAINT_INDEX_BIT_SIZE;
+import static org.tinfour.edge.QuadEdgeConstants.CONSTRAINT_INDEX_VALUE_MAX;
+import static org.tinfour.edge.QuadEdgeConstants.CONSTRAINT_LOWER_INDEX_MASK;
+import static org.tinfour.edge.QuadEdgeConstants.CONSTRAINT_LOWER_INDEX_ZERO;
+import static org.tinfour.edge.QuadEdgeConstants.CONSTRAINT_REGION_BORDER_FLAG;
+import static org.tinfour.edge.QuadEdgeConstants.CONSTRAINT_UPPER_INDEX_MASK;
+import static org.tinfour.edge.QuadEdgeConstants.CONSTRAINT_UPPER_INDEX_ZERO;
 /**
  * A representation of an edge with forward and reverse links on one
  * side and counterpart links attached to its dual (other side).
@@ -372,7 +380,7 @@ public class QuadEdge implements IQuadEdge {
 
   /**
    * Gets the index of the constraint associated with this edge.
-   * Constraint index values must be in the range 0 to Integer.MAX_VALUE,
+   * Constraint index values must be in the range 0 to 9190,
    * with negative numbers being reserved for internal use by the
    * Tinfour library,
    *
@@ -380,12 +388,34 @@ public class QuadEdge implements IQuadEdge {
    */
   @Override
   public int getConstraintIndex() {
-    return dual.getConstraintIndex();
+    if(dual.isConstraintRegionBorder()){
+        return getLowerConstraintIndex();
+    }
+    if(dual.isConstraintRegionInterior()){
+      return getLowerConstraintIndex();
+    }
+    // it must be a constraint line
+    return getUpperConstraintIndex();
   }
 
   @Override
   public void setConstraintIndex(int constraintIndex) {
-    dual.setConstraintIndex(constraintIndex);
+     if(isConstraintRegionMember()){
+      checkConstraintIndex(-1, constraintIndex);
+    } else if(this.isConstraintLineMember()){
+      checkConstraintIndex(0, constraintIndex);
+    }else{
+      throw new IllegalArgumentException(
+        "Unable to set constraint index for an edge that is not assigned a constraint type");
+    }
+
+    if(isConstraintRegionBorder()){
+      setLowerConstraintIndex(constraintIndex);
+    }else if(isConstraintLineMember()){
+      setUpperConstraintIndex(constraintIndex);
+    }else{
+      setLowerConstraintIndex(constraintIndex);
+    }
   }
 
   /**
@@ -400,7 +430,7 @@ public class QuadEdge implements IQuadEdge {
 
   @Override
   public void setConstrained(int constraintIndex) {
-    dual.setConstrained(constraintIndex);
+       throw new UnsupportedOperationException("generic setConstrained() method is not supported");
   }
 
   /**
@@ -452,16 +482,35 @@ public class QuadEdge implements IQuadEdge {
     }
 
     if (isConstrained()) {
-      sb.append("    constrained ");
-      if (isConstrainedRegionBorder()) {
-        sb.append("region border ");
-      }else if(isConstraintLineMember()){
-        sb.append("line ");
+      sb.append("    constraint");
+      if (isConstraintRegionBorder()) {
+        sb.append(" region border ");
+        sb.append(Integer.toString(getConstraintBorderIndex()));
+        sb.append("/");
+        sb.append(Integer.toString(dual.getConstraintBorderIndex()));
+        if (isConstraintLineMember()) {
+          sb.append(", line (index unavailable)");
+        }
+      } else {
+        if (isConstraintRegionInterior()) {
+          // the edge itself is not constrained, but it might
+          // be part of a region
+          sb.append("    constraint region interior ");
+          sb.append(Integer.toString(this.getConstraintRegionInteriorIndex()));
+        }
+        if (isConstraintLineMember()) {
+          if (isConstraintRegionInterior()) {
+            sb.append(", ");
+          }
+          sb.append(" line ");
+          sb.append(Integer.toString(getConstraintLineIndex()));
+        }
       }
-      sb.append(Integer.toString(getConstraintIndex()));
-    } else if (isConstrainedRegionInterior()) {
-      sb.append("    constrained region interior ");
-      sb.append(Integer.toString(getConstraintIndex()));
+    } else if (isConstraintRegionInterior()) {
+      // the edge itself is not constrained, but it might
+      // be part of a region
+      sb.append("    constraint region interior ");
+      sb.append(Integer.toString(this.getConstraintRegionInteriorIndex()));
     }
 
     return sb.toString();
@@ -533,18 +582,18 @@ public class QuadEdge implements IQuadEdge {
   }
 
   @Override
-  public boolean isConstrainedRegionMember() {
-    return dual.isConstrainedRegionMember();
+  public boolean isConstraintRegionMember() {
+    return dual.isConstraintRegionMember();
   }
 
   @Override
-  public boolean isConstrainedRegionInterior() {
-    return dual.isConstrainedRegionInterior();
+  public boolean isConstraintRegionInterior() {
+    return dual.isConstraintRegionInterior();
   }
 
   @Override
-  public boolean isConstrainedRegionBorder() {
-    return dual.isConstrainedRegionBorder();
+  public boolean isConstraintRegionBorder() {
+    return dual.isConstraintRegionBorder();
   }
 
 
@@ -560,14 +609,10 @@ public class QuadEdge implements IQuadEdge {
 
 
   @Override
-  public void setConstrainedRegionBorderFlag() {
-    dual.setConstrainedRegionBorderFlag();
+  public void setConstraintRegionBorderFlag() {
+    dual.setConstraintRegionBorderFlag();
   }
 
-  @Override
-  public void setConstrainedRegionInteriorFlag() {
-    dual.setConstrainedRegionInteriorFlag();
-  }
 
   @Override
   public void setSynthetic(boolean status){
@@ -613,4 +658,85 @@ public class QuadEdge implements IQuadEdge {
     transform.transform(c, 0, c, 4, 2);
     l2d.setLine(c[4], c[5], c[6], c[7]);
   }
+
+  protected void checkConstraintIndex(int lowValue, int constraintIndex) {
+    if (constraintIndex < lowValue || constraintIndex > CONSTRAINT_INDEX_VALUE_MAX) {
+      throw new IllegalArgumentException(
+        "Constraint index " + constraintIndex
+        + " is out of range [" + lowValue + ".." + CONSTRAINT_INDEX_VALUE_MAX + "]");
+    }
+  }
+
+
+  @Override
+  public void setConstraintBorderIndex(int constraintIndex) {
+    checkConstraintIndex(-1, constraintIndex);
+
+    if(!dual.isConstraintRegionBorder()){
+      // The edge was not previously populated as a border.
+      // Because border constraint settings supercede settings such as
+      // linear or interior constraint values, clear out
+      // any existing constraint values (the flags are preserved)
+      dual.index &= CONSTRAINT_FLAG_MASK;
+    }
+
+    dual.index
+      = (CONSTRAINT_EDGE_FLAG | CONSTRAINT_REGION_BORDER_FLAG)
+      | (dual.index & CONSTRAINT_LOWER_INDEX_ZERO)
+      | (constraintIndex + 1);
+  }
+
+  @Override
+  public int getConstraintBorderIndex(){
+   if((dual.index&CONSTRAINT_REGION_BORDER_FLAG)==0){
+     return -1;
+   }else{
+     return (dual.index& CONSTRAINT_LOWER_INDEX_MASK)-1;
+   }
+  }
+
+  @Override
+  public void setConstraintLineIndex(int constraintIndex) {
+      dual.setConstraintLineIndex(constraintIndex);
+  }
+
+  @Override
+  public void setConstraintRegionInteriorIndex(int constraintIndex) {
+    dual.setConstraintRegionInteriorIndex(constraintIndex);
+  }
+
+  protected void setUpperConstraintIndex(int constraintIndex) {
+    dual.index = (dual.index & CONSTRAINT_UPPER_INDEX_ZERO)
+      | ((constraintIndex + 1) << CONSTRAINT_INDEX_BIT_SIZE);
+  }
+
+  protected int getUpperConstraintIndex() {
+    return ((dual.index & CONSTRAINT_UPPER_INDEX_MASK) >> CONSTRAINT_INDEX_BIT_SIZE) - 1;
+  }
+
+  protected void setLowerConstraintIndex(int constraintIndex) {
+    dual.index = (dual.index & CONSTRAINT_LOWER_INDEX_ZERO)
+      | (constraintIndex + 1);
+  }
+
+  protected int getLowerConstraintIndex() {
+    return (dual.index & CONSTRAINT_LOWER_INDEX_MASK) - 1;
+  }
+
+  @Override
+  public int getConstraintRegionInteriorIndex() {
+    if (dual.isConstraintRegionInterior()) {
+      return getLowerConstraintIndex();
+    }
+    return -1;
+  }
+
+  @Override
+  public int getConstraintLineIndex() {
+     if(dual.isConstraintLineMember() && !dual.isConstraintRegionBorder()){
+       return getUpperConstraintIndex();
+     }
+     return -1;
+  }
+
 }

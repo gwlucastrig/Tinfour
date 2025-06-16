@@ -27,7 +27,7 @@
  *    The idea of this test is that we create a number of adjacent
  *    polygon constraints given as square regions organized in a
  *    regular grid.  Given a random (x,y) coordinate point, we can compute
- *    which polygon it outght to be inside.  We then look it up using
+ *    which polygon it ought to be inside.  We then look up its constraint using
  *    the TIN structure and see if it matches.
  *      Note that this test avoids constraints that lie exactly on
  *    a polygon boundary, because constraint membership would be ambiguous.
@@ -159,9 +159,9 @@ public class MultiSquareConstraintTest implements IDevelopmentTest {
       IConstraint constraint = tin.getRegionConstraint(e);
       if (constraint != null) {
         index = (Integer) constraint.getApplicationData();
-        if (e.isConstrainedRegionInterior()) {
+        if (e.isConstraintRegionInterior()) {
           kInterior++;
-        } else if (e.isConstrainedRegionBorder()) {
+        } else if (e.isConstraintRegionBorder()) {
           if ((e.getIndex() & 1) == 0) {
             kBorderEven++;
           } else {

@@ -7,6 +7,7 @@
  * 11/2015  G. Lucas     Created
  * 12/2016  G. Lucas     Introduced support for constraints
  * 11/2017  G. Lucas     Refactored for constrained regions
+ * 06/2025  G. Lucas     Refactored for better handling of constraint relationshipes
  *
  * Notes:
  * Special considerations for setForward() and setReverse()
@@ -212,7 +213,7 @@ public interface IQuadEdge {
    * A constrained region member is not necessarily a constrained edge.
    * @return true if the edge is a member of an region; otherwise false.
    */
-  boolean isConstrainedRegionMember();
+  boolean isConstraintRegionMember();
 
   /**
    * Indicates whether the edge is a member of a constraint line, In some
@@ -238,7 +239,7 @@ public interface IQuadEdge {
    * as "member" edges of a constrained region.
    * @return true if the edge is in the interior of an region; otherwise false.
    */
-  boolean isConstrainedRegionInterior();
+  boolean isConstraintRegionInterior();
 
   /**
    * Indicates whether an edge represents the border of a constrained
@@ -247,17 +248,12 @@ public interface IQuadEdge {
    * @return true if the edge is the border of the constrained region;
    * otherwise, false.
    */
-  boolean isConstrainedRegionBorder();
+  boolean isConstraintRegionBorder();
 
   /**
    * Sets a flag indicating that the edge is an edge of a constrained region.
    */
-  void setConstrainedRegionBorderFlag();
-
-  /**
-   * Sets the constrained region membership flag for the edge to true.
-   */
-  void setConstrainedRegionInteriorFlag( );
+  void setConstraintRegionBorderFlag();
 
   /**
    * Sets the synthetic flag for the edge. Synthetic edges are
@@ -323,7 +319,59 @@ public interface IQuadEdge {
    * instances by allowing an application to reuse a single instance multiple
    * times.
    * @param transform a valid affine transform
-   * @param l2d a valid Line2D instance
+   * @param l2d a valid Line2D instance to receive the geometry data from the edge.
    */
   void setLine2D(AffineTransform transform, Line2D l2d);
+
+
+  /**
+   * Sets a flag identifying the edge as the border of a region-based constraint
+   * and stores the index for that constraint.
+   * @param constraintIndex a positive integer in the range zero to 8190, or -1 for a null constraint.
+   */
+  void setConstraintBorderIndex(int constraintIndex);
+
+  /**
+   * Sets a flag identifying the edge as the border of a line-based constraint
+   * and stores the index for that constraint.
+   *
+   * @param constraintIndex a positive integer in range zero to 8190
+   */
+  void setConstraintLineIndex(int constraintIndex);
+
+  /**
+   * Sets a flag identifying the edge as an interior member of a region-based
+   * constraint
+   * and stores the index for that constraint.
+   *
+   * @param constraintIndex a positive integer in the range 0 to 8190, or -1 for a null value
+   */
+  void setConstraintRegionInteriorIndex(int constraintIndex);
+
+
+  /**
+   * Gets the index of the region-based constraint associated with an edge
+   * that serves as part of the polygon bounding that region.
+   * @return a positive integer or -1 if no constraint is specified.
+   */
+  int getConstraintBorderIndex();
+
+  /**
+   * Gets the index of the region-based constraint associated with an
+   * edge contained in the interior of a constraint polygon.  The edge itself
+   * is not necessarily constrained and is not part of the definition
+   * for the polygon.
+   * @return a positive integer or -1 if no constraint is specified.
+   */
+  int getConstraintRegionInteriorIndex();
+
+  /**
+   * Gets the index of a line-based constraint associated with an edge.
+   * The edge is constrained.  Due to limitations of memory, the Tinfour
+   * implementation cannot support an index for an edge that happens to
+   * be a member of multiple constraints (as in the case of an edge that
+   * is also part of a border constraint).
+   * @return a positive integer or -1 is no constraint index is available.
+   */
+  int getConstraintLineIndex();
 }

@@ -97,17 +97,15 @@ class SemiVirtualEdgePool implements Iterable<IQuadEdge> {
   int nFree;
   int nAllocationOperations;
   int nFreeOperations;
-  
-  
+
+
   /**
    * The constraint maps provide a way of tying a constraint object reference to
-   * the edges that are associated with it. Separate maps are maintained for the
-   * borders of region constraints (borders) and linear constraints. This
-   * indirect method is used to economize on memory use by edges. Although it
-   * would be possible to add constraint references to the edge structure, doing
-   * so would increase the edge memory use by an unacceptably large degree.
+   * the edges that are associated with it.  This indirect method was
+   * introduced in the standard version of Tinfour edges in order to
+   * economize on memory use by edges. In the semivirtual variation, we have
+   * more flexibility and may be able to eliminate this approach.
    */
-  HashMap<Integer, IConstraint> borderConstraintMap = new HashMap<>();
   HashMap<Integer, IConstraint> linearConstraintMap = new HashMap<>();
 
 
@@ -356,7 +354,6 @@ class SemiVirtualEdgePool implements Iterable<IQuadEdge> {
     nAllocated = 0;
     nFree = pages.length * PAIRS_PER_PAGE;
     linearConstraintMap.clear();
-    borderConstraintMap.clear();
   }
 
   @Override
@@ -388,10 +385,10 @@ class SemiVirtualEdgePool implements Iterable<IQuadEdge> {
       IQuadEdge e = it.next();
       if (e.isConstrained()) {
         nConstrained++;
-        if (e.isConstrainedRegionBorder()) {
+        if (e.isConstraintRegionBorder()) {
           nConstraintBorder++;
         }
-      } else if (e.isConstrainedRegionInterior()) {
+      } else if (e.isConstraintRegionInterior()) {
         nConstraintInterior++;
       }
     }
@@ -453,7 +450,7 @@ class SemiVirtualEdgePool implements Iterable<IQuadEdge> {
   public Iterator<IQuadEdge> iterator() {
     return getIterator(true);
   }
-    
+
   /**
    * Constructs an iterator that will optionally skip ghost edges.
    *
@@ -554,7 +551,7 @@ class SemiVirtualEdgePool implements Iterable<IQuadEdge> {
     //       as the conventional edge pool.  We may be able to improve
     //       performance by just setting the links directly rather than
     //       creating SemiVirtualEdge instances. However, Java is pretty
-    //       amazing at optimizing these days, and there is a good
+    //       amazing at optimizing these days, so there is a good
     //       chance that the saving will be small compared to the effort
     //       of writing the code.
     SemiVirtualEdge d = e.getDual();
@@ -582,37 +579,30 @@ class SemiVirtualEdgePool implements Iterable<IQuadEdge> {
     // so we divide index by two
     int constraintFlags = ePage.constraints[e.indexOnPage / 2];
     pPage.constraints[p.indexOnPage / 2] = constraintFlags;
-    
-        // p is on the same side of the original edge e and
-    // q is on the same side as the dual edge d.
-    if (e.isConstrainedRegionBorder()) {
-      IConstraint c = borderConstraintMap.get(e.getIndex());
+
+    // The new edge p is the base side of the edge.  If e was the partner side
+    // of the edge, the border constraints (if any) that were copied above
+    // were placed on the opposite sides.  We need to swap thm.  We could do
+    // that efficiently by manipulating the constraintFlags variable
+    // directly, but for now it is easier to just use the edge accessor
+    // routines.  
+    if ((e.getIndex() & 1) != 0 && e.isConstraintRegionBorder()) {
+      p.setConstraintBorderIndex(e.getConstraintBorderIndex());
+      q.setConstraintBorderIndex(d.getConstraintBorderIndex());
+    }
+
+    if (e.isConstraintLineMember()) {
+      IConstraint c = linearConstraintMap.get(e.getIndex());
       if (c != null) {
-        this.addBorderConstraintToMap(p, c);
-      }
-      c = borderConstraintMap.get(d.getIndex());
-      if (c != null) {
-        addBorderConstraintToMap(q, c);
+        addLinearConstraintToMap(p, c);
       }
     }
-    
+
     return p;
   }
 
-  
 
-  /**
-   * Adds the specified constraint to the border constraint map, thus recording
-   * which region constraint lies to the left side of the edge (e.g. which
-   * region is bordered by the specified edge).
-   * @param edge a valid edge instance
-   * @param constraint a valid constraint instance
-   */
-  public void addBorderConstraintToMap(IQuadEdge edge, IConstraint constraint){
-     borderConstraintMap.put(edge.getIndex(), constraint);
-  }
-  
-  
+
   /**
    * Adds the specified constraint to the linear constraint map, thus recording
    * which constraint lies to the left side of the edge.
@@ -624,15 +614,8 @@ class SemiVirtualEdgePool implements Iterable<IQuadEdge> {
      linearConstraintMap.put(index, constraint);
      linearConstraintMap.put(index^1, constraint);
   }
-  
-  /**
-   * Removes any existing border constraint from the constraint map.
-   * @param edge a valid edge instance
-   */
-  public void removeBorderConstraintFromMap(IQuadEdge edge){
-    borderConstraintMap.remove(edge.getIndex());
-  }
-  
+
+
     /**
    * Removes any existing border constraint from the constraint map.
    * @param edge a valid edge instance
@@ -640,20 +623,9 @@ class SemiVirtualEdgePool implements Iterable<IQuadEdge> {
   public void removeLinearConstraintFromMap(IQuadEdge edge){
     linearConstraintMap.remove(edge.getIndex());
   }
-  
-  /**
-   * Gets the border constraint associated with the edge.
-   * @param edge a valid edge instance.
-   * @return if a border constraint is associated with the edge, a valid
-   * instance; otherwise, a null.
-   */
-  public IConstraint getBorderConstraint(IQuadEdge edge){
-    if(edge.isConstrainedRegionBorder()){
-     return borderConstraintMap.get(edge.getIndex());
-    }
-    return null;
-  }
-  
+
+
+
   /**
    * Gets the linear constraint associated with the edge, if any.
    *
@@ -668,9 +640,9 @@ class SemiVirtualEdgePool implements Iterable<IQuadEdge> {
     return null;
   }
 
-  
-  
-  
-  
-  
+
+
+
+
+
 }

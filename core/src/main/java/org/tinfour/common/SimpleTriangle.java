@@ -313,6 +313,27 @@ public class SimpleTriangle {
   }
 
   /**
+   * Gets the centroid for the triangle. The centroid is computed as the
+   * simple average of the x, y, and z coordinates for the vertices that
+   * define the triangle.
+   * @return a valid instance of a Vertex.
+   */
+  public Vertex getCentroid() {
+    Vertex a = edgeA.getA();
+    Vertex b = edgeB.getA();
+    Vertex c = edgeC.getA();
+    if (a == null || b == null || c == null) {
+      return null;
+    }
+    double x = (a.getX() + b.getX() + c.getX()) / 3.0;
+    double y = (a.getY() + b.getY() + c.getY()) / 3.0;
+    double z = (a.getZ() + b.getZ() + c.getZ()) / 3.0;
+    Vertex v = new Vertex(x, y, z, 0);
+    v.setSynthetic(true);
+    return v;
+  }
+
+  /**
    * Indicates whether the triangle is a ghost triangle. A ghost triangle
    * is one that lies outside the bounds of a Delaunay triangulation and
    * contains an undefined vertex.

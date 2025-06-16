@@ -1742,6 +1742,7 @@ public class SemiVirtualIncrementalTin implements IIncrementalTin {
 
   @Override
   public void addConstraints(List<IConstraint> constraints, boolean restoreConformity) {
+
     if (isLocked) {
       if (isDisposed) {
         throw new IllegalStateException(
@@ -1759,11 +1760,11 @@ public class SemiVirtualIncrementalTin implements IIncrementalTin {
       return;
     }
 
-    // the max number of constraints is (2^20)-1
-    if (constraints.size() > QuadEdgeConstants.CONSTRAINT_INDEX_MAX) {
+    // the max number of constraints is (2^13)-2
+    if (constraints.size() > QuadEdgeConstants.CONSTRAINT_INDEX_VALUE_MAX) {
       throw new IllegalArgumentException(
         "The maximum number of constraints is "
-        + QuadEdgeConstants.CONSTRAINT_INDEX_MAX);
+        + QuadEdgeConstants.CONSTRAINT_INDEX_VALUE_MAX);
     }
 
     // Step 0 -- assume that conformity is not in place.
@@ -1772,7 +1773,13 @@ public class SemiVirtualIncrementalTin implements IIncrementalTin {
     isConformant = false;
 
     // Step 1 -- add all the vertices from the constraints to the TIN.
+    //           Also, collect constraints in order with polygon constraints
+    //           first followed by line constraints.
+    List<IConstraint>polygonConstraints = new ArrayList<>();
+    List<IConstraint>linearConstraints = new ArrayList<>();
+
     boolean redundantVertex = false;
+    int kConstraint = 0;
     for (IConstraint c : constraints) {
       c.complete();
       IConstraint reference = c;
@@ -1782,18 +1789,17 @@ public class SemiVirtualIncrementalTin implements IIncrementalTin {
           redundantVertex = true;
         }
       }
-
       if (redundantVertex) {
         Vertex prior = null;
         ArrayList<Vertex> replacementList = new ArrayList<Vertex>(); //NOPMD
         for (Vertex v : c) {
           Vertex m = this.getMatchingVertex(v);
-          if (m == v) { // NOPMD
+          if (m == v) { //NOPMD
             replacementList.add(v);
             prior = v;
           } else {
             // m should never be null, but should be a vertex merger group
-            if (m == prior) { // NOPMD
+            if (m == prior) { //NOPMD
               continue;
             }
             replacementList.add(m);
@@ -1802,13 +1808,27 @@ public class SemiVirtualIncrementalTin implements IIncrementalTin {
         }
         reference = c.getConstraintWithNewGeometry(replacementList);
       }
+      if(reference.definesConstrainedRegion()){
+        polygonConstraints.add(reference);
+      }else{
+        linearConstraints.add(reference);
+      }
+      reference.setConstraintIndex(this, kConstraint++);
       constraintList.add(reference);
     }
 
+
+    List<IConstraint>processList = new ArrayList<>();
+    processList.addAll(polygonConstraints);
+    processList.addAll(linearConstraints);
+
     // Step 2 -- Construct new edges for constraint and mark any existing
     //           edges with the constraint index.
+    ArrayList<ArrayList<IQuadEdge>> efcList = new ArrayList<>();
+
     isLocked = true;
     lockedDueToConstraints = true;
+
     IntCollector []icArray = new IntCollector[constraintList.size()];
     int k = 0;
     for (IConstraint c : constraintList) {
@@ -1869,14 +1889,21 @@ public class SemiVirtualIncrementalTin implements IIncrementalTin {
           SemiVirtualEdge edge,
           IConstraint constraint,
           IntCollector edgesForConstraint) {
-    edge.setConstrained(constraint.getConstraintIndex());
     if (constraint.definesConstrainedRegion()) {
       edgesForConstraint.add(edge.getIndex());
-      edge.setConstrainedRegionBorderFlag();
-      edgePool.addBorderConstraintToMap(edge, constraint);
-    }else{
+      edge.setConstraintBorderIndex(constraint.getConstraintIndex());
+    } else {
+      // The constraint is a line feature.  The addConstraints() method
+      // sorts the constraints so that regions are processed first,
+      // followed by the line features.  Because regions take precedence
+      // over line features, we only set the constraint index value if
+      // the edge isn't already specified as a region border.
+      if (edge.isConstraintRegionMember()) {
+        edge.setConstraintLineMemberFlag();
+      } else {
+        edge.setConstraintLineIndex(constraint.getConstraintIndex());
+      }
       edgePool.addLinearConstraintToMap(edge, constraint);
-      edge.setConstraintLineMemberFlag();
     }
   }
 
@@ -2313,18 +2340,16 @@ public class SemiVirtualIncrementalTin implements IIncrementalTin {
         con = getRegionConstraint(e);
         constraintIndex = con == null ? -1 : con.getConstraintIndex();
       }
-      if (e.isConstrainedRegionBorder()) {
-        con = edgePool.getBorderConstraint(e);
+      if (e.isConstraintRegionBorder()) {
+        con = getBorderConstraint(e);
         constraintIndex = con == null ? -1 : con.getConstraintIndex();
       } else if (con != null && constraintIndex >= 0) {
-        e.setConstrainedRegionInteriorFlag();
-        e.setConstraintIndex(constraintIndex);
+        e.setConstraintRegionInteriorIndex(constraintIndex);
       }
       if (constraintIndex >= 0) {
         IQuadEdge f = e.getForward();
-        if (!f.isConstrainedRegionBorder()) {
-          f.setConstrainedRegionInteriorFlag();
-          f.setConstraintIndex(constraintIndex);
+        if (!f.isConstraintRegionBorder()) {
+          f.setConstraintRegionInteriorIndex(constraintIndex);
         }
       }
     }
@@ -2546,7 +2571,7 @@ public class SemiVirtualIncrementalTin implements IIncrementalTin {
     int constraintIndex = c.getConstraintIndex();
     for (int i = 0; i < intCollector.n; i++) {
       IQuadEdge e = this.edgePool.getEdgeForIndex(intCollector.buffer[i]);
-      if (e.isConstrainedRegionBorder()) {
+      if (e.isConstraintRegionBorder()) {
         floodFillConstrainedRegionsQueue( constraintIndex, visited, e);
       }
     }
@@ -2576,23 +2601,17 @@ public class SemiVirtualIncrementalTin implements IIncrementalTin {
       IQuadEdge e = deque.peek();
       IQuadEdge f = e.getForward();
       int fIndex = f.getIndex();
-      if (!f.isConstrainedRegionBorder() && !visited.get(fIndex)) {
+      if (!f.isConstraintRegionBorder() && !visited.get(fIndex)) {
         visited.set(fIndex);
-        f.setConstrainedRegionInteriorFlag();
-        if (!f.isConstraintLineMember()) {
-          f.setConstraintIndex(constraintIndex);
-        }
+        f.setConstraintRegionInteriorIndex(constraintIndex);
         deque.push(f.getDual());
         continue;
       }
       IQuadEdge r = e.getReverse();
       int rIndex = r.getIndex();
-      if (!r.isConstrainedRegionBorder() && !visited.get(rIndex)) {
+      if (!r.isConstraintRegionBorder() && !visited.get(rIndex)) {
         visited.set(rIndex);
-        r.setConstrainedRegionInteriorFlag();
-        if (!r.isConstraintLineMember()) {
-          r.setConstraintIndex(constraintIndex);
-        }
+        r.setConstraintRegionInteriorIndex(constraintIndex);
         deque.push(r.getDual());
         continue;
       }
@@ -2618,29 +2637,39 @@ public class SemiVirtualIncrementalTin implements IIncrementalTin {
   }
 
 
+  IConstraint getBorderConstraint(IQuadEdge edge){
+    int index = edge.getConstraintBorderIndex();
+    if(index<0 || index>=constraintList.size()){
+      return null;
+    }
+    return constraintList.get(index);
+  }
+
+
   @Override
   public IConstraint getRegionConstraint(IQuadEdge edge) {
-    IQuadEdge e = edge;
-    if(e.isConstraintLineMember()){
+     IQuadEdge e = edge;
+    if (e.isConstraintLineMember()) {
       IQuadEdge test = e.getForward();
-      if(!test.isConstraintLineMember() && test.isConstrainedRegionMember()){
+      if (!test.isConstraintLineMember() && test.isConstraintRegionMember()) {
         e = test;
-      }else{
+      } else {
         test = e.getReverse();
-        if(!test.isConstraintLineMember() && test.isConstrainedRegionMember()){
-          e=test;
+        if (!test.isConstraintLineMember() && test.isConstraintRegionMember()) {
+          e = test;
         }
       }
     }
-    if (e.isConstrainedRegionInterior()) {
-      int index = e.getConstraintIndex();
+
+    if (e.isConstraintRegionBorder()) {
+      return getBorderConstraint(e);
+    } else if (e.isConstraintRegionInterior()) {
+      int index = e.getConstraintRegionInteriorIndex();
       // the test for constraintList.size() should be completely
       // unnecessary, but we do it just in case.
-      if (index < constraintList.size()) {
+      if (index>=0 && index < constraintList.size()) {
         return constraintList.get(index);
       }
-    } else if (e.isConstrainedRegionBorder()) {
-      return edgePool.getBorderConstraint(e);
     }
     return null;
   }
@@ -2900,9 +2929,9 @@ public class SemiVirtualIncrementalTin implements IIncrementalTin {
     boolean vertexIsInConstraintRegion = false;
     int vertexConstraintIndex = -1;
     if (this.maxLengthOfQueueInFloodFill > 0) {
-      if (eResult.isInterior() && searchEdge.isConstrainedRegionMember()) {
+      if (eResult.isInterior() && searchEdge.isConstraintRegionMember()) {
         vertexIsInConstraintRegion = true;
-        IConstraint con = this.getRegionConstraint(searchEdge);
+        IConstraint con = getRegionConstraint(searchEdge);
         if (con != null) {
           vertexConstraintIndex = con.getConstraintIndex();
         }
@@ -2913,25 +2942,59 @@ public class SemiVirtualIncrementalTin implements IIncrementalTin {
     Vertex splitConstraintEnd = null;
     int splitConstraintIndex = -1;
     boolean splitConstraintIsBorder = false;
+    boolean splitConstraintIsLine = false;
+    boolean splitConstraintIsRegionInterior = false;
     IConstraint splitConstraintLeft = null;
     IConstraint splitConstraintRight = null;
+    IConstraint splitConstraintLine = null;
     boolean splitConstraintFlag = searchEdge.isConstrained() && eResult.getDistanceToEdge() < 4 * thresholds.getVertexTolerance();
     if (splitConstraintFlag) {
-      splitConstraintIndex = searchEdge.getConstraintIndex();
       splitConstraintEnd = searchEdge.getB();
-      if(searchEdge.isConstrainedRegionBorder()){
+      if(searchEdge.isConstraintRegionBorder()){
         splitConstraintIsBorder = true;
-        splitConstraintLeft = edgePool.getBorderConstraint(searchEdge);
-        splitConstraintRight = edgePool.getBorderConstraint(searchEdge.getDual());
+        splitConstraintLeft = getBorderConstraint(searchEdge);
+        splitConstraintRight = getBorderConstraint(searchEdge.getDual());
+        splitConstraintIndex = searchEdge.getConstraintBorderIndex();
+      }else{
+        // it must be a line constraint.
+        splitConstraintIndex = searchEdge.getConstraintLineIndex();
       }
+      // it is possible for a constraint to be BOTH a border constraint
+      // and a line constraint. So we need to perform an independent access.
+      splitConstraintIsLine= searchEdge.isConstraintLineMember();
+      if(splitConstraintIsLine){
+          splitConstraintLine = getLinearConstraint(searchEdge);
+      }
+    }
+
+    // region-interior edges are usually not constrained, unless
+    // they are also a line feature.
+    splitConstraintIsRegionInterior = searchEdge.isConstraintRegionInterior();
+    if(splitConstraintIsRegionInterior && splitConstraintIndex == -1){
+      splitConstraintIndex = searchEdge.getConstraintRegionInteriorIndex();
     }
 
     Vertex anchor = searchEdge.getA();
 
     final SemiVirtualEdge e = edgePool.allocateUnassignedEdge();
     final SemiVirtualEdge pStart = edgePool.allocateEdge(v, anchor);
-    if (splitConstraintFlag) {
-      pStart.setConstrained(splitConstraintIndex);
+    if(splitConstraintFlag){
+      if (splitConstraintIsBorder) {
+        // The edge pStart is the opposite direction as the original
+        // split constraint edge.  So we need to apply the bordering
+        // constraints in the reversed sides from how they were stored
+        // in the original.
+        pStart.setConstraintRegionBorderFlag();
+        if (splitConstraintRight != null) {
+          pStart.setConstraintBorderIndex(splitConstraintRight.getConstraintIndex());
+        }
+        if (splitConstraintLeft != null) {
+          pStart.getDual().setConstraintBorderIndex(splitConstraintLeft.getConstraintIndex());
+        }
+      }
+      if(splitConstraintIsLine){
+        pStart.setConstraintLineIndex(splitConstraintLine.getConstraintIndex());
+      }
     }
     final SemiVirtualEdge p = pStart.copy();
     p.setForward(searchEdge);
@@ -2956,19 +3019,6 @@ public class SemiVirtualIncrementalTin implements IIncrementalTin {
        p.setForward(n1);
        edgePool.deallocateEdge(c);  // removed from edge pool, object c is empty
        c.loadFromEdge(n1);  // c = n1;   store content of edge n1 into object c
-       if (splitConstraintIsBorder) {
-        // The edge pStart is the opposite direction as the original
-        // split constraint edge.  So we need to apply the bordering
-        // constraints in the reversed sides from how they were stored
-        // in the original.
-        pStart.setConstrainedRegionBorderFlag();
-        if (splitConstraintRight != null) {
-          edgePool.addBorderConstraintToMap(pStart, splitConstraintRight);
-        }
-        if (splitConstraintLeft != null) {
-          edgePool.addBorderConstraintToMap(pStart.getDual(), splitConstraintLeft);
-        }
-      }
      }
 
     while (true) {
@@ -3084,20 +3134,28 @@ public class SemiVirtualIncrementalTin implements IIncrementalTin {
           buffer = -1;
         }
         if (splitConstraintFlag && B == splitConstraintEnd) {
-          e.setConstrained(splitConstraintIndex);
           conEdges.add(e.copy());
+          // recall that edges can be part of a regional constraint
+          // (a border or an interior) or a line constraint
+          // or BOTH.
           if (splitConstraintIsBorder) {
             // This edge is the same direction as the original
             // split constraint edge.  So we need to apply the bordering
             // constraints as they were stored in the original. This approach
             // is just the opposite of the above code for pStart.
-            e.setConstrainedRegionBorderFlag();
+            e.setConstraintRegionBorderFlag();
             if (splitConstraintLeft != null) {
-              edgePool.addBorderConstraintToMap(e, splitConstraintLeft);
+             e.setConstraintBorderIndex(splitConstraintLeft.getConstraintIndex());
             }
             if (splitConstraintRight != null) {
-              edgePool.addBorderConstraintToMap(e.getDual(), splitConstraintRight);
+              e.getDual().setConstraintBorderIndex(splitConstraintRight.getConstraintIndex());
             }
+          }else if(splitConstraintIsRegionInterior){
+            e.setConstraintRegionInteriorIndex(splitConstraintIndex);
+          }
+          if (splitConstraintIsLine) {
+            e.setConstraintLineIndex(splitConstraintLine.getConstraintIndex());
+            edgePool.addLinearConstraintToMap(e, splitConstraintLine);
           }
         }
 
@@ -3116,18 +3174,19 @@ public class SemiVirtualIncrementalTin implements IIncrementalTin {
       }
     }
 
-
-
-    if(vertexIsInConstraintRegion){
+    // This logic is similar to the logic in sweepForConstraintAssignments()
+    // except that it does not need to look at the forward references
+    // to the edges in the pinwheel operation.  They would either be undisturbed
+    // or would have been updated by restoreConformity() above.
+    if (vertexIsInConstraintRegion) {
       int constraintIndex = vertexConstraintIndex;
       for(IQuadEdge q: searchEdge.pinwheel()){
-        if(q.isConstrainedRegionBorder()){
-          IConstraint con = edgePool.getBorderConstraint(q);
+        if(q.isConstraintRegionBorder()){
+          IConstraint con = getBorderConstraint(q);
           constraintIndex = con ==null ? -1 : con.getConstraintIndex();
         }
-        if(constraintIndex>=0 && !q.isConstrained() && !q.isConstrainedRegionMember()){
-          q.setConstrainedRegionInteriorFlag();
-          q.setConstraintIndex(constraintIndex);
+        if(constraintIndex>=0 && !q.isConstrained() && !q.isConstraintRegionMember()){
+          q.setConstraintRegionInteriorIndex(constraintIndex);
         }
       }
     }

@@ -121,15 +121,14 @@ public class EdgePool implements Iterable<IQuadEdge> {
   int nFreeOperations;
 
   /**
-   * The constraint maps provide a way of tying a constraint object
-   * reference to the edges that are associated with it.  Separate maps are
-   * maintained for the borders of region constraints (borders) and linear
-   * constraints. This indirect method is used to economize on memory use
-   * by edges. Although it would be possible
-   * to add constraint references to the edge structure, doing so would
-   * increase the edge memory use by an unacceptably large degree.
+   * The constraint map provides a way of tying a constraint object
+   * reference to the edges that are associated with it. To conserve
+   * memory use, the edge class design only supports the storage
+   * of two constraint index values of 12 bits each.  But it is possible
+   * for a constrained edge to be both the border of a polygon area (requiring
+   * two indices) and a linear feature (requiring one index).  Thus
+   * we require a supplemental way of handing linear constraints.
    */
-  HashMap<Integer, IConstraint>borderConstraintMap = new HashMap<>();
   HashMap<Integer, IConstraint>linearConstraintMap = new HashMap<>();
 
   /**
@@ -375,7 +374,7 @@ public class EdgePool implements Iterable<IQuadEdge> {
     }
     pages[pages.length - 1].nextPage = null;
     linearConstraintMap.clear();
-    borderConstraintMap.clear();
+    //borderConstraintMap.clear();
   }
 
   @Override
@@ -407,10 +406,10 @@ public class EdgePool implements Iterable<IQuadEdge> {
       IQuadEdge e = it.next();
       if(e.isConstrained()){
         nConstrained++;
-        if(e.isConstrainedRegionBorder()){
+        if(e.isConstraintRegionBorder()){
           nConstraintBorder++;
         }
-      }else if(e.isConstrainedRegionInterior()){
+      }else if(e.isConstraintRegionInterior()){
         nConstraintInterior++;
       }
     }
@@ -551,25 +550,12 @@ public class EdgePool implements Iterable<IQuadEdge> {
 
     // copy the constraint flags, if any
     p.dual.index = b.dual.index;
-    //    if (e instanceof QuadEdgePartner) {
-    //      return n.dual;
-    //    } else {
-    //      return n;
-    //    }
+    if((e.getIndex()&1)!=0 && e.isConstraintRegionBorder()){
+      p.setConstraintBorderIndex(e.getConstraintBorderIndex());
+      q.setConstraintBorderIndex(b.getConstraintBorderIndex());
+    }
 
-
-    // p is on the same side of the original edge e and
-    // q is on the same side as the dual edge d.
-    if (e.isConstrainedRegionBorder()) {
-      IConstraint c = borderConstraintMap.get(e.getIndex());
-      if (c != null) {
-        addBorderConstraintToMap(p, c);
-      }
-      c = borderConstraintMap.get(d.getIndex());
-      if (c != null) {
-        addBorderConstraintToMap(q, c);
-      }
-    }else if(e.isConstraintLineMember()){
+    if(e.isConstraintLineMember()){
       IConstraint c = linearConstraintMap.get(e.getIndex());
       if(c!=null){
         addLinearConstraintToMap(p, c);
@@ -578,17 +564,6 @@ public class EdgePool implements Iterable<IQuadEdge> {
 
     return p;
 
-  }
-
-  /**
-   * Adds the specified constraint to the border constraint map, thus recording
-   * which region constraint lies to the left side of the edge (e.g. which
-   * region is bordered by the specified edge).
-   * @param edge a valid edge instance
-   * @param constraint a valid constraint instance
-   */
-  public void addBorderConstraintToMap(IQuadEdge edge, IConstraint constraint){
-     borderConstraintMap.put(edge.getIndex(), constraint);
   }
 
 
@@ -611,21 +586,7 @@ public class EdgePool implements Iterable<IQuadEdge> {
    * @param edge a valid edge instance
    */
   public void removeBorderConstraintFromMap(IQuadEdge edge){
-    borderConstraintMap.remove(edge.getIndex());
-  }
-
-
-  /**
-   * Gets the border constraint associated with the edge.
-   * @param edge a valid edge instance.
-   * @return if a border constraint is associated with the edge, a valid
-   * instance; otherwise, a null.
-   */
-  public IConstraint getBorderConstraint(IQuadEdge edge){
-    if(edge.isConstrainedRegionBorder()){
-     return borderConstraintMap.get(edge.getIndex());
-    }
-    return null;
+    //borderConstraintMap.remove(edge.getIndex());
   }
 
   /**
@@ -738,20 +699,6 @@ public class EdgePool implements Iterable<IQuadEdge> {
             linearConstraintMap.remove(oldIndex ^ 1);
             linearConstraintMap.put(newIndex, c);
             linearConstraintMap.put(newIndex ^ 1, c);
-          }
-        }
-        if (swap.isConstrainedRegionBorder()) {
-          if (borderConstraintMap.containsKey(oldIndex)) {
-            IConstraint c = borderConstraintMap.get(oldIndex);
-            borderConstraintMap.remove(oldIndex);
-            borderConstraintMap.put(newIndex, c);
-          }
-          oldIndex ^= 1;  // set index to dual
-          newIndex ^= 1;
-          if (borderConstraintMap.containsKey(oldIndex)) {
-            IConstraint c = borderConstraintMap.get(oldIndex);
-            borderConstraintMap.remove(oldIndex);
-            borderConstraintMap.put(newIndex, c);
           }
         }
 
