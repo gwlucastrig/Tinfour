@@ -728,10 +728,12 @@ public final class SemiVirtualEdge implements IQuadEdge {
       // The edge was not previously populated as a border.
       // Because border constraint settings supercede settings such as
       // linear or interior constraint values, clear out
-      // any existing constraint values (the flags are preserved)
-      c[ix] &= CONSTRAINT_FLAG_MASK;
+      // any existing constraint values  The constraint line f;ag
+      // is preserved (if it was set_, but thr line index is not preserved.
+      c[ix] &= CONSTRAINT_LINE_MEMBER_FLAG;
     }
-      c[ix] |= CONSTRAINT_EDGE_FLAG | CONSTRAINT_REGION_BORDER_FLAG;
+    c[ix] |= CONSTRAINT_EDGE_FLAG | CONSTRAINT_REGION_BORDER_FLAG;
+
     if (iSide == 0) {
       // the base side
       setLowerConstraintIndex(c, constraintIndex);

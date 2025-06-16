@@ -117,9 +117,9 @@ import java.util.Formatter;
 import org.tinfour.common.IQuadEdge;
 import org.tinfour.common.Vertex;
 import static org.tinfour.edge.QuadEdgeConstants.CONSTRAINT_EDGE_FLAG;
-import static org.tinfour.edge.QuadEdgeConstants.CONSTRAINT_FLAG_MASK;
 import static org.tinfour.edge.QuadEdgeConstants.CONSTRAINT_INDEX_BIT_SIZE;
 import static org.tinfour.edge.QuadEdgeConstants.CONSTRAINT_INDEX_VALUE_MAX;
+import static org.tinfour.edge.QuadEdgeConstants.CONSTRAINT_LINE_MEMBER_FLAG;
 import static org.tinfour.edge.QuadEdgeConstants.CONSTRAINT_LOWER_INDEX_MASK;
 import static org.tinfour.edge.QuadEdgeConstants.CONSTRAINT_LOWER_INDEX_ZERO;
 import static org.tinfour.edge.QuadEdgeConstants.CONSTRAINT_REGION_BORDER_FLAG;
@@ -652,12 +652,13 @@ public class QuadEdge implements IQuadEdge {
   public void setConstraintBorderIndex(int constraintIndex) {
     checkConstraintIndex(-1, constraintIndex);
 
-    if(!dual.isConstraintRegionBorder()){
+    if (!dual.isConstraintRegionBorder()) {
       // The edge was not previously populated as a border.
       // Because border constraint settings supercede settings such as
       // linear or interior constraint values, clear out
-      // any existing constraint values (the flags are preserved)
-      dual.index &= CONSTRAINT_FLAG_MASK;
+      // any existing constraint values  The constraint line f;ag
+      // is preserved (if it was set_, but thr line index is not preserved.
+      dual.index &= CONSTRAINT_LINE_MEMBER_FLAG;
     }
 
     dual.index
