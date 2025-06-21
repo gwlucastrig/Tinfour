@@ -685,7 +685,13 @@ public final class SemiVirtualEdge implements IQuadEdge {
     return (c[cIndex] & cMask) != 0;
   }
 
+  @Override
   public void setLine2D(AffineTransform transform, Line2D l2d) {
+      transcribeToLine2D(transform, l2d);
+  }
+
+  @Override
+  public void transcribeToLine2D(AffineTransform transform, Line2D l2d) {
     Vertex A = getA();
     Vertex B = getB();
     double[] c = new double[8];
@@ -709,8 +715,12 @@ public final class SemiVirtualEdge implements IQuadEdge {
       c[2] = B.getX();
       c[3] = B.getY();
     }
-    transform.transform(c, 0, c, 4, 2);
-    l2d.setLine(c[4], c[5], c[6], c[7]);
+    if (transform == null) {
+      l2d.setLine(c[0], c[1], c[2], c[3]);
+    } else {
+      transform.transform(c, 0, c, 4, 2);
+      l2d.setLine(c[4], c[5], c[6], c[7]);
+    }
   }
 
   @Override

@@ -228,8 +228,8 @@ public class TwinBuildTest implements IDevelopmentTest {
         avgTotalA / 1000000.0,
         avgTotalB / 1000000.0);
       ps.println("");
-      ps.println("comparitive time method a/b: " + avgTotalA / avgTotalB);
-      ps.println("comparitive time method b/a: " + avgTotalB / avgTotalA);
+      ps.println("comparative time method a/b: " + avgTotalA / avgTotalB);
+      ps.println("comparative time method b/a: " + avgTotalB / avgTotalA);
     }
     ps.println("Test complete");
   }

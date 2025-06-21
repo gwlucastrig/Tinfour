@@ -967,11 +967,11 @@ public class IncrementalTin implements IIncrementalTin {
         n2 = n1.getForward();
         n2.setForward(c.getForward());
         p.setForward(n1);
-        // we need to get the base reference in order to ensure
-        // that any ghost edges we create will start with a
-        // non-null vertex and end with a null.
-        c = c.getBaseReference();
         if (buffer == null) {
+          // we need to get the base reference in order to ensure
+          // that any ghost edges we create will start with a
+          // non-null vertex and end with a null.
+          c = c.getBaseReference();
           c.clear();
           buffer = c;
         } else {
@@ -1234,13 +1234,13 @@ public class IncrementalTin implements IIncrementalTin {
         n2 = n1.getForward();
         n2.setForward(c.getForward());
         p.setForward(n1);
-        // we need to get the base reference in order to ensure
-        // that any ghost edges we create will start with a
-        // non-null vertex and end with a null.
-        c = c.getBaseReference();
+
+
         if (buffer == null) {
-          edgePool.removeBorderConstraintFromMap(c);
-          edgePool.removeBorderConstraintFromMap(c.getDual());
+          // we need to get the base reference in order to ensure
+          // that any ghost edges we create will start with a
+          // non-null vertex and end with a null.
+          c = c.getBaseReference();
           c.clear();
           buffer = c;
         } else {
@@ -2266,7 +2266,7 @@ public class IncrementalTin implements IIncrementalTin {
 
     isLocked = true;
     lockedDueToConstraints = true;
-    
+
     for (IConstraint c : processList) {
       ArrayList<IQuadEdge> edgesForConstraint = new ArrayList<>(); //NOPMD
       efcList.add(edgesForConstraint);
