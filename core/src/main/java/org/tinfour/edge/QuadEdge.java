@@ -117,9 +117,9 @@ import java.util.Formatter;
 import org.tinfour.common.IQuadEdge;
 import org.tinfour.common.Vertex;
 import static org.tinfour.edge.QuadEdgeConstants.CONSTRAINT_EDGE_FLAG;
-import static org.tinfour.edge.QuadEdgeConstants.CONSTRAINT_FLAG_MASK;
 import static org.tinfour.edge.QuadEdgeConstants.CONSTRAINT_INDEX_BIT_SIZE;
 import static org.tinfour.edge.QuadEdgeConstants.CONSTRAINT_INDEX_VALUE_MAX;
+import static org.tinfour.edge.QuadEdgeConstants.CONSTRAINT_LINE_MEMBER_FLAG;
 import static org.tinfour.edge.QuadEdgeConstants.CONSTRAINT_LOWER_INDEX_MASK;
 import static org.tinfour.edge.QuadEdgeConstants.CONSTRAINT_LOWER_INDEX_ZERO;
 import static org.tinfour.edge.QuadEdgeConstants.CONSTRAINT_REGION_BORDER_FLAG;
@@ -419,18 +419,13 @@ public class QuadEdge implements IQuadEdge {
   }
 
   /**
-   * Gets the index of the constrain associated with
+   * Indicates whether the edge is constrained.
    *
    * @return true if the edge is constrained; otherwise, false.
    */
   @Override
   public boolean isConstrained() {
-    return dual.isConstrained();
-  }
-
-  @Override
-  public void setConstrained(int constraintIndex) {
-       throw new UnsupportedOperationException("generic setConstrained() method is not supported");
+    return dual.index < 0;  // the CONSTRAINT_FLAG is also the sign bit.
   }
 
   /**
@@ -632,6 +627,11 @@ public class QuadEdge implements IQuadEdge {
 
   @Override
   public void setLine2D(AffineTransform transform, Line2D l2d) {
+    transcribeToLine2D(transform, l2d);
+  }
+
+  @Override
+  public void transcribeToLine2D(AffineTransform transform, Line2D l2d) {
     Vertex A = getA();
     Vertex B = getB();
     double[] c = new double[8];
@@ -655,8 +655,13 @@ public class QuadEdge implements IQuadEdge {
       c[2] = B.getX();
       c[3] = B.getY();
     }
-    transform.transform(c, 0, c, 4, 2);
-    l2d.setLine(c[4], c[5], c[6], c[7]);
+
+    if (transform == null) {
+      l2d.setLine(c[0], c[1], c[2], c[3]);
+    } else {
+      transform.transform(c, 0, c, 4, 2);
+      l2d.setLine(c[4], c[5], c[6], c[7]);
+    }
   }
 
   protected void checkConstraintIndex(int lowValue, int constraintIndex) {
@@ -672,12 +677,13 @@ public class QuadEdge implements IQuadEdge {
   public void setConstraintBorderIndex(int constraintIndex) {
     checkConstraintIndex(-1, constraintIndex);
 
-    if(!dual.isConstraintRegionBorder()){
+    if (!dual.isConstraintRegionBorder()) {
       // The edge was not previously populated as a border.
       // Because border constraint settings supercede settings such as
       // linear or interior constraint values, clear out
-      // any existing constraint values (the flags are preserved)
-      dual.index &= CONSTRAINT_FLAG_MASK;
+      // any existing constraint values  The constraint line f;ag
+      // is preserved (if it was set_, but thr line index is not preserved.
+      dual.index &= CONSTRAINT_LINE_MEMBER_FLAG;
     }
 
     dual.index

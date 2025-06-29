@@ -76,7 +76,7 @@ public class LakeVolumeExample {
         path = args[i + 1];
       }
     }
-    // set up for processing.  In this case, the default is to 
+    // set up for processing.  In this case, the default is to
     // use the Silsbe sample, but if an argument is passed into the
     // main, it uses the Salisbury University sample
     if (useSilsbeSample) {
@@ -150,7 +150,7 @@ public class LakeVolumeExample {
     @Override
     public void accept(SimpleTriangle t) {
 
-   
+
       IConstraint constraint = t.getContainingRegion();
       if (constraint instanceof PolygonConstraint) {
         Boolean appData = (Boolean)constraint.getApplicationData();
@@ -180,7 +180,7 @@ public class LakeVolumeExample {
         return false;
       }
       if (edge.isConstraintRegionInterior()) {
-        int index = edge.getConstraintIndex();
+        int index = edge.getConstraintRegionInteriorIndex();
         return water[index];
       }
       return false;

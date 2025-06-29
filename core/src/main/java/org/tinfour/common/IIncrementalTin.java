@@ -77,6 +77,15 @@ import java.util.List;
  * Multi-threaded access is particularly useful when performing
  * surface-interpolation operations to construct raster (grid) representations
  * of data.
+ * <h3>Constraints and constrained edges</h3>
+ * Normally, Tinfour is free to choose the geometry of the edges in a triangular
+ * mesh based on the Delaunay criterion. But some applications require that
+ * certain edges be preserved as specified. Therefore, Tinfour supports
+ * the specification of constraint objects to create a Constrained Delaunay
+ * Triangulations (CDT). Background information on the CDT is provided at
+ * the Tinfour project web article
+ * <a href="https://gwlucastrig.github.io/TinfourDocs/DelaunayIntroCDT/index.html">
+ * What is the Constrained Delaunay Triangulation and why would you care?</a>.
  */
 public interface IIncrementalTin {
 
@@ -494,6 +503,15 @@ public interface IIncrementalTin {
    * in constraints must never cross each other). Due to the high cost of
    * processing required to check that this restriction is observed,
    * it is not directly enforced by the Tinfour implementations.
+   * <p>
+   * Finally, there is a limit to the number of constraint objects that
+   * can be added to the incremental TIN. At this time, the total number
+   * of constraint objects is limited to 8190 (2^13-2). A constraint object
+   * may contain multiple edges, so the total number of edges is only limited
+   * by available memory and processing time. The reason for this restriction
+   * is that Tinfour attempts to conserve the amount of memory dedicated to
+   * edges and allows only a single 32-bit integer to store constraint references
+   * and state data.
    * <p>
    * <strong>Restoring Conformity</strong>
    * <p>

@@ -40,7 +40,6 @@ package org.tinfour.edge;
 
 import org.tinfour.common.Vertex;
 import static org.tinfour.edge.QuadEdgeConstants.CONSTRAINT_EDGE_FLAG;
-import static org.tinfour.edge.QuadEdgeConstants.CONSTRAINT_FLAG_MASK;
 import static org.tinfour.edge.QuadEdgeConstants.CONSTRAINT_INDEX_BIT_SIZE;
 import static org.tinfour.edge.QuadEdgeConstants.CONSTRAINT_INDEX_VALUE_MAX;
 import static org.tinfour.edge.QuadEdgeConstants.CONSTRAINT_LINE_MEMBER_FLAG;
@@ -191,33 +190,8 @@ class QuadEdgePartner extends QuadEdge {
     }
   }
 
-
-
   /**
-   * Sets an edge as constrained and sets its constraint index. Note that
-   * once an edge is constrained, it cannot be set to a non-constrained
-   * status. Constraint index values must be positive integers in
-   * the range 0 to QuadEdge&#46;CONSTAINT_INDEX_MAX (8190).
-   *
-   * @param constraintIndex positive number indicating which constraint
-   * a particular edge is associated with, in the range 0 to 8190.
-   */
-  @Override
-  public void setConstrained(int constraintIndex) {
-    if(constraintIndex == -1){
-      index = 0;
-      return;
-    }
-    if (constraintIndex < 0 || constraintIndex >  CONSTRAINT_INDEX_VALUE_MAX) {
-      throw new IllegalArgumentException(
-        "Constraint index " + constraintIndex
-        + " is out of range [0.." +  CONSTRAINT_INDEX_VALUE_MAX + "]");
-    }
-    index = CONSTRAINT_EDGE_FLAG | ((index & CONSTRAINT_LOWER_INDEX_ZERO) | (constraintIndex+1));
-  }
-
-  /**
-   * Gets the index of the constrain associated with
+   * Indicates whether the edge is constrained
    *
    * @return true if the edge is constrained; otherwise, false.
    */
@@ -245,15 +219,16 @@ class QuadEdgePartner extends QuadEdge {
     @Override
   public void setConstraintRegionBorderFlag() {
 
-    if (!isConstraintRegionBorder()) {
-      // The edge was not previously populated as a border.
-      // Because border constraint settings supercede settings such as
-      // linear or interior constraint values, clear out
-      // any existing constraint values (the flags are preserved)
-      index &= CONSTRAINT_FLAG_MASK;
-    }
+      if (!isConstraintRegionBorder()) {
+        // The edge was not previously populated as a border.
+        // Because border constraint settings supercede settings such as
+        // linear or interior constraint values, clear out
+        // any existing constraint values  The constraint line f;ag
+        // is preserved (if it was set_, but thr line index is not preserved.
+        index &= CONSTRAINT_LINE_MEMBER_FLAG;
+      }
 
-    index |= CONSTRAINT_REGION_BORDER_FLAG;
+      index |= CONSTRAINT_EDGE_FLAG | CONSTRAINT_REGION_BORDER_FLAG;
   }
 
 
@@ -294,8 +269,9 @@ class QuadEdgePartner extends QuadEdge {
       // The edge was not previously populated as a border.
       // Because border constraint settings supercede settings such as
       // linear or interior constraint values, clear out
-      // any existing constraint values (the flags are preserved)
-      index &= CONSTRAINT_FLAG_MASK;
+      // any existing constraint values  The constraint line f;ag
+      // is preserved (if it was set_, but thr line index is not preserved.
+      index &= CONSTRAINT_LINE_MEMBER_FLAG;
     }
 
     index

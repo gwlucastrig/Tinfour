@@ -30,16 +30,82 @@ import java.awt.geom.Line2D;
  * Defines methods for accessing the data in a quad-edge
  * implementation.
  * <p>
+ * Currently, Tinfour implements two kinds of quad-edge objects:
+ * standard and semi-virtual. The standard implementation (the QuadEdge class)
+ * is based on in-memory references and literal instances of objects.
+ * The semi-virtual approach attempts to reduce the amount of memory used
+ * by a Delaunay triangulation by maintaining some in-memory data in arrays
+ * rather than objects. Edge-related objects are created as needed and
+ * discarded when no long required.
+ * <p>
+ * <strong>Memory considerations</strong>
+ * <p>
+ * For a Delaunay triangulation with a sufficiently large number of vertices, N,
+ * the number of edges in the triangular mesh approaches 3*N. Since many of
+ * the data sets that Tinfour processes can include millions of vertices,
+ * memory management becomes an important issue.  Both the standard and
+ * semi-virtual edge instances are designed to be conservative in their
+ * use of memory. This approach has a significant influence on the organization
+ * of the methods in the IQuadEdge interface. It is worth noting that,
+ * in Java, an object requires memory for its content (explicitly defined
+ * data fields) and also for object-management overhead.
+ * In many implementations of the Java Runtime Environment (JRE) running
+ * with less than 32 gigabytes of memory, this overhead is about 12 bytes.
+ * For JRE's configured with 32 gigabytes or more, that figure doubles.
+ * <p>
+ * <strong>Performance considerations</strong>
+ * <p>
  * In general, get operations can be performed without
  * any degradation of performance.  However, set operations on quad-edges
  * often require down casting (narrow casting) of object references.
  * In ordinary applications, the performance cost of down casting is small.
- * But for TIN applications require very large data sets with repeated
+ * But for applications that require very large data sets and repeated
  * modifications to the edge structure of the TIN, this cost can degrade
  * processing rates by as much as 25 percent. Thus this interface avoids
  * specifying any methods that set edge relationships (connections).
  * <p>
- * See the definition of IConstraint for a discussion of constrained regions.
+ * <strong>Constraints and constrained edges</strong>
+ * <p>
+ * Normally, Tinfour is free to choose the geometry of the edges in a triangular
+ * mesh based on the Delaunay criterion. But some applications require that
+ * certain edges be preserved as specified. Therefore, Tinfour supports
+ * the specification of constraint objects to create a Constrained Delaunay
+ * Triangulations (CDT). Background information on the CDT is provided at
+ * the Tinfour project web article
+ * <a href="https://gwlucastrig.github.io/TinfourDocs/DelaunayIntroCDT/index.html">
+ * What is the Constrained Delaunay Triangulation and why would you care?</a>.
+ * <p>
+ * Tinfour supports two kinds of constraints: region (polygon) constraints,
+ * and line constraints (chains of one or more connected edges not forming
+ * a closed polygon).
+ * <p>
+ * <strong>Constraint assignment to edges</strong>
+ * <p>
+ * When constraint objects are added to an incremental TIN instance,
+ * Tinfour assigns each object a unique integer index (currently, in the range
+ * zero to 8190). IQuadEdge instances can store these indices for internal
+ * or application use.
+ * <p>
+ * In a Delaunay triangulation, an edge is either constrained (fixed geometry)
+ * or unconstrained (free to be modified to meet the Delaunay criterion).
+ * In Tinfour, an can have some combination of the following constraint-related states:
+ * <ol>
+ * <li>Unconstrained</li>
+ * <li>Border of a constrained region (polygon) or the common border
+ * of two adjacent regions (constrained)</li>
+ * <li>The interior of a region constraint (unconstrained)</li>
+ * <li>A member of a line-based constraint (constrained)</li>
+ * </ol>
+ * <p>
+ * It is possible for an edge to belong to both a region-based constraint
+ * (either as its border or its interior) and a line-based constraint.
+ * Unfortunately, memory considerations for incremental TIN construction
+ * limit the number of references to two.  But an edge that is assigned both
+ * as the border of two adjacent constraint regions and an independent
+ * line constraint would require three. In such cases, the IQuadEdge instances
+ * give priority to the region specifications.  Tinfour's incremental TIN classes
+ * implement logic for maintaining supplemental information so that they can
+ * track linear constraint assignments when necessary.
  */
 public interface IQuadEdge {
 
@@ -194,19 +260,6 @@ public interface IQuadEdge {
    */
   boolean isConstrained();
 
-
-  /**
-   * Sets an edge as constrained and sets its constraint index. Note that
-   * once an edge is constrained, it cannot be set to a non-constrained
-   * status.  Constraint index values must be positive integers. The
-   * range of supported values will depend on the specific class that
-   * implements this interface. Please refer to the class documentation
-   * for specific values.
-   * @param  constraintIndex positive number indicating which constraint
-   * a particular edge is associated with.
-   */
-  void setConstrained(int constraintIndex);
-
   /**
    * Indicates whether the edge is a member of a constrained region
    * (is in the interior or serves as the border of a polygon-based constraint).
@@ -307,11 +360,22 @@ public interface IQuadEdge {
 
 
   /**
+   * A deprecated method replaced by the equivalent transcribeToLine2D().
+   * @param transform a valid affine transform
+   * @param l2d a valid Line2D instance to receive the geometry data from the edge.
+   */
+  @Deprecated
+  void setLine2D(AffineTransform transform, Line2D l2d);
+
+
+  /**
    * Provides a convenience method for rendering edges by setting the
    * Line2D argument with the transformed coordinates of the edge.
    * The affine transform is used to map vertex A and B of the edge
    * to the specified coordinate system. The transformed coordinates
-   * are then stored in the application-supplied Line2D object.
+   * are then stored in the application-supplied Line2D object.  If a null
+   * reference is supplied for the transform, this method treats it as the
+   * identity transform.
    * <p>
    * This method is intended to support rendering operations that may
    * render a large number of edges using Java's Line2D class. In such cases,
@@ -321,8 +385,7 @@ public interface IQuadEdge {
    * @param transform a valid affine transform
    * @param l2d a valid Line2D instance to receive the geometry data from the edge.
    */
-  void setLine2D(AffineTransform transform, Line2D l2d);
-
+  void transcribeToLine2D(AffineTransform transform, Line2D l2d);
 
   /**
    * Sets a flag identifying the edge as the border of a region-based constraint

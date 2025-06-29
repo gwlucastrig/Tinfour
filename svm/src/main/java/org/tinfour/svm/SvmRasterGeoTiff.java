@@ -314,12 +314,12 @@ class SvmRasterGeoTiff {
     }
     IQuadEdge fwd = edge.getForward();
     if (fwd.isConstraintRegionInterior()) {
-      int index = fwd.getConstraintIndex();
+      int index = fwd.getConstraintRegionInteriorIndex();
       return water[index];
     }
     IQuadEdge rev = edge.getReverse();
     if (rev.isConstraintRegionInterior()) {
-      int index = rev.getConstraintIndex();
+      int index = rev.getConstraintRegionInteriorIndex();
       return water[index];
     }
     return false;

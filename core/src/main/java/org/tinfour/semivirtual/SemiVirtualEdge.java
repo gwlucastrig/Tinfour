@@ -646,7 +646,7 @@ public final class SemiVirtualEdge implements IQuadEdge {
       c[ix] &= CONSTRAINT_FLAG_MASK;
     }
 
-    c[ix] |= CONSTRAINT_REGION_BORDER_FLAG;
+    c[ix] |= CONSTRAINT_EDGE_FLAG | CONSTRAINT_REGION_BORDER_FLAG;
   }
 
   @Override
@@ -696,7 +696,13 @@ public final class SemiVirtualEdge implements IQuadEdge {
     return (c[cIndex] & cMask) != 0;
   }
 
+  @Override
   public void setLine2D(AffineTransform transform, Line2D l2d) {
+      transcribeToLine2D(transform, l2d);
+  }
+
+  @Override
+  public void transcribeToLine2D(AffineTransform transform, Line2D l2d) {
     Vertex A = getA();
     Vertex B = getB();
     double[] c = new double[8];
@@ -720,8 +726,12 @@ public final class SemiVirtualEdge implements IQuadEdge {
       c[2] = B.getX();
       c[3] = B.getY();
     }
-    transform.transform(c, 0, c, 4, 2);
-    l2d.setLine(c[4], c[5], c[6], c[7]);
+    if (transform == null) {
+      l2d.setLine(c[0], c[1], c[2], c[3]);
+    } else {
+      transform.transform(c, 0, c, 4, 2);
+      l2d.setLine(c[4], c[5], c[6], c[7]);
+    }
   }
 
   @Override
@@ -739,10 +749,12 @@ public final class SemiVirtualEdge implements IQuadEdge {
       // The edge was not previously populated as a border.
       // Because border constraint settings supercede settings such as
       // linear or interior constraint values, clear out
-      // any existing constraint values (the flags are preserved)
-      c[ix] &= CONSTRAINT_FLAG_MASK;
+      // any existing constraint values  The constraint line f;ag
+      // is preserved (if it was set_, but thr line index is not preserved.
+      c[ix] &= CONSTRAINT_LINE_MEMBER_FLAG;
     }
-      c[ix] |= CONSTRAINT_EDGE_FLAG | CONSTRAINT_REGION_BORDER_FLAG;
+    c[ix] |= CONSTRAINT_EDGE_FLAG | CONSTRAINT_REGION_BORDER_FLAG;
+
     if (iSide == 0) {
       // the base side
       setLowerConstraintIndex(c, constraintIndex);
@@ -861,11 +873,6 @@ public final class SemiVirtualEdge implements IQuadEdge {
   private int getLowerConstraintIndex(int[] c) {
     int ix = indexOnPage / 2;
     return (c[ix] & CONSTRAINT_LOWER_INDEX_MASK) - 1;
-  }
-
-  @Override
-  public void setConstrained(int constraintIndex) {
-    throw new UnsupportedOperationException("generic setConstrained() method is not supported");
   }
 
 }
