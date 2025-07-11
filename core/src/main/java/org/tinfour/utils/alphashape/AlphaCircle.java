@@ -28,6 +28,9 @@
  */
 package org.tinfour.utils.alphashape;
 
+import org.tinfour.common.IQuadEdge;
+import org.tinfour.common.Vertex;
+
 /**
  * Provides definitions to be used for alpha-shape construction
  * or other applications for a pair of circles of radius r
@@ -83,8 +86,6 @@ public class AlphaCircle {
    * @param y1 Y coordinate of the second point
    */
   public AlphaCircle(double r, double x0, double y0, double x1, double y1) {
-
-
     this.r = r;
     this.r2test = r * r;
 
@@ -92,9 +93,9 @@ public class AlphaCircle {
     double k = (y1 - y0);
 
     double seglen = Math.sqrt(h * h + k * k);
-    if (seglen > 2 * r) {
-      // The line segment is longer than the diameter.  Create a circle
-      // of radius r centered on the line segment.  Mark it as a partial.
+    if (seglen >= 2 * r) {
+      // The line segment length is greater than or equal to the diameter.
+      // Create a circle of radius r centered on the line segment.  Mark it as a partial.
       centerX0 = (x0 + x1) / 2.0;
       centerY0 = (y0 + y1) / 2.0;
       centerX1 = centerX0;
@@ -251,6 +252,21 @@ public class AlphaCircle {
     return d < r2test;
   }
 
+  public boolean isPointInCircleLeft(double x, double y) {
+    double dx = x - centerX0;
+    double dy = y - centerY0;
+    double d = dx * dx + dy * dy;
+    return d < r2test;
+  }
+
+    public boolean isPointInCircleRight(double x, double y) {
+    double dx = x - centerX1;
+    double dy = y - centerY1;
+    double d = dx * dx + dy * dy;
+    return d < r2test;
+  }
+
+
   /**
    * Computes the distance from the specified coordinates to the nearest
    * circle center.
@@ -274,6 +290,88 @@ public class AlphaCircle {
       dMin = d;
     }
     return Math.sqrt(dMin);
+  }
+
+  /**
+   * Determines whether the associated edge is covered (unexposed).
+   * The standard alpha-shape algorithm classifies an edge as being
+   * "exposed" if at least one of its associated alpha circles
+   * that does not contain a vertex. The Tinfour modifed algorithm
+   * used an alternate definition that requires that both circles
+   * are empty. Thus, the standard definition tends to classify
+   * more edges as exposed rather than covered.
+   * <p>
+   * Interpreting the favorExposure option:
+   * <ul>
+   * <li><strong>true:</strong> Standard definition. An edge is exposed if at
+   * least  one of its associated alpha-circles does not contain a vertex.</li>
+   * <li><strong>false:</strong> Tinfour modified definition. An edge is exposed
+   * only if both of its associated alpha-circles do not contain a vertex.</li>
+   * </ul>
+   *
+   * @param edge a valid edge from a current incremental TIN instance.
+   * @param radius the radius of the two circles associated with the edge
+   * @param favorExposure indicates that constructor applies the traditional
+   * alpha-circle logic which tends to treat more edges as alpha-exposed than
+   * the non-traditional Tinfour variation.
+   * @return
+   */
+  public static boolean isCovered(IQuadEdge edge, double radius, boolean favorExposure) {
+    IQuadEdge f = edge.getForward();
+    Vertex A = edge.getA();
+    Vertex B = edge.getB();
+    Vertex C = f.getB();
+    Vertex D = edge.getForwardFromDual().getB();
+    AlphaCircle circle = new AlphaCircle(radius, A.getX(), A.getY(), B.getX(), B.getY());
+
+    if (circle.partial) {
+      // the edge is of length greater than the circle diameter.
+      // such edges are treated as fully exposed.
+      return false;
+    }
+
+    boolean cover0 = false;
+    boolean cover1 = false;
+
+    if (C != null) {
+      double x = C.getX();
+      double y = C.getY();
+      double dx = x - circle.centerX0;
+      double dy = y - circle.centerY0;
+      double d = dx * dx + dy * dy;
+      if (d < circle.r2test) {
+        cover0 = true;
+      }
+      dx = x - circle.centerX1;
+      dy = y - circle.centerY1;
+      d = dx * dx + dy * dy;
+      if (d < circle.r2test) {
+        cover1 = true;
+      }
+    }
+
+    if (D != null) {
+      double x = D.getX();
+      double y = D.getY();
+      double dx = x - circle.centerX0;
+      double dy = y - circle.centerY0;
+      double d = dx * dx + dy * dy;
+      if (d < circle.r2test) {
+        cover0 = true;
+      }
+      dx = x - circle.centerX1;
+      dy = y - circle.centerY1;
+      d = dx * dx + dy * dy;
+      if (d < circle.r2test) {
+        cover1 = true;
+      }
+    }
+
+    if (favorExposure) {
+      return cover0 && cover1;
+    } else {
+      return cover0 || cover1;
+    }
   }
 
 }

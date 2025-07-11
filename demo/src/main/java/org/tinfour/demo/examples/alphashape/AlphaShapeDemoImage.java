@@ -32,7 +32,6 @@ import org.tinfour.common.IQuadEdge;
 import org.tinfour.common.Vertex;
 import org.tinfour.standard.IncrementalTin;
 import org.tinfour.utils.alphashape.AlphaCircle;
-import org.tinfour.utils.alphashape.AlphaPart;
 import org.tinfour.utils.alphashape.AlphaShape;
 import org.tinfour.utils.rendering.RendererForTinInspection;
 import org.tinfour.utils.rendering.RenderingSurfaceAid;
@@ -69,7 +68,8 @@ public class AlphaShapeDemoImage {
     Font font = new Font("Arial", Font.PLAIN, 72);
     String text = "A";
     boolean populateInteriorVertices = true;
-    double alphaRadius = 4.25;
+    double alphaRadius = 4.5;
+    boolean useClassicAlphaShape = false;
 
     // Options for display and image production
     boolean labelVertices = false;
@@ -82,9 +82,9 @@ public class AlphaShapeDemoImage {
 
     // Other settings related to output
     boolean printDiagnosticText = false;
-    String outputFileName = "AlphaShapeTestImage.png";
-    int outputImageWidth = 700;
-    int outputImageHeight = 500;
+    String outputFileName = "AlphaShapeDemoImage.png";
+    int outputImageWidth = 1000;
+    int outputImageHeight = 800;
 
     // -----------------------------------------------------------------
     // Process data:
@@ -95,13 +95,14 @@ public class AlphaShapeDemoImage {
     Shape inputShape = makeTestVertices(vertices, font, text, populateInteriorVertices);
     IIncrementalTin tin = new IncrementalTin(1);
     tin.add(vertices, null);
-    AlphaShape alpha = new AlphaShape(tin, alphaRadius);
+    AlphaShape alpha = new AlphaShape(tin, alphaRadius, useClassicAlphaShape);
 
     if (printDiagnosticText) {
-      printDiagnosticText(tin, alpha);
+      System.out.println("\n");
+      alpha.summarize(System.out, false);
     }
 
-    verifyCircleTestPlausibility(tin, alphaRadius, vertices);
+    verifyCircleTestPlausibility(tin, alphaRadius);
 
     // Configure the renderer based on options specifed above  ----------------
     RendererForTinInspection renderer = new RendererForTinInspection(tin);
@@ -119,21 +120,23 @@ public class AlphaShapeDemoImage {
     }
 
     if (fillAlphaShape) {
-      Path2D alphaShape = alpha.getPath2D();
+      Path2D alphaShape = alpha.getPath2D(true);
       Color fillColor = new Color(0, 0, 0, 16);
       renderer.addOverlay(alphaShape, fillColor, thinStroke, true);
-    }
-
-    if (drawAlphaShape) {
-      Path2D alphaShape = alpha.getPath2D();
-      renderer.addOverlay(alphaShape, Color.red, thickStroke, false);
     }
 
     if (showAlphaClassificationForEdges) {
       showAlphaClassifications(tin, alphaRadius, renderer);
     }
 
-    // The renderer is now configured according to parameters specified above.
+    if (drawAlphaShape) {
+      Path2D alphaShapePolygons = alpha.getPath2D(true);
+      renderer.addOverlay(alphaShapePolygons, Color.red, thickStroke, false);
+      Path2D alphaShapeOpenLines = alpha.getPath2D(false);
+      renderer.addOverlay(alphaShapeOpenLines, Color.magenta, thickStroke, false);
+    }
+
+    // The renderer is configured and populated according to parameters specified above.
     // Uses it to render an image.  The return value, the RenderingSurfaceAid
     // includes both the image, an associated Graphics2D object, and metadata.
     RenderingSurfaceAid rsa = renderer.render(outputImageWidth, outputImageHeight, 50);
@@ -147,7 +150,7 @@ public class AlphaShapeDemoImage {
       // Get the coordinatates to be used for the upper-left corner
       // of the circle.
       Rectangle2D r2d = rsa.getDomainRectangle();
-      double px0 = r2d.getMaxX() + 20;
+      double px0 = r2d.getMaxX() + 10;
       double py0 = r2d.getMinY();
       // The pixelsPerUnit value relates the scale of the Cartesian coordinate
       // system associated with the Delaunay triangulation to the scale of
@@ -173,7 +176,8 @@ public class AlphaShapeDemoImage {
       g2d.drawString(label, xLab, yLab);
     }
 
-
+    System.out.println("");
+    System.out.println("Writing output to file " + outputFileName);
     File output = new File(outputFileName);
     if (output.exists()) {
       output.delete();
@@ -274,8 +278,10 @@ public class AlphaShapeDemoImage {
    * @param radius the alpha radius for testing
    * @param vertices a list of the vertices in the TIN.
    */
-  static void verifyCircleTestPlausibility(IIncrementalTin tin, double radius, List<Vertex> vertices) {
+  static void verifyCircleTestPlausibility(IIncrementalTin tin, double radius) {
+    List<Vertex> vertices = tin.getVertices();
     for (IQuadEdge e : tin.edges()) {
+
       if (e.getLength() >= 2 * radius) {
         continue;
       }
@@ -284,27 +290,41 @@ public class AlphaShapeDemoImage {
       Vertex C = e.getForward().getB();
       Vertex D = e.getForwardFromDual().getB();
       AlphaCircle circle = new AlphaCircle(radius, A.getX(), A.getY(), B.getX(), B.getY());
-      boolean cStat = C != null && circle.isPointInCircles(C.getX(), C.getY());
-      boolean dStat = D != null && circle.isPointInCircles(D.getX(), D.getY());
-      if (!cStat && !dStat && D != null) {
-        for (Vertex v : vertices) {
-          if (v != A && v != B && v != C && v != D) {
-            boolean status = circle.isPointInCircles(v.getX(), v.getY());
-            if (status) {
-              System.out.println("AlphaCircle assumption failed for edge " + e.getIndex() + ", vertex " + v);
-              circle.isPointInCircles(v.getX(), v.getY());
-              return;
-            }
+      boolean inside0 = false;
+      boolean inside1 = false;
+      if (C != null) {
+        inside0 |= circle.isPointInCircleLeft(C.getX(), C.getY());
+        inside1 |= circle.isPointInCircleRight(C.getX(), C.getY());
+      }
+      if (D != null) {
+        inside0 |= circle.isPointInCircleLeft(D.getX(), D.getY());
+        inside1 |= circle.isPointInCircleRight(D.getX(), D.getY());
+      }
+      for (Vertex v : vertices) {
+        if (v != A && v != B && v != C && v != D) {
+          boolean test0 = circle.isPointInCircleLeft(v.getX(), v.getY());
+          boolean test1 = circle.isPointInCircleRight(v.getX(), v.getY());
+          if (test0 && !inside0 || test1 && !inside1) {
+            System.out.println("AlphaCircle assumption failed for edge " + e.getIndex() + ", vertex " + v);
+            return;
           }
         }
       }
     }
   }
 
+
+
   /**
    * Adds color-coded highlights to show how edges are rated by the
-   * AlphaCircle test: orange for a potential border, green for a fully covered
-   * edge. Exposed edges are not changed.
+   * AlphaCircle test: orange if one circle is occupied, green if both circles
+   * are occupied.  In the classic alpha-shape definition, an edge is treated
+   * as covered (not exposed) if and only if a vertex lies within both
+   * the alpha circles for that edge.  In Tinfour's modified definition,
+   * the edge is considered covered (not exposed) if a vertex lies within
+   * either alpha circle.  So when interpreting the graphic, edges that are
+   * rendered in orange are treated as exposed in the classic alpha-shape
+   * definition and are treated as covered in the Tinfour modified definition.
    *
    * @param tin a valid Delaunay triangulation
    * @param radius the alpha radius
@@ -317,16 +337,27 @@ public class AlphaShapeDemoImage {
       if (edge.getLength() > 2 * radius) {
         continue;
       }
-      Vertex A = edge.getA();
+          Vertex A = edge.getA();
       Vertex B = edge.getB();
       Vertex C = edge.getForward().getB();
       Vertex D = edge.getForwardFromDual().getB();
       AlphaCircle circle = new AlphaCircle(radius, A.getX(), A.getY(), B.getX(), B.getY());
+      boolean inside0 = false;
+      boolean inside1 = false;
+      if (C != null) {
+        inside0 |= circle.isPointInCircleLeft(C.getX(), C.getY());
+        inside1 |= circle.isPointInCircleRight(C.getX(), C.getY());
+      }
+          if (D != null) {
+        inside0 |= circle.isPointInCircleLeft(D.getX(), D.getY());
+        inside1 |= circle.isPointInCircleRight(D.getX(), D.getY());
+      }
+
       int nC = 0;
-      if (C != null && circle.isPointInCircles(C.getX(), C.getY())) {
+      if (inside0) {
         nC++;
       }
-      if (D != null && circle.isPointInCircles(D.getX(), D.getY())) {
+      if (inside1) {
         nC++;
       }
 
@@ -342,20 +373,5 @@ public class AlphaShapeDemoImage {
     BasicStroke thickStroke = new BasicStroke(5.0f);
     renderer.addUnderlay(alpha1, Color.orange, thickStroke, false);
     renderer.addUnderlay(alpha2, Color.green, thickStroke, false);
-  }
-
-  static void printDiagnosticText(IIncrementalTin tin, AlphaShape alpha) {
-    System.out.println("");
-    System.out.println("Edges ---------------------------------------------");
-    for (IQuadEdge edge : tin.edges()) {
-      System.out.println("  " + edge.toString());
-    }
-    System.out.println("");
-    System.out.println("Alpha Shape ------------------------------------------");
-    List<AlphaPart> partList = alpha.getAlphaParts();
-    System.out.println("Number of Parts: " + partList.size());
-    for (AlphaPart part : partList) {
-      System.out.println("  " + part.toString());
-    }
   }
 }

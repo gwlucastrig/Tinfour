@@ -41,6 +41,7 @@ import org.tinfour.common.Vertex;
  */
 public class AlphaPart {
 
+  final boolean isPolygon;
   final List<IQuadEdge> edges = new ArrayList<>();
   double area;
   AlphaPart parent;
@@ -50,6 +51,11 @@ public class AlphaPart {
    * Standard constructor, package scope.
    */
   AlphaPart() {
+    isPolygon = true;
+  }
+
+  AlphaPart(boolean isPolygon){
+    this.isPolygon = isPolygon;
   }
 
   /**
@@ -88,6 +94,16 @@ public class AlphaPart {
     return vList;
   }
 
+   /**
+   * Indicates that the path encloses a region.
+   *
+   * @return true if the region indicated by the path encloses
+   * a set of points definition an alpha shape.
+   */
+  public boolean isAnEnclosure() {
+    return children.size() > 0;
+  }
+
   /**
    * Indicates that the path represents a region that is in the interior
    * of an alpha shape..
@@ -100,14 +116,13 @@ public class AlphaPart {
   }
 
   /**
-   * Indicates that the path encloses a region.
-   *
-   * @return true if the region indicated by the path encloses
-   * a set of points definition an alpha shape.
+   * Indicates whether the part is a polygon feature.
+   * @return true if the part is a polygon feature; false if it is a
+   * an open-line.
    */
-  public boolean isAnEnclosure() {
-    return children.size() > 0;
-  }
+   public boolean isPolygon(){
+     return isPolygon;
+   }
 
   /**
    * Performs area computation and other operations related to the completion
@@ -117,6 +132,10 @@ public class AlphaPart {
     if (edges.size() < 3) {
       return;
     }
+    if(!isPolygon){
+      area = 0;
+      return;
+    }
     double xSum = 0;
     double ySum = 0;
     for (IQuadEdge edge : edges) {
@@ -124,9 +143,9 @@ public class AlphaPart {
       xSum += A.getX();
       ySum += A.getY();
     }
-
     double xC = xSum / edges.size();
     double yC = ySum / edges.size();
+
     Vertex A = edges.get(0).getA();
     double x0 = A.getX() - xC;
     double y0 = A.getY() - yC;
@@ -165,6 +184,12 @@ public class AlphaPart {
 
   @Override
   public String toString() {
+    String geoString;
+    if(isPolygon){
+      geoString = "polygon   ";
+    }else{
+      geoString = "open-line ";
+    }
     String a = parent != null ? "child" : "";
     if (children.size() > 0) {
       if (a.isEmpty()) {
@@ -174,6 +199,7 @@ public class AlphaPart {
       }
     }
 
-    return String.format("AlphaPart n=%3d, area=%6.3f, %s", edges.size(), getArea(), a);
+    return String.format("AlphaPart %s n=%3d, area=%6.3f, %s",
+      geoString, edges.size(), getArea(), a);
   }
 }
