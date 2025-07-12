@@ -252,6 +252,16 @@ public class AlphaCircle {
     return d < r2test;
   }
 
+  /**
+   * Indicates whether the specified coordinate are within an alpha circle
+   * with a center located to the left of the specified line segment.
+   * Points lying on the circle edge are not considered to be within the circle.
+   *
+   * @param x a valid Cartesian coordinate
+   * @param y a valid Cartesian coordinate
+   * @return true if the distance from the specified coordinates to the circle
+   * center is less than the circle radius.
+   */
   public boolean isPointInCircleLeft(double x, double y) {
     double dx = x - centerX0;
     double dy = y - centerY0;
@@ -259,13 +269,22 @@ public class AlphaCircle {
     return d < r2test;
   }
 
-    public boolean isPointInCircleRight(double x, double y) {
+  /**
+   * Indicates whether the specified coordinate are within an alpha circle
+   * with a center located to the right of the specified line segment.
+   * Points lying on the circle edge are not considered to be within the circle.
+   *
+   * @param x a valid Cartesian coordinate
+   * @param y a valid Cartesian coordinate
+   * @return true if the distance from the specified coordinates to the circle
+   * center is less than the circle radius.
+   */
+  public boolean isPointInCircleRight(double x, double y) {
     double dx = x - centerX1;
     double dy = y - centerY1;
     double d = dx * dx + dy * dy;
     return d < r2test;
   }
-
 
   /**
    * Computes the distance from the specified coordinates to the nearest
@@ -301,22 +320,22 @@ public class AlphaCircle {
    * are empty. Thus, the standard definition tends to classify
    * more edges as exposed rather than covered.
    * <p>
-   * Interpreting the favorExposure option:
+   * Interpreting the classicAlphaShape option:
    * <ul>
    * <li><strong>true:</strong> Standard definition. An edge is exposed if at
-   * least  one of its associated alpha-circles does not contain a vertex.</li>
-   * <li><strong>false:</strong> Tinfour modified definition. An edge is exposed
+   * least one of its associated alpha-circles does not contain a vertex.</li>
+   * <li><strong>false:</strong> Tinfour-modified definition. An edge is exposed
    * only if both of its associated alpha-circles do not contain a vertex.</li>
    * </ul>
    *
    * @param edge a valid edge from a current incremental TIN instance.
    * @param radius the radius of the two circles associated with the edge
-   * @param favorExposure indicates that constructor applies the traditional
+   * @param classicAlphaShape indicates that constructor applies the traditional
    * alpha-circle logic which tends to treat more edges as alpha-exposed than
    * the non-traditional Tinfour variation.
-   * @return
+   * @return true if the edge is covered; false if the edge is exposed.
    */
-  public static boolean isCovered(IQuadEdge edge, double radius, boolean favorExposure) {
+  public static boolean isCovered(IQuadEdge edge, double radius, boolean classicAlphaShape) {
     IQuadEdge f = edge.getForward();
     Vertex A = edge.getA();
     Vertex B = edge.getB();
@@ -367,7 +386,7 @@ public class AlphaCircle {
       }
     }
 
-    if (favorExposure) {
+    if (classicAlphaShape) {
       return cover0 && cover1;
     } else {
       return cover0 || cover1;
