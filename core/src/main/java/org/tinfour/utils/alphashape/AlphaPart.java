@@ -29,6 +29,7 @@
  */
 package org.tinfour.utils.alphashape;
 
+import java.awt.geom.Path2D;
 import java.util.ArrayList;
 import java.util.List;
 import org.tinfour.common.IQuadEdge;
@@ -54,12 +55,13 @@ public class AlphaPart {
     isPolygon = true;
   }
 
-  AlphaPart(boolean isPolygon){
+  AlphaPart(boolean isPolygon) {
     this.isPolygon = isPolygon;
   }
 
   /**
    * Gets a list of any child (embedded) alpha part components.
+   *
    * @return a valid, potentially empty list.
    */
   public List<AlphaPart> getChildren() {
@@ -68,33 +70,36 @@ public class AlphaPart {
 
   /**
    * Gets a list of the edges that define the alpha part.
+   *
    * @return a valid, potentially empty list
    */
-  public List<IQuadEdge> getEdges(){
+  public List<IQuadEdge> getEdges() {
     return new ArrayList<>(edges);
   }
 
   /**
    * Gets the alpha part that contains this instance (if any).
+   *
    * @return if a parent exists, a valid reference; otherwise, a null.
    */
-  public AlphaPart getParent(){
+  public AlphaPart getParent() {
     return parent;
   }
 
   /**
    * Gets the vertices that define the alpha part.
+   *
    * @return a valid, non-empty list.
    */
-  public List<Vertex>getVertices(){
-    ArrayList<Vertex>vList = new ArrayList<>(edges.size());
-    for(IQuadEdge edge: edges){
+  public List<Vertex> getVertices() {
+    ArrayList<Vertex> vList = new ArrayList<>(edges.size());
+    for (IQuadEdge edge : edges) {
       vList.add(edge.getA());
     }
     return vList;
   }
 
-   /**
+  /**
    * Indicates that the path encloses a region.
    *
    * @return true if the region indicated by the path encloses
@@ -117,12 +122,13 @@ public class AlphaPart {
 
   /**
    * Indicates whether the part is a polygon feature.
+   *
    * @return true if the part is a polygon feature; false if it is a
    * an open-line.
    */
-   public boolean isPolygon(){
-     return isPolygon;
-   }
+  public boolean isPolygon() {
+    return isPolygon;
+  }
 
   /**
    * Performs area computation and other operations related to the completion
@@ -132,7 +138,7 @@ public class AlphaPart {
     if (edges.size() < 3) {
       return;
     }
-    if(!isPolygon){
+    if (!isPolygon) {
       area = 0;
       return;
     }
@@ -185,9 +191,9 @@ public class AlphaPart {
   @Override
   public String toString() {
     String geoString;
-    if(isPolygon){
+    if (isPolygon) {
       geoString = "polygon   ";
-    }else{
+    } else {
       geoString = "open-line ";
     }
     String a = parent != null ? "child" : "";
@@ -201,5 +207,39 @@ public class AlphaPart {
 
     return String.format("AlphaPart %s n=%3d, area=%6.3f, %s",
       geoString, edges.size(), getArea(), a);
+  }
+
+  /**
+   * Get an instance of Path2D populated with coordinates taken from
+   * the edges that define this alpha part. For a polygon part, the defining
+   * points will be linked together as a series of connected line segments.
+   * For a non-polygon part, the Path2D will consist of a series of separate
+   * line segments.  Non-polygon parts are no suitable for rendering using
+   * Java's area-fill routines.
+   * @return a valid instance
+   */
+  public Path2D getPath2D() {
+    Path2D p = new Path2D.Double();
+
+    if (isPolygon && Math.abs(getArea()) > 1.0e-6) {
+      // edges are connected.  Move to first vertex of first edge,
+      // and then line-to second vertex of all subsequent edges.
+      IQuadEdge aEdge = edges.get(0);
+      Vertex A = aEdge.getA();
+      p.moveTo(A.getX(), A.getY());
+      for (IQuadEdge e : edges) {
+        Vertex B = e.getB();
+        p.lineTo(B.getX(), B.getY());
+      }
+    } else {
+      // edges are not connected.
+      for (IQuadEdge e : edges) {
+        Vertex A = e.getA();
+        Vertex B = e.getB();
+        p.moveTo(A.getX(), A.getY());
+        p.lineTo(B.getX(), B.getY());
+      }
+    }
+    return p;
   }
 }

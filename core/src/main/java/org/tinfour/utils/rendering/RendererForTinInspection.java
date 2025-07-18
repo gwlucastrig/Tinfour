@@ -97,6 +97,8 @@ public class RendererForTinInspection {
   private boolean vertexLabelEnableIndex = true;
   private boolean vertexLabelEnableZ = false;
   private String vertexLabelFormatZ = "%f";
+    private double vertexRenderingSize = 5;
+
   private boolean coordinateSystemIsPixels;
 
   private Color edgeColor = Color.lightGray;
@@ -274,7 +276,9 @@ public class RendererForTinInspection {
         xy[1] = v.getY();
 
         af.transform(xy, 0, xy, 2, 1);
-        e2d.setFrame(xy[2] - 2, xy[3] - 2, 5.0f, 5.0f);
+        double vs = vertexRenderingSize;
+        e2d.setFrame(xy[2] - vs / 2, xy[3] - vs / 2, vs, vs);
+
         g2d.fill(e2d);
         g2d.draw(e2d);
 
@@ -601,5 +605,13 @@ public class RendererForTinInspection {
     this.coordinateSystemIsPixels = coordinateSystemIsPixels;
   }
 
+  /**
+   * Set the size in pixels for the vertex symbol.  The default size
+   * is 5 pixels.
+   * @param size a positive floating point value, in pixels.
+   */
+  public void setVertexRenderingSize(double size){
+    vertexRenderingSize = size;
+  }
 
 }

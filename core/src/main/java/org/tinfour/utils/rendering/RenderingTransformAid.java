@@ -78,7 +78,7 @@ public class RenderingTransformAid {
     if (pad < 0) {
       throw new IllegalArgumentException("Negative pad value not allowed");
     }
-    if (width - 2 * pad < 1 || height - 2 * pad < 1) {
+    if (width - pad < 1 || height - pad < 1) {
       throw new IllegalArgumentException(
               "Width and height (minus padding) too small");
     }

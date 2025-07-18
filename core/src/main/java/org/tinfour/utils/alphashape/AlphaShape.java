@@ -82,8 +82,10 @@ public class AlphaShape {
   /**
    * Constructs an alpha shape based on the specified Delaunay triangulation.
    * Note that this constructor takes the specification of a radius for the
-   * alpha-circle features used to develop the alpha shape. Other
-   * implementations may use the alpha parameter rather than the radius.
+   * alpha-circle features used to develop the alpha shape. Various authors
+   * in the published literature use different definitions for the alpha
+   * parameter. Software libraries other than Tinfour may use different
+   * definitions alpha parameter than the simple radius.
    *
    * @param tin a valid instance of a Triangulated Irregular Network (TIN).
    * @param radius the radius for alpha circle computations.
@@ -105,68 +107,7 @@ public class AlphaShape {
     Thresholds thresholds = tin.getThresholds();
     double sNominal = thresholds.getNominalPointSpacing();
     areaMinThreshold = sNominal * sNominal / 1048576.0;
-    initShape(tin, radius, true);
 
-  }
-
-  /**
-   * Constructs a 2D alpha shape based on the specified Delaunay triangulation.
-   * Note that this constructor takes the specification of a radius for the
-   * alpha-circle features used to develop the alpha shape. Other
-   * implementations may use the alpha parameter rather than the radius.
-   * <p>
-   * <strong>Classic versus modified construction: </strong>The standard
-   * alpha-shape definition refers to edges as "alpha-exposed" if they are not treated as
-   * being part of the interior or borders of the alpha shape.
-   * So exposed edges would be those exterior to the shape or those that
-   * lie entirely within a "hole" in the shape. The standard alpha-shape
-   * algorithm classifies an edge as exposed if there exists at least one
-   * edge-related circle that is empty (does not contain a vertex).
-   * On the other hand, the modified-alpha-shape variation supported by Tinfour
-   * allows an alternate specification in which an edge is exposed only if
-   * both of its edge-related circles are empty.
-   * Therefore, the <strong>standard alpha-shape</strong> algorithm would tend
-   * to classify more edges as "exposed" than the Tinfour modified approach.
-   * The result is that the classic alpha-shape may have more holes or
-   * cavities than the modified version.
-   * <p>
-   * Interpreting the classicAlphaShape option:
-   * <ul>
-   * <li><strong>true:</strong> Standard definition. An edge is exposed if at
-   * least one of its associated alpha-circles does not contain a vertex.</li>
-   * <li><strong>false:</strong> Tinfour modified definition. An edge is exposed
-   * only if both of its associated alpha-circles do not contain a vertex.</li>
-   * </ul>
-   *
-   *
-   * @param tin a valid instance of a Triangulated Irregular Network (TIN).
-   * @param radius the radius for alpha circle computations.
-   * @param classicAlphaShape indicates that constructor applies the traditional
-   * alpha-circle logic which tends to treat more edges as alpha-exposed than
-   * the non-traditional Tinfour variation.
-   */
-  public AlphaShape(IIncrementalTin tin, double radius, boolean classicAlphaShape) {
-    this.tin = tin;
-    this.radius = radius;
-    if (!tin.isBootstrapped()) {
-      throw new IllegalArgumentException(
-        "Invalid specification, incremental TIN is not bootstrapped");
-    }
-    // In some cases, the geometry may give rise to polygons that are
-    // of nearly zero area. This is most common when processing the long
-    // edges near the perimeter.  Based on the nominal point spacing of the
-    // TIN, come up with a lower-bound area value for which we will
-    // accept polygons.  This operation is not part of the original alpha-shape
-    // algorithm, but is implemented for code robustness.
-    Thresholds thresholds = tin.getThresholds();
-    double sNominal = thresholds.getNominalPointSpacing();
-    areaMinThreshold = sNominal * sNominal / 1048576.0;
-
-    initShape(tin, radius, classicAlphaShape);
-
-  }
-
-  private void initShape(IIncrementalTin tin, double radius, boolean classicAlphaShape) {
 
     // About edge index scheme:
     // Each edge has two indices, one for each direction. The "base" index
@@ -178,7 +119,7 @@ public class AlphaShape {
     //      dual_index  = edge_index^1;
     int maxEdgeAllocationIndex = tin.getMaximumEdgeAllocationIndex();
     boolean[] covered = new boolean[maxEdgeAllocationIndex + 2];
-    boolean[] border = new boolean[maxEdgeAllocationIndex + 2];;
+    boolean[] border = new boolean[maxEdgeAllocationIndex + 2];
 
     // we define a border edge as an "outside border":
     //    a) the edge is covered
@@ -193,7 +134,7 @@ public class AlphaShape {
       }
       int eIndex = edge.getIndex();
       int dIndex = eIndex ^ 1;
-      boolean test = AlphaCircle.isCovered(edge, radius, classicAlphaShape);
+      boolean test = AlphaCircle.isCovered(edge, radius, false);
       covered[eIndex] = test;
       covered[dIndex] = test;
     }
@@ -267,6 +208,13 @@ public class AlphaShape {
           }
         }
         aPath.complete();
+        if (aPath.edges.size() < 3) {
+          // the traversal algorithm was not successful in creating a path
+          alphaParts.remove(aPath);
+          aPath = new AlphaPart(false);
+          alphaParts.add(aPath);
+          aPath.edges.add(e0.getDual());
+        }
       }
     }
 
@@ -288,10 +236,12 @@ public class AlphaShape {
         // be the parent of AlphaPart i.
         for (int j = i - 1; j >= 0; j--) {
           AlphaPart jPart = alphaParts.get(j);
-          Polyside.Result pr = Polyside.isPointInPolygon(jPart.edges, aX, aY);
-          if (pr.isCovered()) {
-            jPart.addChild(iPart);
-            break; // break the j loop
+          if (jPart.isPolygon()) {
+            Polyside.Result pr = Polyside.isPointInPolygon(jPart.edges, aX, aY);
+            if (pr.isCovered()) {
+              jPart.addChild(iPart);
+              break; // break the j loop
+            }
           }
         }
       }

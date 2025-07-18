@@ -69,7 +69,6 @@ public class AlphaShapeDemoImage {
     String text = "A";
     boolean populateInteriorVertices = true;
     double alphaRadius = 4.5;
-    boolean useClassicAlphaShape = false;
 
     // Options for display and image production
     boolean labelVertices = false;
@@ -95,7 +94,7 @@ public class AlphaShapeDemoImage {
     Shape inputShape = makeTestVertices(vertices, font, text, populateInteriorVertices);
     IIncrementalTin tin = new IncrementalTin(1);
     tin.add(vertices, null);
-    AlphaShape alpha = new AlphaShape(tin, alphaRadius, useClassicAlphaShape);
+    AlphaShape alpha = new AlphaShape(tin, alphaRadius);
 
     if (printDiagnosticText) {
       System.out.println("\n");
@@ -110,7 +109,7 @@ public class AlphaShapeDemoImage {
     renderer.setVertexLabelEnabledToShowIndex(labelVertices);
 
     BasicStroke thinStroke = new BasicStroke(1.0f);
-    BasicStroke thickStroke = new BasicStroke((4.0f));
+    BasicStroke thickStroke = new BasicStroke(4.0f, BasicStroke.CAP_BUTT, BasicStroke.JOIN_BEVEL);
 
     if (fillInputShape) {
       // Filling the input shape provides a way of inspecting
@@ -169,10 +168,14 @@ public class AlphaShapeDemoImage {
       e2d = new Ellipse2D.Double(xCenter - 3, yCenter - 3, 6, 6);
       g2d.fill(e2d);
       g2d.draw(e2d);
-      g2d.setFont(new Font("SANS_SERIF", Font.BOLD, 14));
+      Font labelFont = new Font("SANS_SERIF", Font.BOLD, 14);
+      FontRenderContext frc = new FontRenderContext(null, true, true);
+      g2d.setFont(labelFont);
       String label = String.format("Radius %6.3f", alphaRadius);
-      int xLab = (int) px0;
-      int yLab = (int) (py0 + 2 * rPixel + 20);
+      TextLayout layout = new TextLayout(label, labelFont, frc);
+      Rectangle2D rText = layout.getPixelBounds(frc, 0, 0);
+      int xLab = (int) (xCenter - rText.getCenterX());
+      int yLab = (int) (yCenter + rPixel + 2 * rText.getHeight());
       g2d.drawString(label, xLab, yLab);
     }
 
@@ -278,11 +281,11 @@ public class AlphaShapeDemoImage {
    * @param radius the alpha radius for testing
    * @param vertices a list of the vertices in the TIN.
    */
-  static void verifyCircleTestPlausibility(IIncrementalTin tin, double radius) {
+ static void verifyCircleTestPlausibility(IIncrementalTin tin, double radius) {
     List<Vertex> vertices = tin.getVertices();
     for (IQuadEdge e : tin.edges()) {
-
-      if (e.getLength() >= 2 * radius) {
+      double eLength = e.getLength();
+      if (eLength >= 2 * radius) {
         continue;
       }
       Vertex A = e.getA();
@@ -290,16 +293,24 @@ public class AlphaShapeDemoImage {
       Vertex C = e.getForward().getB();
       Vertex D = e.getForwardFromDual().getB();
       AlphaCircle circle = new AlphaCircle(radius, A.getX(), A.getY(), B.getX(), B.getY());
+      // The following flags are arranged to support debugging when we wish
+      // to inspect how a particular inside/outside decision was made.
       boolean inside0 = false;
       boolean inside1 = false;
+      boolean cInside0 = false;
+      boolean cInside1 = false;
+      boolean dInside0 = false;
+      boolean dInside1 = false;
       if (C != null) {
-        inside0 |= circle.isPointInCircleLeft(C.getX(), C.getY());
-        inside1 |= circle.isPointInCircleRight(C.getX(), C.getY());
+        cInside0 |= circle.isPointInCircleLeft(C.getX(), C.getY());
+        cInside1 |= circle.isPointInCircleRight(C.getX(), C.getY());
       }
       if (D != null) {
-        inside0 |= circle.isPointInCircleLeft(D.getX(), D.getY());
-        inside1 |= circle.isPointInCircleRight(D.getX(), D.getY());
+        dInside0 |= circle.isPointInCircleLeft(D.getX(), D.getY());
+        dInside1 |= circle.isPointInCircleRight(D.getX(), D.getY());
       }
+      inside0 = cInside0 | dInside0;
+      inside1 = cInside1 | dInside1;
       for (Vertex v : vertices) {
         if (v != A && v != B && v != C && v != D) {
           boolean test0 = circle.isPointInCircleLeft(v.getX(), v.getY());
@@ -312,7 +323,6 @@ public class AlphaShapeDemoImage {
       }
     }
   }
-
 
 
   /**
@@ -337,7 +347,7 @@ public class AlphaShapeDemoImage {
       if (edge.getLength() > 2 * radius) {
         continue;
       }
-          Vertex A = edge.getA();
+      Vertex A = edge.getA();
       Vertex B = edge.getB();
       Vertex C = edge.getForward().getB();
       Vertex D = edge.getForwardFromDual().getB();
@@ -348,7 +358,7 @@ public class AlphaShapeDemoImage {
         inside0 |= circle.isPointInCircleLeft(C.getX(), C.getY());
         inside1 |= circle.isPointInCircleRight(C.getX(), C.getY());
       }
-          if (D != null) {
+      if (D != null) {
         inside0 |= circle.isPointInCircleLeft(D.getX(), D.getY());
         inside1 |= circle.isPointInCircleRight(D.getX(), D.getY());
       }

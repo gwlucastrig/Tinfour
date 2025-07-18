@@ -312,7 +312,7 @@ public class AlphaCircle {
   }
 
   /**
-   * Determines whether the associated edge is covered (unexposed).
+   * Determines whether the associated edge is exposed or covered (unexposed).
    * The standard alpha-shape algorithm classifies an edge as being
    * "exposed" if at least one of its associated alpha circles
    * that does not contain a vertex. The Tinfour modifed algorithm
