@@ -42,22 +42,44 @@ import org.tinfour.common.Vertex;
  */
 public class AlphaPart {
 
-  final boolean isPolygon;
+  final AlphaPartType partType;
   final List<IQuadEdge> edges = new ArrayList<>();
-  double area;
+  final List<Vertex>vertices = new ArrayList<>();
+  final double area;
   AlphaPart parent;
   final List<AlphaPart> children = new ArrayList<>();
 
+
   /**
-   * Standard constructor, package scope.
+   * Standard constructor, package scope.  Not used
    */
   AlphaPart() {
-    isPolygon = true;
+    partType = AlphaPartType.Unspecified;
+    area = 0;
   }
 
-  AlphaPart(boolean isPolygon) {
-    this.isPolygon = isPolygon;
+
+  AlphaPart(AlphaPartType partType, double area, List<IQuadEdge>eList) {
+    this.partType = partType;
+    this.area = area;
+    this.edges.addAll(eList);
   }
+
+  AlphaPart(List<Vertex>inputVertices){
+    this.partType = AlphaPartType.Vertices;
+    this.area = 0;
+    this.vertices.addAll(inputVertices);
+  }
+
+  /**
+   * Gets the type of part (polygon, unconnected lines, or unassociated vertices)
+   * for this alpha part.
+   * @return a valid enumeration instance.
+   */
+  public AlphaPartType getPartType(){
+    return partType;
+  }
+
 
   /**
    * Gets a list of any child (embedded) alpha part components.
@@ -69,12 +91,33 @@ public class AlphaPart {
   }
 
   /**
-   * Gets a list of the edges that define the alpha part.
+   * Gets a list of the edges that define the alpha part. Because this call exposes
+   * the internal list element of the part, applications should not
+   * modify the List instance that is returned from this call.
    *
    * @return a valid, potentially empty list
    */
   public List<IQuadEdge> getEdges() {
     return new ArrayList<>(edges);
+  }
+
+  /**
+   * Gets a list of the Vertices that define the alpha part. Because this call
+   * exposes
+   * the internal list element of the part, applications should not
+   * modify the List instance that is returned from this call.
+   *
+   * @return a valid, potentially empty list
+   */
+  public List<Vertex> getVertices() {
+    if (vertices.isEmpty()) {
+      if (!edges.isEmpty()) {
+        edges.forEach(e -> {
+          vertices.add(e.getA());
+        });
+      }
+    }
+    return vertices;
   }
 
   /**
@@ -86,18 +129,7 @@ public class AlphaPart {
     return parent;
   }
 
-  /**
-   * Gets the vertices that define the alpha part.
-   *
-   * @return a valid, non-empty list.
-   */
-  public List<Vertex> getVertices() {
-    ArrayList<Vertex> vList = new ArrayList<>(edges.size());
-    for (IQuadEdge edge : edges) {
-      vList.add(edge.getA());
-    }
-    return vList;
-  }
+ 
 
   /**
    * Indicates that the path encloses a region.
@@ -127,45 +159,9 @@ public class AlphaPart {
    * an open-line.
    */
   public boolean isPolygon() {
-    return isPolygon;
+    return partType==AlphaPartType.Polygon;
   }
 
-  /**
-   * Performs area computation and other operations related to the completion
-   * of an alpha shape.
-   */
-  void complete() {
-    if (edges.size() < 3) {
-      return;
-    }
-    if (!isPolygon) {
-      area = 0;
-      return;
-    }
-    double xSum = 0;
-    double ySum = 0;
-    for (IQuadEdge edge : edges) {
-      Vertex A = edge.getA();
-      xSum += A.getX();
-      ySum += A.getY();
-    }
-    double xC = xSum / edges.size();
-    double yC = ySum / edges.size();
-
-    Vertex A = edges.get(0).getA();
-    double x0 = A.getX() - xC;
-    double y0 = A.getY() - yC;
-    double aSum = 0;
-    for (IQuadEdge e : edges) {
-      Vertex B = e.getB();
-      double x1 = B.getX() - xC;
-      double y1 = B.getY() - yC;
-      aSum += x0 * y1 - x1 * y0;
-      x0 = x1;
-      y0 = y1;
-    }
-    area = aSum / 2.0;
-  }
 
   /**
    * Gets the computed area of a polygon feature.
@@ -191,11 +187,21 @@ public class AlphaPart {
   @Override
   public String toString() {
     String geoString;
-    if (isPolygon) {
-      geoString = "polygon   ";
-    } else {
-      geoString = "open-line ";
+    switch (partType) {
+      case Polygon:
+        geoString = "polygon     ";
+        break;
+      case OpenLine:
+        geoString = "open-line   ";
+        break;
+      case Vertices:
+        geoString = "vertices    ";
+        break;
+      default:
+        geoString = "Unspecified ";
+        break;
     }
+
     String a = parent != null ? "child" : "";
     if (children.size() > 0) {
       if (a.isEmpty()) {
@@ -205,8 +211,14 @@ public class AlphaPart {
       }
     }
 
+    int n;
+    if(partType==AlphaPartType.Vertices){
+      n = vertices.size();
+    }else{
+      n = edges.size();
+    }
     return String.format("AlphaPart %s n=%3d, area=%6.3f, %s",
-      geoString, edges.size(), getArea(), a);
+      geoString, n, getArea(), a);
   }
 
   /**
@@ -221,7 +233,7 @@ public class AlphaPart {
   public Path2D getPath2D() {
     Path2D p = new Path2D.Double();
 
-    if (isPolygon && Math.abs(getArea()) > 1.0e-6) {
+    if (isPolygon() && Math.abs(getArea()) > 1.0e-6) {
       // edges are connected.  Move to first vertex of first edge,
       // and then line-to second vertex of all subsequent edges.
       IQuadEdge aEdge = edges.get(0);

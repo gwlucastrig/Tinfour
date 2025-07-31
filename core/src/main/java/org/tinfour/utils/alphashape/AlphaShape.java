@@ -50,27 +50,18 @@ import org.tinfour.utils.Polyside;
  * convex bounding polygon that defines a region covered by a set of vertices.
  * The alpha shape may also include "holes" within the bounds of the outer
  * polygon.
- *  <p>
+ * <p>
  * <strong>Instances are coupled to the source triangulation: </strong> When
  * an instance of this class is created, it receives several elements
  * from the source Incremental TIN instance supplied in the constructor.
  * Therefore, it is imperative that the source triangulation not be modified
  * while the AlphaShape instance is still being used.
  * <p>
- * <strong>Maturity of this implementation:</strong>
- * At this time, the current AlphaShape implementation supports cases
- * in which the results are polygon in nature. It has not been tested
- * extensively for potentially degenerate cases. For example, very small
- * values of the radius for the alpha-circle tests would correctly
- * produce an alpha shape consisting of individual points. Some sets of vertices
- * collapse into open line features.
- * <p>
  * <strong>References:</strong>
  * <cite>H. Edelsbrunner, D. Kirkpatrick and R. Seidel,
  * "On the shape of a set of points in the plane,"
- * in IEEE Transactions on Information Theory, vol. 29, no. 4, pp. 551-559, July
- * 1983,
- * doi: 10.1109/TIT.1983.1056714.</cite>
+ * in IEEE Transactions on Information Theory, vol. 29, no. 4, pp. 551-559,
+ * July 1983, doi: 10.1109/TIT.1983.1056714.</cite>
  */
 public class AlphaShape {
 
@@ -108,7 +99,6 @@ public class AlphaShape {
     double sNominal = thresholds.getNominalPointSpacing();
     areaMinThreshold = sNominal * sNominal / 1048576.0;
 
-
     // About edge index scheme:
     // Each edge has two indices, one for each direction. The "base" index
     // is always even, the index of its dual is always one greater than
@@ -134,9 +124,45 @@ public class AlphaShape {
       }
       int eIndex = edge.getIndex();
       int dIndex = eIndex ^ 1;
-      boolean test = AlphaCircle.isCovered(edge, radius, false);
-      covered[eIndex] = test;
-      covered[dIndex] = test;
+      Vertex A = edge.getA();
+      Vertex B = edge.getB();
+      Vertex C = edge.getForward().getB();
+      Vertex D = edge.getForwardFromDual().getB();
+      AlphaCircle circle = new AlphaCircle(radius, A.getX(), A.getY(), B.getX(), B.getY());
+      // The following flags are arranged to support debugging when we wish
+      // to inspect how a particular inside/outside decision was made.
+      boolean cInside = false;
+      boolean dInside = false;
+      boolean cInside0 = false;
+      boolean cInside1 = false;
+      boolean dInside0 = false;
+      boolean dInside1 = false;
+      if (C != null) {
+        cInside0 |= circle.isPointInCircleLeft(C.getX(), C.getY());
+        cInside1 |= circle.isPointInCircleRight(C.getX(), C.getY());
+      }
+      if (D != null) {
+        dInside0 |= circle.isPointInCircleLeft(D.getX(), D.getY());
+        dInside1 |= circle.isPointInCircleRight(D.getX(), D.getY());
+      }
+      cInside = cInside0 | cInside1;
+      dInside = dInside0 | dInside1;
+
+      if (cInside) {
+        covered[dIndex] = true;
+        covered[eIndex] = true;
+        if (dInside) {
+          covered[dIndex] = true;
+        } else {
+          border[dIndex] = true;
+        }
+      } else if (dInside) {
+        // the logic already established that cInside is false
+        covered[eIndex] = true;
+        covered[dIndex] = true;
+        border[eIndex] = true;
+      }
+
     }
 
     // Recall that an edge has two sides.  This logic finds the sides
@@ -145,16 +171,18 @@ public class AlphaShape {
     // would be one in which all edges are covered.
     for (IQuadEdge e : tin.edges()) {
       int eIndex = e.getIndex();
-      if (covered[eIndex]) {
+      int dIndex = eIndex ^ 1;
+      if (border[eIndex] || border[dIndex]) {
         // find the side-cover values
         IQuadEdge d = e.getDual();
-        int dIndex = d.getIndex();
         int fIndex = e.getForward().getIndex();
         int rIndex = e.getReverse().getIndex();
         boolean eSideCover = covered[fIndex] && covered[rIndex];
         int dfIndex = d.getForward().getIndex();
         int drIndex = d.getReverse().getIndex();
         boolean dSideCover = covered[dfIndex] && covered[drIndex];
+        border[eIndex] = false;
+        border[dIndex] = false;
         if (!eSideCover) {
           border[eIndex] = true;
         }
@@ -163,6 +191,7 @@ public class AlphaShape {
         }
       }
     }
+
 
     // Build the alpha-shape polygons using the border classifications
     // established above. The border flags mark covered edges that have a side
@@ -185,36 +214,40 @@ public class AlphaShape {
       // But the border could be either the base edge or its dual.
       // So this logic needs to check both.
       for (int i = 0; i < 2; i++, e0 = e0.getDual()) {
+        List<IQuadEdge> eList = new ArrayList<>();
         int startIndex = e0.getIndex();
         if (!border[startIndex] || visited[startIndex]) {
           continue;
         }
         visited[startIndex] = true;
-        AlphaPart aPath = new AlphaPart();
-        alphaParts.add(aPath);
-        aPath.edges.add(e0.getDual());
+
+        eList.add(e0.getDual());
         IQuadEdge e = e0.getReverse();
         while (true) {
           int eIndex = e.getIndex();
           if (eIndex == startIndex) {
             break;
           }
-          if (border[eIndex]) {
+          if (border[eIndex] || covered[eIndex]) {
             visited[eIndex] = true;
-            aPath.edges.add(e.getDual());
+            eList.add(e.getDual());
             e = e.getReverse();
           } else {
             e = e.getReverseFromDual();
           }
         }
-        aPath.complete();
-        if (aPath.edges.size() < 3) {
-          // the traversal algorithm was not successful in creating a path
-          alphaParts.remove(aPath);
-          aPath = new AlphaPart(false);
-          alphaParts.add(aPath);
-          aPath.edges.add(e0.getDual());
+        // if the eList size is less than 3, the traversal algorithm
+        // was not successful in creating a polygoon.  The area computation
+        // will come back as zero
+        double area = computeArea(eList);
+        AlphaPartType partType;
+        if(Math.abs(area) >= areaMinThreshold){
+          partType = AlphaPartType.Polygon;
+        }else{
+          partType = AlphaPartType.OpenLine;
         }
+        AlphaPart aPath = new AlphaPart(partType, area, eList);
+        alphaParts.add(aPath);
       }
     }
 
@@ -246,6 +279,88 @@ public class AlphaShape {
         }
       }
     }
+
+    // If the alpha radius is small enough, individual vertices might
+    // be exposed. Collect unassociated vertices (if any).
+    List<Vertex> vList = new ArrayList<>();
+    for (IQuadEdge edge : tin.edges()) {
+      IQuadEdge e = edge;
+      int eIndex = e.getIndex();
+      int dIndex = eIndex ^ 1;
+      if (covered[eIndex] || covered[dIndex]) {
+        // The vertex was identified as part of the alpha shape
+        continue;
+      }
+
+
+      for (int iSide = 0; iSide < 2; iSide++) {
+        // if vertex A of the edge was not already processed
+        // check to see if it should be included.
+        if (!visited[eIndex]) {
+          boolean uncommitted = true;
+          for (IQuadEdge p : e.pinwheel()) {
+            int pIndex = p.getIndex();
+            if (covered[pIndex] || visited[pIndex]) {
+              uncommitted = false;
+            }
+            visited[pIndex] = true;
+          }
+
+          if (uncommitted) {
+            Vertex A = e.getA();
+            vList.add(A);
+          }
+        }
+
+          // Set up to process the other side of the edge (to potentially
+          // obtain vertex B).
+          if (iSide == 0) {
+            if (visited[dIndex]) {
+              break;
+            }
+            eIndex = dIndex;
+            dIndex = eIndex ^ 1;
+            e = e.getDual();
+
+        }
+      }
+    }
+
+    if(vList.size()>0){
+      AlphaPart part = new AlphaPart(vList);
+      alphaParts.add(part);
+    }
+
+
+  }
+
+  private double computeArea(List<IQuadEdge> edges) {
+    if (edges.size() < 3) {
+      return 0;
+    }
+    double aSum = 0;
+    double xSum = 0;
+    double ySum = 0;
+    for (IQuadEdge edge : edges) {
+      Vertex A = edge.getA();
+      xSum += A.getX();
+      ySum += A.getY();
+    }
+    double xC = xSum / edges.size();
+    double yC = ySum / edges.size();
+
+    Vertex A = edges.get(0).getA();
+    double x0 = A.getX() - xC;
+    double y0 = A.getY() - yC;
+    for (IQuadEdge e : edges) {
+      Vertex B = e.getB();
+      double x1 = B.getX() - xC;
+      double y1 = B.getY() - yC;
+      aSum += x0 * y1 - x1 * y0;
+      x0 = x1;
+      y0 = y1;
+    }
+    return aSum / 2.0;
   }
 
   /**
@@ -314,7 +429,7 @@ public class AlphaShape {
     Path2D p = new Path2D.Double();
     for (AlphaPart a : alphaParts) {
       if (polygonFlag) {
-        if (a.isPolygon && Math.abs(a.getArea()) > areaMinThreshold) {
+        if (a.isPolygon() && Math.abs(a.getArea()) > areaMinThreshold) {
           // edges are connected.  Move to first vertex of first edge,
           // and then line-to second vertex of all subsequent edges.
           IQuadEdge aEdge = a.edges.get(0);
@@ -326,7 +441,7 @@ public class AlphaShape {
           }
         }
       } else {
-        if (a.isPolygon) {
+        if (a.isPolygon()) {
           if (Math.abs(a.getArea()) <= areaMinThreshold) {
             IQuadEdge aEdge = a.edges.get(0);
             Vertex A = aEdge.getA();
@@ -360,7 +475,7 @@ public class AlphaShape {
   public Path2D getOuterPolygonsPath2D() {
     Path2D p = new Path2D.Double();
     for (AlphaPart a : alphaParts) {
-      if (a.isPolygon && !a.isEnclosed() && Math.abs(a.getArea()) > areaMinThreshold) {
+      if (a.isPolygon() && !a.isEnclosed() && Math.abs(a.getArea()) > areaMinThreshold) {
         // edges are connected.  Move to first vertex of first edge,
         // and then line-to second vertex of all subsequent edges.
         IQuadEdge aEdge = a.edges.get(0);
@@ -387,7 +502,7 @@ public class AlphaShape {
     List<IConstraint> constraints = new ArrayList<>();
     for (AlphaPart a : alphaParts) {
       LinearConstraint constraint = new LinearConstraint();
-      if (a.isPolygon) {
+      if (a.isPolygon()) {
         Vertex A = a.edges.get(0).getA();
         constraint.add(A);
         for (IQuadEdge e : a.edges) {
@@ -424,9 +539,10 @@ public class AlphaShape {
 
   /**
    * Gets the Delaunay triangulation from which this instance was derived.
+   *
    * @return a valid reference to an instance of IIncrementalTin.
    */
-  public IIncrementalTin getDelaunayTriangulation(){
+  public IIncrementalTin getDelaunayTriangulation() {
     return this.tin;
   }
 
