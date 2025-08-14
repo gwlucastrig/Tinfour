@@ -129,7 +129,7 @@ public class AlphaPart {
     return parent;
   }
 
- 
+
 
   /**
    * Indicates that the path encloses a region.
@@ -189,16 +189,16 @@ public class AlphaPart {
     String geoString;
     switch (partType) {
       case Polygon:
-        geoString = "polygon     ";
+        geoString = "polygon    ";
         break;
       case OpenLine:
-        geoString = "open-line   ";
+        geoString = "open-line  ";
         break;
       case Vertices:
-        geoString = "vertices    ";
-        break;
+        geoString = "vertices   ";
+        return String.format("AlphaPart %s n=%3d ",   geoString, vertices.size());
       default:
-        geoString = "Unspecified ";
+        geoString = "Unspecified";
         break;
     }
 
@@ -211,11 +211,11 @@ public class AlphaPart {
       }
     }
 
-    int n;
-    if(partType==AlphaPartType.Vertices){
-      n = vertices.size();
-    }else{
-      n = edges.size();
+    int n = edges.size();
+
+    if (a.isEmpty()) {
+      return String.format("AlphaPart %s n=%3d, area=%6.3f",
+        geoString, n, getArea());
     }
     return String.format("AlphaPart %s n=%3d, area=%6.3f, %s",
       geoString, n, getArea(), a);

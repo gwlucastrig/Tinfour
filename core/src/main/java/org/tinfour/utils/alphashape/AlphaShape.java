@@ -111,6 +111,7 @@ public class AlphaShape {
     boolean[] covered = new boolean[maxEdgeAllocationIndex + 2];
     boolean[] border = new boolean[maxEdgeAllocationIndex + 2];
 
+    // Step 1: Classify edges  ----------------------------
     // we define a border edge as an "outside border":
     //    a) the edge is covered
     //    b) the left side of the edge is exposed
@@ -162,37 +163,38 @@ public class AlphaShape {
         covered[dIndex] = true;
         border[eIndex] = true;
       }
-
     }
 
-    // Recall that an edge has two sides.  This logic finds the sides
-    // of the covered edges that face exposed triangles.  We consider a triangle
-    // as exposed if one or more of its edges is exposed.  A "covered" triangle
-    // would be one in which all edges are covered.
+
+    // Step 1a: Reclassify edges based on neighboring triangles ----------
+    //   If the forward and reverse edges for a border edge
+    // are both covered, we treat the entire triangle as being
+    // part of the interior of the alpha shape. This condition
+    // causes the code to mark the border edge as fully covered
+    // rather than a border.
     for (IQuadEdge e : tin.edges()) {
       int eIndex = e.getIndex();
       int dIndex = eIndex ^ 1;
-      if (border[eIndex] || border[dIndex]) {
-        // find the side-cover values
+      if (border[eIndex]) {
+        int efIndex = e.getForward().getIndex();
+        int erIndex = e.getReverse().getIndex();
+        if (covered[efIndex] && covered[erIndex]) {
+          border[eIndex] = false;
+          covered[eIndex] = true;
+        }
+      } else if (border[dIndex]) {
         IQuadEdge d = e.getDual();
-        int fIndex = e.getForward().getIndex();
-        int rIndex = e.getReverse().getIndex();
-        boolean eSideCover = covered[fIndex] && covered[rIndex];
         int dfIndex = d.getForward().getIndex();
         int drIndex = d.getReverse().getIndex();
-        boolean dSideCover = covered[dfIndex] && covered[drIndex];
-        border[eIndex] = false;
-        border[dIndex] = false;
-        if (!eSideCover) {
-          border[eIndex] = true;
-        }
-        if (!dSideCover) {
-          border[dIndex] = true;
+        if (covered[dfIndex] && covered[drIndex]) {
+          border[dIndex] = false;
+          covered[dIndex] = true;
         }
       }
     }
 
 
+    // Step 2: Assemble alpha polygons ----------------------------
     // Build the alpha-shape polygons using the border classifications
     // established above. The border flags mark covered edges that have a side
     // that faces an exposed triangle. The visited flags tells the logic whether
@@ -204,9 +206,7 @@ public class AlphaShape {
     // As each border is processed, its index is added to the visited flags.
     // The polygon-building sub-loop terminates when it reaches its original
     // starting edge.
-    //   Note that it is possible for an edge to border two exposed triangles.
-    // This is common in the classic alpha-shape definition, but rare in the
-    // Tinfour-modified definition.
+    //
     boolean[] visited = new boolean[maxEdgeAllocationIndex + 2];
     for (IQuadEdge edge : tin.edges()) {
       IQuadEdge e0 = edge;
@@ -280,6 +280,7 @@ public class AlphaShape {
       }
     }
 
+    // Step 3: Collect orphan vertices -------------------------------------
     // If the alpha radius is small enough, individual vertices might
     // be exposed. Collect unassociated vertices (if any).
     List<Vertex> vList = new ArrayList<>();

@@ -144,11 +144,10 @@ public class AlphaCircle {
       double s = (h * h + k * k) / (2 * k);
       double t = -h / k;
 
-      double a = (1 + t * t);
-      double b = 2 * s * t;
-      double c = s * s - r * r;
+      double st = s*t;
+          double oneT2 = 1+t*t;
+      double d = r*r*oneT2 - s*s;  // the discriminant
 
-      double d = b * b - 4 * a * c;
       if (d < 0) {
         if (d > -1.0e-12) {
           // The discriminant is close enough to zero
@@ -165,7 +164,7 @@ public class AlphaCircle {
         }
       }
       d = Math.sqrt(d);
-      double x = (-b - d) / (2 * a);
+      double x = (-st-d)/oneT2;
       double y = s + t * x;
       // We wish to place centerX0, centerY0 to the left of the
       // segment (x0, y0), (x1, y0).  Compute the dot product of
@@ -175,14 +174,14 @@ public class AlphaCircle {
       if (side > 0) {
         centerX0 = x + x0;
         centerY0 = y + y0;
-        x = (-b + d) / (2 * a);
+        x = (-st+d)/oneT2;
         y = s + t * x;
         centerX1 = x + x0;
         centerY1 = y + y0;
       } else {
         centerX1 = x + x0;
         centerY1 = y + y0;
-        x = (-b + d) / (2 * a);
+        x =  x = (-st+d)/oneT2;
         y = s + t * x;
         centerX0 = x + x0;
         centerY0 = y + y0;
@@ -191,11 +190,10 @@ public class AlphaCircle {
       // Here we compute y first and x as a function of y with x = s + t*y
       double s = (k * k + h * h) / (2 * h);
       double t = -k / h;
-      double a = (1 + t * t);
-      double b = 2 * s * t;
-      double c = s * s - r * r;
+            double st = s*t;
+          double oneT2 = 1+t*t;
+      double d = r*r*oneT2 - s*s;  // the discriminant
 
-      double d = b * b - 4 * a * c;
       if (d < 0) {
         if (d > -1.0e-12) {
           d = 0;
@@ -209,20 +207,20 @@ public class AlphaCircle {
         }
       }
       d = Math.sqrt(d);
-      double y = (-b - d) / (2 * a);
+      double y =  (-st-d)/oneT2;
       double x = s + t * y;
       double side = h * y - k * x;  // see note on side calculation above
       if (side > 0) {
         centerX0 = x + x0;
         centerY0 = y + y0;
-        y = (-b + d) / (2 * a);
+        y = (-st+d)/oneT2;
         x = s + t * y;
         centerX1 = x + x0;
         centerY1 = y + y0;
       } else {
         centerX1 = x + x0;
         centerY1 = y + y0;
-        y = (-b + d) / (2 * a);
+        y =  (-st+d)/oneT2;
         x = s + t * y;
         centerX0 = x + x0;
         centerY0 = y + y0;
