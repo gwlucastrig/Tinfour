@@ -115,8 +115,10 @@ public class AlphaShape {
     // we define a border edge as an "outside border":
     //    a) the edge is covered
     //    b) the left side of the edge is exposed
-    // note that it is possible for both sides of a covered
-    // edge to be exposed.
+    // The Tinfour edge iterator loops over the base side
+    // of the edge.  So this logic must also consider the dual.
+    // This consideration adds a slight complication because
+    // the left side of the edge is the right side of the dual and vice versa.
     for (IQuadEdge edge : tin.edges()) {
       // we treat all edges of length greater than the diameter
       // as being fully uncovered.
@@ -165,7 +167,6 @@ public class AlphaShape {
       }
     }
 
-
     // Step 1a: Reclassify edges based on neighboring triangles ----------
     //   If the forward and reverse edges for a border edge
     // are both covered, we treat the entire triangle as being
@@ -193,7 +194,6 @@ public class AlphaShape {
       }
     }
 
-
     // Step 2: Assemble alpha polygons ----------------------------
     // Build the alpha-shape polygons using the border classifications
     // established above. The border flags mark covered edges that have a side
@@ -210,45 +210,56 @@ public class AlphaShape {
     boolean[] visited = new boolean[maxEdgeAllocationIndex + 2];
     for (IQuadEdge edge : tin.edges()) {
       IQuadEdge e0 = edge;
+      int startIndex = e0.getIndex();
+      int dualIndex = startIndex ^ 1;
+      if (visited[startIndex] || visited[dualIndex]) {
+        continue;
+      }
+      if (!border[startIndex]) {
+        if (border[dualIndex]) {
+          startIndex = dualIndex;
+          e0 = e0.getDual();
+        } else {
+          continue;
+        }
+      }
       // The tin.edges() iterator yields only the base side of each edge.
       // But the border could be either the base edge or its dual.
       // So this logic needs to check both.
-      for (int i = 0; i < 2; i++, e0 = e0.getDual()) {
-        List<IQuadEdge> eList = new ArrayList<>();
-        int startIndex = e0.getIndex();
-        if (!border[startIndex] || visited[startIndex]) {
-          continue;
-        }
-        visited[startIndex] = true;
 
-        eList.add(e0.getDual());
-        IQuadEdge e = e0.getReverse();
-        while (true) {
-          int eIndex = e.getIndex();
-          if (eIndex == startIndex) {
-            break;
-          }
-          if (border[eIndex] || covered[eIndex]) {
-            visited[eIndex] = true;
-            eList.add(e.getDual());
-            e = e.getReverse();
-          } else {
-            e = e.getReverseFromDual();
-          }
+      List<IQuadEdge> eList = new ArrayList<>();
+
+      visited[startIndex] = true;
+      visited[dualIndex] = true;
+      eList.add(e0.getDual());
+
+      IQuadEdge e = e0.getReverse();
+      while (true) {
+        int eIndex = e.getIndex();
+        if (eIndex == startIndex) {
+          break;
         }
-        // if the eList size is less than 3, the traversal algorithm
-        // was not successful in creating a polygoon.  The area computation
-        // will come back as zero
-        double area = computeArea(eList);
-        AlphaPartType partType;
-        if(Math.abs(area) >= areaMinThreshold){
-          partType = AlphaPartType.Polygon;
-        }else{
-          partType = AlphaPartType.OpenLine;
+        if (border[eIndex] || covered[eIndex]) {
+          visited[eIndex] = true;
+          visited[eIndex ^ 1] = true;
+          eList.add(e.getDual());
+          e = e.getReverse();
+        } else {
+          e = e.getReverseFromDual();
         }
-        AlphaPart aPath = new AlphaPart(partType, area, eList);
-        alphaParts.add(aPath);
       }
+      // if the eList size is less than 3, the traversal algorithm
+      // was not successful in creating a polygoon.  The area computation
+      // will come back as zero
+      double area = computeArea(eList);
+      AlphaPartType partType;
+      if (Math.abs(area) >= areaMinThreshold) {
+        partType = AlphaPartType.Polygon;
+      } else {
+        partType = AlphaPartType.OpenLine;
+      }
+      AlphaPart aPath = new AlphaPart(partType, area, eList);
+      alphaParts.add(aPath);
     }
 
     if (alphaParts.size() > 1) {
@@ -260,6 +271,7 @@ public class AlphaShape {
           return Double.compare(area2, area1);
         }
       });
+      
       for (int i = 1; i < alphaParts.size(); i++) {
         AlphaPart iPart = alphaParts.get(i);
         Vertex A = iPart.edges.get(0).getA();
@@ -293,7 +305,6 @@ public class AlphaShape {
         continue;
       }
 
-
       for (int iSide = 0; iSide < 2; iSide++) {
         // if vertex A of the edge was not already processed
         // check to see if it should be included.
@@ -313,26 +324,74 @@ public class AlphaShape {
           }
         }
 
-          // Set up to process the other side of the edge (to potentially
-          // obtain vertex B).
-          if (iSide == 0) {
-            if (visited[dIndex]) {
-              break;
-            }
-            eIndex = dIndex;
-            dIndex = eIndex ^ 1;
-            e = e.getDual();
-
+        // Set up to process the other side of the edge (to potentially
+        // obtain vertex B).
+        if (iSide == 0) {
+          if (visited[dIndex]) {
+            break;
+          }
+          eIndex = dIndex;
+          dIndex = eIndex ^ 1;
+          e = e.getDual();
         }
       }
     }
 
-    if(vList.size()>0){
+    if (vList.size() > 0) {
       AlphaPart part = new AlphaPart(vList);
       alphaParts.add(part);
     }
 
-
+    // Diagnostic: Count vertices an verify that all vertices in the
+    // Delaunay triangulation were captured by the alpha shape
+    //  int nVertexBorder = 0;
+    //  int nVertexOrphan = 0;
+    //  int nVertexInside = 0;
+    //  Arrays.fill(visited, 0, visited.length, false);
+    //  for (AlphaPart part : alphaParts) {
+    //    if (part.getPartType() == AlphaPartType.Vertices) {
+    //      nVertexOrphan += part.vertices.size();
+    //    } else {
+    //      for (IQuadEdge e : part.edges) {
+    //        int eIndex = e.getIndex();
+    //        if (visited[eIndex]) {
+    //          continue;
+    //        }
+    //        visited[eIndex] = true;
+    //        nVertexBorder++;
+    //        for (IQuadEdge p : e.pinwheel()) {
+    //          visited[p.getIndex()] = true;
+    //        }
+    //      }
+    //    }
+    //  }
+    //
+    //  for (IQuadEdge e : tin.edges()) {
+    //    int eIndex = e.getIndex();
+    //    if (covered[eIndex] && !visited[eIndex]) {
+    //      nVertexInside++;
+    //      visited[eIndex] = true;
+    //      for (IQuadEdge p : e.pinwheel()) {
+    //        visited[p.getIndex()] = true;
+    //      }
+    //    }
+    //    IQuadEdge d = e.getDual();
+    //    int dIndex = d.getIndex();
+    //    if (covered[dIndex] && !visited[dIndex]) {
+    //      nVertexInside++;
+    //      visited[dIndex] = true;
+    //      for (IQuadEdge p : d.pinwheel()) {
+    //        visited[p.getIndex()] = true;
+    //      }
+    //    }
+    //  }
+    //
+    //  System.out.format("# Vertices for borders  %6d%n", nVertexBorder);
+    //  System.out.format("# Vertices for interior %6d%n", nVertexInside);
+    //  System.out.format("# Vertices unassociated %6d%n", nVertexOrphan);
+    //  System.out.format("# Vertices total:       %6d%n",
+    //        nVertexBorder + nVertexInside + nVertexOrphan);
+    //  System.out.format("# Vertices in TIN       %6d%n", tin.getVertices().size());
   }
 
   private double computeArea(List<IQuadEdge> edges) {

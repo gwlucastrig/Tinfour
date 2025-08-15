@@ -68,7 +68,7 @@ public class AlphaShapeDemoImage {
     Font font = new Font("Arial", Font.PLAIN, 72);
     String text = "A";
     boolean populateInteriorVertices = true;
-    double alphaRadius = 4.5;
+    double alphaRadius = 3.0;
 
     // Options for display and image production
     boolean labelVertices = false;
@@ -281,7 +281,7 @@ public class AlphaShapeDemoImage {
    * @param radius the alpha radius for testing
    * @param vertices a list of the vertices in the TIN.
    */
- static void verifyCircleTestPlausibility(IIncrementalTin tin, double radius) {
+  static void verifyCircleTestPlausibility(IIncrementalTin tin, double radius) {
     List<Vertex> vertices = tin.getVertices();
     for (IQuadEdge e : tin.edges()) {
       double eLength = e.getLength();
@@ -324,17 +324,17 @@ public class AlphaShapeDemoImage {
     }
   }
 
-
   /**
    * Adds color-coded highlights to show how edges are rated by the
    * AlphaCircle test: orange if one circle is occupied, green if both circles
-   * are occupied.  In the classic alpha-shape definition, an edge is treated
+   * are occupied. In the classic alpha-shape definition, an edge is treated
    * as covered (not exposed) if and only if a vertex lies within both
-   * the alpha circles for that edge.  In Tinfour's modified definition,
+   * the alpha circles for that edge. In Tinfour's modified definition,
    * the edge is considered covered (not exposed) if a vertex lies within
-   * either alpha circle.  So when interpreting the graphic, edges that are
-   * rendered in orange are treated as exposed in the classic alpha-shape
-   * definition and are treated as covered in the Tinfour modified definition.
+   * either alpha circle or both. Furthermore, if only one of the neighboring
+   * vertices lies within one or both of the circles, then the edge is treated
+   * as a border (with the interior facing the enclosed vertex and the exterior
+   * facing the non-enclosed vertex).
    *
    * @param tin a valid Delaunay triangulation
    * @param radius the alpha radius
@@ -352,29 +352,39 @@ public class AlphaShapeDemoImage {
       Vertex C = edge.getForward().getB();
       Vertex D = edge.getForwardFromDual().getB();
       AlphaCircle circle = new AlphaCircle(radius, A.getX(), A.getY(), B.getX(), B.getY());
-      boolean inside0 = false;
-      boolean inside1 = false;
+      boolean cInside0 = false;
+      boolean cInside1 = false;
+      boolean dInside0 = false;
+      boolean dInside1 = false;
       if (C != null) {
-        inside0 |= circle.isPointInCircleLeft(C.getX(), C.getY());
-        inside1 |= circle.isPointInCircleRight(C.getX(), C.getY());
+        cInside0 |= circle.isPointInCircleLeft(C.getX(), C.getY());
+        cInside1 |= circle.isPointInCircleRight(C.getX(), C.getY());
       }
       if (D != null) {
-        inside0 |= circle.isPointInCircleLeft(D.getX(), D.getY());
-        inside1 |= circle.isPointInCircleRight(D.getX(), D.getY());
+        dInside0 |= circle.isPointInCircleLeft(D.getX(), D.getY());
+        dInside1 |= circle.isPointInCircleRight(D.getX(), D.getY());
       }
 
-      int nC = 0;
-      if (inside0) {
-        nC++;
-      }
-      if (inside1) {
-        nC++;
+      boolean cInside = cInside0 | cInside1;
+      boolean dInside = dInside0 | dInside1;
+
+      boolean covered = false;
+      boolean border = false;
+      if (cInside) {
+        covered = true;
+        if (!dInside) {
+          border = true;
+        }
+      } else if (dInside) {
+        // the logic already established that cInside is false
+        covered = true;
+        border = true;
       }
 
-      if (nC == 1) {
+      if (border) {
         alpha1.moveTo(A.getX(), A.getY());
         alpha1.lineTo(B.getX(), B.getY());
-      } else if (nC == 2) {
+      } else if (covered) {
         alpha2.moveTo(A.getX(), A.getY());
         alpha2.lineTo(B.getX(), B.getY());
       }
