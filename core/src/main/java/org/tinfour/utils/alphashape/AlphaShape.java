@@ -352,56 +352,56 @@ public class AlphaShape {
 
     // Diagnostic: Count vertices an verify that all vertices in the
     // Delaunay triangulation were captured by the alpha shape.
-    int nVertexBorder = 0;
-    int nVertexOrphan = 0;
-    int nVertexInside = 0;
-    boolean[] marked = new boolean[maxEdgeAllocationIndex + 2];
-
-    // add up the vertices incorporated into the borders.
-    for (AlphaPart part : alphaParts) {
-      if (part.getPartType() == AlphaPartType.Vertices) {
-        nVertexOrphan += part.vertices.size();
-      } else {
-        for (IQuadEdge e : part.edges) {
-          int eIndex = e.getIndex();
-          if (marked[eIndex]) {
-            continue;
-          }
-          marked[eIndex] = true;
-          nVertexBorder++;
-          for (IQuadEdge p : e.pinwheel()) {
-            marked[p.getIndex()] = true;
-          }
-        }
-      }
-    }
-
-    for (IQuadEdge e : tin.edges()) {
-      int eIndex = e.getIndex();
-      if (covered[eIndex] && !marked[eIndex]) {
-        nVertexInside++;
-        marked[eIndex] = true;
-        for (IQuadEdge p : e.pinwheel()) {
-          marked[p.getIndex()] = true;
-        }
-      }
-      IQuadEdge d = e.getDual();
-      int dIndex = d.getIndex();
-      if (covered[dIndex] && !marked[dIndex]) {
-        nVertexInside++;
-        marked[dIndex] = true;
-        for (IQuadEdge p : d.pinwheel()) {
-          marked[p.getIndex()] = true;
-        }
-      }
-    }
-
-    int nVertexTotal = nVertexBorder + nVertexInside + nVertexOrphan;
-    System.out.format("# Vertices for borders  %6d%n", nVertexBorder);
-    System.out.format("# Vertices for interior %6d%n", nVertexInside);
-    System.out.format("# Vertices unassociated %6d%n", nVertexOrphan);
-    System.out.format("# Vertices total:       %6d%n", nVertexTotal);
-    System.out.format("# Vertices in TIN       %6d%n", tin.getVertices().size());
+    //  int nVertexBorder = 0;
+    //  int nVertexOrphan = 0;
+    //  int nVertexInside = 0;
+    //  boolean[] marked = new boolean[maxEdgeAllocationIndex + 2];
+    //
+    //  // add up the vertices incorporated into the borders.
+    //  for (AlphaPart part : alphaParts) {
+    //    if (part.getPartType() == AlphaPartType.Vertices) {
+    //      nVertexOrphan += part.vertices.size();
+    //    } else {
+    //      for (IQuadEdge e : part.edges) {
+    //        int eIndex = e.getIndex();
+    //        if (marked[eIndex]) {
+    //          continue;
+    //        }
+    //        marked[eIndex] = true;
+    //        nVertexBorder++;
+    //        for (IQuadEdge p : e.pinwheel()) {
+    //          marked[p.getIndex()] = true;
+    //        }
+    //      }
+    //    }
+    //  }
+    //
+    //  for (IQuadEdge e : tin.edges()) {
+    //    int eIndex = e.getIndex();
+    //    if (covered[eIndex] && !marked[eIndex]) {
+    //      nVertexInside++;
+    //      marked[eIndex] = true;
+    //      for (IQuadEdge p : e.pinwheel()) {
+    //        marked[p.getIndex()] = true;
+    //      }
+    //    }
+    //    IQuadEdge d = e.getDual();
+    //    int dIndex = d.getIndex();
+    //    if (covered[dIndex] && !marked[dIndex]) {
+    //      nVertexInside++;
+    //      marked[dIndex] = true;
+    //      for (IQuadEdge p : d.pinwheel()) {
+    //        marked[p.getIndex()] = true;
+    //      }
+    //    }
+    //  }
+    //
+    //  int nVertexTotal = nVertexBorder + nVertexInside + nVertexOrphan;
+    //  System.out.format("# Vertices for borders  %6d%n", nVertexBorder);
+    //  System.out.format("# Vertices for interior %6d%n", nVertexInside);
+    //  System.out.format("# Vertices unassociated %6d%n", nVertexOrphan);
+    //  System.out.format("# Vertices total:       %6d%n", nVertexTotal);
+    //  System.out.format("# Vertices in TIN       %6d%n", tin.getVertices().size());
   }
 
   private double computeArea(List<IQuadEdge> edges) {

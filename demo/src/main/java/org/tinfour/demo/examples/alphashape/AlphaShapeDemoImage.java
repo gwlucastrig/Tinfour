@@ -78,6 +78,7 @@ public class AlphaShapeDemoImage {
     boolean fillInputShape = false;
     boolean showAlphaClassificationForEdges = false;
     boolean drawReferenceCircle = true;
+    boolean drawInsetText = true;
 
     // Other settings related to output
     boolean printDiagnosticText = false;
@@ -146,16 +147,26 @@ public class AlphaShapeDemoImage {
       // To illustrate the size of the alpha circle, draw a circle
       // with the alpha radius on the right side of the image.
       //
-      // Get the coordinatates to be used for the upper-left corner
-      // of the circle.
-      Rectangle2D r2d = rsa.getDomainRectangle();
-      double px0 = r2d.getMaxX() + 10;
-      double py0 = r2d.getMinY();
+      Font labelFont = new Font("SANS_SERIF", Font.BOLD, 14);
+      FontRenderContext frc = new FontRenderContext(null, true, true);
+      String label = String.format("Radius %6.3f", alphaRadius);
+      TextLayout layout = new TextLayout(label, labelFont, frc);
+      Rectangle2D rText = layout.getPixelBounds(frc, 0, 0);
+
+      // Get the pixel dimensions of the circle
       // The pixelsPerUnit value relates the scale of the Cartesian coordinate
       // system associated with the Delaunay triangulation to the scale of
       // pixel coordinates.
       double pixelsPerUnit = rsa.getPixelsPerUnit();
       double rPixel = alphaRadius * pixelsPerUnit;
+
+      // Get the coordinatates to be used for the upper-left corner
+      // of the circle.
+      Rectangle2D r2d = rsa.getDomainRectangle();
+      double pw = rText.getCenterX() > rPixel ? rText.getCenterX() : rPixel;
+      double px0 = r2d.getMaxX() + 5 + pw;
+      double py0 = r2d.getMinY();
+
       Ellipse2D e2d = new Ellipse2D.Double(px0, py0, rPixel * 2, rPixel * 2);
       g2d.setStroke(new BasicStroke(2.0f));
       g2d.setColor(Color.blue);
@@ -168,15 +179,20 @@ public class AlphaShapeDemoImage {
       e2d = new Ellipse2D.Double(xCenter - 3, yCenter - 3, 6, 6);
       g2d.fill(e2d);
       g2d.draw(e2d);
-      Font labelFont = new Font("SANS_SERIF", Font.BOLD, 14);
-      FontRenderContext frc = new FontRenderContext(null, true, true);
+
       g2d.setFont(labelFont);
-      String label = String.format("Radius %6.3f", alphaRadius);
-      TextLayout layout = new TextLayout(label, labelFont, frc);
-      Rectangle2D rText = layout.getPixelBounds(frc, 0, 0);
       int xLab = (int) (xCenter - rText.getCenterX());
       int yLab = (int) (yCenter + rPixel + 2 * rText.getHeight());
       g2d.drawString(label, xLab, yLab);
+    }
+
+    if (drawInsetText) {
+      g2d.setColor(Color.blue);
+      g2d.setStroke(new BasicStroke(1.0f));
+      FontRenderContext frc = new FontRenderContext(null, true, true);
+      TextLayout layout = new TextLayout(text, font, frc);
+      Rectangle2D r2d = layout.getPixelBounds(frc, 0, 0);
+      layout.draw(g2d, 10, (float) (10 - r2d.getMinY()));
     }
 
     System.out.println("");
@@ -249,12 +265,13 @@ public class AlphaShapeDemoImage {
     }
 
     if (populateInterior) {
+      int nD = 100;
       Rectangle2D r2d = shape.getBounds2D();
       Random random = new Random(0);
-      double dx = r2d.getWidth() / 100;
-      double dy = r2d.getHeight() / 100;
-      for (int i = 0; i < 100; i++) {
-        for (int j = 0; j < 100; j++) {
+      double dx = r2d.getWidth() / nD;
+      double dy = r2d.getHeight() / nD;
+      for (int i = 0; i <= nD; i++) {
+        for (int j = 0; j <= nD; j++) {
           double x = i * dx + r2d.getMinX();
           double y = j * dy + r2d.getMinY();
           if (shape.contains(x, y)) {
