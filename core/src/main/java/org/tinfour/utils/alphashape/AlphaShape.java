@@ -112,13 +112,16 @@ public class AlphaShape {
     boolean[] border = new boolean[maxEdgeAllocationIndex + 2];
 
     // Step 1: Classify edges  ----------------------------
-    // we define a border edge as an "outside border":
-    //    a) the edge is covered
-    //    b) the left side of the edge is exposed
-    // The Tinfour edge iterator loops over the base side
-    // of the edge.  So this logic must also consider the dual.
-    // This consideration adds a slight complication because
-    // the left side of the edge is the right side of the dual and vice versa.
+    // For each edge:
+    //    Vertex A, vertex B are the initial point and final point
+    //    Vertex C is the vertex to the left of edge AB
+    //    Vertex D is the vertex to the right of edge AB
+    // Possible states:
+    //    a) the edge is fully exposed -- neither vertex C or D lies in a circle
+    //    b) the edge is fully covered -- both C and D lie in a circle
+    //    c) border -- one or both circles are occupied, but only on one
+    //          side of the edge.  The unoccupied side is the exterior border.
+    //          The occupied side of the edge is the "covered" side.
     for (IQuadEdge edge : tin.edges()) {
       // we treat all edges of length greater than the diameter
       // as being fully uncovered.
@@ -126,7 +129,7 @@ public class AlphaShape {
         continue;
       }
       int eIndex = edge.getIndex();
-      int dIndex = eIndex ^ 1;
+      int dIndex = eIndex ^ 1;  // index of the dual
       Vertex A = edge.getA();
       Vertex B = edge.getB();
       Vertex C = edge.getForward().getB();
@@ -140,6 +143,8 @@ public class AlphaShape {
       boolean cInside1 = false;
       boolean dInside0 = false;
       boolean dInside1 = false;
+      // The following could be streamlined a bit, but we leave it
+      // this way to facilitate debugging and diagnostics.
       if (C != null) {
         cInside0 |= circle.isPointInCircleLeft(C.getX(), C.getY());
         cInside1 |= circle.isPointInCircleRight(C.getX(), C.getY());
@@ -206,9 +211,20 @@ public class AlphaShape {
     // As each border is processed, its index is added to the visited flags.
     // The polygon-building sub-loop terminates when it reaches its original
     // starting edge.
+    //    The edge-collection process moves from edge to edge by performing
+    // a counterclockwise "pivot" around the first edge,  When setting the
+    // visited flag for border edges, we mark both sides of the edge
+    // as true.  Doing so will prevent the edge from being treated as a
+    // starting edge at any point. For exterior edges, we mark only the side
+    // that starts with the pivot point (array indexed by the dual index of the edge).
+    // Doing so will allow us to correctly use the visited flags when collecting
+    // orphan vertices later on.
     //
     boolean[] visited = new boolean[maxEdgeAllocationIndex + 2];
     for (IQuadEdge edge : tin.edges()) {
+      // The tin.edges() iterator produces only the base side of each edge-pair.
+      // But the border could be either the base edge or its dual.
+      // So this logic needs to check both sides of the edge.
       IQuadEdge e0 = edge;
       int startIndex = e0.getIndex();
       int dualIndex = startIndex ^ 1;
@@ -223,31 +239,23 @@ public class AlphaShape {
           continue;
         }
       }
-      // The tin.edges() iterator yields only the base side of each edge.
-      // But the border could be either the base edge or its dual.
-      // So this logic needs to check both.
 
       List<IQuadEdge> eList = new ArrayList<>();
+      IQuadEdge e = e0;
+      int eIndex = e.getIndex();
+      do {
 
-      visited[startIndex] = true;
-      visited[dualIndex] = true;
-      eList.add(e0.getDual());
-
-      IQuadEdge e = e0.getReverse();
-      while (true) {
-        int eIndex = e.getIndex();
-        if (eIndex == startIndex) {
-          break;
-        }
+        visited[eIndex ^ 1] = true;  // The edge leading outward from the pivot
         if (border[eIndex] || covered[eIndex]) {
           visited[eIndex] = true;
-          visited[eIndex ^ 1] = true;
           eList.add(e.getDual());
           e = e.getReverse();
         } else {
           e = e.getReverseFromDual();
         }
-      }
+        eIndex = e.getIndex();
+      } while (eIndex != startIndex);
+
       // if the eList size is less than 3, the traversal algorithm
       // was not successful in creating a polygoon.  The area computation
       // will come back as zero
@@ -271,7 +279,7 @@ public class AlphaShape {
           return Double.compare(area2, area1);
         }
       });
-      
+
       for (int i = 1; i < alphaParts.size(); i++) {
         AlphaPart iPart = alphaParts.get(i);
         Vertex A = iPart.edges.get(0).getA();
@@ -343,55 +351,57 @@ public class AlphaShape {
     }
 
     // Diagnostic: Count vertices an verify that all vertices in the
-    // Delaunay triangulation were captured by the alpha shape
-    //  int nVertexBorder = 0;
-    //  int nVertexOrphan = 0;
-    //  int nVertexInside = 0;
-    //  Arrays.fill(visited, 0, visited.length, false);
-    //  for (AlphaPart part : alphaParts) {
-    //    if (part.getPartType() == AlphaPartType.Vertices) {
-    //      nVertexOrphan += part.vertices.size();
-    //    } else {
-    //      for (IQuadEdge e : part.edges) {
-    //        int eIndex = e.getIndex();
-    //        if (visited[eIndex]) {
-    //          continue;
-    //        }
-    //        visited[eIndex] = true;
-    //        nVertexBorder++;
-    //        for (IQuadEdge p : e.pinwheel()) {
-    //          visited[p.getIndex()] = true;
-    //        }
-    //      }
-    //    }
-    //  }
-    //
-    //  for (IQuadEdge e : tin.edges()) {
-    //    int eIndex = e.getIndex();
-    //    if (covered[eIndex] && !visited[eIndex]) {
-    //      nVertexInside++;
-    //      visited[eIndex] = true;
-    //      for (IQuadEdge p : e.pinwheel()) {
-    //        visited[p.getIndex()] = true;
-    //      }
-    //    }
-    //    IQuadEdge d = e.getDual();
-    //    int dIndex = d.getIndex();
-    //    if (covered[dIndex] && !visited[dIndex]) {
-    //      nVertexInside++;
-    //      visited[dIndex] = true;
-    //      for (IQuadEdge p : d.pinwheel()) {
-    //        visited[p.getIndex()] = true;
-    //      }
-    //    }
-    //  }
-    //
-    //  System.out.format("# Vertices for borders  %6d%n", nVertexBorder);
-    //  System.out.format("# Vertices for interior %6d%n", nVertexInside);
-    //  System.out.format("# Vertices unassociated %6d%n", nVertexOrphan);
-    //  System.out.format("# Vertices total:       %6d%n",
-    //        nVertexBorder + nVertexInside + nVertexOrphan);
-    //  System.out.format("# Vertices in TIN       %6d%n", tin.getVertices().size());
+    // Delaunay triangulation were captured by the alpha shape.
+    int nVertexBorder = 0;
+    int nVertexOrphan = 0;
+    int nVertexInside = 0;
+    boolean[] marked = new boolean[maxEdgeAllocationIndex + 2];
+
+    // add up the vertices incorporated into the borders.
+    for (AlphaPart part : alphaParts) {
+      if (part.getPartType() == AlphaPartType.Vertices) {
+        nVertexOrphan += part.vertices.size();
+      } else {
+        for (IQuadEdge e : part.edges) {
+          int eIndex = e.getIndex();
+          if (marked[eIndex]) {
+            continue;
+          }
+          marked[eIndex] = true;
+          nVertexBorder++;
+          for (IQuadEdge p : e.pinwheel()) {
+            marked[p.getIndex()] = true;
+          }
+        }
+      }
+    }
+
+    for (IQuadEdge e : tin.edges()) {
+      int eIndex = e.getIndex();
+      if (covered[eIndex] && !marked[eIndex]) {
+        nVertexInside++;
+        marked[eIndex] = true;
+        for (IQuadEdge p : e.pinwheel()) {
+          marked[p.getIndex()] = true;
+        }
+      }
+      IQuadEdge d = e.getDual();
+      int dIndex = d.getIndex();
+      if (covered[dIndex] && !marked[dIndex]) {
+        nVertexInside++;
+        marked[dIndex] = true;
+        for (IQuadEdge p : d.pinwheel()) {
+          marked[p.getIndex()] = true;
+        }
+      }
+    }
+
+    int nVertexTotal = nVertexBorder + nVertexInside + nVertexOrphan;
+    System.out.format("# Vertices for borders  %6d%n", nVertexBorder);
+    System.out.format("# Vertices for interior %6d%n", nVertexInside);
+    System.out.format("# Vertices unassociated %6d%n", nVertexOrphan);
+    System.out.format("# Vertices total:       %6d%n", nVertexTotal);
+    System.out.format("# Vertices in TIN       %6d%n", tin.getVertices().size());
   }
 
   private double computeArea(List<IQuadEdge> edges) {
