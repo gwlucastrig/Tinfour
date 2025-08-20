@@ -34,11 +34,13 @@ import java.io.PrintStream;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.Iterator;
 import java.util.List;
 import org.tinfour.common.IConstraint;
 import org.tinfour.common.IIncrementalTin;
 import org.tinfour.common.IQuadEdge;
 import org.tinfour.common.LinearConstraint;
+import org.tinfour.common.SimpleTriangle;
 import org.tinfour.common.Thresholds;
 import org.tinfour.common.Vertex;
 import org.tinfour.utils.Polyside;
@@ -69,6 +71,7 @@ public class AlphaShape {
   private final double radius;
   private final double areaMinThreshold;
   private final List<AlphaPart> alphaParts = new ArrayList<>();
+  private final boolean[] triangleEdge;
 
   /**
    * Constructs an alpha shape based on the specified Delaunay triangulation.
@@ -350,6 +353,22 @@ public class AlphaShape {
       alphaParts.add(part);
     }
 
+    // Step 4: Initialize data to support triangle iterator -----------
+    //   In the code above, the covered flag was populated as true
+    // for BOTH sides of an interior edge.  Interior edges will be used
+    // to establish triangles by the triangle iterator.  However, the
+    // exterior side of a border edge was also marked as covered
+    // (just as a coding convenience). So when we set up the triangle-edge
+    // flags, we want to make sure that borders are not set.
+    triangleEdge = new boolean[maxEdgeAllocationIndex];
+    for (int i = 0; i < maxEdgeAllocationIndex; i++) {
+      if (covered[i] && !border[i]) {
+        triangleEdge[i] = true;
+      }
+    }
+
+
+
     // Diagnostic: Count vertices an verify that all vertices in the
     // Delaunay triangulation were captured by the alpha shape.
     //  int nVertexBorder = 0;
@@ -402,6 +421,7 @@ public class AlphaShape {
     //  System.out.format("# Vertices unassociated %6d%n", nVertexOrphan);
     //  System.out.format("# Vertices total:       %6d%n", nVertexTotal);
     //  System.out.format("# Vertices in TIN       %6d%n", tin.getVertices().size());
+
   }
 
   private double computeArea(List<IQuadEdge> edges) {
@@ -620,4 +640,91 @@ public class AlphaShape {
   public String toString() {
     return "Alpha-shape with radius: " + radius;
   }
+
+  private Iterator<SimpleTriangle> getTriangleIterator() {
+    Iterator<SimpleTriangle> ix = new Iterator<SimpleTriangle>() {
+      int index;
+      final List<IQuadEdge> edgeList = new ArrayList();
+      
+      {
+        boolean[] visited = new boolean[tin.getMaximumEdgeAllocationIndex()];
+        for (IQuadEdge e : tin.edges()) {
+          int eIndex = e.getIndex();
+          int dIndex = eIndex ^ 1;
+          if (triangleEdge[eIndex] && !visited[eIndex]) {
+            IQuadEdge f = e.getForward();
+            IQuadEdge r = e.getReverse();
+            visited[eIndex] = true;
+            visited[f.getIndex()] = true;
+            visited[r.getIndex()] = true;
+            edgeList.add(e);
+          }
+          if (triangleEdge[dIndex] && !visited[dIndex]) {
+            IQuadEdge d = e.getDual();
+            IQuadEdge f = d.getForward();
+            IQuadEdge r = d.getReverse();
+            visited[dIndex] = true;
+            visited[f.getIndex()] = true;
+            visited[r.getIndex()] = true;
+            edgeList.add(d);
+          }
+        }
+      }
+
+      @Override
+      public boolean hasNext() {
+        return index < edgeList.size();
+      }
+
+      /**
+       * Overrides the default remove operation with an implementation that
+       * throws an UnsupportedOperationException. Tinfour requires a specific
+       * set of relationships between edges, and removing an edge from an
+       * iterator would damage the overall structure and result in faulty
+       * behavior. Therefore, Tinfour iterators do not support remove
+       * operations.
+       */
+      @Override
+      public void remove() {
+        throw new UnsupportedOperationException(
+          "Remove operation not supported by this iterator");
+      }
+
+      @Override
+      public SimpleTriangle next() {
+        if (index == edgeList.size()) {
+          return null;
+        }
+        IQuadEdge e = edgeList.get(index);
+        index++;
+        return new SimpleTriangle(tin, e);
+      }
+    };
+
+    return ix;
+  }
+
+  /**
+   * Provides an instance of an iterable that can be used to access the
+   * set of triangles interior to the alpha shape.
+   * <p>
+   * For example, this method could be used in the following manner:
+   * <pre>
+   *     AlphaShape alphaShape = // some implementation
+   *     for(SimpleTriangle t: alphaShape.triangles(){
+   *            // some processing logic
+   *     }
+   * </pre>
+   *
+   * @return a valid instance.
+   */
+  public Iterable<SimpleTriangle> triangles() {
+    return new Iterable<SimpleTriangle>() {
+      @Override
+      public Iterator<SimpleTriangle> iterator() {
+        return getTriangleIterator();
+      }
+    };
+  }
+
 }

@@ -14,18 +14,15 @@ import java.awt.Graphics2D;
 import java.awt.Shape;
 import java.awt.font.FontRenderContext;
 import java.awt.font.TextLayout;
-import java.awt.geom.AffineTransform;
 import java.awt.geom.Ellipse2D;
 import java.awt.geom.Line2D;
 import java.awt.geom.Path2D;
-import java.awt.geom.PathIterator;
 import java.awt.geom.Rectangle2D;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Random;
 import javax.imageio.ImageIO;
 import org.tinfour.common.IIncrementalTin;
 import org.tinfour.common.IQuadEdge;
@@ -92,7 +89,7 @@ public class AlphaShapeDemoImage {
     //    2.  Create a Delaunay triangulation using Tinfour's IncrementalTin class
     //    3.  Use the triangulation to create an alpha shape.
     List<Vertex> vertices = new ArrayList<>();
-    Shape inputShape = makeTestVertices(vertices, font, text, populateInteriorVertices);
+    Shape inputShape = AlphaShapeTestVertices.makeVerticesFromText(vertices, font, text, populateInteriorVertices);
     IIncrementalTin tin = new IncrementalTin(1);
     tin.add(vertices, null);
     AlphaShape alpha = new AlphaShape(tin, alphaRadius);
@@ -203,89 +200,7 @@ public class AlphaShapeDemoImage {
     }
     ImageIO.write(image, "PNG", output);
   }
-
-  /**
-   * Make a list of vertices for test input using a letter form.
-   * Although letter forms are not necessarily an ideal match for the
-   * assumptions
-   * of an alpha shape, they provide a convenient way to generate a test set/
-   *
-   * @param font the font to be used, should have a point size of at least 72.
-   * @param text a non-empty text for input.
-   * @param populateInterior populate the interior regions of the letter forms
-   * with
-   * randomly generated vertices.
-   * @return a valid test set.
-   */
-  static Shape makeTestVertices(List<Vertex> vertices, Font font, String text, boolean populateInterior) {
-    AffineTransform flipY = new AffineTransform(1, 0, 0, -1, 0, 0);
-    FontRenderContext frc = new FontRenderContext(null, true, true);
-    TextLayout layout = new TextLayout(text, font, frc);
-    Shape shape = layout.getOutline(new AffineTransform());
-
-    PathIterator path = shape.getPathIterator(flipY, 0.25);
-    shape = flipY.createTransformedShape(shape);
-
-    double[] d = new double[6];
-    int vIndex = 0; // gives each vertex a unique index
-    int n;
-    double x0 = 0;
-    double y0 = 0;
-    while (!path.isDone()) {
-      int flag = path.currentSegment(d);
-      switch (flag) {
-        case PathIterator.SEG_MOVETO:
-          vertices.add(new Vertex(d[0], d[1], 0, vIndex++)); // NOPMD
-          x0 = d[0];
-          y0 = d[1];
-          break;
-        case PathIterator.SEG_LINETO:
-          double x1 = d[0];
-          double y1 = d[1];
-          double dx = x1 - x0;
-          double dy = y1 - y0;
-          double dS = Math.sqrt(dx * dx + dy * dy);
-          n = (int) Math.ceil(dS / 4);
-          for (int i = 1; i < n; i++) {
-            double t = (double) i / (double) n;
-            double x = t * (x1 - x0) + x0;
-            double y = t * (y1 - y0) + y0;
-            vertices.add(new Vertex(x, y, 0, vIndex++));
-          }
-          vertices.add(new Vertex(d[0], d[1], 0, vIndex++));
-          x0 = x1;
-          y0 = y1;
-          break;
-        case PathIterator.SEG_CLOSE:
-          break;
-        default:
-          break;
-      }
-      path.next();
-    }
-
-    if (populateInterior) {
-      int nD = 100;
-      Rectangle2D r2d = shape.getBounds2D();
-      Random random = new Random(0);
-      double dx = r2d.getWidth() / nD;
-      double dy = r2d.getHeight() / nD;
-      for (int i = 0; i <= nD; i++) {
-        for (int j = 0; j <= nD; j++) {
-          double x = i * dx + r2d.getMinX();
-          double y = j * dy + r2d.getMinY();
-          if (shape.contains(x, y)) {
-            if (random.nextDouble() < 0.125) {
-              vertices.add(new Vertex(x, y, 0, vIndex++));
-            }
-          }
-        }
-      }
-    }
-
-    return shape;
-  }
-
+ 
   /**
    * A procedure to verify that by testing the vertices directly opposite an
    * edge
