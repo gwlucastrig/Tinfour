@@ -66,6 +66,7 @@ public class RuppertRefiner implements DelaunayRefiner {
 	 * Note: theoretical termination is guaranteed for minAngleDeg <= 20.7° with
 	 * standard circumcenters; off-centers improve behavior for larger angles, but
 	 * pathological inputs can still defeat termination.
+	 * </p>
 	 */
 	public RuppertRefiner(IIncrementalTin tin, double minAngleDeg) {
 		if (tin == null) {
@@ -230,7 +231,6 @@ public class RuppertRefiner implements DelaunayRefiner {
 	}
 
 	/**
-	 * 
 	 * Inserts Shewchuk’s off-center point for a skinny triangle, or splits an
 	 * encroached constrained segment instead.
 	 * <p>
@@ -373,7 +373,6 @@ public class RuppertRefiner implements DelaunayRefiner {
 	}
 
 	/**
-	 * 
 	 * Inserts a triangle’s circumcenter unless it would encroach a constrained
 	 * subsegment, in which case that subsegment is split instead.
 	 * <p>
@@ -433,7 +432,6 @@ public class RuppertRefiner implements DelaunayRefiner {
 	}
 
 	/**
-	 * 
 	 * Returns the first constrained subsegment encroached by a given point.
 	 * <p>
 	 * For each constrained subsegment, the method constructs its diametral circle
@@ -459,7 +457,6 @@ public class RuppertRefiner implements DelaunayRefiner {
 	}
 
 	/**
-	 * 
 	 * Finds the first constrained subsegment whose open interior lies within a
 	 * given distance of a point.
 	 * <p>
