@@ -77,7 +77,7 @@ public final class TriangleUtility {
 	 * This method checks all three angles of the triangle defined by vertices
 	 * {@code A}, {@code B}, and {@code C}, and returns {@code true} if any angle is
 	 * acuter ("smaller") than θ.
-	 * 
+	 *
 	 * @param t    The {@link SimpleTriangle} whose angles are to be tested.
 	 * @param cos2 The threshold cosine squared value of angle θ. Should be in the
 	 *             range [0, 1].
@@ -109,26 +109,31 @@ public final class TriangleUtility {
 
 		// quick degeneracy check
 		if (ab2 < EPS2 || ac2 < EPS2 || bc2 < EPS2)
+		 {
 			return false; // ignore or flag as error
+		}
 
 		// angle at A
 		double dotA = abx * acx + aby * acy; // AB·AC
 		if (dotA > 0 && // obtuse angles cannot be "small"
-				dotA * dotA > cos2 * ab2 * ac2)
+				dotA * dotA > cos2 * ab2 * ac2) {
 			return true;
+		}
 
 		// angle at B
 		double bax = -abx, bay = -aby; // BA = -AB (no new length)
 		double dotB = bax * bcx + bay * bcy; // BA·BC
-		if (dotB > 0 && dotB * dotB > cos2 * ab2 * bc2)
+		if (dotB > 0 && dotB * dotB > cos2 * ab2 * bc2) {
 			return true;
+		}
 
 		// angle at C
 		double cax = -acx, cay = -acy; // CA = -AC
 		double cbx = -bcx, cby = -bcy; // CB = -BC
 		double dotC = cax * cbx + cay * cby; // CA·CB
-		if (dotC > 0 && dotC * dotC > cos2 * ac2 * bc2)
+		if (dotC > 0 && dotC * dotC > cos2 * ac2 * bc2) {
 			return true;
+		}
 
 		return false; // no angle < θ
 	}

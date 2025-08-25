@@ -193,35 +193,36 @@ public class SimpleTriangle {
    * @return a valid floating point number.
    */
   public double getArea() {
+	  Vertex a = getVertexA();
+	  Vertex b = getVertexB();
+	  Vertex c = getVertexC();
+	  if (a == null || b == null || c == null) {
+	    return 0.0;
+	  }
 
-    Vertex a = edgeA.getA();
-    Vertex b = edgeB.getA();
-    Vertex c = edgeC.getA();
-    if (a == null || b == null || c == null) {
-      return 0;
-    }
+	  double ax = a.getX(), ay = a.getY();
+	  double bx = b.getX(), by = b.getY();
+	  double cx = c.getX(), cy = c.getY();
 
-    double ax = a.getX();
-    double ay = a.getY();
-    double bx = b.getX();
-    double by = b.getY();
-    double cx = c.getX();
-    double cy = c.getY();
+	  // fast double‐only computation of twice the signed area
+	  double abx = bx - ax;
+	  double aby = by - ay;
+	  double acx = cx - ax;
+	  double acy = cy - ay;
+	  double det  = acy * abx - acx * aby;    // = 2 * signed area
+	  
+	  double perm = Math.abs(abx) * Math.abs(acy) + Math.abs(aby) * Math.abs(acx);
+	  double bound = 3.33066907387547e-16 * perm; // 3 * 2^-53
+	  if (Math.abs(det) >= bound) return 0.5 * det;
 
-    // The area computation is performed using extended precision
-    // to reduce the severify of numeric errors when processing
-    // triangles that are nearly degenerate (nearly collapsed to a single line).
-    //  area = ( (c.y - a.y) * (b.x - a.x) - (c.x - a.x) * (b.y - a.y) )/2;
-    DD q11 = new DD(cx).selfSubtract(ax);
-    DD q12 = new DD(ay).selfSubtract(by);
-    DD q21 = new DD(cy).selfSubtract(ay);
-    DD q22 = new DD(bx).selfSubtract(ax);
-
-    q11.selfMultiply(q12);
-    q21.selfMultiply(q22);
-    q11.selfAdd(q21);
-    return q11.doubleValue() / 2.0;
-  }
+	  // Fallback: The area computation is performed using extended precision
+	  // to reduce the severify of numeric errors when processing
+	  // triangles that are nearly degenerate (nearly collapsed to a single line).
+	  DD t1 = new DD(acy).selfMultiply(abx); // (cy−ay)*(bx−ax)
+	  DD t2 = new DD(acx).selfMultiply(aby); // (cx−ax)*(by−ay)
+	  DD ddDet = t1.selfSubtract(t2); // exact (acy*abx − acx*aby)
+	  return ddDet.doubleValue() * 0.5;
+	}
 
   /**
    * Gets the polygon-based constraint that contains this triangle, if any.
