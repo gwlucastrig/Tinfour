@@ -89,6 +89,13 @@ public class Circumcircle {
   public double getY() {
     return centerY;
   }
+  
+  /**
+   * Gets a vertex representing the center of this circumcircle.
+   */
+  public Vertex getCircumcenter() {
+	  return new Vertex(centerX, centerY, Double.NaN);
+  }
 
   /**
    * Copies the content of the specified circumcircle instance.
@@ -236,5 +243,9 @@ public class Circumcircle {
   public Rectangle2D getBounds(){
       double r = getRadius();
       return new Rectangle2D.Double(centerX-r, centerY-r, 2*r, 2*r);
+  }
+  
+  public boolean isFinite() {
+    return Double.isFinite(centerX) && Double.isFinite(centerY) && Double.isFinite(r2) && r2 > 0;
   }
 }

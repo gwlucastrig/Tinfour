@@ -129,6 +129,25 @@ public class SimpleTriangle {
   public IQuadEdge getEdgeC() {
     return edgeC;
   }
+  
+  /**
+   * Get the shortest edge of the triangle.
+   *
+   * @return the shortest edge (by squared length)
+   */
+  public IQuadEdge getShortestEdge() {
+      double lenA = edgeA.getLengthSq();
+      double lenB = edgeB.getLengthSq();
+      double lenC = edgeC.getLengthSq();
+
+      if (lenA <= lenB && lenA <= lenC) {
+          return edgeA;
+      } else if (lenB <= lenA && lenB <= lenC) {
+          return edgeB;
+      } else {
+          return edgeC;
+      }
+  }
 
   /**
    * Gets vertex A of the triangle. The method names used in this class follow
@@ -174,35 +193,36 @@ public class SimpleTriangle {
    * @return a valid floating point number.
    */
   public double getArea() {
+	  Vertex a = getVertexA();
+	  Vertex b = getVertexB();
+	  Vertex c = getVertexC();
+	  if (a == null || b == null || c == null) {
+	    return 0.0;
+	  }
 
-    Vertex a = edgeA.getA();
-    Vertex b = edgeB.getA();
-    Vertex c = edgeC.getA();
-    if (a == null || b == null || c == null) {
-      return 0;
-    }
+	  double ax = a.getX(), ay = a.getY();
+	  double bx = b.getX(), by = b.getY();
+	  double cx = c.getX(), cy = c.getY();
 
-    double ax = a.getX();
-    double ay = a.getY();
-    double bx = b.getX();
-    double by = b.getY();
-    double cx = c.getX();
-    double cy = c.getY();
+	  // fast double‐only computation of twice the signed area
+	  double abx = bx - ax;
+	  double aby = by - ay;
+	  double acx = cx - ax;
+	  double acy = cy - ay;
+	  double det  = acy * abx - acx * aby;    // = 2 * signed area
+	  
+	  double perm = Math.abs(abx) * Math.abs(acy) + Math.abs(aby) * Math.abs(acx);
+	  double bound = 3.33066907387547e-16 * perm; // 3 * 2^-53
+	  if (Math.abs(det) >= bound) return 0.5 * det;
 
-    // The area computation is performed using extended precision
-    // to reduce the severify of numeric errors when processing
-    // triangles that are nearly degenerate (nearly collapsed to a single line).
-    //  area = ( (c.y - a.y) * (b.x - a.x) - (c.x - a.x) * (b.y - a.y) )/2;
-    DD q11 = new DD(cx).selfSubtract(ax);
-    DD q12 = new DD(ay).selfSubtract(by);
-    DD q21 = new DD(cy).selfSubtract(ay);
-    DD q22 = new DD(bx).selfSubtract(ax);
-
-    q11.selfMultiply(q12);
-    q21.selfMultiply(q22);
-    q11.selfAdd(q21);
-    return q11.doubleValue() / 2.0;
-  }
+	  // Fallback: The area computation is performed using extended precision
+	  // to reduce the severify of numeric errors when processing
+	  // triangles that are nearly degenerate (nearly collapsed to a single line).
+	  DD t1 = new DD(acy).selfMultiply(abx); // (cy−ay)*(bx−ax)
+	  DD t2 = new DD(acx).selfMultiply(aby); // (cx−ax)*(by−ay)
+	  DD ddDet = t1.selfSubtract(t2); // exact (acy*abx − acx*aby)
+	  return ddDet.doubleValue() * 0.5;
+	}
 
   /**
    * Gets the polygon-based constraint that contains this triangle, if any.
@@ -342,5 +362,31 @@ public class SimpleTriangle {
    */
   public int getIndex(){
     return index;
+  }
+  
+  @Override
+  public String toString() {
+    StringBuilder sb = new StringBuilder("SimpleTriangle{");
+    sb.append("index=").append(index);
+
+    // Vertices A, B, C
+    Vertex A = getVertexA();
+    Vertex B = getVertexB();
+    Vertex C = getVertexC();
+    sb.append(", vertices=[")
+      .append(A != null ? A : "null").append(", ")
+      .append(B != null ? B : "null").append(", ")
+      .append(C != null ? C : "null").append("]");
+
+    // Signed area
+    sb.append(", area=").append(String.format("%.4f", getArea()));
+
+    // Ghost?
+    if (isGhost()) {
+      sb.append(", ghost");
+    }
+
+    sb.append("}");
+    return sb.toString();
   }
 }
