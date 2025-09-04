@@ -220,6 +220,24 @@ public class RendererForTinInspection {
       r2d.getMinX(), yLower, r2d.getMaxX(), yUpper,
       true);
 
+    render(rsa);
+    return rsa;
+  }
+
+
+  /**
+   * Uses the application-provided RenderingSurfaceAir to depicts the content
+   * of the Delaunay triangulation (TIN) associated with this instance.
+   * @param rsa A valid instance providing coordinate transforms and graphics
+   * resources for depiction.
+   */
+  public void render(RenderingSurfaceAid rsa){
+	if (tin == null || !tin.isBootstrapped()) {
+		return;
+	}
+	BufferedImage bImage = rsa.getBufferedImage();
+	int width = bImage.getWidth();
+	int height = bImage.getHeight();			
     Graphics2D g2d = rsa.getGraphics2D();
     if (background != null) {
       g2d.setColor(background);
@@ -310,8 +328,6 @@ public class RendererForTinInspection {
       }
       g2d.draw(s);
     }
-
-    return rsa;
   }
 
   /**

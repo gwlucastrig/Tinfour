@@ -3059,18 +3059,26 @@ public class IncrementalTin implements IIncrementalTin {
       IQuadEdge e = deque.peek();
       IQuadEdge f = e.getForward();
       int fIndex = f.getIndex();
-      if (!f.isConstraintRegionBorder() && !visited.get(fIndex)) {
+      if (!visited.get(fIndex)) {
         visited.set(fIndex);
-        f.setConstraintRegionInteriorIndex(constraintIndex);
-        deque.push(f.getDual());
+        if (f.isConstraintRegionBorder()) {
+          f.setConstraintBorderIndex(constraintIndex);
+        } else {
+          f.setConstraintRegionInteriorIndex(constraintIndex);
+          deque.push(f.getDual());
+        }
         continue;
       }
       IQuadEdge r = e.getReverse();
       int rIndex = r.getIndex();
-      if (!r.isConstraintRegionBorder() && !visited.get(rIndex)) {
+      if (!visited.get(rIndex)) {
         visited.set(rIndex);
-        r.setConstraintRegionInteriorIndex(constraintIndex);
-        deque.push(r.getDual());
+        if (r.isConstraintRegionBorder()) {
+          r.setConstraintBorderIndex(constraintIndex);
+        } else {
+          r.setConstraintRegionInteriorIndex(constraintIndex);
+          deque.push(r.getDual());
+        }
         continue;
       }
       deque.pop();
