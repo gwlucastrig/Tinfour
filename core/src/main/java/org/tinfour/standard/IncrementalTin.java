@@ -3247,6 +3247,18 @@ public class IncrementalTin implements IIncrementalTin {
     md.setForward(db);
     db.setForward(bm);
     bm.setForward(md);
+
+    if (isConformant && restoreConformity) {
+      restoreConformity(am, 1);
+      restoreConformity(mb, 1);
+      restoreConformity(bc.getDual(), 1);
+      restoreConformity(ca.getDual(), 1);
+      restoreConformity(ad.getDual(), 1);
+      restoreConformity(db.getDual(), 1);
+    } else {
+      isConformant = false;
+    }
+
     return m;
   }
 

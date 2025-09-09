@@ -313,6 +313,35 @@ public class EdgePool implements Iterable<IQuadEdge> {
   }
 
   /**
+   * Gets the edge associated with the specified index, if any.
+   * If the index value is out of range, or if the associated edge
+   * has been deallocated, this method returns a null reference.
+   * @param index a positive integer value less than or equal to the maximum
+   * allocation index for edges.
+   * @return if an edge with a matching index exists, a valid reference;
+   * otherwise, a null.
+   */
+  public IQuadEdge getEdgeForIndex(int index){
+    if (index < 0) {
+      return null;
+    }
+    int iPage = index / pageSize2;
+    if (iPage >= pages.length) {
+      return null;
+    }
+    Page p = pages[iPage];
+    int iEdge = (index - (iPage * pageSize2)) / 2;
+    if (iEdge >= p.nAllocated) {
+      return null;
+    }
+    if ((index & 1) == 0) {
+      return p.edges[iEdge];
+    } else {
+      return p.edges[iEdge].getDual();
+    }
+  }
+
+  /**
    * Get a list of the Edges currently stored in the collection
    *
    * @return a valid, potentially empty list of edges
