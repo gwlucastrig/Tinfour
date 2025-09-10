@@ -97,6 +97,8 @@ public class RendererForTinInspection {
   private boolean vertexLabelEnableIndex = true;
   private boolean vertexLabelEnableZ = false;
   private String vertexLabelFormatZ = "%f";
+    private double vertexRenderingSize = 5;
+
   private boolean coordinateSystemIsPixels;
 
   private Color edgeColor = Color.lightGray;
@@ -218,6 +220,24 @@ public class RendererForTinInspection {
       r2d.getMinX(), yLower, r2d.getMaxX(), yUpper,
       true);
 
+    render(rsa);
+    return rsa;
+  }
+
+
+  /**
+   * Uses the application-provided RenderingSurfaceAir to depicts the content
+   * of the Delaunay triangulation (TIN) associated with this instance.
+   * @param rsa A valid instance providing coordinate transforms and graphics
+   * resources for depiction.
+   */
+  public void render(RenderingSurfaceAid rsa){
+	if (tin == null || !tin.isBootstrapped()) {
+		return;
+	}
+	BufferedImage bImage = rsa.getBufferedImage();
+	int width = bImage.getWidth();
+	int height = bImage.getHeight();
     Graphics2D g2d = rsa.getGraphics2D();
     if (background != null) {
       g2d.setColor(background);
@@ -274,7 +294,9 @@ public class RendererForTinInspection {
         xy[1] = v.getY();
 
         af.transform(xy, 0, xy, 2, 1);
-        e2d.setFrame(xy[2] - 2, xy[3] - 2, 5.0f, 5.0f);
+        double vs = vertexRenderingSize;
+        e2d.setFrame(xy[2] - vs / 2, xy[3] - vs / 2, vs, vs);
+
         g2d.fill(e2d);
         g2d.draw(e2d);
 
@@ -306,8 +328,6 @@ public class RendererForTinInspection {
       }
       g2d.draw(s);
     }
-
-    return rsa;
   }
 
   /**
@@ -456,6 +476,10 @@ public class RendererForTinInspection {
     uy /= d;
     double px = uy;
     double py = -ux;
+    if(coordinateSystemIsPixels){
+      px = -px;
+      py = -py;
+    }
     String s = Integer.toString(edge.getIndex());
     Font font = labelFont;
     if (edge.isConstrained()) {
@@ -593,13 +617,27 @@ public class RendererForTinInspection {
    * would be the upper-left corner of the display surface).  Setting the
    * coordinate system to be based on pixels has the effect of flipping the
    * rendering upside down.
+   * <p>
+   * Setting the coordinate system to pixels has a side effect in that
+   * the triangles in the depiction may appear to be oriented in
+   * clockwise fashion rather than counterclockwise. This is an artifact
+   * of the rendering operation and does not affect the underlying
+   * Delaunay triangulation.
    * @param coordinateSystemIsPixels true if the coordinate system is to be
-   * treated as based on pixels; false if the corrdinate system is to be treated
+   * treated as based on pixels; false if the coordinate system is to be treated
    * as Cartesian.
    */
   public void setCoordinateSystemIsPixels(boolean coordinateSystemIsPixels){
     this.coordinateSystemIsPixels = coordinateSystemIsPixels;
   }
 
+  /**
+   * Set the size in pixels for the vertex symbol.  The default size
+   * is 5 pixels.
+   * @param size a positive floating point value, in pixels.
+   */
+  public void setVertexRenderingSize(double size){
+    vertexRenderingSize = size;
+  }
 
 }

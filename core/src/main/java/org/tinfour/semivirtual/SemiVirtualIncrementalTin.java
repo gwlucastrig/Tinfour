@@ -2601,18 +2601,26 @@ public class SemiVirtualIncrementalTin implements IIncrementalTin {
       IQuadEdge e = deque.peek();
       IQuadEdge f = e.getForward();
       int fIndex = f.getIndex();
-      if (!f.isConstraintRegionBorder() && !visited.get(fIndex)) {
+      if (!visited.get(fIndex)) {
         visited.set(fIndex);
-        f.setConstraintRegionInteriorIndex(constraintIndex);
-        deque.push(f.getDual());
+        if (f.isConstraintRegionBorder()) {
+          f.setConstraintBorderIndex(constraintIndex);
+        } else {
+          f.setConstraintRegionInteriorIndex(constraintIndex);
+          deque.push(f.getDual());
+        }
         continue;
       }
       IQuadEdge r = e.getReverse();
       int rIndex = r.getIndex();
-      if (!r.isConstraintRegionBorder() && !visited.get(rIndex)) {
+      if (!visited.get(rIndex)) {
         visited.set(rIndex);
-        r.setConstraintRegionInteriorIndex(constraintIndex);
-        deque.push(r.getDual());
+        if (r.isConstraintRegionBorder()) {
+          r.setConstraintBorderIndex(constraintIndex);
+        } else {
+          r.setConstraintRegionInteriorIndex(constraintIndex);
+          deque.push(r.getDual());
+        }
         continue;
       }
       deque.pop();
@@ -2793,6 +2801,17 @@ public class SemiVirtualIncrementalTin implements IIncrementalTin {
     md.setForward(db);
     db.setForward(bm);
     bm.setForward(md);
+
+    if (isConformant && restoreConformity) {
+      restoreConformity(am, 1);
+      restoreConformity(mb, 1);
+      restoreConformity(bc.getDual(), 1);
+      restoreConformity(ca.getDual(), 1);
+      restoreConformity(ad.getDual(), 1);
+      restoreConformity(db.getDual(), 1);
+    } else {
+      isConformant = false;
+    }
 
     return m;
 
