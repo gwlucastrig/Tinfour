@@ -3187,15 +3187,16 @@ public class IncrementalTin implements IIncrementalTin {
     }
     return null;
   }
-
-  @Override
-  public Vertex splitEdge(IQuadEdge eInput, double zSplit, boolean restoreConformity) {
+  
+  /**
+   * Splits the edge at parameter t measured from A toward B.
+   * t is clamped to (ε, 1-ε) to avoid zero-length subedges.
+   */
+  public Vertex splitEdge(IQuadEdge eInput, double t, double zSplit, boolean restoreConformity) {
 
     QuadEdge ab = (QuadEdge) eInput;
-    // TO DO: implement a check to make sure that eInput
-    //        is a valid edge for this TIN instance.
-
     QuadEdge ba = ab.getDual();
+
     QuadEdge bc = ab.getForward();
     QuadEdge ad = ba.getForward();
     Vertex a = ab.getA();
@@ -3207,11 +3208,19 @@ public class IncrementalTin implements IIncrementalTin {
       return null;
     }
 
+    // reverse references
     QuadEdge ca = ab.getReverse();
     QuadEdge db = ba.getReverse();
-    // subdivide the constraint edge to restore conformity
-    double mx = (a.getX() + b.getX()) / 2.0;
-    double my = (a.getY() + b.getY()) / 2.0;
+
+    // clamp t to avoid degeneracy
+    final double eps = 1e-12;
+    if (!(t > 0.0 && t < 1.0)) {
+      t = Math.max(eps, Math.min(1.0 - eps, t));
+    }
+
+    // coordinates at t along A->B
+    double mx = a.getX() + t * (b.getX() - a.getX());
+    double my = a.getY() + t * (b.getY() - a.getY());
     double mz = zSplit;
 
     Vertex m = new Vertex(mx, my, mz, nSyntheticVertices++);
@@ -3221,29 +3230,30 @@ public class IncrementalTin implements IIncrementalTin {
       m.setStatus(Vertex.BIT_SYNTHETIC);
     }
 
-    // split ab by inserting midpoint m.  ab will become the second segment
-    // the newly allocated point will become the first.
-    // we assign variables to local references with descriptive names
-    // such as am, mb, etc. just to avoid confusion.
+    // split ab; edgePool.splitEdge(ab, m) returns a->m; ab becomes m->b
     QuadEdge am = edgePool.splitEdge(ab, m);
     QuadEdge mb = ab;
     QuadEdge bm = ba;
 
-    // create new edges
+    // create new spokes to c and d
     QuadEdge cm = edgePool.allocateEdge(c, m);
     QuadEdge dm = edgePool.allocateEdge(d, m);
     QuadEdge ma = am.getDual();
     QuadEdge mc = cm.getDual();
     QuadEdge md = dm.getDual();
-    ma.setForward(ad);  // should already be set
+
+    ma.setForward(ad);
     ad.setForward(dm);
     dm.setForward(ma);
+
     mb.setForward(bc);
     bc.setForward(cm);
     cm.setForward(mb);
+
     mc.setForward(ca);
     ca.setForward(am); // should already be set
     am.setForward(mc);
+
     md.setForward(db);
     db.setForward(bm);
     bm.setForward(md);
