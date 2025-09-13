@@ -2723,35 +2723,43 @@ public class SemiVirtualIncrementalTin implements IIncrementalTin {
     return null;
   }
 
-  @Override
+  /**
+   * Split an existing edge at parametric location t measured from A toward B.
+   * The new vertex is inserted at A + t(B−A). If t is at/near an endpoint,
+   * it is clamped to (ε, 1−ε) to avoid zero-length subedges.
+   */
   public Vertex splitEdge(
-          IQuadEdge eInput,
-          double zSplit,
-          boolean restoreConformity)
-  {
+      IQuadEdge eInput,
+      double t,
+      double zSplit,
+      boolean restoreConformity) {
+
     if (restoreConformity) {
       throw new UnsupportedOperationException(
-              "The restoreConformity option is not yet implemented");
+          "The restoreConformity option is not yet implemented");
     }
 
+    // Verify that the edge belongs to this instance
     int index = eInput.getIndex();
     SemiVirtualEdge eTest = edgePool.getEdgeForIndex(index);
     if (eTest == null
-            || eTest.getA() != eInput.getA()
-            || eTest.getB() != eInput.getB()) {
+        || eTest.getA() != eInput.getA()
+        || eTest.getB() != eInput.getB()) {
       throw new IllegalArgumentException(
-              "Specified edge does not belong to this instance for edge index "
+          "Specified edge does not belong to this instance for edge index "
               + index);
     }
 
+    final double eps = 1e-12;
+    if (!(t > 0.0 && t < 1.0)) {
+      t = Math.max(eps, Math.min(1.0 - eps, t));
+    }
 
-   SemiVirtualEdge ab = (SemiVirtualEdge) eInput;
-    // TO DO: implement a check to make sure that eInput
-    //        is a valid edge for this TIN instance.
-
+    SemiVirtualEdge ab = (SemiVirtualEdge) eInput;
     SemiVirtualEdge ba = ab.getDual();
     SemiVirtualEdge bc = ab.getForward();
     SemiVirtualEdge ad = ba.getForward();
+
     Vertex a = ab.getA();
     Vertex b = ab.getB();
     Vertex c = bc.getB();
@@ -2763,9 +2771,10 @@ public class SemiVirtualIncrementalTin implements IIncrementalTin {
 
     SemiVirtualEdge ca = ab.getReverse();
     SemiVirtualEdge db = ba.getReverse();
-    // subdivide the constraint edge to restore conformity
-    double mx = (a.getX() + b.getX()) / 2.0;
-    double my = (a.getY() + b.getY()) / 2.0;
+
+    // Coordinates at parametric location t on A->B
+    double mx = a.getX() + t * (b.getX() - a.getX());
+    double my = a.getY() + t * (b.getY() - a.getY());
     double mz = zSplit;
 
     Vertex m = new Vertex(mx, my, mz, nSyntheticVertices++);
@@ -2775,46 +2784,39 @@ public class SemiVirtualIncrementalTin implements IIncrementalTin {
       m.setStatus(Vertex.BIT_SYNTHETIC);
     }
 
-    // split ab by inserting midpoint m.  ab will become the second segment
-    // the newly allocated point will become the first.
-    // we assign variables to local references with descriptive names
-    // such as am, mb, etc. just to avoid confusion.
+    // Split AB by inserting m (edgePool.splitEdge returns A->M; AB becomes M->B)
     SemiVirtualEdge am = edgePool.splitEdge(ab, m);
     SemiVirtualEdge mb = ab;
     SemiVirtualEdge bm = ba;
 
-    // create new edges
+    // Create spokes
     SemiVirtualEdge cm = edgePool.allocateEdge(c, m);
     SemiVirtualEdge dm = edgePool.allocateEdge(d, m);
     SemiVirtualEdge ma = am.getDual();
     SemiVirtualEdge mc = cm.getDual();
     SemiVirtualEdge md = dm.getDual();
-    ma.setForward(ad);  // should already be set
+
+    // Relink rings (same pattern as midpoint version)
+    ma.setForward(ad);
     ad.setForward(dm);
     dm.setForward(ma);
+
     mb.setForward(bc);
     bc.setForward(cm);
     cm.setForward(mb);
+
     mc.setForward(ca);
-    ca.setForward(am); // should already be set
+    ca.setForward(am);
     am.setForward(mc);
+
     md.setForward(db);
     db.setForward(bm);
     bm.setForward(md);
 
-    if (isConformant && restoreConformity) {
-      restoreConformity(am, 1);
-      restoreConformity(mb, 1);
-      restoreConformity(bc.getDual(), 1);
-      restoreConformity(ca.getDual(), 1);
-      restoreConformity(ad.getDual(), 1);
-      restoreConformity(db.getDual(), 1);
-    } else {
-      isConformant = false;
-    }
+    // restoreConformity not supported in this implementation (flag checked above)
 
+    isConformant = false; // unchanged semantics vs. your current method
     return m;
-
   }
 
   @Override
