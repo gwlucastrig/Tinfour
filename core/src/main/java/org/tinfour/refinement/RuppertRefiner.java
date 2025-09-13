@@ -1,8 +1,9 @@
 package org.tinfour.refinement;
 
 import java.util.ArrayList;
-import java.util.HashSet;
+import java.util.IdentityHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 import org.tinfour.common.Circumcircle;
@@ -12,44 +13,132 @@ import org.tinfour.common.IIncrementalTinNavigator;
 import org.tinfour.common.IQuadEdge;
 import org.tinfour.common.SimpleTriangle;
 import org.tinfour.common.Vertex;
-import org.tinfour.utils.Circle;
 import org.tinfour.utils.SegmentUtility;
-import org.tinfour.utils.TriangleUtility;
 
 /**
- * Improves mesh quality via Ruppert’s Delaunay refinement algorithm.
+ * RuppertRefiner implements Ruppert’s Delaunay refinement for improving mesh
+ * quality of an {@link IIncrementalTin}.
+ *
  * <p>
- * Ruppert’s algorithm generates high-quality triangulations by iteratively
- * improving an initial constrained Delaunay triangulation. Its primary goal is
- * to eliminate poorly-shaped triangles (specifically, triangles with angles
- * below a user-specified minimum).
+ * The refiner iteratively removes poor-quality triangles by inserting Steiner
+ * points (Shewchuk-style off-centers with circumcenter fallback) and by
+ * splitting encroached constrained subsegments. Several practical safeguards
+ * are included to avoid pathological infinite refinement:
+ * <ul>
+ * <li>radius–edge gating (configurable; optionally enforces ρ ≥ √2);</li>
+ * <li>concentric-shell segment tagging to enable robust off-center / midpoint
+ * handling;</li>
+ * <li>identification of <em>seditious</em> edges (midpoints on the same shell
+ * about a critical corner) and optional skipping/ignoring of these in
+ * split/encroachment decisions to prevent ping-pong cascades;</li>
+ * <li>scale-aware tolerances for encroachment, near-vertex and near-edge checks
+ * to avoid degenerate insertions.</li>
+ * </ul>
+ *
+ * <p>
+ * Features and guarantees:
+ * <ul>
+ * <li>The refiner is driven by a minimum-angle (or equivalently a
+ * circumradius-to-shortest-edge ratio) goal supplied at construction. When
+ * configured to enforce the √2 guard, the implementation follows standard
+ * termination theory (Ruppert/Shewchuk) and mitigates many non-adversarial
+ * inputs.</li>
+ * <li>Concentric-shell and seditious-edge logic extend robustness to small
+ * corner cases commonly observed in practice.</li>
+ * <li>By default the algorithm uses off-center insertion (Shewchuk) and splits
+ * constrained segments when required by encroachment rules.</li>
+ * <li>Terminated either when no encroached subsegments and no poor triangles
+ * remain, or when an iteration cap is reached.</li>
+ * </ul>
+ *
+ * <p>
+ * References:
+ * <ul>
+ * <li>J. Ruppert, "A Delaunay Refinement Algorithm for Quality 2-Dimensional
+ * Mesh Generation", J. Algorithms (1995).</li>
+ * <li>J. R. Shewchuk, "Delaunay Refinement Mesh Generation", 1997.</li>
+ * </ul>
  */
 public class RuppertRefiner implements DelaunayRefiner {
 
-	// Iteration cap
-	private static final int MAX_ITERATIONS = 1000;
-
 	// Relative tolerances
-	// Encroachment test tolerance is scaled by segment length.
-	private static final double ENCROACH_REL_TOL = 1e-6;
-	// Near-vertex/edge tolerances are scaled by a local length.
-	private static final double NEAR_VERTEX_REL_TOL = 1e-6;
-	private static final double NEAR_EDGE_REL_TOL = 1e-8;
+	private static final double NEAR_VERTEX_REL_TOL = 1e-9;
+	private static final double NEAR_EDGE_REL_TOL = 1e-9;
+
+	// Shells and corner handling
+	private static final double SHELL_BASE = 2.0;
+	private static final double SHELL_EPS = 1e-9;
+	/**
+	 * Threshold, in degrees, for classifying a constrained vertex as a "small
+	 * corner".
+	 * <p>
+	 * At each constrained vertex, we consider the smaller of the two angles between
+	 * its incident constrained segments. If that smaller angle is less than
+	 * <code>SMALL_CORNER_DEG</code>, the corner is treated as “critical.”
+	 * </p>
+	 * 
+	 * <h3>Why this matters:</h3>
+	 * <ul>
+	 * <li>Very small angles can trigger endless "ping-pong" refinement: splitting
+	 * an encroached subsegment creates another encroachment or skinny triangle,
+	 * which causes another split, and so on, producing ever shorter edges.</li>
+	 * <li>When a corner is critical, the refiner applies special safeguards:
+	 * <ol>
+	 * <li>Midpoint splits are organized on concentric “shells” around the corner.
+	 * </li>
+	 * <li>Edges joining midpoints on the same shell are marked “seditious.”</li>
+	 * <li>The refiner may skip splitting skinny triangles whose shortest edge is
+	 * seditious and may ignore encroachments that would recreate the ping-pong.
+	 * </li>
+	 * </ol>
+	 * These rules stop the cascade while allowing refinement elsewhere.</li>
+	 * </ul>
+	 * 
+	 * <h3>Recommended value:</h3>
+	 * <ul>
+	 * <li>60° is a safe, conservative default (following Shewchuk). It reliably
+	 * prevents cascades in practice.</li>
+	 * <li>Larger values can over-suppress refinement near ordinary corners.</li>
+	 * </ul>
+	 */
+	private static final double SMALL_CORNER_DEG = 60.0;
+	private static final double SQRT2 = Math.sqrt(2.0);
 
 	private final IIncrementalTin tin;
-	private final IIncrementalTinNavigator nav;
 
-	private final double minAngleRad; // θmin in radians
-	private final double cosThetaSquared; // cos^2(θmin)
-	private final double beta; // β = 1 / (2 sin θmin)
+	private final double minAngleRad;
+	private final double beta; // 1/(2 sin θmin)
+	private final double rhoTarget; // 1/(2 sin θmin)
+	private final double rhoMin; // possibly clamped to √2
+
+	private final boolean skipSeditiousTriangles;
+	private final boolean ignoreSeditiousEncroachments;
 
 	private final double minTriangleArea;
 
 	private Vertex lastInsertedVertex = null;
 
+	private final Map<Vertex, VData> vdata = new IdentityHashMap<>();
+
+	private Map<Vertex, CornerInfo> cornerInfo = new IdentityHashMap<>();
+
+	private final IIncrementalTinNavigator navigator;
+
 	/**
-	 * Instantiates the refiner using <i>circumradius-to-shortest-edge</i> ratio
-	 * instead of minimum angle.
+	 * Creates a RuppertRefiner configured by a target circumradius-to-shortest-edge
+	 * ratio {@code ratio}.
+	 *
+	 * <p>
+	 * This factory computes the equivalent minimum angle from {@code ratio} (via
+	 * {@code θ = arcsin(1/(2·ratio))}) and delegates to the primary constructor.
+	 * The created refiner will attempt to eliminate triangles whose
+	 * circumradius-to-shortest-edge ratio meets or exceeds the implied target.
+	 *
+	 * @param tin   the incremental TIN to refine; must be bootstrapped and non-null
+	 * @param ratio the target circumradius-to-shortest-edge ratio (must be &gt; 0)
+	 * @return a configured {@code RuppertRefiner}
+	 * @throws IllegalArgumentException if {@code tin} is null or not bootstrapped,
+	 *                                  or if {@code ratio <= 0}
 	 */
 	public static RuppertRefiner fromEdgeRatio(IIncrementalTin tin, double ratio) {
 		if (ratio <= 0) {
@@ -60,78 +149,167 @@ public class RuppertRefiner implements DelaunayRefiner {
 	}
 
 	/**
-	 * Constructs a Ruppert refiner.
+	 * Constructs a RuppertRefiner with the requested minimum internal triangle
+	 * angle.
 	 *
 	 * <p>
-	 * Note: theoretical termination is guaranteed for minAngleDeg <= 20.7° with
-	 * standard circumcenters; off-centers improve behavior for larger angles, but
-	 * pathological inputs can still defeat termination.
+	 * The refiner will try to remove triangles with angles smaller than
+	 * {@code minAngleDeg}. The implementation uses off-center insertion with
+	 * circumcenter fallback, encroachment checks for constrained subsegments, and
+	 * several practical safeguards (concentric-shell tagging and seditious-edge
+	 * handling) to prevent pathological infinite refinement loops.
 	 * </p>
+	 *
+	 * <p>
+	 * <strong>Parameters and preconditions</strong>:
+	 * <ul>
+	 * <li>{@code tin} must be non-null and bootstrapped (already built).</li>
+	 * <li>{@code minAngleDeg} must be in (0, 60) degrees; values near the
+	 * theoretical limits may still fail to terminate.</li>
+	 * </ul>
+	 * </p>
+	 *
+	 * @param tin         the incremental triangulation to refine (non-null,
+	 *                    bootstrapped)
+	 * @param minAngleDeg the requested minimum angle in degrees (0 &lt; θ &lt; 60)
+	 * @throws IllegalArgumentException on invalid inputs
 	 */
 	public RuppertRefiner(IIncrementalTin tin, double minAngleDeg) {
+		this(tin, minAngleDeg, false, true, true);
+	}
+
+	/**
+	 * Constructs a RuppertRefiner with explicit runtime policy options.
+	 *
+	 * <p>
+	 * This overload exposes three boolean options useful for production tuning:
+	 * <ul>
+	 * <li>{@code enforceSqrt2Guard} — when {@code true}, the internal radius-edge
+	 * gating enforces {@code ρ ≥ √2} (Shewchuk/Ruppert termination guard).</li>
+	 * <li>{@code skipSeditiousTriangles} — when {@code true}, triangles whose
+	 * shortest edges have been marked seditious are not attempted for split.</li>
+	 * <li>{@code ignoreSeditiousEncroachments} — when {@code true}, encroachments
+	 * identified as seditious are ignored (prevents ping-pong splitting).</li>
+	 * </ul>
+	 * </p>
+	 *
+	 * @param tin                          the incremental triangulation to refine
+	 *                                     (non-null, bootstrapped)
+	 * @param minAngleDeg                  the requested minimum angle in degrees (0
+	 *                                     &lt; θ &lt; 60)
+	 * @param enforceSqrt2Guard            whether to force the ρ ≥ √2 termination
+	 *                                     guard
+	 * @param skipSeditiousTriangles       whether to skip splitting triangles whose
+	 *                                     shortest edges are seditious
+	 * @param ignoreSeditiousEncroachments whether to ignore seditious encroachments
+	 * @throws IllegalArgumentException on invalid inputs
+	 */
+	public RuppertRefiner(IIncrementalTin tin, double minAngleDeg, boolean enforceSqrt2Guard, boolean skipSeditiousTriangles,
+			boolean ignoreSeditiousEncroachments) {
 		if (tin == null) {
 			throw new IllegalArgumentException("tin must not be null");
+		}
+		if (!tin.isBootstrapped()) {
+			throw new IllegalArgumentException("tin is not properly constructed");
 		}
 		if (!(minAngleDeg > 0 && minAngleDeg < 60)) {
 			throw new IllegalArgumentException("minAngle must be in (0,60)");
 		}
+
 		this.tin = tin;
-		this.nav = tin.getNavigator();
-
 		this.minAngleRad = Math.toRadians(minAngleDeg);
-		double cosTheta = Math.cos(minAngleRad);
-		this.cosThetaSquared = cosTheta * cosTheta;
-		this.beta = 1.0 / (2.0 * Math.sin(minAngleRad));
+		final double sinT = Math.sin(minAngleRad);
+		this.beta = 1.0 / (2.0 * sinT);
+		this.rhoTarget = 1.0 / (2.0 * sinT);
 
-		this.minTriangleArea = tin.getNominalPointSpacing() / 100;
-	}
+		this.skipSeditiousTriangles = skipSeditiousTriangles;
+		this.ignoreSeditiousEncroachments = ignoreSeditiousEncroachments;
 
-	/**
-	 * Executes Ruppert refinement.
-	 */
-	@Override
-	public void refine() {
-		int iterations = 0;
+		this.rhoMin = enforceSqrt2Guard ? Math.max(SQRT2, rhoTarget) : rhoTarget;
 
-		while (iterations++ < MAX_ITERATIONS) {
+		this.minTriangleArea = 1e-6;
 
-			// 1) Gather all constrained segments afresh (no length filter; do not skip line
-			// members).
-			List<IQuadEdge> segments = collectConstrainedSegments();
-
-			// 2) Split any encroached constrained segment.
-			IQuadEdge enc = findEncroachedSegment(segments);
-			if (enc != null) {
-				splitSegment(enc);
-				continue;
-			}
-
-			// 3) Otherwise, pick the largest skinny triangle and refine with off-center.
-			SimpleTriangle bad = findLargestPoorTriangle();
-			if (bad != null) {
-				insertOffcenterOrSplit(bad, segments);
-				continue;
-			}
-
-			// 4) No encroached segments; no skinny triangles.
-			return;
+		for (Vertex v : tin.vertices()) {
+			vdata.put(v, new VData(VType.INPUT, null, 0));
 		}
 
-		System.err.println("Ruppert refinement: reached max iterations without convergence (" + MAX_ITERATIONS + ").");
+		navigator = tin.getNavigator();
+		cornerInfo = buildCornerInfo();
+	}
+
+	Set<IQuadEdge> s;
+
+	/**
+	 * Perform refinement on the supplied {@link IIncrementalTin}.
+	 *
+	 * <p>
+	 * This method runs Ruppert’s iterative loop:
+	 * <ol>
+	 * <li>collect constrained segments;</li>
+	 * <li>split an encroached constrained segment if any;</li>
+	 * <li>otherwise find a largest bad triangle and attempt an off-center insert
+	 * (circumcenter fallback) or split an encroached segment found while testing
+	 * the candidate;</li>
+	 * <li>repeat until no encroached segments and no bad triangles remain or an
+	 * iteration cap is reached.</li>
+	 * </ol>
+	 * </p>
+	 *
+	 * <p>
+	 * The method is re-entrant in the sense it mutates the supplied {@code tin}; it
+	 * returns true when refinement converges or false if the maximum iteration cap
+	 * is hit.
+	 * </p>
+	 */
+	@Override
+	public boolean refine() {
+		// ~100 refinements per input triangle
+		// very generous cap - not intended to be hit
+		final int maxIterations = vdata.size() * 2 * 100;
+		int iterations = 0;
+
+		while (iterations++ < maxIterations) {
+			var vLast = refineOnce();
+			if (vLast == null) {
+				return true;
+			}
+		}
+
+		return false;
+	}
+
+	@Override
+	public Vertex refineOnce() {
+		List<IQuadEdge> segments = collectConstrainedSegments();
+
+		IQuadEdge enc = findEncroachedSegment(segments);
+		if (enc != null) {
+			return splitSegmentSmart(enc);
+
+		}
+
+		SimpleTriangle bad = findLargestPoorTriangle(segments);
+		if (bad != null) {
+			return insertOffcenterOrSplit(bad, segments);
+
+		}
+		return null;
 	}
 
 	/**
-	 * Collects all constrained subsegments of the current TIN (uses base edges).
+	 * Collects constrained subsegments from the current TIN.
+	 *
+	 * <p>
+	 * Returns a snapshot list of {@link IQuadEdge} whose {@code isConstrained()}
+	 * predicate is true. The list is used by encroachment and near-edge searches.
+	 * </p>
+	 *
+	 * @return modifiable list of constrained subsegments
 	 */
 	private List<IQuadEdge> collectConstrainedSegments() {
 		List<IQuadEdge> result = new ArrayList<>();
-		// Deduplicate by baseIndex (assumes DCEL-style half-edges share base index).
-		Set<Integer> seenBase = new HashSet<>();
-		for (IQuadEdge e : tin.getEdges()) {
-			if (!e.isConstrained()) {
-				continue;
-			}
-			if (seenBase.add(e.getBaseIndex())) {
+		for (IQuadEdge e : tin.edges()) { // .edges() returns only base edges
+			if (e.isConstrained()) {
 				result.add(e);
 			}
 		}
@@ -139,34 +317,26 @@ public class RuppertRefiner implements DelaunayRefiner {
 	}
 
 	/**
+	 * Scan segments and return one encroached segment, or {@code null}.
 	 *
-	 * Scans the constrained subsegments and returns one whose diametral circle is
-	 * encroached by an existing vertex. The encroachment test is scale-aware: a
-	 * small relative tolerance is applied proportional to the segment length. A
-	 * global nearest-vertex query to the segment midpoint is used as a certificate:
-	 * if any vertex lies strictly inside the diametral circle, then the nearest
-	 * vertex to the midpoint must also lie inside that circle.
+	 * <p>
+	 * The test is scale-aware: the encroachment tolerance is proportional to the
+	 * segment length. A nearest-neighbour query at the segment midpoint is used as
+	 * a fast certificate of encroachment; the method validates the certificate with
+	 * the precise diametral-circle test.
+	 * </p>
 	 *
-	 * @param segments the constrained subsegments to test
-	 * @return an encroached subsegment if found; null if none are encroached
+	 * @param segments a snapshot list of constrained subsegments to inspect
+	 * @return an encroached {@link IQuadEdge} or {@code null} if none found
 	 */
 	private IQuadEdge findEncroachedSegment(List<IQuadEdge> segments) {
 		for (IQuadEdge seg : segments) {
-			// Diametral circle center is the midpoint of the segment.
-			Circle diam = SegmentUtility.getDiametralCircle(seg);
-
-			Vertex a = seg.getA();
-			Vertex b = seg.getB();
-			double cx = 0.5 * (a.getX() + b.getX());
-			double cy = 0.5 * (a.getY() + b.getY());
-
-			Vertex nearest = nav.getNearestVertex(cx, cy);
-			if (nearest == null) {
-				continue;
-			}
-
-			double localTol = ENCROACH_REL_TOL * seg.getLength();
-			if (SegmentUtility.isPointEncroachingSegment(nearest, seg, diam, localTol)) {
+			// NOTE validity of this test requires Delaunay integrity
+			Vertex enc = SegmentUtility.closestEncroacherOrNull(seg);
+			if (enc != null) {
+				if (ignoreSeditiousEncroachments && shouldIgnoreEncroachment(seg, enc)) {
+					continue;
+				}
 				return seg;
 			}
 		}
@@ -174,282 +344,287 @@ public class RuppertRefiner implements DelaunayRefiner {
 	}
 
 	/**
+	 * Find the largest-area triangle whose quality violates the requested bound.
 	 *
-	 * Splits a constrained subsegment by inserting its midpoint into the TIN.
+	 * <p>
+	 * The implementation uses a radius-to-shortest-edge ratio test (equivalently
+	 * the minimum-angle bound). Triangles marked as ghosts or outside constrained
+	 * regions (when any constraints exist) are ignored. Optionally skips triangles
+	 * whose shortest edge is seditious.
+	 * </p>
 	 *
-	 * @param seg the constrained subsegment to split
+	 * @param segments snapshot of constrained subsegments (used by heuristics)
+	 * @return a {@link SimpleTriangle} chosen for refinement, or {@code null}
 	 */
-	private void splitSegment(IQuadEdge seg) {
-		Vertex a = seg.getA();
-		Vertex b = seg.getB();
-		Vertex mid = new Vertex(0.5 * (a.getX() + b.getX()), 0.5 * (a.getY() + b.getY()), Double.NaN);
+	private SimpleTriangle findLargestPoorTriangle(List<IQuadEdge> segments) {
+		SimpleTriangle best = null;
+		double bestCross2 = -1.0;
 
-		tin.add(mid);
-		lastInsertedVertex = mid;
-	}
-
-	/**
-	 * 
-	 * Finds the largest skinny triangle that violates the minimum-angle criterion.
-	 * 
-	 * @return the largest-area skinny triangle found, or {@code null} if none
-	 *         violate the angle bound.
-	 */
-	private SimpleTriangle findLargestPoorTriangle() {
-		SimpleTriangle largest = null;
-		double largestArea = -1.0;
-
-		boolean hasAnyConstraints = !tin.getConstraints().isEmpty();
+		final boolean hasConstraints = !tin.getConstraints().isEmpty();
+		final double threshMul = 4.0 * rhoMin * rhoMin; // 4*rhoMin^2
+		final double minCross2 = 4.0 * minTriangleArea * minTriangleArea; // (2*area)^2
 
 		for (SimpleTriangle t : tin.triangles()) {
-			if (t.isGhost()) {
+			if (t.isGhost())
 				continue;
-			}
 
-			// Refine only inside constrained regions if there are any.
-			if (hasAnyConstraints) {
+			if (hasConstraints) {
 				IConstraint rc = t.getContainingRegion();
-				if (rc == null || !rc.definesConstrainedRegion()) {
+				if (rc == null || !rc.definesConstrainedRegion())
 					continue;
-				}
 			}
 
-			if (!TriangleUtility.hasAngleSmallerThanTheta(t, cosThetaSquared)) {
+			// below, compute edge ratio and area inline
+			Vertex A = t.getVertexA(), B = t.getVertexB(), C = t.getVertexC();
+			double ax = A.getX(), ay = A.getY();
+			double bx = B.getX(), by = B.getY();
+			double cx = C.getX(), cy = C.getY();
+
+			// AB, AC
+			double abx = bx - ax, aby = by - ay;
+			double acx = cx - ax, acy = cy - ay;
+
+			// |AB|^2, |AC|^2, |BC|^2 via (AC-AB)^2 = la + lc - 2 dot(AB,AC)
+			double la = abx * abx + aby * aby;
+			double lc = acx * acx + acy * acy;
+			double dot = abx * acx + aby * acy;
+			double lb = la + lc - 2.0 * dot;
+
+			// cross^2 (double-area squared)
+			double cross = abx * acy - aby * acx;
+			double cross2 = cross * cross;
+			if (!(cross2 > 0.0))
+				continue;
+
+			// shortest edge and product of the other two squared sides
+			double pairProd;
+			Vertex sA, sB;
+			if (la <= lb && la <= lc) {
+				pairProd = lb * lc;
+				sA = A;
+				sB = B;
+			} else if (lb <= la && lb <= lc) {
+				pairProd = la * lc;
+				sA = B;
+				sB = C;
+			} else {
+				pairProd = la * lb;
+				sA = C;
+				sB = A;
+			}
+
+			// bad if (R/s) >= rhoMin <=> pairProd >= 4*rhoMin^2 * cross^2
+			if (pairProd < threshMul * cross2)
+				continue;
+
+			if (skipSeditiousTriangles && isSeditious(sA, sB)) {
 				continue;
 			}
 
-			// Optional: do not retry endlessly the exact same triangle object
-			// if we've already seen it. Comment out if too aggressive.
-
-			double area = t.getArea();
-			if (area > minTriangleArea && area > largestArea) {
-				largestArea = area;
-				largest = t;
+			if (cross2 > minCross2 && cross2 > bestCross2) {
+				bestCross2 = cross2;
+				best = t;
 			}
 		}
-		return largest;
+		return best;
 	}
 
 	/**
-	 * Inserts Shewchuk’s off-center point for a skinny triangle, or splits an
-	 * encroached constrained segment instead.
+	 * Try to insert an off-center for a given skinny triangle, or split an
+	 * encroached segment.
+	 *
 	 * <p>
-	 * Given a bad triangle:
+	 * Procedure:
 	 * <ol>
-	 * <li>Identify its shortest edge e = pq and the opposite vertex r.</li>
-	 * <li>Compute the edge midpoint m and the unit normal n of the perpendicular
-	 * bisector oriented toward r.</li>
-	 * <li>Compute the triangle’s circumcenter C and the distance dCirc = |mC|.</li>
-	 * <li>Compute the target distance d = min(dCirc, β|e|) where β = 1/(2 sin
-	 * θmin).</li>
-	 * <li>Place the off-center at m + d n.</li>
-	 * <li>If the off-center encroaches any constrained subsegment, split that
-	 * subsegment (Ruppert rule) instead of inserting the point.</li>
-	 * <li>Otherwise, guard against placing the point too close to an existing
-	 * vertex or nearly on the interior of a constrained edge using scale-aware
-	 * tolerances, and insert it if safe.</li>
-	 * <li>If the perpendicular bisector is undefined or the circumcircle is not
-	 * finite, fall back to the circumcenter path.</li>
+	 * <li>Compute triangle shortest edge midpoint and unit bisector oriented into
+	 * the triangle;</li>
+	 * <li>compute circumcenter and choose target distance
+	 * {@code d = min(dCircumcenter, beta * |edge|)};</li>
+	 * <li>place off-center at {@code m + d·n};</li>
+	 * <li>if the off-center encroaches a constrained segment, split that segment
+	 * instead;</li>
+	 * <li>guard against inserting points too close to existing vertices or too near
+	 * a constrained edge interior; otherwise insert.</li>
 	 * </ol>
 	 * </p>
-	 * <p>
-	 * Tolerances:
-	 * <ul>
-	 * <li>Encroachment tests use a threshold proportional to the tested segment
-	 * length.</li>
-	 * <li>Near-vertex and near-edge interior checks use thresholds proportional to
-	 * the triangle’s shortest edge length.</li>
-	 * </ul>
-	 * </p>
-	 * 
-	 * @param tri      the skinny triangle to improve.
-	 * @param segments the current snapshot of constrained subsegments (used for
-	 *                 encroachment checks).
+	 *
+	 * @param tri      the skinny triangle to resolve
+	 * @param segments current constrained-subsegment snapshot used for encroachment
+	 *                 tests
+	 * @return
 	 */
-	private void insertOffcenterOrSplit(SimpleTriangle tri, List<IQuadEdge> segments) {
-		// 1) Identify shortest edge e = pq with opposite r
-		Vertex a = tri.getVertexA();
-		Vertex b = tri.getVertexB();
-		Vertex c = tri.getVertexC();
+	private Vertex insertOffcenterOrSplit(SimpleTriangle tri, List<IQuadEdge> segments) {
+		Vertex a = tri.getVertexA(), b = tri.getVertexB(), c = tri.getVertexC();
 
-		Vertex p = a, q = b, r = c;
-		double ab2 = a.getDistanceSq(b);
-		double bc2 = b.getDistanceSq(c);
-		double ca2 = c.getDistanceSq(a);
-
+		Vertex p = a, q = b;
+		double ab2 = a.getDistanceSq(b), bc2 = b.getDistanceSq(c), ca2 = c.getDistanceSq(a);
 		if (bc2 < ab2 && bc2 <= ca2) {
 			p = b;
 			q = c;
-			r = a;
 		} else if (ca2 < ab2 && ca2 <= bc2) {
 			p = c;
 			q = a;
-			r = b;
 		}
 
-		double len = Math.sqrt(p.getDistanceSq(q)); // |e|
+		double len = Math.sqrt(p.getDistanceSq(q));
+		if (!(len > 0)) {
+			return insertCircumcenterOrSplit(tri, segments);
+		}
 
-		// 2) Midpoint m and unit normal n of the perpendicular bisector, pointing
-		// toward r
 		double mx = 0.5 * (p.getX() + q.getX());
 		double my = 0.5 * (p.getY() + q.getY());
 
-		double nx = q.getY() - p.getY();
-		double ny = -(q.getX() - p.getX());
+		/*
+		 * Tinfour edges are always oriented counterclockwise around the interior of a
+		 * triangle - find vector oriented 90 degrees counterclockwise from PQ.
+		 */
+		double nx = -(q.getY() - p.getY());
+		double ny = q.getX() - p.getX();
 		double nlen = Math.hypot(nx, ny);
 		if (nlen == 0) {
-			// Degenerate edge; fallback to circumcenter.
-			insertCircumcenterOrSplit(tri, segments);
-			return;
+			return insertCircumcenterOrSplit(tri, segments);
 		}
 		nx /= nlen;
 		ny /= nlen;
 
-		// Orient n toward r (inside the triangle)
-		if ((r.getX() - mx) * nx + (r.getY() - my) * ny < 0) {
-			nx = -nx;
-			ny = -ny;
-		}
-
-		// 3) Circumcenter C and distance from m to C
 		Circumcircle cc = tri.getCircumcircle();
 		if (cc == null || !cc.isFinite()) {
-			// Fallback: split shortest constrained segment if any encroached; else try
-			// circumcenter insert
-			insertCircumcenterOrSplit(tri, segments);
-			return;
+			return insertCircumcenterOrSplit(tri, segments);
 		}
-		double cx = cc.getX();
-		double cy = cc.getY();
+		double cx = cc.getX(), cy = cc.getY();
 		double dCirc = Math.hypot(cx - mx, cy - my);
 
-		// 4) Desired distance (Shewchuk): d = min(dCirc, β|e|)
 		double d = Math.min(dCirc, beta * len);
 
-		// 5) Off-center point
 		double ox = mx + nx * d;
 		double oy = my + ny * d;
 		Vertex off = new Vertex(ox, oy, Double.NaN);
 
-		// 6) If off-center encroaches any constrained segment, split that segment
 		IQuadEdge enc = firstEncroachedByPoint(off, segments);
 		if (enc != null) {
-			splitSegment(enc);
-			return;
+			return splitSegmentSmart(enc);
 		}
 
-		// 7) Guard against near-duplicate insertion and near-edge placement
-		double localScale = Math.max(1e-12, len); // use shortest edge length as scale
+		double localScale = Math.max(1e-12, len);
 		double nearVertexTol = NEAR_VERTEX_REL_TOL * localScale;
 		double nearEdgeTol = NEAR_EDGE_REL_TOL * localScale;
 
-		if (lastInsertedVertex != null) {
-			if (lastInsertedVertex.getDistance(off) <= nearVertexTol) {
-				// Avoid immediate oscillation on the same point
-				return;
-			}
+		if (lastInsertedVertex != null && lastInsertedVertex.getDistance(off) <= nearVertexTol) {
+			return null;
 		}
 
-		// Snap/skip if too close to existing vertex
-		Vertex nearest = nav.getNearestVertex(ox, oy);
+		Vertex nearest = nearestNeighbor(ox, oy);
 		if (nearest != null && nearest.getDistance(off) <= nearVertexTol) {
-			// Too close to an existing vertex; skip this insertion.
-			// We rely on other refinements to change local geometry.
-			return;
+			return null;
 		}
 
-		// Avoid placing the point nearly on the interior of a constrained edge
 		IQuadEdge nearEdge = firstNearConstrainedEdgeInterior(off, segments, nearEdgeTol);
 		if (nearEdge != null) {
-			// Treat as encroachment to be safe
-			splitSegment(nearEdge);
-			return;
+			return splitSegmentSmart(nearEdge);
 		}
 
-		// 8) Safe: insert the off-center
-		tin.add(off);
+		addVertex(off, VType.OFFCENTER, null, 0);
 		lastInsertedVertex = off;
-
+		return off;
 	}
 
 	/**
-	 * Inserts a triangle’s circumcenter unless it would encroach a constrained
-	 * subsegment, in which case that subsegment is split instead.
+	 * Fallback insertion path that considers the triangle circumcenter.
+	 *
 	 * <p>
-	 * This is a fallback path used when off-center construction is degenerate or
-	 * not applicable. The circumcenter candidate is screened as follows:
-	 * <ul>
-	 * <li>If it encroaches any constrained subsegment, split that subsegment.</li>
-	 * <li>If it lies too close to an existing vertex (scale-aware threshold), skip
-	 * insertion to avoid creating degenerate elements.</li>
-	 * <li>If it lies within a small tolerance of the interior of a constrained
-	 * edge, treat as encroachment and split the edge.</li>
-	 * <li>Otherwise, insert the point into the TIN.</li>
-	 * </ul>
+	 * If the circumcenter encroaches a constrained subsegment, the encroached
+	 * segment is split instead of inserting the point. The candidate is also
+	 * screened against near-duplicate and near-edge conditions.
 	 * </p>
-	 * 
-	 * @param tri      the skinny triangle whose circumcenter is considered.
-	 * @param segments the current snapshot of constrained subsegments (used for
-	 *                 encroachment checks).
+	 *
+	 * @param tri      the triangle whose circumcenter is considered
+	 * @param segments snapshot of constrained subsegments used for screening
+	 * @return
 	 */
-	private void insertCircumcenterOrSplit(SimpleTriangle tri, List<IQuadEdge> segments) {
+	private Vertex insertCircumcenterOrSplit(SimpleTriangle tri, List<IQuadEdge> segments) {
 		Circumcircle cc = tri.getCircumcircle();
 		if (cc == null || !cc.isFinite()) {
-			return;
+			return null;
 		}
 
 		Vertex center = cc.getCircumcenter();
 
-		// If encroaches any constrained segment, split that instead
 		IQuadEdge enc = firstEncroachedByPoint(center, segments);
 		if (enc != null) {
-			splitSegment(enc);
-			return;
+			return splitSegmentSmart(enc);
 		}
 
-		// Near-duplicate guard
 		double localScale = Math.max(1e-12, tri.getShortestEdge().getLength());
 		double nearVertexTol = NEAR_VERTEX_REL_TOL * localScale;
-		Vertex nearest = nav.getNearestVertex(center.getX(), center.getY());
+		double nearEdgeTol = NEAR_EDGE_REL_TOL * localScale;
+
+		Vertex nearest = nearestNeighbor(center.x, center.y);
 		if ((nearest != null && nearest.getDistance(center) <= nearVertexTol)
 				|| (lastInsertedVertex != null && lastInsertedVertex.getDistance(center) <= nearVertexTol)) {
-			return;
+			return null;
 		}
 
-		// Near constrained edge interior guard
-		double nearEdgeTol = NEAR_EDGE_REL_TOL * localScale;
 		IQuadEdge nearEdge = firstNearConstrainedEdgeInterior(center, segments, nearEdgeTol);
 		if (nearEdge != null) {
-			splitSegment(nearEdge);
-			return;
+			return splitSegmentSmart(nearEdge);
 		}
+		tin.add(center);
+		vdata.put(center, new VData(VType.CIRCUMCENTER, null, 0));
+		lastInsertedVertex = center;
+		return center;
+	}
 
-		if (tin.add(center)) {
-			lastInsertedVertex = center;
-		} else {
-			lastInsertedVertex = center;
-		}
+	private Vertex nearestNeighbor(double x, double y) {
+		return navigator.getNearestVertex(x, y);
 	}
 
 	/**
-	 * Returns the first constrained subsegment encroached by a given point.
+	 * Split a constrained subsegment while tagging the new midpoint for shells.
+	 *
 	 * <p>
-	 * For each constrained subsegment, the method constructs its diametral circle
-	 * and checks whether the point lies strictly inside it, using a tolerance
-	 * proportional to the subsegment length. The first encroached subsegment is
-	 * returned.
+	 * This method uses the TIN's {@code splitEdge} operation to preserve topology.
+	 * If one endpoint is a critical corner, the inserted midpoint is assigned a
+	 * shell index computed from the corner center; the midpoint is recorded in the
+	 * vertex metadata map.
 	 * </p>
-	 * 
-	 * @param p        the candidate point to test.
-	 * @param segments the constrained subsegments to check.
-	 * @return the first encroached subsegment, or {@code null} if none are
-	 *         encroached.
+	 *
+	 * @param seg the constrained subsegment to split (must be non-null)
+	 * @return the newly inserted vertex
+	 */
+	private Vertex splitSegmentSmart(IQuadEdge seg) {
+		Vertex a = seg.getA(), b = seg.getB();
+		Vertex corner = null;
+		if (isCornerCritical(a)) {
+			corner = a;
+		} else if (isCornerCritical(b)) {
+			corner = b;
+		}
+
+		Vertex v = tin.splitEdge(seg, Double.NaN, true);
+		if (v != null) {
+			int k = (corner != null) ? shellIndex(corner, v.x, v.y) : 0;
+			vdata.put(v, new VData(VType.MIDPOINT, corner, k));
+			lastInsertedVertex = v;
+		}
+		return v;
+	}
+
+	/**
+	 * Find the first constrained subsegment encroached by the candidate point.
+	 *
+	 * @param p        the candidate point (may be off-center or circumcenter)
+	 * @param segments the constrained subsegment snapshot to check
+	 * @return the first encroached {@link IQuadEdge} or {@code null}
 	 */
 	private IQuadEdge firstEncroachedByPoint(Vertex p, List<IQuadEdge> segments) {
 		for (IQuadEdge seg : segments) {
-			Circle diam = SegmentUtility.getDiametralCircle(seg);
-			double localTol = ENCROACH_REL_TOL * seg.getLength();
-			if (SegmentUtility.isPointEncroachingSegment(p, seg, diam, localTol)) {
+			Vertex vA = seg.getA();
+			Vertex vB = seg.getB();
+			double midX = (vA.getX() + vB.getX()) / 2.0;
+			double midY = (vA.getY() + vB.getY()) / 2.0;
+			double length = seg.getLength();
+			double r2 = length * length / 4;
+			if (p.getDistanceSq(midX, midY) < r2) {
 				return seg;
 			}
 		}
@@ -457,63 +632,305 @@ public class RuppertRefiner implements DelaunayRefiner {
 	}
 
 	/**
-	 * Finds the first constrained subsegment whose open interior lies within a
-	 * given distance of a point.
+	 * Find a constrained subsegment whose open interior lies within {@code tol} of
+	 * {@code v}.
+	 *
 	 * <p>
-	 * The method projects the point orthogonally onto each constrained subsegment
-	 * and checks whether the projection parameter lies strictly between 0 and 1
-	 * (i.e., within the open segment, excluding endpoints). If so, it computes the
-	 * perpendicular distance from the point to the segment. If the distance is less
-	 * than or equal to the supplied tolerance, the subsegment is returned as
-	 * “near.” This is used as a safeguard to avoid inserting points nearly on
-	 * constrained edges, which can produce degenerate elements.
+	 * Used to avoid inserting points nearly on the interior of constrained edges.
+	 * Projection onto each segment is computed; only projections with parameter
+	 * {@code t ∈ (0,1)} are considered interior.
 	 * </p>
-	 * <p>
-	 * The tolerance should be scale-aware (e.g., proportional to a local length
-	 * like the shortest edge of the triangle being refined).
-	 * </p>
-	 * 
-	 * @param v        the point to test.
-	 * @param segments the constrained subsegments to consider.
-	 * @param tol      the maximum permitted perpendicular distance to a segment’s
-	 *                 interior.
-	 * @return the first subsegment whose interior is within {@code tol} of the
-	 *         point; {@code null} if none.
+	 *
+	 * @param v        point to test
+	 * @param segments list of constrained subsegments
+	 * @param tol      perpendicular-distance tolerance (scale-aware)
+	 * @return first subsegment whose interior is within {@code tol}, or
+	 *         {@code null}
 	 */
 	private IQuadEdge firstNearConstrainedEdgeInterior(Vertex v, List<IQuadEdge> segments, double tol) {
-		double px = v.getX();
-		double py = v.getY();
+		double px = v.getX(), py = v.getY();
 		for (IQuadEdge seg : segments) {
-			Vertex a = seg.getA();
-			Vertex b = seg.getB();
+			Vertex a = seg.getA(), b = seg.getB();
 			double ax = a.getX(), ay = a.getY();
 			double bx = b.getX(), by = b.getY();
 
-			double vx = bx - ax;
-			double vy = by - ay;
-			double wx = px - ax;
-			double wy = py - ay;
+			double vx = bx - ax, vy = by - ay;
+			double wx = px - ax, wy = py - ay;
 
 			double vv = vx * vx + vy * vy;
 			if (vv == 0) {
 				continue;
 			}
 
-			// Projection parameter t of P onto AB
 			double t = (wx * vx + wy * vy) / vv;
 			if (t <= 0 || t >= 1) {
-				// Near an endpoint: we allow it (the add() guard will catch duplicates).
 				continue;
 			}
 
-			// Distance from P to the line AB
-			double projx = ax + t * vx;
-			double projy = ay + t * vy;
+			double projx = ax + t * vx, projy = ay + t * vy;
 			double dist = Math.hypot(px - projx, py - projy);
 			if (dist <= tol) {
 				return seg;
 			}
 		}
 		return null;
+	}
+
+	/**
+	 * Conservative check to decide whether to ignore an encroachment (seditious
+	 * case).
+	 *
+	 * <p>
+	 * The method predicts the midpoint shell that would be created by splitting
+	 * {@code e} and compares it with the shell of the {@code witness}. If both lie
+	 * on the same shell around a critical corner and the witness is a corner-tied
+	 * midpoint, the encroachment is considered seditious and may be ignored to
+	 * prevent ping-pong.
+	 * </p>
+	 *
+	 * @param e       the candidate constrained subsegment
+	 * @param witness the vertex found in the diametral circle
+	 * @return {@code true} if the encroachment should be ignored, {@code false}
+	 *         otherwise
+	 */
+	private boolean shouldIgnoreEncroachment(IQuadEdge e, Vertex witness) {
+		Vertex A = e.getA(), B = e.getB();
+		Vertex corner = null;
+		if (isCornerCritical(A)) {
+			corner = A;
+		} else if (isCornerCritical(B)) {
+			corner = B;
+		}
+		if (corner == null) {
+			return false;
+		}
+
+		double mx = 0.5 * (A.x + B.x), my = 0.5 * (A.y + B.y);
+		int kMid = shellIndex(corner, mx, my);
+		int kW = shellIndex(corner, witness.x, witness.y);
+		if (kMid != kW) {
+			return false;
+		}
+
+		VData mw = vdata.get(witness);
+		return (mw != null && mw.t == VType.MIDPOINT && mw.corner == corner);
+	}
+
+	/**
+	 * Build corner angle information for constrained-graph vertices.
+	 *
+	 * <p>
+	 * This routine inspects the constrained segment adjacency around each vertex
+	 * and records the minimum and maximum interior angles between incident
+	 * constrained edges. The computed {@link CornerInfo} map is used to mark
+	 * corners that are either very acute (considered "critical" for seditious
+	 * logic).
+	 * </p>
+	 *
+	 * @return a map from corner {@link Vertex} to {@link CornerInfo}
+	 */
+	private Map<Vertex, CornerInfo> buildCornerInfo() {
+		Map<Vertex, List<Vertex>> nbrs = new IdentityHashMap<>();
+		for (IQuadEdge e : collectConstrainedSegments()) {
+			Vertex A = e.getA(), B = e.getB();
+			nbrs.computeIfAbsent(A, k -> new ArrayList<>()).add(B);
+			nbrs.computeIfAbsent(B, k -> new ArrayList<>()).add(A);
+		}
+		Map<Vertex, CornerInfo> info = new IdentityHashMap<>();
+		for (var ent : nbrs.entrySet()) {
+			Vertex z = ent.getKey();
+			List<Vertex> list = ent.getValue();
+			if (list.size() < 2) {
+				continue;
+			}
+
+			CornerInfo ci = new CornerInfo();
+			List<Double> angs = new ArrayList<>(list.size());
+			for (Vertex w : list) {
+				angs.add(Math.atan2(w.y - z.y, w.x - z.x));
+			}
+			for (int i = 0; i < angs.size(); i++) {
+				for (int j = i + 1; j < angs.size(); j++) {
+					double a = angleSmallBetweenDeg(angs.get(i), angs.get(j));
+					ci.minAngleDeg = Math.min(ci.minAngleDeg, a);
+				}
+			}
+			info.put(z, ci);
+		}
+		return info;
+	}
+
+	/**
+	 * Compute the smaller of the two oriented angles (in degrees) between the two
+	 * given directions (radians).
+	 *
+	 * @param a first direction in radians
+	 * @param b second direction in radians
+	 * @return absolute smallest angle between directions, in degrees, ∈ [0,180]
+	 */
+	private double angleSmallBetweenDeg(double a, double b) {
+		double d = Math.abs(a - b);
+		d = Math.min(d, 2 * Math.PI - d);
+		return Math.toDegrees(d);
+	}
+
+	/**
+	 * Test whether a corner vertex is critical.
+	 *
+	 * <p>
+	 * A corner is critical if the smallest incident constrained-edge angle is less
+	 * than a configured small threshold.
+	 * </p>
+	 *
+	 * @param z the corner vertex to test
+	 * @return {@code true} if the corner is critical; {@code false} otherwise
+	 */
+	private boolean isCornerCritical(Vertex z) {
+		CornerInfo ci = cornerInfo.get(z);
+		return ci != null && ci.minAngleDeg < SMALL_CORNER_DEG;
+	}
+
+	/**
+	 * Tests whether the edge (u,v) is seditious.
+	 *
+	 * <p>
+	 * An edge is seditious when both endpoints are midpoints produced on
+	 * constrained segments incident to the same critical corner, and both points
+	 * lie on the same concentric shell around that corner. Seditious edges are
+	 * treated specially (their presence can be excluded from triangle-splitting
+	 * decisions to prevent cascades).
+	 * </p>
+	 *
+	 * @param u one endpoint
+	 * @param v the other endpoint
+	 * @return {@code true} if the edge is seditious; {@code false} otherwise
+	 */
+	private boolean isSeditious(Vertex u, Vertex v) {
+		VData mu = vdata.get(u), mv = vdata.get(v);
+		if (mu == null || mv == null || mu.t != VType.MIDPOINT || mv.t != VType.MIDPOINT) {
+			return false;
+		}
+		if (mu.corner == null || mu.corner != mv.corner) {
+			return false;
+		}
+		Vertex z = mu.corner;
+		if (!isCornerCritical(z)) {
+			return false;
+		}
+		return sameShell(z, u, v);
+	}
+
+	/**
+	 * Compute a concentric-shell index for a point about corner {@code z}.
+	 *
+	 * <p>
+	 * Shells are integer exponents of {@code SHELL_BASE} (powers of two by
+	 * default). The shell index is a convenient bucket used for comparing whether
+	 * two midpoints lie on the same concentric radius.
+	 * </p>
+	 *
+	 * @param z the corner center
+	 * @param x candidate point x-coordinate
+	 * @param y candidate point y-coordinate
+	 * @return integer shell index (0 for extremely small radii)
+	 */
+	private int shellIndex(Vertex z, double x, double y) {
+		double d = Math.hypot(x - z.x, y - z.y);
+		if (d <= SHELL_EPS) {
+			return 0;
+		}
+		return (int) Math.round(Math.log(d) / Math.log(SHELL_BASE));
+	}
+
+	/**
+	 * Convenience: test whether two vertices lie on the same shell about corner
+	 * {@code z}.
+	 *
+	 * @param z corner center
+	 * @param a first vertex
+	 * @param b second vertex
+	 * @return {@code true} if both vertices have equal shell index around {@code z}
+	 */
+	private boolean sameShell(Vertex z, Vertex a, Vertex b) {
+		return shellIndex(z, a.x, a.y) == shellIndex(z, b.x, b.y);
+	}
+
+	/**
+	 * Add a new vertex to both the TIN and internal KD-tree, and record metadata.
+	 *
+	 * @param v      the vertex to add (must be non-null)
+	 * @param type   the creation type (see {@link VType})
+	 * @param corner optional corner vertex used for shell tagging (may be
+	 *               {@code null})
+	 * @param shell  shell index assigned to the vertex (0 if not used)
+	 */
+	private void addVertex(Vertex v, VType type, Vertex corner, int shell) {
+		tin.add(v);
+		vdata.put(v, new VData(type, corner, shell));
+	}
+
+	/**
+	 * Enumeration of vertex creation types tracked by {@link VData}.
+	 *
+	 * <ul>
+	 * <li>{@code INPUT} — original TIN vertex;</li>
+	 * <li>{@code MIDPOINT} — vertex created by segment bisection;</li>
+	 * <li>{@code OFFCENTER} — Shewchuk off-center insertion;</li>
+	 * <li>{@code CIRCUMCENTER} — triangle circumcenter insertion (fallback).</li>
+	 * </ul>
+	 */
+	private enum VType {
+		INPUT, MIDPOINT, OFFCENTER, CIRCUMCENTER
+	}
+
+	/**
+	 * Metadata recorded for each vertex inserted or present in the TIN.
+	 *
+	 * <p>
+	 * This internal helper bundles:
+	 * <ul>
+	 * <li>{@link VType} — how the vertex was created (input, midpoint, off-center,
+	 * circumcenter);</li>
+	 * <li>{@code corner} — an optional corner vertex used for concentric-shell
+	 * tagging;</li>
+	 * <li>{@code shell} — an integer shell index (power-of-two radius) used to
+	 * detect seditious midpoints.</li>
+	 * </ul>
+	 * </p>
+	 *
+	 * <p>
+	 * Instances are stored in an {@link IdentityHashMap} keyed by {@code Vertex}.
+	 * This compact form enables inexpensive seditious/encroachment heuristics.
+	 * </p>
+	 */
+	private static class VData {
+		VType t;
+		Vertex corner;
+		int shell;
+
+		VData(VType t, Vertex c, int s) {
+			this.t = t;
+			this.corner = c;
+			this.shell = s;
+		}
+	}
+
+	/**
+	 * Simple structural holder for corner angular information.
+	 *
+	 * <p>
+	 * Fields:
+	 * <ul>
+	 * <li>{@code minAngleDeg} — the smallest angle (in degrees) between any two
+	 * constrained incident edges at the corner.</li>
+	 * </p>
+	 *
+	 * <p>
+	 * The refiner uses this to mark corners that are “critical” either because they
+	 * are very acute (small) which can provoke pathological encroachment behavior.
+	 * </p>
+	 */
+	private static class CornerInfo {
+		double minAngleDeg = 180.0;
 	}
 }

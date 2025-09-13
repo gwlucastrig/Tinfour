@@ -55,14 +55,7 @@ public final class SegmentUtility {
 		// but a negative radius itself is anomalous.
 		// For robustness, ensure radius is non-negative.
 		if (length < 0) {
-			// This indicates a potential issue upstream or with the segment's properties.
-			// However, to maintain consistency with radius calculation (length/2):
-			// Proceeding might lead to a Circle with negative radius if not clamped.
-			// Clamping radius to 0 for negative lengths:
-			// radius = 0;
-			// Or, rely on Circle to handle it, or throw as original code hinted:
-			// throw new IllegalArgumentException("Segment length cannot be negative.");
-			// Current Circle impl allows negative radius, so we proceed.
+			throw new IllegalArgumentException("Segment length cannot be negative.");
 		}
 		double radius = length / 2.0;
 
@@ -113,13 +106,6 @@ public final class SegmentUtility {
 		Vertex vA = segment.getA();
 		Vertex vB = segment.getB();
 
-		if (vA == null || vB == null) {
-			// This should ideally have been caught by getDiametralCircle if it was used
-			// to compute diametralCircleOfSegment from the same segment instance.
-			// However, as a safeguard if components are mismatched or segment modified:
-			throw new IllegalArgumentException("Segment endpoints cannot be null. Segment: " + segment);
-		}
-
 		// Condition 2: The point is not one of the segment's endpoints.
 		// Vertex identity is checked by index.
 		if (point.getIndex() == vA.getIndex() || point.getIndex() == vB.getIndex()) {
@@ -128,5 +114,48 @@ public final class SegmentUtility {
 
 		// Condition 1: The point lies strictly inside the diametral circle.
 		return diametralCircleOfSegment.isStrictlyInside(point.getX(), point.getY(), tolerance);
+	}
+
+	/**
+	 * Returns the nearest encroaching apex vertex of the two triangles adjacent to
+	 * the given edge, or null if neither apex lies strictly inside the edge’s
+	 * diametral circle (Gabriel test). Endpoints of the edge are not considered
+	 * encroachers. Handles boundary edges where one apex may be absent. Assumes the
+	 * mesh is (constrained) Delaunay so checking only adjacent apices is
+	 * sufficient.
+	 *
+	 * @param edge   edge to test (must be part of the current (C)DT)
+	 * @return the closest encroaching apex vertex (C or D), or null if the edge is
+	 *         not encroached
+	 */
+	public static Vertex closestEncroacherOrNull(IQuadEdge edge) {
+		Vertex A = edge.getA(), B = edge.getB();
+		double mx = 0.5 * (A.getX() + B.getX());
+		double my = 0.5 * (A.getY() + B.getY());
+		double r2 = edge.getLengthSq() / 4; // (diameter/2) squared
+
+		Vertex best = null;
+		double bestD2 = Double.POSITIVE_INFINITY;
+
+		IQuadEdge f = edge.getForward();
+		Vertex C = f.getB();
+		if (C != null) {
+			double d2 = C.getDistanceSq(mx, my);
+			if (d2 < bestD2) {
+				bestD2 = d2;
+				best = C;
+			}
+		}
+		IQuadEdge fd = edge.getForwardFromDual();
+		Vertex D = fd.getB();
+		if (D != null) {
+			double d2 = D.getDistanceSq(mx, my);
+			if (d2 < bestD2) {
+				bestD2 = d2;
+				best = D;
+			}
+		}
+
+		return (best != null && bestD2 < r2) ? best : null;
 	}
 }
