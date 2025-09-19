@@ -1824,8 +1824,6 @@ public class SemiVirtualIncrementalTin implements IIncrementalTin {
 
     // Step 2 -- Construct new edges for constraint and mark any existing
     //           edges with the constraint index.
-    ArrayList<ArrayList<IQuadEdge>> efcList = new ArrayList<>();
-
     isLocked = true;
     lockedDueToConstraints = true;
 
@@ -2726,6 +2724,7 @@ public class SemiVirtualIncrementalTin implements IIncrementalTin {
   @Override
   public Vertex splitEdge(
           IQuadEdge eInput,
+          double t,
           double zSplit,
           boolean restoreConformity)
   {

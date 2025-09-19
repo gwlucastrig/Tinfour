@@ -82,7 +82,7 @@ public class RendererForTinInspection {
 
   private final static double CENTERING_THRESHOLD = 1.0e-4;
 
-  private final IIncrementalTin tin;
+  private IIncrementalTin tin;
 
   private Color background = Color.white;
   private Color foreground = Color.black;
@@ -115,6 +115,14 @@ public class RendererForTinInspection {
    * @param tin a valid instance of an incremental TIN class.
    */
   public RendererForTinInspection(IIncrementalTin tin) {
+    this.tin = tin;
+  }
+
+  /**
+   * Sets the incremental TIN instance to be used for rendering
+   * @param tin a valid instance
+   */
+  public void setIncrementalTin(IIncrementalTin tin){
     this.tin = tin;
   }
 

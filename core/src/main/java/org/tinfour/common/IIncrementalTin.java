@@ -531,6 +531,8 @@ public interface IIncrementalTin {
    *
    * @param constraints a valid, potentially empty list.
    * @param restoreConformity restores conformity
+   * @throws InsufficientConstraintGeometryException if the input vertices
+   * and constraints are insufficient to establish a planar coordinate system.
    */
   void addConstraints(
     List<IConstraint> constraints, boolean restoreConformity);
@@ -566,21 +568,58 @@ public interface IIncrementalTin {
 
 
   /**
-   * Split an existing edge into two at the midpoint, using the
-   * specified zSplit value as the z coordinate for the edge.
+   * Splits an existing edge into two at parametric position t measured
+   * from the edge’s origin (A) toward its destination (B).
    * <p>
-   * <strong>WARNING</strong> The restoreDelaunay feature is
-   * not yet implemented.
+   * The inserted vertex inherits the constraint status of the edge; if the
+   * input edge is constrained, the new vertex is marked as a constraint
+   * vertex and the edge is subdivided into two constrained edges.
+   * </p>
+   * <p>
+   * Implementations may clamp t to an open interval (ε, 1−ε) to avoid
+   * creation of zero-length subedges. The z coordinate of the inserted
+   * vertex is taken from the supplied {@code zSplit}. If an implementation
+   * does not support restoring Delaunay conformance at split time, the
+   * {@code restoreConformity} flag may be ignored.
+   * </p>
+   *
+   * @param eInput a valid edge belonging to this TIN instance
+   * @param t the split parameter in [0,1], measured from A toward B; values
+   *          at or near the endpoints may be clamped by the implementation
+   * @param zSplit the z coordinate for the new vertex
+   * @param restoreConformity if true, attempt to restore Delaunay
+   *                          conformance around the modified neighborhood
+   * @return the insertion vertex (never null if the split succeeds)
+   */
+  Vertex splitEdge(
+      IQuadEdge eInput,
+      double t,
+      double zSplit,
+      boolean restoreConformity);
+
+  /**
+   * Split an existing edge into two at the midpoint, using the
+   * specified zSplit value as the z coordinate for the new vertex.
+   * <p>
+   * <strong>WARNING</strong> The restoreConformity feature may not be
+   * implemented in all TINs.
+   * </p>
+   * <p>
+   * This default implementation delegates to
+   * {@link #splitEdge(IQuadEdge, double, double, boolean)} with t = 0.5.
+   * </p>
+   *
    * @param eInput a valid edge
    * @param zSplit the z coordinate for the new vertex
-   * @param restoreConformity restore Delaunay conformance after
-   * insertion <strong>NOT YET IMPLEMENTE</strong>
+   * @param restoreConformity restore Delaunay conformance after insertion
    * @return the insertion vertex
    */
-   Vertex  splitEdge(
-           IQuadEdge eInput,
-           double zSplit,
-           boolean restoreConformity);
+  default Vertex splitEdge(
+      IQuadEdge eInput,
+      double zSplit,
+      boolean restoreConformity) {
+    return splitEdge(eInput, 0.5, zSplit, restoreConformity);
+  }
 
   /**
    * Gets the region constraint associated with the edge, if any. If the edge is

@@ -61,6 +61,7 @@ public class IntegrityCheck implements IIntegrityCheck {
   private final List<IQuadEdge> edges;
 
   private String message;
+  private boolean delaunayFailure;
   private int nDelaunayViolations;
   private double sumDelaunayViolations;
   private double maxDelaunayViolation;
@@ -381,13 +382,16 @@ public class IntegrityCheck implements IIntegrityCheck {
         }
 
         if (h > thresholds.getDelaunayThreshold()) {
+          delaunayFailure = true;
           message = "InCircle failure h=" + h
                   + ", starting at edge " + e
+                  + (e.isConstrained() ? "c" : " ")
                   + ": ("
                   + a.getIndex()
                   + ", " + b.getIndex()
                   + ", " + c.getIndex()
                   + ", " + d.getIndex() + ")";
+          // geoOp.inCircle(a, b, c, d); // a diagnostic, retest for debugging
           return false;
         }
       }
@@ -422,7 +426,9 @@ public class IntegrityCheck implements IIntegrityCheck {
   public void printSummary(PrintStream ps) {
     Formatter fmt = new Formatter(ps);
     fmt.format("Integrity Check Results:%n   %s%n", getMessage());
-    if (nDelaunayViolations == 0) {
+    if(delaunayFailure){
+      fmt.format("   Detected Delaunay violations exceeding numerical tolerance: %8.4e%n", thresholds.getDelaunayThreshold());
+    }else if (nDelaunayViolations == 0) {
       fmt.format("   No Delaunay violations detected%n");
     } else {
       fmt.format("   Detected acceptable Delaunay violations within tolerance: %8.4e%n", thresholds.getDelaunayThreshold());
