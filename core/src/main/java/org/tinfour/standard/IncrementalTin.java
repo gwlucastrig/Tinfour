@@ -1154,6 +1154,7 @@ public class IncrementalTin implements IIncrementalTin {
       }
       if (splitConstraintIsLine) {
         pStart.setConstraintLineIndex(splitConstraintLine.getConstraintIndex());
+        edgePool.addLinearConstraintToMap(pStart, splitConstraintLine);
       }
     }
     QuadEdge p = pStart;
