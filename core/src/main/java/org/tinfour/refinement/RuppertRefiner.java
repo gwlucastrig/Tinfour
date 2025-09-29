@@ -4,10 +4,8 @@ import java.util.ArrayList;
 import java.util.IdentityHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 
 import org.tinfour.common.Circumcircle;
-import org.tinfour.common.IConstraint;
 import org.tinfour.common.IIncrementalTin;
 import org.tinfour.common.IIncrementalTinNavigator;
 import org.tinfour.common.IQuadEdge;
@@ -25,7 +23,7 @@ import org.tinfour.utils.SegmentUtility;
  * splitting encroached constrained subsegments. Several practical safeguards
  * are included to avoid pathological infinite refinement:
  * <ul>
- * <li>radius–edge gating (configurable; optionally enforces ρ ≥ √2);</li>
+ * <li>radius-edge gating (configurable; optionally enforces ρ ≥ √2);</li>
  * <li>concentric-shell segment tagging to enable robust off-center / midpoint
  * handling;</li>
  * <li>identification of <em>seditious</em> edges (midpoints on the same shell
@@ -76,7 +74,7 @@ public class RuppertRefiner implements DelaunayRefiner {
 	 * its incident constrained segments. If that smaller angle is less than
 	 * <code>SMALL_CORNER_DEG</code>, the corner is treated as “critical.”
 	 * </p>
-	 * 
+	 *
 	 * <h3>Why this matters:</h3>
 	 * <ul>
 	 * <li>Very small angles can trigger endless "ping-pong" refinement: splitting
@@ -93,7 +91,7 @@ public class RuppertRefiner implements DelaunayRefiner {
 	 * </ol>
 	 * These rules stop the cascade while allowing refinement elsewhere.</li>
 	 * </ul>
-	 * 
+	 *
 	 * <h3>Recommended value:</h3>
 	 * <ul>
 	 * <li>60° is a safe, conservative default (following Shewchuk). It reliably
@@ -140,11 +138,11 @@ public class RuppertRefiner implements DelaunayRefiner {
 	 * @throws IllegalArgumentException if {@code tin} is null or not bootstrapped,
 	 *                                  or if {@code ratio <= 0}
 	 */
-	public static RuppertRefiner fromEdgeRatio(IIncrementalTin tin, double ratio) {
+	public static RuppertRefiner fromEdgeRatio(final IIncrementalTin tin, final double ratio) {
 		if (ratio <= 0) {
 			throw new IllegalArgumentException("ratio must be > 0");
 		}
-		double minAngleDeg = Math.toDegrees(Math.asin(1.0 / (2.0 * ratio)));
+		final double minAngleDeg = Math.toDegrees(Math.asin(1.0 / (2.0 * ratio)));
 		return new RuppertRefiner(tin, minAngleDeg);
 	}
 
@@ -174,7 +172,7 @@ public class RuppertRefiner implements DelaunayRefiner {
 	 * @param minAngleDeg the requested minimum angle in degrees (0 &lt; θ &lt; 60)
 	 * @throws IllegalArgumentException on invalid inputs
 	 */
-	public RuppertRefiner(IIncrementalTin tin, double minAngleDeg) {
+	public RuppertRefiner(final IIncrementalTin tin, final double minAngleDeg) {
 		this(tin, minAngleDeg, false, true, true);
 	}
 
@@ -204,8 +202,8 @@ public class RuppertRefiner implements DelaunayRefiner {
 	 * @param ignoreSeditiousEncroachments whether to ignore seditious encroachments
 	 * @throws IllegalArgumentException on invalid inputs
 	 */
-	public RuppertRefiner(IIncrementalTin tin, double minAngleDeg, boolean enforceSqrt2Guard, boolean skipSeditiousTriangles,
-			boolean ignoreSeditiousEncroachments) {
+	public RuppertRefiner(final IIncrementalTin tin, final double minAngleDeg, final boolean enforceSqrt2Guard, final boolean skipSeditiousTriangles,
+			final boolean ignoreSeditiousEncroachments) {
 		if (tin == null) {
 			throw new IllegalArgumentException("tin must not be null");
 		}
@@ -227,17 +225,15 @@ public class RuppertRefiner implements DelaunayRefiner {
 
 		this.rhoMin = enforceSqrt2Guard ? Math.max(SQRT2, rhoTarget) : rhoTarget;
 
-		this.minTriangleArea = 1e-6;
+		this.minTriangleArea = 1e-6; // TODO user-input
 
-		for (Vertex v : tin.vertices()) {
+		for (final Vertex v : tin.vertices()) {
 			vdata.put(v, new VData(VType.INPUT, null, 0));
 		}
 
 		navigator = tin.getNavigator();
 		cornerInfo = buildCornerInfo();
 	}
-
-	Set<IQuadEdge> s;
 
 	/**
 	 * Perform refinement on the supplied {@link IIncrementalTin}.
@@ -269,7 +265,7 @@ public class RuppertRefiner implements DelaunayRefiner {
 		int iterations = 0;
 
 		while (iterations++ < maxIterations) {
-			var vLast = refineOnce();
+			final var vLast = refineOnce();
 			if (vLast == null) {
 				return true;
 			}
@@ -280,15 +276,15 @@ public class RuppertRefiner implements DelaunayRefiner {
 
 	@Override
 	public Vertex refineOnce() {
-		List<IQuadEdge> segments = collectConstrainedSegments();
+		final List<IQuadEdge> segments = collectConstrainedSegments();
 
-		IQuadEdge enc = findEncroachedSegment(segments);
+		final IQuadEdge enc = findEncroachedSegment(segments);
 		if (enc != null) {
 			return splitSegmentSmart(enc);
 
 		}
 
-		SimpleTriangle bad = findLargestPoorTriangle(segments);
+		final SimpleTriangle bad = findLargestPoorTriangle(segments);
 		if (bad != null) {
 			return insertOffcenterOrSplit(bad, segments);
 
@@ -307,8 +303,8 @@ public class RuppertRefiner implements DelaunayRefiner {
 	 * @return modifiable list of constrained subsegments
 	 */
 	private List<IQuadEdge> collectConstrainedSegments() {
-		List<IQuadEdge> result = new ArrayList<>();
-		for (IQuadEdge e : tin.edges()) { // .edges() returns only base edges
+		final List<IQuadEdge> result = new ArrayList<>();
+		for (final IQuadEdge e : tin.edges()) { // .edges() returns only base edges
 			if (e.isConstrained()) {
 				result.add(e);
 			}
@@ -329,10 +325,10 @@ public class RuppertRefiner implements DelaunayRefiner {
 	 * @param segments a snapshot list of constrained subsegments to inspect
 	 * @return an encroached {@link IQuadEdge} or {@code null} if none found
 	 */
-	private IQuadEdge findEncroachedSegment(List<IQuadEdge> segments) {
-		for (IQuadEdge seg : segments) {
+	private IQuadEdge findEncroachedSegment(final List<IQuadEdge> segments) {
+		for (final IQuadEdge seg : segments) {
 			// NOTE validity of this test requires Delaunay integrity
-			Vertex enc = SegmentUtility.closestEncroacherOrNull(seg);
+			final Vertex enc = SegmentUtility.closestEncroacherOrNull(seg);
 			if (enc != null) {
 				if (ignoreSeditiousEncroachments && shouldIgnoreEncroachment(seg, enc)) {
 					continue;
@@ -356,45 +352,53 @@ public class RuppertRefiner implements DelaunayRefiner {
 	 * @param segments snapshot of constrained subsegments (used by heuristics)
 	 * @return a {@link SimpleTriangle} chosen for refinement, or {@code null}
 	 */
-	private SimpleTriangle findLargestPoorTriangle(List<IQuadEdge> segments) {
+	private SimpleTriangle findLargestPoorTriangle(final List<IQuadEdge> segments) {
 		SimpleTriangle best = null;
 		double bestCross2 = -1.0;
 
-		final boolean hasConstraints = !tin.getConstraints().isEmpty();
+		final int constraints = tin.getConstraints().size();
 		final double threshMul = 4.0 * rhoMin * rhoMin; // 4*rhoMin^2
 		final double minCross2 = 4.0 * minTriangleArea * minTriangleArea; // (2*area)^2
 
-		for (SimpleTriangle t : tin.triangles()) {
-			if (t.isGhost())
+		for (final SimpleTriangle t : tin.triangles()) {
+			if (t.isGhost()) {
 				continue;
+			}
 
-			if (hasConstraints) {
-				IConstraint rc = t.getContainingRegion();
-				if (rc == null || !rc.definesConstrainedRegion())
+			if (constraints == 1) {
+				// faster constraint check
+				if (!t.getEdgeA().isConstraintRegionMember() || !t.getEdgeB().isConstraintRegionMember() || !t.getEdgeC().isConstraintRegionMember()) {
 					continue;
+				}
+			} else if (constraints > 1) {
+				final var rc = t.getContainingRegion();
+				if (rc == null || !rc.definesConstrainedRegion()) {
+					continue;
+				}
 			}
 
 			// below, compute edge ratio and area inline
-			Vertex A = t.getVertexA(), B = t.getVertexB(), C = t.getVertexC();
-			double ax = A.getX(), ay = A.getY();
-			double bx = B.getX(), by = B.getY();
-			double cx = C.getX(), cy = C.getY();
+			final Vertex A = t.getVertexA(), B = t.getVertexB(), C = t.getVertexC();
+			final double ax = A.getX(), ay = A.getY();
+			final double bx = B.getX(), by = B.getY();
+			final double cx = C.getX(), cy = C.getY();
 
 			// AB, AC
-			double abx = bx - ax, aby = by - ay;
-			double acx = cx - ax, acy = cy - ay;
+			final double abx = bx - ax, aby = by - ay;
+			final double acx = cx - ax, acy = cy - ay;
 
 			// |AB|^2, |AC|^2, |BC|^2 via (AC-AB)^2 = la + lc - 2 dot(AB,AC)
-			double la = abx * abx + aby * aby;
-			double lc = acx * acx + acy * acy;
-			double dot = abx * acx + aby * acy;
-			double lb = la + lc - 2.0 * dot;
+			final double la = abx * abx + aby * aby;
+			final double lc = acx * acx + acy * acy;
+			final double dot = abx * acx + aby * acy;
+			final double lb = la + lc - 2.0 * dot;
 
 			// cross^2 (double-area squared)
-			double cross = abx * acy - aby * acx;
-			double cross2 = cross * cross;
-			if (!(cross2 > 0.0))
+			final double cross = abx * acy - aby * acx;
+			final double cross2 = cross * cross;
+			if (!(cross2 > 0.0)) {
 				continue;
+			}
 
 			// shortest edge and product of the other two squared sides
 			double pairProd;
@@ -414,8 +418,9 @@ public class RuppertRefiner implements DelaunayRefiner {
 			}
 
 			// bad if (R/s) >= rhoMin <=> pairProd >= 4*rhoMin^2 * cross^2
-			if (pairProd < threshMul * cross2)
+			if (pairProd < threshMul * cross2) {
 				continue;
+			}
 
 			if (skipSeditiousTriangles && isSeditious(sA, sB)) {
 				continue;
@@ -453,11 +458,11 @@ public class RuppertRefiner implements DelaunayRefiner {
 	 *                 tests
 	 * @return
 	 */
-	private Vertex insertOffcenterOrSplit(SimpleTriangle tri, List<IQuadEdge> segments) {
-		Vertex a = tri.getVertexA(), b = tri.getVertexB(), c = tri.getVertexC();
+	private Vertex insertOffcenterOrSplit(final SimpleTriangle tri, final List<IQuadEdge> segments) {
+		final Vertex a = tri.getVertexA(), b = tri.getVertexB(), c = tri.getVertexC();
 
 		Vertex p = a, q = b;
-		double ab2 = a.getDistanceSq(b), bc2 = b.getDistanceSq(c), ca2 = c.getDistanceSq(a);
+		final double ab2 = a.getDistanceSq(b), bc2 = b.getDistanceSq(c), ca2 = c.getDistanceSq(a);
 		if (bc2 < ab2 && bc2 <= ca2) {
 			p = b;
 			q = c;
@@ -466,13 +471,13 @@ public class RuppertRefiner implements DelaunayRefiner {
 			q = a;
 		}
 
-		double len = Math.sqrt(p.getDistanceSq(q));
+		final double len = Math.sqrt(p.getDistanceSq(q));
 		if (!(len > 0)) {
 			return insertCircumcenterOrSplit(tri, segments);
 		}
 
-		double mx = 0.5 * (p.getX() + q.getX());
-		double my = 0.5 * (p.getY() + q.getY());
+		final double mx = 0.5 * (p.getX() + q.getX());
+		final double my = 0.5 * (p.getY() + q.getY());
 
 		/*
 		 * Tinfour edges are always oriented counterclockwise around the interior of a
@@ -480,45 +485,45 @@ public class RuppertRefiner implements DelaunayRefiner {
 		 */
 		double nx = -(q.getY() - p.getY());
 		double ny = q.getX() - p.getX();
-		double nlen = Math.hypot(nx, ny);
+		final double nlen = Math.hypot(nx, ny);
 		if (nlen == 0) {
 			return insertCircumcenterOrSplit(tri, segments);
 		}
 		nx /= nlen;
 		ny /= nlen;
 
-		Circumcircle cc = tri.getCircumcircle();
+		final Circumcircle cc = tri.getCircumcircle();
 		if (cc == null || !cc.isFinite()) {
 			return insertCircumcenterOrSplit(tri, segments);
 		}
-		double cx = cc.getX(), cy = cc.getY();
-		double dCirc = Math.hypot(cx - mx, cy - my);
+		final double cx = cc.getX(), cy = cc.getY();
+		final double dCirc = Math.hypot(cx - mx, cy - my);
 
-		double d = Math.min(dCirc, beta * len);
+		final double d = Math.min(dCirc, beta * len);
 
-		double ox = mx + nx * d;
-		double oy = my + ny * d;
-		Vertex off = new Vertex(ox, oy, Double.NaN);
+		final double ox = mx + nx * d;
+		final double oy = my + ny * d;
+		final Vertex off = new Vertex(ox, oy, Double.NaN);
 
-		IQuadEdge enc = firstEncroachedByPoint(off, segments);
+		final IQuadEdge enc = firstEncroachedByPoint(off, segments);
 		if (enc != null) {
 			return splitSegmentSmart(enc);
 		}
 
-		double localScale = Math.max(1e-12, len);
-		double nearVertexTol = NEAR_VERTEX_REL_TOL * localScale;
-		double nearEdgeTol = NEAR_EDGE_REL_TOL * localScale;
+		final double localScale = Math.max(1e-12, len);
+		final double nearVertexTol = NEAR_VERTEX_REL_TOL * localScale;
+		final double nearEdgeTol = NEAR_EDGE_REL_TOL * localScale;
 
 		if (lastInsertedVertex != null && lastInsertedVertex.getDistance(off) <= nearVertexTol) {
 			return null;
 		}
 
-		Vertex nearest = nearestNeighbor(ox, oy);
+		final Vertex nearest = nearestNeighbor(ox, oy);
 		if (nearest != null && nearest.getDistance(off) <= nearVertexTol) {
 			return null;
 		}
 
-		IQuadEdge nearEdge = firstNearConstrainedEdgeInterior(off, segments, nearEdgeTol);
+		final IQuadEdge nearEdge = firstNearConstrainedEdgeInterior(off, segments, nearEdgeTol);
 		if (nearEdge != null) {
 			return splitSegmentSmart(nearEdge);
 		}
@@ -541,30 +546,30 @@ public class RuppertRefiner implements DelaunayRefiner {
 	 * @param segments snapshot of constrained subsegments used for screening
 	 * @return
 	 */
-	private Vertex insertCircumcenterOrSplit(SimpleTriangle tri, List<IQuadEdge> segments) {
-		Circumcircle cc = tri.getCircumcircle();
+	private Vertex insertCircumcenterOrSplit(final SimpleTriangle tri, final List<IQuadEdge> segments) {
+		final Circumcircle cc = tri.getCircumcircle();
 		if (cc == null || !cc.isFinite()) {
 			return null;
 		}
 
-		Vertex center = cc.getCircumcenter();
+		final Vertex center = cc.getCircumcenter();
 
-		IQuadEdge enc = firstEncroachedByPoint(center, segments);
+		final IQuadEdge enc = firstEncroachedByPoint(center, segments);
 		if (enc != null) {
 			return splitSegmentSmart(enc);
 		}
 
-		double localScale = Math.max(1e-12, tri.getShortestEdge().getLength());
-		double nearVertexTol = NEAR_VERTEX_REL_TOL * localScale;
-		double nearEdgeTol = NEAR_EDGE_REL_TOL * localScale;
+		final double localScale = Math.max(1e-12, tri.getShortestEdge().getLength());
+		final double nearVertexTol = NEAR_VERTEX_REL_TOL * localScale;
+		final double nearEdgeTol = NEAR_EDGE_REL_TOL * localScale;
 
-		Vertex nearest = nearestNeighbor(center.x, center.y);
+		final Vertex nearest = nearestNeighbor(center.x, center.y);
 		if ((nearest != null && nearest.getDistance(center) <= nearVertexTol)
 				|| (lastInsertedVertex != null && lastInsertedVertex.getDistance(center) <= nearVertexTol)) {
 			return null;
 		}
 
-		IQuadEdge nearEdge = firstNearConstrainedEdgeInterior(center, segments, nearEdgeTol);
+		final IQuadEdge nearEdge = firstNearConstrainedEdgeInterior(center, segments, nearEdgeTol);
 		if (nearEdge != null) {
 			return splitSegmentSmart(nearEdge);
 		}
@@ -574,7 +579,7 @@ public class RuppertRefiner implements DelaunayRefiner {
 		return center;
 	}
 
-	private Vertex nearestNeighbor(double x, double y) {
+	private Vertex nearestNeighbor(final double x, final double y) {
 		return navigator.getNearestVertex(x, y);
 	}
 
@@ -591,8 +596,8 @@ public class RuppertRefiner implements DelaunayRefiner {
 	 * @param seg the constrained subsegment to split (must be non-null)
 	 * @return the newly inserted vertex
 	 */
-	private Vertex splitSegmentSmart(IQuadEdge seg) {
-		Vertex a = seg.getA(), b = seg.getB();
+	private Vertex splitSegmentSmart(final IQuadEdge seg) {
+		final Vertex a = seg.getA(), b = seg.getB();
 		Vertex corner = null;
 		if (isCornerCritical(a)) {
 			corner = a;
@@ -600,9 +605,9 @@ public class RuppertRefiner implements DelaunayRefiner {
 			corner = b;
 		}
 
-		Vertex v = tin.splitEdge(seg, Double.NaN, true);
+		final Vertex v = tin.splitEdge(seg, Double.NaN, true);
 		if (v != null) {
-			int k = (corner != null) ? shellIndex(corner, v.x, v.y) : 0;
+			final int k = (corner != null) ? shellIndex(corner, v.x, v.y) : 0;
 			vdata.put(v, new VData(VType.MIDPOINT, corner, k));
 			lastInsertedVertex = v;
 		}
@@ -616,14 +621,14 @@ public class RuppertRefiner implements DelaunayRefiner {
 	 * @param segments the constrained subsegment snapshot to check
 	 * @return the first encroached {@link IQuadEdge} or {@code null}
 	 */
-	private IQuadEdge firstEncroachedByPoint(Vertex p, List<IQuadEdge> segments) {
-		for (IQuadEdge seg : segments) {
-			Vertex vA = seg.getA();
-			Vertex vB = seg.getB();
-			double midX = (vA.getX() + vB.getX()) / 2.0;
-			double midY = (vA.getY() + vB.getY()) / 2.0;
-			double length = seg.getLength();
-			double r2 = length * length / 4;
+	private IQuadEdge firstEncroachedByPoint(final Vertex p, final List<IQuadEdge> segments) {
+		for (final IQuadEdge seg : segments) {
+			final Vertex vA = seg.getA();
+			final Vertex vB = seg.getB();
+			final double midX = (vA.getX() + vB.getX()) / 2.0;
+			final double midY = (vA.getY() + vB.getY()) / 2.0;
+			final double length = seg.getLength();
+			final double r2 = length * length / 4;
 			if (p.getDistanceSq(midX, midY) < r2) {
 				return seg;
 			}
@@ -647,28 +652,28 @@ public class RuppertRefiner implements DelaunayRefiner {
 	 * @return first subsegment whose interior is within {@code tol}, or
 	 *         {@code null}
 	 */
-	private IQuadEdge firstNearConstrainedEdgeInterior(Vertex v, List<IQuadEdge> segments, double tol) {
-		double px = v.getX(), py = v.getY();
-		for (IQuadEdge seg : segments) {
-			Vertex a = seg.getA(), b = seg.getB();
-			double ax = a.getX(), ay = a.getY();
-			double bx = b.getX(), by = b.getY();
+	private IQuadEdge firstNearConstrainedEdgeInterior(final Vertex v, final List<IQuadEdge> segments, final double tol) {
+		final double px = v.getX(), py = v.getY();
+		for (final IQuadEdge seg : segments) {
+			final Vertex a = seg.getA(), b = seg.getB();
+			final double ax = a.getX(), ay = a.getY();
+			final double bx = b.getX(), by = b.getY();
 
-			double vx = bx - ax, vy = by - ay;
-			double wx = px - ax, wy = py - ay;
+			final double vx = bx - ax, vy = by - ay;
+			final double wx = px - ax, wy = py - ay;
 
-			double vv = vx * vx + vy * vy;
+			final double vv = vx * vx + vy * vy;
 			if (vv == 0) {
 				continue;
 			}
 
-			double t = (wx * vx + wy * vy) / vv;
+			final double t = (wx * vx + wy * vy) / vv;
 			if (t <= 0 || t >= 1) {
 				continue;
 			}
 
-			double projx = ax + t * vx, projy = ay + t * vy;
-			double dist = Math.hypot(px - projx, py - projy);
+			final double projx = ax + t * vx, projy = ay + t * vy;
+			final double dist = Math.hypot(px - projx, py - projy);
 			if (dist <= tol) {
 				return seg;
 			}
@@ -693,8 +698,8 @@ public class RuppertRefiner implements DelaunayRefiner {
 	 * @return {@code true} if the encroachment should be ignored, {@code false}
 	 *         otherwise
 	 */
-	private boolean shouldIgnoreEncroachment(IQuadEdge e, Vertex witness) {
-		Vertex A = e.getA(), B = e.getB();
+	private boolean shouldIgnoreEncroachment(final IQuadEdge e, final Vertex witness) {
+		final Vertex A = e.getA(), B = e.getB();
 		Vertex corner = null;
 		if (isCornerCritical(A)) {
 			corner = A;
@@ -705,14 +710,14 @@ public class RuppertRefiner implements DelaunayRefiner {
 			return false;
 		}
 
-		double mx = 0.5 * (A.x + B.x), my = 0.5 * (A.y + B.y);
-		int kMid = shellIndex(corner, mx, my);
-		int kW = shellIndex(corner, witness.x, witness.y);
+		final double mx = 0.5 * (A.x + B.x), my = 0.5 * (A.y + B.y);
+		final int kMid = shellIndex(corner, mx, my);
+		final int kW = shellIndex(corner, witness.x, witness.y);
 		if (kMid != kW) {
 			return false;
 		}
 
-		VData mw = vdata.get(witness);
+		final VData mw = vdata.get(witness);
 		return (mw != null && mw.t == VType.MIDPOINT && mw.corner == corner);
 	}
 
@@ -730,28 +735,28 @@ public class RuppertRefiner implements DelaunayRefiner {
 	 * @return a map from corner {@link Vertex} to {@link CornerInfo}
 	 */
 	private Map<Vertex, CornerInfo> buildCornerInfo() {
-		Map<Vertex, List<Vertex>> nbrs = new IdentityHashMap<>();
-		for (IQuadEdge e : collectConstrainedSegments()) {
-			Vertex A = e.getA(), B = e.getB();
+		final Map<Vertex, List<Vertex>> nbrs = new IdentityHashMap<>();
+		for (final IQuadEdge e : collectConstrainedSegments()) {
+			final Vertex A = e.getA(), B = e.getB();
 			nbrs.computeIfAbsent(A, k -> new ArrayList<>()).add(B);
 			nbrs.computeIfAbsent(B, k -> new ArrayList<>()).add(A);
 		}
-		Map<Vertex, CornerInfo> info = new IdentityHashMap<>();
-		for (var ent : nbrs.entrySet()) {
-			Vertex z = ent.getKey();
-			List<Vertex> list = ent.getValue();
+		final Map<Vertex, CornerInfo> info = new IdentityHashMap<>();
+		for (final var ent : nbrs.entrySet()) {
+			final Vertex z = ent.getKey();
+			final List<Vertex> list = ent.getValue();
 			if (list.size() < 2) {
 				continue;
 			}
 
-			CornerInfo ci = new CornerInfo();
-			List<Double> angs = new ArrayList<>(list.size());
-			for (Vertex w : list) {
+			final CornerInfo ci = new CornerInfo();
+			final List<Double> angs = new ArrayList<>(list.size());
+			for (final Vertex w : list) {
 				angs.add(Math.atan2(w.y - z.y, w.x - z.x));
 			}
 			for (int i = 0; i < angs.size(); i++) {
 				for (int j = i + 1; j < angs.size(); j++) {
-					double a = angleSmallBetweenDeg(angs.get(i), angs.get(j));
+					final double a = angleSmallBetweenDeg(angs.get(i), angs.get(j));
 					ci.minAngleDeg = Math.min(ci.minAngleDeg, a);
 				}
 			}
@@ -768,7 +773,7 @@ public class RuppertRefiner implements DelaunayRefiner {
 	 * @param b second direction in radians
 	 * @return absolute smallest angle between directions, in degrees, ∈ [0,180]
 	 */
-	private double angleSmallBetweenDeg(double a, double b) {
+	private double angleSmallBetweenDeg(final double a, final double b) {
 		double d = Math.abs(a - b);
 		d = Math.min(d, 2 * Math.PI - d);
 		return Math.toDegrees(d);
@@ -785,8 +790,8 @@ public class RuppertRefiner implements DelaunayRefiner {
 	 * @param z the corner vertex to test
 	 * @return {@code true} if the corner is critical; {@code false} otherwise
 	 */
-	private boolean isCornerCritical(Vertex z) {
-		CornerInfo ci = cornerInfo.get(z);
+	private boolean isCornerCritical(final Vertex z) {
+		final CornerInfo ci = cornerInfo.get(z);
 		return ci != null && ci.minAngleDeg < SMALL_CORNER_DEG;
 	}
 
@@ -805,15 +810,15 @@ public class RuppertRefiner implements DelaunayRefiner {
 	 * @param v the other endpoint
 	 * @return {@code true} if the edge is seditious; {@code false} otherwise
 	 */
-	private boolean isSeditious(Vertex u, Vertex v) {
-		VData mu = vdata.get(u), mv = vdata.get(v);
+	private boolean isSeditious(final Vertex u, final Vertex v) {
+		final VData mu = vdata.get(u), mv = vdata.get(v);
 		if (mu == null || mv == null || mu.t != VType.MIDPOINT || mv.t != VType.MIDPOINT) {
 			return false;
 		}
 		if (mu.corner == null || mu.corner != mv.corner) {
 			return false;
 		}
-		Vertex z = mu.corner;
+		final Vertex z = mu.corner;
 		if (!isCornerCritical(z)) {
 			return false;
 		}
@@ -834,8 +839,8 @@ public class RuppertRefiner implements DelaunayRefiner {
 	 * @param y candidate point y-coordinate
 	 * @return integer shell index (0 for extremely small radii)
 	 */
-	private int shellIndex(Vertex z, double x, double y) {
-		double d = Math.hypot(x - z.x, y - z.y);
+	private int shellIndex(final Vertex z, final double x, final double y) {
+		final double d = Math.hypot(x - z.x, y - z.y);
 		if (d <= SHELL_EPS) {
 			return 0;
 		}
@@ -851,12 +856,12 @@ public class RuppertRefiner implements DelaunayRefiner {
 	 * @param b second vertex
 	 * @return {@code true} if both vertices have equal shell index around {@code z}
 	 */
-	private boolean sameShell(Vertex z, Vertex a, Vertex b) {
+	private boolean sameShell(final Vertex z, final Vertex a, final Vertex b) {
 		return shellIndex(z, a.x, a.y) == shellIndex(z, b.x, b.y);
 	}
 
 	/**
-	 * Add a new vertex to both the TIN and internal KD-tree, and record metadata.
+	 * Add a new vertex to both the TIN and record metadata.
 	 *
 	 * @param v      the vertex to add (must be non-null)
 	 * @param type   the creation type (see {@link VType})
@@ -864,7 +869,7 @@ public class RuppertRefiner implements DelaunayRefiner {
 	 *               {@code null})
 	 * @param shell  shell index assigned to the vertex (0 if not used)
 	 */
-	private void addVertex(Vertex v, VType type, Vertex corner, int shell) {
+	private void addVertex(final Vertex v, final VType type, final Vertex corner, final int shell) {
 		tin.add(v);
 		vdata.put(v, new VData(type, corner, shell));
 	}
@@ -908,7 +913,7 @@ public class RuppertRefiner implements DelaunayRefiner {
 		Vertex corner;
 		int shell;
 
-		VData(VType t, Vertex c, int s) {
+		VData(final VType t, final Vertex c, final int s) {
 			this.t = t;
 			this.corner = c;
 			this.shell = s;
