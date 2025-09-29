@@ -3220,32 +3220,19 @@ public class IncrementalTin implements IIncrementalTin {
     }
     return null;
   }
-  
+
   /**
    * Splits the edge at parameter t measured from A toward B.
    * t is clamped to (ε, 1-ε) to avoid zero-length subedges.
    */
+  @Override
   public Vertex splitEdge(IQuadEdge eInput, double t, double zSplit, boolean restoreConformity) {
-
-    QuadEdge ab = (QuadEdge) eInput;
-    QuadEdge ba = ab.getDual();
-
-    QuadEdge bc = ab.getForward();
-    QuadEdge ad = ba.getForward();
-    Vertex a = ab.getA();
-    Vertex b = ab.getB();
-    Vertex c = bc.getB();
-    Vertex d = ad.getB();
 
     Vertex a = eInput.getA();
     Vertex b = eInput.getB();
     if (a == null || b == null) {
       return null;
     }
-
-    // reverse references
-    QuadEdge ca = ab.getReverse();
-    QuadEdge db = ba.getReverse();
 
     // clamp t to avoid degeneracy
     final double eps = 1e-12;
@@ -3265,45 +3252,7 @@ public class IncrementalTin implements IIncrementalTin {
       m.setStatus(Vertex.BIT_SYNTHETIC);
     }
 
-    // split ab; edgePool.splitEdge(ab, m) returns a->m; ab becomes m->b
-    QuadEdge am = edgePool.splitEdge(ab, m);
-    QuadEdge mb = ab;
-    QuadEdge bm = ba;
-
-    // create new spokes to c and d
-    QuadEdge cm = edgePool.allocateEdge(c, m);
-    QuadEdge dm = edgePool.allocateEdge(d, m);
-    QuadEdge ma = am.getDual();
-    QuadEdge mc = cm.getDual();
-    QuadEdge md = dm.getDual();
-
-    ma.setForward(ad);
-    ad.setForward(dm);
-    dm.setForward(ma);
-
-    mb.setForward(bc);
-    bc.setForward(cm);
-    cm.setForward(mb);
-
-    mc.setForward(ca);
-    ca.setForward(am); // should already be set
-    am.setForward(mc);
-
-    md.setForward(db);
-    db.setForward(bm);
-    bm.setForward(md);
-
-    if (isConformant && restoreConformity) {
-      restoreConformity(am, 1);
-      restoreConformity(mb, 1);
-      restoreConformity(bc.getDual(), 1);
-      restoreConformity(ca.getDual(), 1);
-      restoreConformity(ad.getDual(), 1);
-      restoreConformity(db.getDual(), 1);
-    } else {
-      isConformant = false;
-    }
-
+    insertAction((QuadEdge) eInput, m, true, true);
     return m;
   }
 

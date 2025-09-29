@@ -2735,46 +2735,11 @@ public class SemiVirtualIncrementalTin implements IIncrementalTin {
   }
 
   /**
-   * Split an existing edge at parametric location t measured from A toward B.
-   * The new vertex is inserted at A + t(B−A). If t is at/near an endpoint,
-   * it is clamped to (ε, 1−ε) to avoid zero-length subedges.
+   * Splits the edge at parameter t measured from A toward B.
+   * t is clamped to (ε, 1-ε) to avoid zero-length subedges.
    */
-  public Vertex splitEdge(
-      IQuadEdge eInput,
-      double t,
-      double zSplit,
-      boolean restoreConformity) {
-
-    if (restoreConformity) {
-      throw new UnsupportedOperationException(
-          "The restoreConformity option is not yet implemented");
-    }
-
-    // Verify that the edge belongs to this instance
-    int index = eInput.getIndex();
-    SemiVirtualEdge eTest = edgePool.getEdgeForIndex(index);
-    if (eTest == null
-        || eTest.getA() != eInput.getA()
-        || eTest.getB() != eInput.getB()) {
-      throw new IllegalArgumentException(
-          "Specified edge does not belong to this instance for edge index "
-              + index);
-    }
-
-    final double eps = 1e-12;
-    if (!(t > 0.0 && t < 1.0)) {
-      t = Math.max(eps, Math.min(1.0 - eps, t));
-    }
-
-    SemiVirtualEdge ab = (SemiVirtualEdge) eInput;
-    SemiVirtualEdge ba = ab.getDual();
-    SemiVirtualEdge bc = ab.getForward();
-    SemiVirtualEdge ad = ba.getForward();
-
-    Vertex a = ab.getA();
-    Vertex b = ab.getB();
-    Vertex c = bc.getB();
-    Vertex d = ad.getB();
+  @Override
+  public Vertex splitEdge(IQuadEdge eInput, double t, double zSplit, boolean restoreConformity) {
 
     Vertex a = eInput.getA();
     Vertex b = eInput.getB();
@@ -2782,10 +2747,13 @@ public class SemiVirtualIncrementalTin implements IIncrementalTin {
       return null;
     }
 
-    SemiVirtualEdge ca = ab.getReverse();
-    SemiVirtualEdge db = ba.getReverse();
+    // clamp t to avoid degeneracy
+    final double eps = 1e-12;
+    if (!(t > 0.0 && t < 1.0)) {
+      t = Math.max(eps, Math.min(1.0 - eps, t));
+    }
 
-    // Coordinates at parametric location t on A->B
+    // coordinates at t along A->B
     double mx = a.getX() + t * (b.getX() - a.getX());
     double my = a.getY() + t * (b.getY() - a.getY());
     double mz = zSplit;
@@ -2797,38 +2765,7 @@ public class SemiVirtualIncrementalTin implements IIncrementalTin {
       m.setStatus(Vertex.BIT_SYNTHETIC);
     }
 
-    // Split AB by inserting m (edgePool.splitEdge returns A->M; AB becomes M->B)
-    SemiVirtualEdge am = edgePool.splitEdge(ab, m);
-    SemiVirtualEdge mb = ab;
-    SemiVirtualEdge bm = ba;
-
-    // Create spokes
-    SemiVirtualEdge cm = edgePool.allocateEdge(c, m);
-    SemiVirtualEdge dm = edgePool.allocateEdge(d, m);
-    SemiVirtualEdge ma = am.getDual();
-    SemiVirtualEdge mc = cm.getDual();
-    SemiVirtualEdge md = dm.getDual();
-
-    // Relink rings (same pattern as midpoint version)
-    ma.setForward(ad);
-    ad.setForward(dm);
-    dm.setForward(ma);
-
-    mb.setForward(bc);
-    bc.setForward(cm);
-    cm.setForward(mb);
-
-    mc.setForward(ca);
-    ca.setForward(am);
-    am.setForward(mc);
-
-    md.setForward(db);
-    db.setForward(bm);
-    bm.setForward(md);
-
-    // restoreConformity not supported in this implementation (flag checked above)
-
-    isConformant = false; // unchanged semantics vs. your current method
+    insertAction((SemiVirtualEdge) eInput, m, true, true);
     return m;
   }
 
