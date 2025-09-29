@@ -71,6 +71,7 @@ import org.tinfour.common.IMonitorWithCancellation;
 import org.tinfour.common.INeighborEdgeLocator;
 import org.tinfour.common.INeighborhoodPointsCollector;
 import org.tinfour.common.IQuadEdge;
+import org.tinfour.common.InsufficientConstraintGeometryException;
 import org.tinfour.common.NearestEdgeResult;
 import org.tinfour.common.SimpleTriangle;
 import org.tinfour.common.SimpleTriangleIterator;
@@ -1036,7 +1037,6 @@ public class IncrementalTin implements IIncrementalTin {
     final double x = v.x;
     final double y = v.y;
 
-    int nReplacements = 0;
     if (x < boundsMinX) {
       boundsMinX = x;
     } else if (x > boundsMaxX) {
@@ -1066,10 +1066,21 @@ public class IncrementalTin implements IIncrementalTin {
       return false;
     }
 
+    boolean isOnEdge = eResult.getDistanceToEdge() < 4 * thresholds.getVertexTolerance();
+    return insertAction(searchEdge, v, eResult.isInterior(), isOnEdge);
+  }
+
+  private boolean insertAction(final QuadEdge insertEdge, final Vertex v, boolean isInterior, boolean isOnEdge) {
+    final double x = v.x;
+    final double y = v.y;
+
+    searchEdge = insertEdge;
+
+    int nReplacements = 0;
     boolean vertexIsInConstraintRegion = false;
     int vertexConstraintIndex = -1;
     if (this.maxLengthOfQueueInFloodFill > 0) {
-      if (eResult.isInterior() && searchEdge.isConstraintRegionMember()) {
+      if (isInterior && searchEdge.isConstraintRegionMember()) {
         vertexIsInConstraintRegion = true;
         IConstraint con = this.getRegionConstraint(searchEdge);
         if (con != null) {
@@ -1086,30 +1097,30 @@ public class IncrementalTin implements IIncrementalTin {
     IConstraint splitConstraintLeft = null;
     IConstraint splitConstraintRight = null;
     IConstraint splitConstraintLine = null;
-    boolean splitConstraintFlag = searchEdge.isConstrained() && eResult.getDistanceToEdge() < 4 * thresholds.getVertexTolerance();
+    boolean splitConstraintFlag = searchEdge.isConstrained() && isOnEdge;
     if (splitConstraintFlag) {
       splitConstraintEnd = searchEdge.getB();
-      if(searchEdge.isConstraintRegionBorder()){
+      if (searchEdge.isConstraintRegionBorder()) {
         splitConstraintIsBorder = true;
         splitConstraintLeft = getBorderConstraint(searchEdge);
         splitConstraintRight = getBorderConstraint(searchEdge.getDual());
         splitConstraintIndex = searchEdge.getConstraintBorderIndex();
-      }else{
+      } else {
         // it must be a line constraint.
         splitConstraintIndex = searchEdge.getConstraintLineIndex();
       }
       // it is possible for a constraint to be BOTH a border constraint
       // and a line constraint. So we need to perform an independent access.
-      splitConstraintIsLine= searchEdge.isConstraintLineMember();
-      if(splitConstraintIsLine){
-          splitConstraintLine = getLinearConstraint(searchEdge);
+      splitConstraintIsLine = searchEdge.isConstraintLineMember();
+      if (splitConstraintIsLine) {
+        splitConstraintLine = getLinearConstraint(searchEdge);
       }
     }
 
     // region-interior edges are usually not constrained, unless
     // they are also a line feature.
     splitConstraintIsRegionInterior = searchEdge.isConstraintRegionInterior();
-    if(splitConstraintIsRegionInterior && splitConstraintIndex == -1){
+    if (splitConstraintIsRegionInterior && splitConstraintIndex == -1) {
       splitConstraintIndex = searchEdge.getConstraintRegionInteriorIndex();
     }
 
@@ -1141,8 +1152,9 @@ public class IncrementalTin implements IIncrementalTin {
           pStart.getDual().setConstraintBorderIndex(splitConstraintLeft.getConstraintIndex());
         }
       }
-      if(splitConstraintIsLine){
+      if (splitConstraintIsLine) {
         pStart.setConstraintLineIndex(splitConstraintLine.getConstraintIndex());
+        edgePool.addLinearConstraintToMap(pStart, splitConstraintLine);
       }
     }
     QuadEdge p = pStart;
@@ -1235,7 +1247,6 @@ public class IncrementalTin implements IIncrementalTin {
         n2.setForward(c.getForward());
         p.setForward(n1);
 
-
         if (buffer == null) {
           // we need to get the base reference in order to ensure
           // that any ghost edges we create will start with a
@@ -1296,15 +1307,15 @@ public class IncrementalTin implements IIncrementalTin {
             // is just the opposite of the above code for pStart.
             e.setConstraintRegionBorderFlag();
             if (splitConstraintLeft != null) {
-             e.setConstraintBorderIndex(splitConstraintLeft.getConstraintIndex());
+              e.setConstraintBorderIndex(splitConstraintLeft.getConstraintIndex());
             }
             if (splitConstraintRight != null) {
               e.getDual().setConstraintBorderIndex(splitConstraintRight.getConstraintIndex());
             }
-          }else if(splitConstraintIsRegionInterior){
+          } else if (splitConstraintIsRegionInterior) {
             e.setConstraintRegionInteriorIndex(splitConstraintIndex);
           }
-          if(splitConstraintIsLine){
+          if (splitConstraintIsLine) {
             e.setConstraintLineIndex(splitConstraintLine.getConstraintIndex());
             edgePool.addLinearConstraintToMap(e, splitConstraintLine);
           }
@@ -1317,9 +1328,18 @@ public class IncrementalTin implements IIncrementalTin {
       }
     }
 
+    if (pStart.isConstrained()) {
+      if (!conEdges.contains(pStart)) {
+        conEdges.add(pStart);
+      }
+    }
     if (isConformant) {
       for (QuadEdge e : conEdges) {
         restoreConformity(e, 1);
+        restoreConformity(e.getForward(), 1);
+        restoreConformity(e.getReverse(), 1);
+        restoreConformity(e.getDual().getForward(), 1);
+        restoreConformity(e.getDual().getReverse(), 1);
       }
     }
 
@@ -1327,14 +1347,14 @@ public class IncrementalTin implements IIncrementalTin {
     // except that it does not need to look at the forward references
     // to the edges in the pinwheel operation.  They would either be undisturbed
     // or would have been updated by restoreConformity() above.
-    if(vertexIsInConstraintRegion){
+    if (vertexIsInConstraintRegion) {
       int constraintIndex = vertexConstraintIndex;
-      for(IQuadEdge e: searchEdge.pinwheel()){
-        if(e.isConstraintRegionBorder()){
+      for (IQuadEdge e : searchEdge.pinwheel()) {
+        if (e.isConstraintRegionBorder()) {
           IConstraint con = getBorderConstraint(e);
-          constraintIndex = con ==null ? -1 : con.getConstraintIndex();
+          constraintIndex = con == null ? -1 : con.getConstraintIndex();
         }
-        if(constraintIndex>=0 && !e.isConstrained() && !e.isConstraintRegionMember()){
+        if (constraintIndex >= 0 && !e.isConstrained() && !e.isConstraintRegionMember()) {
           e.setConstraintRegionInteriorIndex(constraintIndex);
         }
       }
@@ -2197,6 +2217,19 @@ public class IncrementalTin implements IIncrementalTin {
     if (constraints == null || constraints.isEmpty()) {
       return;
     }
+
+    if(!isBootstrapped){
+      List<Vertex> vList = new ArrayList<>();
+      for(IConstraint c: constraints){
+        vList.addAll(c.getVertices());
+      }
+      this.add(vList, null);
+      if(!isBootstrapped){
+        throw new InsufficientConstraintGeometryException();
+
+      }
+    }
+
 
     // the max number of constraints is (2^13)-2
     if (constraints.size() > QuadEdgeConstants.CONSTRAINT_INDEX_VALUE_MAX) {
@@ -3204,6 +3237,8 @@ public class IncrementalTin implements IIncrementalTin {
     Vertex c = bc.getB();
     Vertex d = ad.getB();
 
+    Vertex a = eInput.getA();
+    Vertex b = eInput.getB();
     if (a == null || b == null) {
       return null;
     }
@@ -3224,7 +3259,7 @@ public class IncrementalTin implements IIncrementalTin {
     double mz = zSplit;
 
     Vertex m = new Vertex(mx, my, mz, nSyntheticVertices++);
-    if (ab.isConstrained()) {
+    if (eInput.isConstrained()) {
       m.setStatus(Vertex.BIT_SYNTHETIC | Vertex.BIT_CONSTRAINT);
     } else {
       m.setStatus(Vertex.BIT_SYNTHETIC);
@@ -3272,6 +3307,7 @@ public class IncrementalTin implements IIncrementalTin {
     return m;
   }
 
+
   @Override
   public Iterable<SimpleTriangle> triangles() {
     final SimpleTriangleIterator sti = new SimpleTriangleIterator(this);
@@ -3308,4 +3344,5 @@ public class IncrementalTin implements IIncrementalTin {
   public boolean isConformant() {
     return isConformant;
   }
+
 }

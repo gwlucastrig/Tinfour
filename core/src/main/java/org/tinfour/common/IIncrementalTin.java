@@ -531,6 +531,8 @@ public interface IIncrementalTin {
    *
    * @param constraints a valid, potentially empty list.
    * @param restoreConformity restores conformity
+   * @throws InsufficientConstraintGeometryException if the input vertices
+   * and constraints are insufficient to establish a planar coordinate system.
    */
   void addConstraints(
     List<IConstraint> constraints, boolean restoreConformity);
