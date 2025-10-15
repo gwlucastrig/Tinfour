@@ -25,15 +25,19 @@
  * Notes:
  *
  *--------------------------------------------------------------------------
- */ 
+ */
 package org.tinfour.common;
- 
+
 /**
- * Provides a wrapper class used to represent the adjusted position 
+ * Provides a wrapper class used to represent the adjusted position
  * of a vertex.
+ * <p>
+ * While applications are free to use this class as needed, the core Tinfour
+ * operations only use it as a compromise solution for case where
+ * vertices are very close to constrained edges.
  */
 public class VertexAdjustment extends Vertex {
-  
+
   private final Vertex vertex;
 
   /**
@@ -50,7 +54,7 @@ public class VertexAdjustment extends Vertex {
     this.status = (byte)(vertex.status | BIT_SYNTHETIC);
     this.auxiliary = vertex.auxiliary;
   }
-  
+
   /**
    * Gets the original vertex that was used to produce this instance
    * @return a valid vertex
@@ -58,7 +62,5 @@ public class VertexAdjustment extends Vertex {
   public Vertex getVertex(){
     return vertex;
   }
-  
-  
-  
+
 }

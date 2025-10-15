@@ -951,7 +951,6 @@ public class MvComposite {
     double z = interpolator.interpolate(SurfaceModel.QuadraticWithCrossTerms,
       BandwidthSelectionMethod.OptimalAICc, 1.0,
       mx, my, null);
-    String q = model.getFormattedX(mx);
     fmt.format("X:     %s%n", model.getFormattedX(mx));
     fmt.format("Y:     %s%n", model.getFormattedY(my));
     if (queryIsOutside) {

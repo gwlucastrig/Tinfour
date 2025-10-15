@@ -254,7 +254,7 @@ public class EdgePool implements Iterable<IQuadEdge> {
    * @param e a valid QuadEdge
    */
   public void deallocateEdge(QuadEdge e) {
-    // Note: Although there is a sanity check method that can
+    // Note: Although there is a potential sanity check method that can
     //       be used to verify that the input edge belongs to this
     //       edge pool, it is not used here for performance purposes.
     int iPage = e.getIndex() / pageSize2;

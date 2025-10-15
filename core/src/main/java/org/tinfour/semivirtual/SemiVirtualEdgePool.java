@@ -560,7 +560,8 @@ class SemiVirtualEdgePool implements Iterable<IQuadEdge> {
 
     Vertex a = e.getA();
 
-    e.setA(m);
+    e.setA(m);  // will also update the dual's B vertex reference
+
     SemiVirtualEdge p = this.allocateEdge(a, m);
     SemiVirtualEdge q = p.getDual();
 
@@ -585,7 +586,7 @@ class SemiVirtualEdgePool implements Iterable<IQuadEdge> {
     // were placed on the opposite sides.  We need to swap thm.  We could do
     // that efficiently by manipulating the constraintFlags variable
     // directly, but for now it is easier to just use the edge accessor
-    // routines.  
+    // routines.
     if ((e.getIndex() & 1) != 0 && e.isConstraintRegionBorder()) {
       p.setConstraintBorderIndex(e.getConstraintBorderIndex());
       q.setConstraintBorderIndex(d.getConstraintBorderIndex());

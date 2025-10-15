@@ -85,9 +85,9 @@ public class MixedModeConstraintTest implements IDevelopmentTest {
 
     @Override
     public void accept(SimpleTriangle t) {
-      IQuadEdge a = t.getEdgeA();
-      IQuadEdge b = t.getEdgeB();
-      IQuadEdge c = t.getEdgeC();
+      //  IQuadEdge a = t.getEdgeA();
+      //  IQuadEdge b = t.getEdgeB();
+      //  IQuadEdge c = t.getEdgeC();
       Color color = Color.white;
       IConstraint con = t.getContainingRegion();
       if (con != null) {

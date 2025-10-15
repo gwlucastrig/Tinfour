@@ -287,6 +287,10 @@ public final class SemiVirtualEdge implements IQuadEdge {
     page.links[offset + 1] = 0;
     page.links[offset + 2] = 0;  // links for dual
     page.links[offset + 3] = 0;
+    if (page.constraints != null) {
+      int ix = indexOnPage / 2;
+      page.constraints[ix] = 0;
+    }
   }
 
   /**
@@ -374,7 +378,6 @@ public final class SemiVirtualEdge implements IQuadEdge {
    */
   public void setA(Vertex a) {
     page.vertices[indexOnPage] = a;
-
   }
 
   /**

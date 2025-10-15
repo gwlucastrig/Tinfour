@@ -59,8 +59,10 @@ import java.io.PrintStream;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.BitSet;
+import java.util.Comparator;
 import java.util.Iterator;
 import java.util.List;
+import java.util.PriorityQueue;
 import org.tinfour.common.BootstrapUtility;
 import org.tinfour.common.GeometricOperations;
 import org.tinfour.common.IConstraint;
@@ -78,6 +80,7 @@ import org.tinfour.common.SimpleTriangleIterator;
 import org.tinfour.common.Thresholds;
 import org.tinfour.common.TriangleCount;
 import org.tinfour.common.Vertex;
+import org.tinfour.common.VertexAdjustment;
 import org.tinfour.common.VertexIterator;
 import org.tinfour.common.VertexMergerGroup;
 import org.tinfour.edge.EdgePool;
@@ -456,6 +459,13 @@ public class IncrementalTin implements IIncrementalTin {
    * Gets the maximum length of the queue in the flood fill operation.
    */
   private int maxLengthOfQueueInFloodFill;
+
+  /**
+   * Indicates whether vertex positions may be adjusted during insertion.
+   * At this time, this option only applies to vertices very near constrained
+   * segments.
+   */
+  private boolean vertexAdjustmentEnabled = true;
 
   /**
    * The rule used for disambiguating z values in a vertex merger group.
@@ -1066,11 +1076,146 @@ public class IncrementalTin implements IIncrementalTin {
       return false;
     }
 
-    boolean isOnEdge = eResult.getDistanceToEdge() < 4 * thresholds.getVertexTolerance();
+    double distanceToEdge = eResult.getDistanceToEdge();
+    boolean isOnEdge = distanceToEdge < 4*thresholds.getVertexTolerance();
+    // in cases where a vertex is very close to, but not exactly on, a
+    // constrained edge, we could get into messy conditions that generate
+    // a large number of synthetic vertices in order to restore conformity.
+    // We've also observed unusual cases where conformity cannot be restored.
+    // So this compromise logic adjusts the position of such vertices to move
+    // them exactly on the constrained edge.
+    if (isOnEdge && searchEdge.isConstrained() && distanceToEdge != 0 && vertexAdjustmentEnabled) {
+      Vertex A = searchEdge.getA();
+      Vertex B = searchEdge.getB();
+      double ax = B.getX() - A.getX();
+      double ay = B.getY() - A.getY();
+      double vx = v.getX() - A.getX();
+      double vy = v.getY() - A.getY();
+      double aa =  ax * ax + ay * ay;
+      double t = (ax * vx + ay * vy) / aa;  // should be in range [0,1]
+      double xAdjusted = A.getX() + t * ax;
+      double yAdjusted = A.getY() + t * ay;
+      Vertex vAdjusted = new VertexAdjustment(xAdjusted, yAdjusted, v);
+      return insertAction(searchEdge, vAdjusted, true, true);
+    }
     return insertAction(searchEdge, v, eResult.isInterior(), isOnEdge);
   }
 
   private boolean insertAction(final QuadEdge insertEdge, final Vertex v, boolean isInterior, boolean isOnEdge) {
+
+    // The inner-process inserts the vertex and returns a list of any edges
+    // that were constrained.
+    List<QuadEdge> conEdges = insertActionInnerProcess(insertEdge, v, isInterior, isOnEdge);
+    if (!isConformant || conEdges.isEmpty()) {
+      // we're done.
+      return true;
+    }
+
+    // If some of the edges produced by the inner-process are constrained,
+    // it is possible that they are non-Delaunay.  We may have to restore
+    // Delaunay by subdividing them.  Here we set up a priority queue
+    // ordered by the length of the edges. For each constrained edge,
+    // we test it to see if it requires subdivision, and process it accordingly
+    // by inserting vertices at its midpoint.
+    //   Future work: the comparison could be based on length-squared, thus
+    // reducing a small amount of overhead for square root calculation.
+    PriorityQueue<QuadEdge> queue = new PriorityQueue<>(new Comparator<QuadEdge>() {
+      @Override
+      public int compare(QuadEdge o1, QuadEdge o2) {
+        // prioritize in descending order
+        // TO DO: add a getLengthSq method to edges
+        int test = Double.compare(o2.getLength(), o1.getLength());
+        if (test == 0) {
+          test = Integer.compare(o1.getIndex(), o2.getIndex());
+        }
+        return test;
+      }
+    });
+
+
+    queue.addAll(conEdges);
+
+    while (!queue.isEmpty()) {
+      QuadEdge e = queue.poll();
+      if (isEdgeNonConforming(e)) {
+        Vertex a = e.getA();
+        Vertex b = e.getB();
+        double mx = (a.getX() + b.getX()) / 2.0;
+        double my = (a.getY() + b.getY()) / 2.0;
+        double mz = (a.getZ() + b.getZ()) / 2.0;
+
+        if (searchEdge == null) {
+          searchEdge = edgePool.getStartingEdge();
+        }
+        searchEdge = walker.findAnEdgeFromEnclosingTriangle(searchEdge, mx, my);
+        IncrementalTinNavigator navigator = new IncrementalTinNavigator(this);
+        NearestEdgeResult eResult = navigator.getNearestEdge(searchEdge, mx, my);
+        searchEdge = (QuadEdge) eResult.getEdge();
+
+        // Future work: The match-edge test is probably unnecessary because
+        // we are splitting existing edges.
+        QuadEdge matchEdge
+          = checkTriangleVerticesForMatch(searchEdge, mx, my, vertexTolerance2);
+        if (matchEdge != null) {
+          continue;
+        }
+
+        Vertex m = new Vertex(mx, my, mz, nSyntheticVertices++);
+        m.setStatus(Vertex.BIT_SYNTHETIC | Vertex.BIT_CONSTRAINT);
+        conEdges = insertActionInnerProcess(searchEdge, m, true, true);
+        // the inner-process call may have affected some of the edges
+        // already in the queue.  For example, previously non-conforming
+        // edges may now become conforming (or vice versa).  So we check to see
+        // if the edges are in the queue and remove them as necessary
+        // before inserting the latest version.
+        for (QuadEdge q : conEdges) {
+          if (queue.contains(q)) {
+            queue.remove(q);
+          }
+          if (isEdgeNonConforming(q)) {
+            queue.add(q);
+          }
+        }
+      }
+    }
+    return true;
+  }
+
+  private boolean isEdgeNonConforming(QuadEdge ab) {
+    QuadEdge ba = ab.getDual();
+    QuadEdge bc = ab.getForward();
+    QuadEdge ad = ba.getForward();
+    if(bc==null){
+      // the edge ab was deallocated and is in a "free" state
+      return false;
+    }
+    Vertex a = ab.getA();
+    Vertex b = ab.getB();
+    Vertex c = bc.getB();
+    Vertex d = ad.getB();
+    // Future work: does testing for free state above mean that
+    // a and b will always be populated?   Even so, we still need to
+    // test for c and d equals null because they may be ghost points.
+    if (a == null || b == null || c == null || d == null) {
+      return false;
+    }
+
+    // If the edge passes the inCircle test, treat it as Delaunay.
+    // Here the test uses a small threshold value because this the numeric
+    // calculation is limited by floating-point precision issues.  We have
+    // seen cases where no number of recursive subdivisions is sufficient
+    // to produce a calculated result of a zero or less.
+    double h = geoOp.inCircle(a, b, c, d);
+    return h > thresholds.getDelaunayThreshold();
+  }
+
+
+  private List<QuadEdge> insertActionInnerProcess(
+    final QuadEdge insertEdge,
+    final Vertex v,
+    boolean isInterior,
+    boolean isOnEdge)
+  {
     final double x = v.x;
     final double y = v.y;
 
@@ -1090,80 +1235,21 @@ public class IncrementalTin implements IIncrementalTin {
     }
     List<QuadEdge> conEdges = new ArrayList<>();
     Vertex splitConstraintEnd = null;
-    int splitConstraintIndex = -1;
-    boolean splitConstraintIsBorder = false;
-    boolean splitConstraintIsLine = false;
-    boolean splitConstraintIsRegionInterior = false;
-    IConstraint splitConstraintLeft = null;
-    IConstraint splitConstraintRight = null;
-    IConstraint splitConstraintLine = null;
+    QuadEdge splitConstraintReserve = null;
     boolean splitConstraintFlag = searchEdge.isConstrained() && isOnEdge;
     if (splitConstraintFlag) {
       splitConstraintEnd = searchEdge.getB();
-      if (searchEdge.isConstraintRegionBorder()) {
-        splitConstraintIsBorder = true;
-        splitConstraintLeft = getBorderConstraint(searchEdge);
-        splitConstraintRight = getBorderConstraint(searchEdge.getDual());
-        splitConstraintIndex = searchEdge.getConstraintBorderIndex();
-      } else {
-        // it must be a line constraint.
-        splitConstraintIndex = searchEdge.getConstraintLineIndex();
-      }
-      // it is possible for a constraint to be BOTH a border constraint
-      // and a line constraint. So we need to perform an independent access.
-      splitConstraintIsLine = searchEdge.isConstraintLineMember();
-      if (splitConstraintIsLine) {
-        splitConstraintLine = getLinearConstraint(searchEdge);
-      }
-    }
-
-    // region-interior edges are usually not constrained, unless
-    // they are also a line feature.
-    splitConstraintIsRegionInterior = searchEdge.isConstraintRegionInterior();
-    if (splitConstraintIsRegionInterior && splitConstraintIndex == -1) {
-      splitConstraintIndex = searchEdge.getConstraintRegionInteriorIndex();
     }
 
     // The build buffer provides temporary tracking of edges that are
-    // removed and replaced while building the TIN.  Because the
-    // delete method of the EdgePool has to do a lot of bookkeeping,
-    // we can gain speed by using the buffer.   The buffer is only large
-    // enough to hold one edge. Were it larger, there would be times
-    // when it would hold more than one edge. Tests reveal that the overhead
-    // of maintaining an array rather than a single reference overwhelms
-    // the potential saving. However, the times for the two approaches are quite
-    // close and it is hard to remove the effect of measurement error.
+    // removed and replaced while building the TIN.  See the comments
+    // in addWithInsertOrAppend() for information about performance issues.
     Vertex anchor = searchEdge.getA();
 
     QuadEdge buffer = null;
-    QuadEdge c, n0, n1, n2;
-    QuadEdge pStart = edgePool.allocateEdge(v, anchor);
-    if (splitConstraintFlag) {
-      if (splitConstraintIsBorder) {
-        // The edge pStart is the opposite direction as the original
-        // split constraint edge.  So we need to apply the bordering
-        // constraints in the reversed sides from how they were stored
-        // in the original.
-        pStart.setConstraintRegionBorderFlag();
-        if (splitConstraintRight != null) {
-          pStart.setConstraintBorderIndex(splitConstraintRight.getConstraintIndex());
-        }
-        if (splitConstraintLeft != null) {
-          pStart.getDual().setConstraintBorderIndex(splitConstraintLeft.getConstraintIndex());
-        }
-      }
-      if (splitConstraintIsLine) {
-        pStart.setConstraintLineIndex(splitConstraintLine.getConstraintIndex());
-        edgePool.addLinearConstraintToMap(pStart, splitConstraintLine);
-      }
-    }
-    QuadEdge p = pStart;
-    p.setForward(searchEdge);
-    n1 = searchEdge.getForward();
-    n2 = n1.getForward();
-    n2.setForward(p.getDual());
-    c = searchEdge;
-    searchEdge = pStart;
+    QuadEdge c, n0, n1, n2, p;
+    QuadEdge pStart;
+
     if (splitConstraintFlag) {
       // special case.  The insertion vertex lies on a constrained edge.
       // ordinarily, a constrained edge is not removed and the
@@ -1172,14 +1258,39 @@ public class IncrementalTin implements IIncrementalTin {
       // be removed and replaced by a pair of split edges.
       // So the Delaunay-edge test would not work properly.  Instead,
       // we handle the removal condition before beginning the ordinary loop.
-      n0 = c.getDual();
-      n1 = n0.getForward();
-      n2 = n1.getForward();
-      n2.setForward(c.getForward());
+
+      // remove the search edge links
+      n0 = searchEdge.getReverseFromDual();
+      n1 = searchEdge.getForward();
+      n0.setForward(n1);
+
+      n0 = searchEdge.getReverse();
+      n1 = searchEdge.getDual().getForward();
+
+      // the split method will reassign searchEdge to the second half of
+      // the split and return the firstHalf.
+      QuadEdge firstHalf = edgePool.splitEdge(searchEdge, v);
+      splitConstraintReserve = searchEdge;
+      pStart = firstHalf.getDual();  // from v to the anchor.
+      p = pStart;
       p.setForward(n1);
-      edgePool.deallocateEdge(c);
       c = n1;
+      conEdges.add(pStart);
+      conEdges.add(searchEdge);
+    } else {
+      pStart = edgePool.allocateEdge(v, anchor);
+      p = pStart;
+      p.setForward(searchEdge);
+      n1 = searchEdge.getForward();
+      n2 = n1.getForward();
+      n2.setForward(p.getDual());
+      c = searchEdge;
+      searchEdge = pStart;
+      if (pStart.isConstrained()) {
+        conEdges.add(pStart);
+      }
     }
+
     while (true) {
       n0 = c.getDual();
       n1 = n0.getForward();
@@ -1288,37 +1399,14 @@ public class IncrementalTin implements IIncrementalTin {
         n1 = c.getForward();
         QuadEdge e;
         Vertex B = c.getB();
-        if (buffer == null) {
+        if(splitConstraintFlag && B == splitConstraintEnd){
+          e = splitConstraintReserve;
+        }else if (buffer == null) {
           e = edgePool.allocateEdge(v, B);
         } else {
           buffer.setVertices(v, B);
           e = buffer;
           buffer = null;
-        }
-        if (splitConstraintFlag && B == splitConstraintEnd) {
-          conEdges.add(e);
-          // recall that edges can be part of a regional constraint
-          // (a border or an interior) or a line constraint
-          // or BOTH.
-          if (splitConstraintIsBorder) {
-            // This edge is the same direction as the original
-            // split constraint edge.  So we need to apply the bordering
-            // constraints as they were stored in the original. This approach
-            // is just the opposite of the above code for pStart.
-            e.setConstraintRegionBorderFlag();
-            if (splitConstraintLeft != null) {
-              e.setConstraintBorderIndex(splitConstraintLeft.getConstraintIndex());
-            }
-            if (splitConstraintRight != null) {
-              e.getDual().setConstraintBorderIndex(splitConstraintRight.getConstraintIndex());
-            }
-          } else if (splitConstraintIsRegionInterior) {
-            e.setConstraintRegionInteriorIndex(splitConstraintIndex);
-          }
-          if (splitConstraintIsLine) {
-            e.setConstraintLineIndex(splitConstraintLine.getConstraintIndex());
-            edgePool.addLinearConstraintToMap(e, splitConstraintLine);
-          }
         }
         e.setForward(n1);
         e.getDual().setForward(p);
@@ -1328,20 +1416,6 @@ public class IncrementalTin implements IIncrementalTin {
       }
     }
 
-    if (pStart.isConstrained()) {
-      if (!conEdges.contains(pStart)) {
-        conEdges.add(pStart);
-      }
-    }
-    if (isConformant) {
-      for (QuadEdge e : conEdges) {
-        restoreConformity(e, 1);
-        restoreConformity(e.getForward(), 1);
-        restoreConformity(e.getReverse(), 1);
-        restoreConformity(e.getDual().getForward(), 1);
-        restoreConformity(e.getDual().getReverse(), 1);
-      }
-    }
 
     // This logic is similar to the logic in sweepForConstraintAssignments()
     // except that it does not need to look at the forward references
@@ -1349,7 +1423,7 @@ public class IncrementalTin implements IIncrementalTin {
     // or would have been updated by restoreConformity() above.
     if (vertexIsInConstraintRegion) {
       int constraintIndex = vertexConstraintIndex;
-      for (IQuadEdge e : searchEdge.pinwheel()) {
+      for (IQuadEdge e : pStart.pinwheel()) {
         if (e.isConstraintRegionBorder()) {
           IConstraint con = getBorderConstraint(e);
           constraintIndex = con == null ? -1 : con.getConstraintIndex();
@@ -1359,7 +1433,7 @@ public class IncrementalTin implements IIncrementalTin {
         }
       }
     }
-    return true;
+    return conEdges;
   }
 
   /**
@@ -2923,8 +2997,6 @@ public class IncrementalTin implements IIncrementalTin {
       maxDepthOfRecursionInRestore = depthOfRecursion;
     }
 
-    boolean constraintSweepRequired =  maxLengthOfQueueInFloodFill > 0;
-
     QuadEdge ba = ab.getDual();
     QuadEdge bc = ab.getForward();
     QuadEdge ad = ba.getForward();
@@ -2933,6 +3005,18 @@ public class IncrementalTin implements IIncrementalTin {
     Vertex c = bc.getB();
     Vertex d = ad.getB();
     if (a == null || b == null || c == null || d == null) {
+      return;
+    }
+
+    boolean constraintSweepRequired = maxLengthOfQueueInFloodFill > 0;
+
+    // The maximum depth of recursion is artificially limited
+    // to avoid excessive operations. This is a suboptimal solution
+    // because it may leave some non-conformant edges in place
+    if (depthOfRecursion > 24) {
+      if (constraintSweepRequired) {
+        sweepForConstraintAssignments(ab);
+      }
       return;
     }
 
@@ -3013,7 +3097,6 @@ public class IncrementalTin implements IIncrementalTin {
     if (constraintSweepRequired) {
       sweepForConstraintAssignments(ab);
     }
-
   }
 
   private void sweepForConstraintAssignments(QuadEdge ab) {
@@ -3294,4 +3377,8 @@ public class IncrementalTin implements IIncrementalTin {
     return isConformant;
   }
 
+  @Override
+  public void setVertexAdjustmentEnabled(boolean status){
+    vertexAdjustmentEnabled = status;
+  }
 }

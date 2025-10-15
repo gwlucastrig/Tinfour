@@ -670,4 +670,24 @@ public interface IIncrementalTin {
    Iterable<Vertex> vertices();
 
 
+   /**
+    * Sets an option allowing or disabling Tinfour's ability to make
+    * small adjustments in the position of a vertex when constructing a
+    * Delaunay triangulation. This option allows the triangulation to
+    * avoid cases where the input vertex set would result in undesirable
+    * characteristics. When a vertex position is adjusted, it is wrapped
+    * in an instance of the VertexAdjustment class which is stored in the
+    * triangulation.
+    * <p>
+    * By default, vertex adjustments are enabled.
+    * <p>
+    * At this time, Tinfour only implements one special case where an adjustment
+    * is constructed. When a vertex is inserted very close to a constrained
+    * segment, its position can be moved onto to the segment. This adjustment
+    * avoids a case where restoring Delaunay conformity would require the creation
+    * of a large number of densely spaced vertices in the neighborhood of the
+    * insertion.
+    * @param status true if adjustments are enabled; otherwise false.
+    */
+   void setVertexAdjustmentEnabled(boolean status);
 }

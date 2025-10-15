@@ -75,7 +75,7 @@ public class LasFileReader {
      * The LAS file used Well-Known-Text to identify CRS
      */
     WKT
-  };
+  }
 
   // For this block of variables, I have elected to avoid
   // Javdoc.  The variable names are self-explanatory and
