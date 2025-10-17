@@ -644,8 +644,7 @@ public class AlphaShape {
   private Iterator<SimpleTriangle> getTriangleIterator() {
     Iterator<SimpleTriangle> ix = new Iterator<SimpleTriangle>() {
       int index;
-      final List<IQuadEdge> edgeList = new ArrayList();
-      
+      final List<IQuadEdge> edgeList = new ArrayList<>();
       {
         boolean[] visited = new boolean[tin.getMaximumEdgeAllocationIndex()];
         for (IQuadEdge e : tin.edges()) {

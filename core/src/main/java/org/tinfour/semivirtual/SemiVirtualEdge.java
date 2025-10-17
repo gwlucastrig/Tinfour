@@ -358,7 +358,16 @@ public final class SemiVirtualEdge implements IQuadEdge {
       return Double.NaN;
     }
     return a.getDistance(b);
+  }
 
+  @Override
+  public double getLengthSq() {
+    Vertex a = getA();
+    Vertex b = getB();
+    if (a == null || b == null) {
+      return Double.NaN;
+    }
+    return a.getDistanceSq(b);
   }
 
   /**

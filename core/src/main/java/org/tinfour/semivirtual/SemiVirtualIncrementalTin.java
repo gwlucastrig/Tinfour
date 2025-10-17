@@ -2760,6 +2760,15 @@ public class SemiVirtualIncrementalTin implements IIncrementalTin {
    */
   @Override
   public Vertex splitEdge(IQuadEdge eInput, double t, double zSplit, boolean restoreConformity) {
+    return splitEdge(eInput, t, zSplit);
+  }
+
+  /**
+   * Splits the edge at parameter t measured from A toward B.
+   * t is clamped to (ε, 1-ε) to avoid zero-length subedges.
+   */
+  @Override
+  public Vertex splitEdge(IQuadEdge eInput, double t, double zSplit) {
 
     Vertex a = eInput.getA();
     Vertex b = eInput.getB();
@@ -2954,7 +2963,7 @@ public class SemiVirtualIncrementalTin implements IIncrementalTin {
       public int compare(SemiVirtualEdge o1, SemiVirtualEdge o2) {
         // prioritize in descending order
         // TO DO: add a getLengthSq method to edges
-        int test = Double.compare(o2.getLength(), o1.getLength());
+        int test = Double.compare(o2.getLengthSq(), o1.getLengthSq());
         if (test == 0) {
           test = Integer.compare(o1.getIndex(), o2.getIndex());
         }

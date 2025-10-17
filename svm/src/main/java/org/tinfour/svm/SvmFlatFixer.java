@@ -151,7 +151,7 @@ class SvmFlatFixer {
         }
       }
 
-      Vertex M = tin.splitEdge(edge, mZ, false);
+      Vertex M = tin.splitEdge(edge, 0.5, mZ);
       M.setSynthetic(true);
       M.setAuxiliaryIndex(SvmBathymetryData.FLAT_ADJUSTMENT);
       fixVertices.add(M);

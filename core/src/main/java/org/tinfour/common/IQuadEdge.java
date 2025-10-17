@@ -207,6 +207,12 @@ public interface IQuadEdge {
   double getLength();
 
   /**
+   * Gets the squared length of the edge.
+   * @return a positive floating point value
+   */
+  double getLengthSq();
+  
+ /**
    * Gets the forward reference of the edge.
    * @return a valid reference.
    */
