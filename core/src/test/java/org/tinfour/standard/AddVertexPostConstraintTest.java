@@ -34,7 +34,7 @@
  *
  * -----------------------------------------------------------------------
  */
-package org.tinfour.contour;
+package org.tinfour.standard;
 
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.AfterAll;
