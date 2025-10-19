@@ -18,6 +18,9 @@ gis/javadoc
 svm/doc
 svm/javadoc
 pom.xml.versionsBackup
+*.classpath
+*.project
+*.settings/
 
 # Package Files -- at this time, all of these are included in the distribution #
 # *.jar

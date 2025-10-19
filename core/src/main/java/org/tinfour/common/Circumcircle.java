@@ -89,6 +89,13 @@ public class Circumcircle {
   public double getY() {
     return centerY;
   }
+  
+  /**
+   * Gets a vertex representing the center of this circumcircle.
+   */
+  public Vertex getCircumcenter() {
+	  return new Vertex(centerX, centerY, Double.NaN);
+  }
 
   /**
    * Copies the content of the specified circumcircle instance.

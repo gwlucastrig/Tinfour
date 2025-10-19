@@ -203,6 +203,25 @@ public class SimpleTriangle {
     q11.selfAdd(q21);
     return q11.doubleValue() / 2.0;
   }
+  
+  /**
+   * Get the shortest edge of the triangle.
+   *
+   * @return the shortest edge (by squared length)
+   */
+  public IQuadEdge getShortestEdge() {
+      double lenA = edgeA.getLengthSq();
+      double lenB = edgeB.getLengthSq();
+      double lenC = edgeC.getLengthSq();
+
+      if (lenA <= lenB && lenA <= lenC) {
+          return edgeA;
+      } else if (lenB <= lenA && lenB <= lenC) {
+          return edgeB;
+      } else {
+          return edgeC;
+      }
+  }
 
   /**
    * Gets the polygon-based constraint that contains this triangle, if any.
