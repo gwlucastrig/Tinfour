@@ -60,6 +60,8 @@ import org.tinfour.common.Vertex;
  */
 public class RuppertRefiner implements IDelaunayRefiner {
 
+	private static final double DEFAULT_MIN_TRIANGLE_AREA = 1e-3;
+
 	// Relative tolerances
 	private static final double NEAR_VERTEX_REL_TOL = 1e-9;
 	private static final double NEAR_EDGE_REL_TOL = 1e-9;
@@ -110,10 +112,10 @@ public class RuppertRefiner implements IDelaunayRefiner {
 	private final double rhoTarget; // 1/(2 sin θmin)
 	private final double rhoMin; // possibly clamped to √2
 
+	private final double minTriangleArea;
+
 	private final boolean skipSeditiousTriangles;
 	private final boolean ignoreSeditiousEncroachments;
-
-	private final double minTriangleArea;
 
 	private Vertex lastInsertedVertex = null;
 
@@ -174,7 +176,29 @@ public class RuppertRefiner implements IDelaunayRefiner {
 	 * @throws IllegalArgumentException on invalid inputs
 	 */
 	public RuppertRefiner(final IIncrementalTin tin, final double minAngleDeg) {
-		this(tin, minAngleDeg, false, true, true);
+		this(tin, minAngleDeg, DEFAULT_MIN_TRIANGLE_AREA);
+	}
+
+	/**
+	 * Constructs a RuppertRefiner with the requested minimum internal triangle
+	 * angle and a user-specified minimum triangle area threshold.
+	 *
+	 * <p>
+	 * The {@code minTriangleArea} is used as a conservative safeguard to avoid
+	 * attempting to refine triangles whose area is extremely small (in the
+	 * coordinate units squared). A value of 0 disables the area-based skipping.
+	 * </p>
+	 *
+	 * @param tin             the incremental triangulation to refine (non-null,
+	 *                        bootstrapped)
+	 * @param minAngleDeg     the requested minimum angle in degrees (0 &lt; θ &lt;
+	 *                        60)
+	 * @param minTriangleArea area threshold for skipping refinement of very small
+	 *                        triangles (must be >= 0)
+	 * @throws IllegalArgumentException on invalid inputs
+	 */
+	public RuppertRefiner(final IIncrementalTin tin, final double minAngleDeg, final double minTriangleArea) {
+		this(tin, minAngleDeg, minTriangleArea, false, true, true);
 	}
 
 	/**
@@ -196,6 +220,8 @@ public class RuppertRefiner implements IDelaunayRefiner {
 	 *                                     (non-null, bootstrapped)
 	 * @param minAngleDeg                  the requested minimum angle in degrees (0
 	 *                                     &lt; θ &lt; 60)
+	 * @param minTriangleArea              area threshold for skipping very small
+	 *                                     triangles (must be >= 0)
 	 * @param enforceSqrt2Guard            whether to force the ρ ≥ √2 termination
 	 *                                     guard
 	 * @param skipSeditiousTriangles       whether to skip splitting triangles whose
@@ -203,8 +229,8 @@ public class RuppertRefiner implements IDelaunayRefiner {
 	 * @param ignoreSeditiousEncroachments whether to ignore seditious encroachments
 	 * @throws IllegalArgumentException on invalid inputs
 	 */
-	public RuppertRefiner(final IIncrementalTin tin, final double minAngleDeg, final boolean enforceSqrt2Guard, final boolean skipSeditiousTriangles,
-			final boolean ignoreSeditiousEncroachments) {
+	public RuppertRefiner(final IIncrementalTin tin, final double minAngleDeg, final double minTriangleArea, final boolean enforceSqrt2Guard,
+			final boolean skipSeditiousTriangles, final boolean ignoreSeditiousEncroachments) {
 		if (tin == null) {
 			throw new IllegalArgumentException("tin must not be null");
 		}
@@ -213,6 +239,9 @@ public class RuppertRefiner implements IDelaunayRefiner {
 		}
 		if (!(minAngleDeg > 0 && minAngleDeg < 60)) {
 			throw new IllegalArgumentException("minAngle must be in (0,60)");
+		}
+		if (!Double.isFinite(minTriangleArea) || minTriangleArea < 0.0) {
+			throw new IllegalArgumentException("minTriangleArea must be finite and >= 0");
 		}
 
 		this.tin = tin;
@@ -226,7 +255,7 @@ public class RuppertRefiner implements IDelaunayRefiner {
 
 		this.rhoMin = enforceSqrt2Guard ? Math.max(SQRT2, rhoTarget) : rhoTarget;
 
-		this.minTriangleArea = 1e-6; // TODO user-input?
+		this.minTriangleArea = minTriangleArea;
 
 		for (final Vertex v : tin.vertices()) {
 			vdata.put(v, new VData(VType.INPUT, null, 0));
@@ -917,11 +946,11 @@ public class RuppertRefiner implements IDelaunayRefiner {
 
 		return (best != null && bestD2 < r2) ? best : null;
 	}
-	
+
 	private static double hypot(double dx, double dy) {
-        double sumOfSquares = dx * dx + dy * dy;
-        return Math.sqrt(sumOfSquares);
-    }
+		double sumOfSquares = dx * dx + dy * dy;
+		return Math.sqrt(sumOfSquares);
+	}
 
 	/**
 	 * Enumeration of vertex creation types tracked by {@link VData}.
