@@ -1,3 +1,33 @@
+/* --------------------------------------------------------------------
+ * Copyright 2025 Gary W. Lucas.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ * ---------------------------------------------------------------------
+ */
+
+ /*
+ * -----------------------------------------------------------------------
+ *
+ * Revision History:
+ * Date     Name         Description
+ * ------   ---------    -------------------------------------------------
+ * 10/2025  M. Carleton  Created 
+ *
+ * Notes:
+ *
+ * -----------------------------------------------------------------------
+ */
+
 package org.tinfour.refinement;
 
 import java.util.ArrayList;
@@ -11,6 +41,7 @@ import org.tinfour.common.IIncrementalTinNavigator;
 import org.tinfour.common.IQuadEdge;
 import org.tinfour.common.SimpleTriangle;
 import org.tinfour.common.Vertex;
+import org.tinfour.interpolation.TriangularFacetInterpolator;
 
 /**
  * RuppertRefiner implements Ruppert’s Delaunay refinement for improving mesh
@@ -124,6 +155,9 @@ public class RuppertRefiner implements IDelaunayRefiner {
 	private Map<Vertex, CornerInfo> cornerInfo = new IdentityHashMap<>();
 
 	private final IIncrementalTinNavigator navigator;
+        private final TriangularFacetInterpolator interpolator;
+        
+        private int vertexIndexer;
 
 	/**
 	 * Creates a RuppertRefiner configured by a target circumradius-to-shortest-edge
@@ -245,6 +279,7 @@ public class RuppertRefiner implements IDelaunayRefiner {
 		}
 
 		this.tin = tin;
+                this.interpolator = new TriangularFacetInterpolator(tin);
 		this.minAngleRad = Math.toRadians(minAngleDeg);
 		final double sinT = Math.sin(minAngleRad);
 		this.beta = 1.0 / (2.0 * sinT);
@@ -263,6 +298,15 @@ public class RuppertRefiner implements IDelaunayRefiner {
 
 		navigator = tin.getNavigator();
 		cornerInfo = buildCornerInfo();
+                
+                // The vertex index is strictly for diagnostic purposes.
+                int maxIndex = 0;
+                for(Vertex v: tin.vertices()){
+                    if(v.getIndex()>maxIndex){
+                        maxIndex = v.getIndex();
+                    }
+                }
+                this.vertexIndexer = maxIndex+1;
 	}
 
 	/**
@@ -533,7 +577,8 @@ public class RuppertRefiner implements IDelaunayRefiner {
 
 		final double ox = mx + nx * d;
 		final double oy = my + ny * d;
-		final Vertex off = new Vertex(ox, oy, Double.NaN);
+                final double oz = interpolator.interpolateWithExteriorSupport(ox, oy, null);
+		final Vertex off = new Vertex(ox, oy, oz);
 
 		final IQuadEdge enc = firstEncroachedByPoint(off, segments);
 		if (enc != null) {
@@ -558,6 +603,7 @@ public class RuppertRefiner implements IDelaunayRefiner {
 			return splitSegmentSmart(nearEdge);
 		}
 
+                off.setIndex(vertexIndexer++);
 		addVertex(off, VType.OFFCENTER, null, 0);
 		lastInsertedVertex = off;
 		return off;
@@ -603,10 +649,12 @@ public class RuppertRefiner implements IDelaunayRefiner {
 		if (nearEdge != null) {
 			return splitSegmentSmart(nearEdge);
 		}
-		tin.add(center);
-		vdata.put(center, new VData(VType.CIRCUMCENTER, null, 0));
-		lastInsertedVertex = center;
-		return center;
+                double cz = interpolator.interpolateWithExteriorSupport(center.getX(), center.getY(), null);
+                Vertex centerZ = new Vertex(center.getX(), center.getY(), cz, vertexIndexer++);
+		tin.add(centerZ);
+		vdata.put(centerZ, new VData(VType.CIRCUMCENTER, null, 0));
+		lastInsertedVertex = centerZ;
+		return centerZ;
 	}
 
 	private Vertex nearestNeighbor(final double x, final double y) {
@@ -635,7 +683,8 @@ public class RuppertRefiner implements IDelaunayRefiner {
 			corner = b;
 		}
 
-		final Vertex v = tin.splitEdge(seg, Double.NaN, true);
+                double z = (a.getZ()+b.getZ())*0.5;
+		final Vertex v = tin.splitEdge(seg, 0.5, z); 
 		if (v != null) {
 			final int k = (corner != null) ? shellIndex(corner, v.x, v.y) : 0;
 			vdata.put(v, new VData(VType.MIDPOINT, corner, k));
