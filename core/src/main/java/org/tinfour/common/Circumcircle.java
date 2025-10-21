@@ -63,7 +63,7 @@ public class Circumcircle {
   public double getRadiusSq() {
     return r2;
   }
-  
+
   /**
    * Gets the radius of the circumcircle
    * @return for a non-degenerate triangle, a positive floating point value
@@ -89,9 +89,10 @@ public class Circumcircle {
   public double getY() {
     return centerY;
   }
-  
+
   /**
    * Gets a vertex representing the center of this circumcircle.
+   * @return a valid vertex (with z coordinate set to NaN).
    */
   public Vertex getCircumcenter() {
 	  return new Vertex(centerX, centerY, Double.NaN);
@@ -229,13 +230,13 @@ public class Circumcircle {
     this.r2 = r2;
   }
 
-  
+
   @Override
   public String toString(){
-      return String.format("(%7.4f,%7.4f) r=%6.4f", 
+      return String.format("(%7.4f,%7.4f) r=%6.4f",
               centerX, centerY, Math.sqrt(r2));
   }
-  
+
   /**
    * Gets the bounds of the circumcircle.
    * @return a valid rectangle instance.

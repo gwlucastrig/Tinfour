@@ -21,7 +21,7 @@
  * Revision History:
  * Date     Name         Description
  * ------   ---------    -------------------------------------------------
- * 10/2025  M. Carleton  Created 
+ * 10/2025  M. Carleton  Created
  *
  * Notes:
  *
@@ -41,6 +41,7 @@ import org.tinfour.common.IIncrementalTinNavigator;
 import org.tinfour.common.IQuadEdge;
 import org.tinfour.common.SimpleTriangle;
 import org.tinfour.common.Vertex;
+import org.tinfour.interpolation.TriangularFacetSpecialInterpolator;
 import org.tinfour.interpolation.TriangularFacetInterpolator;
 
 /**
@@ -86,7 +87,7 @@ import org.tinfour.interpolation.TriangularFacetInterpolator;
  * Mesh Generation", J. Algorithms (1995).</li>
  * <li>J. R. Shewchuk, "Delaunay Refinement Mesh Generation", 1997.</li>
  * </ul>
- * 
+ *
  * @author Michael Carleton
  */
 public class RuppertRefiner implements IDelaunayRefiner {
@@ -155,8 +156,8 @@ public class RuppertRefiner implements IDelaunayRefiner {
 	private Map<Vertex, CornerInfo> cornerInfo = new IdentityHashMap<>();
 
 	private final IIncrementalTinNavigator navigator;
-        private final TriangularFacetInterpolator interpolator;
-        
+    private final TriangularFacetSpecialInterpolator interpolator;
+
         private int vertexIndexer;
 
 	/**
@@ -197,12 +198,12 @@ public class RuppertRefiner implements IDelaunayRefiner {
 	 *
 	 * <p>
 	 * <strong>Parameters and preconditions</strong>:
+	 * </p>
 	 * <ul>
 	 * <li>{@code tin} must be non-null and bootstrapped (already built).</li>
 	 * <li>{@code minAngleDeg} must be in (0, 60) degrees; values near the
 	 * theoretical limits may still fail to terminate.</li>
 	 * </ul>
-	 * </p>
 	 *
 	 * @param tin         the incremental triangulation to refine (non-null,
 	 *                    bootstrapped)
@@ -228,7 +229,7 @@ public class RuppertRefiner implements IDelaunayRefiner {
 	 * @param minAngleDeg     the requested minimum angle in degrees (0 &lt; θ &lt;
 	 *                        60)
 	 * @param minTriangleArea area threshold for skipping refinement of very small
-	 *                        triangles (must be >= 0)
+	 *                        triangles (must be &ge; 0)
 	 * @throws IllegalArgumentException on invalid inputs
 	 */
 	public RuppertRefiner(final IIncrementalTin tin, final double minAngleDeg, final double minTriangleArea) {
@@ -240,6 +241,7 @@ public class RuppertRefiner implements IDelaunayRefiner {
 	 *
 	 * <p>
 	 * This overload exposes three boolean options useful for production tuning:
+	 * </p>
 	 * <ul>
 	 * <li>{@code enforceSqrt2Guard} — when {@code true}, the internal radius-edge
 	 * gating enforces {@code ρ ≥ √2} (Shewchuk/Ruppert termination guard).</li>
@@ -248,14 +250,13 @@ public class RuppertRefiner implements IDelaunayRefiner {
 	 * <li>{@code ignoreSeditiousEncroachments} — when {@code true}, encroachments
 	 * identified as seditious are ignored (prevents ping-pong splitting).</li>
 	 * </ul>
-	 * </p>
 	 *
 	 * @param tin                          the incremental triangulation to refine
 	 *                                     (non-null, bootstrapped)
 	 * @param minAngleDeg                  the requested minimum angle in degrees (0
 	 *                                     &lt; θ &lt; 60)
 	 * @param minTriangleArea              area threshold for skipping very small
-	 *                                     triangles (must be >= 0)
+	 *                                     triangles (must be &ge; 0)
 	 * @param enforceSqrt2Guard            whether to force the ρ ≥ √2 termination
 	 *                                     guard
 	 * @param skipSeditiousTriangles       whether to skip splitting triangles whose
@@ -279,7 +280,7 @@ public class RuppertRefiner implements IDelaunayRefiner {
 		}
 
 		this.tin = tin;
-                this.interpolator = new TriangularFacetInterpolator(tin);
+        this.interpolator = new TriangularFacetSpecialInterpolator(tin);
 		this.minAngleRad = Math.toRadians(minAngleDeg);
 		final double sinT = Math.sin(minAngleRad);
 		this.beta = 1.0 / (2.0 * sinT);
@@ -298,7 +299,7 @@ public class RuppertRefiner implements IDelaunayRefiner {
 
 		navigator = tin.getNavigator();
 		cornerInfo = buildCornerInfo();
-                
+
                 // The vertex index is strictly for diagnostic purposes.
                 int maxIndex = 0;
                 for(Vertex v: tin.vertices()){
@@ -314,6 +315,7 @@ public class RuppertRefiner implements IDelaunayRefiner {
 	 *
 	 * <p>
 	 * This method runs Ruppert’s iterative loop:
+	 * </p>
 	 * <ol>
 	 * <li>collect constrained segments;</li>
 	 * <li>split an encroached constrained segment if any;</li>
@@ -323,7 +325,6 @@ public class RuppertRefiner implements IDelaunayRefiner {
 	 * <li>repeat until no encroached segments and no bad triangles remain or an
 	 * iteration cap is reached.</li>
 	 * </ol>
-	 * </p>
 	 *
 	 * <p>
 	 * The method is re-entrant in the sense it mutates the supplied {@code tin}; it
@@ -577,7 +578,7 @@ public class RuppertRefiner implements IDelaunayRefiner {
 
 		final double ox = mx + nx * d;
 		final double oy = my + ny * d;
-                final double oz = interpolator.interpolateWithExteriorSupport(ox, oy, null);
+                final double oz = interpolator.interpolate(ox, oy, null);
 		final Vertex off = new Vertex(ox, oy, oz);
 
 		final IQuadEdge enc = firstEncroachedByPoint(off, segments);
@@ -649,7 +650,7 @@ public class RuppertRefiner implements IDelaunayRefiner {
 		if (nearEdge != null) {
 			return splitSegmentSmart(nearEdge);
 		}
-                double cz = interpolator.interpolateWithExteriorSupport(center.getX(), center.getY(), null);
+                double cz = interpolator.interpolate(center.getX(), center.getY(), null);
                 Vertex centerZ = new Vertex(center.getX(), center.getY(), cz, vertexIndexer++);
 		tin.add(centerZ);
 		vdata.put(centerZ, new VData(VType.CIRCUMCENTER, null, 0));
@@ -684,7 +685,7 @@ public class RuppertRefiner implements IDelaunayRefiner {
 		}
 
                 double z = (a.getZ()+b.getZ())*0.5;
-		final Vertex v = tin.splitEdge(seg, 0.5, z); 
+		final Vertex v = tin.splitEdge(seg, 0.5, z);
 		if (v != null) {
 			final int k = (corner != null) ? shellIndex(corner, v.x, v.y) : 0;
 			vdata.put(v, new VData(VType.MIDPOINT, corner, k));
