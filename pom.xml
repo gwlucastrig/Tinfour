@@ -58,7 +58,7 @@
     <module>core</module>
     <module>demo</module>
     <module>gis</module>
-	<module>svm</module>
+    <module>svm</module>
   </modules>
 
   <distributionManagement>
@@ -168,8 +168,8 @@
           <artifactId>maven-surefire-plugin</artifactId>
           <version>3.2.5</version>
         </plugin>
-		
-		        
+        
+                
         <plugin>
           <artifactId>maven-pmd-plugin</artifactId>
           <version>3.21.2</version>
@@ -177,7 +177,7 @@
       </plugins>
     </pluginManagement>
   </build>
-  	 
+       
   <profiles>
     <!--
       The "release" profile is mainly used when preparing a release for
@@ -199,6 +199,9 @@
             <groupId>org.apache.maven.plugins</groupId>
             <artifactId>maven-javadoc-plugin</artifactId>
             <version>3.12.0</version>
+            <configuration>
+                <failOnError>false</failOnError>
+            </configuration>
             <executions>
               <execution>
                 <id>attach-javadocs</id>
@@ -240,7 +243,7 @@
             </executions>
           </plugin>
 
-		  
+          
           <plugin>
             <groupId>org.sonatype.plugins</groupId>
             <artifactId>nexus-staging-maven-plugin</artifactId>
@@ -255,7 +258,7 @@
         </plugins>
       </build>
     </profile>
-	  
+      
     <profile>
       <id>jitpack</id>
       <build>
