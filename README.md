@@ -120,17 +120,14 @@ More hints and background information on configuring Tinfour for use in an IDE a
  
 ### Current Work ###
 Development work on the Constrained Conforming Delaunay Triangulation is now complete.
- 
-Development work for the next release of Tinfour will focus on the introduction of Delaunay Refinement.
+
+Release 2.1.9 introduces the ability to perform Delaunay Refinement using Ruppert's Algorithm.
 Delaunay Refinement is a technique for improving the quality of the triangles
 formed by a Delaunay Triangulation through the introduction of synthetic vertices
 at well-chosen positions. Refinement techniques are particularly useful in areas near
 the boundaries of constraints or near the permimeter of a triangulation. These
 areas are often prone to the formation of "skinny" triangles (triangles with two small
 angles and one very large angle). 
-
-Currently, we are investigating the use of Ruppert's Algorithm as a refinement technique, though other
-refinement techniques do exist (such as Chew's Second Delaunay Refinement Algorithm).
  
 For more detail about the Tinfour project development plans, see the
 [Tinfour Project Status and Roadmap](https://github.com/gwlucastrig/Tinfour/wiki/Tinfour-Project-Roadmap) page.
