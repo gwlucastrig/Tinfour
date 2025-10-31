@@ -134,6 +134,7 @@ import static org.tinfour.edge.QuadEdgeConstants.CONSTRAINT_UPPER_INDEX_ZERO;
  * manipulation of subdivisions and the computation of Voronoi diagrams"
  * ACM Transactions on Graphics, 4(2), 1985, p. 75-123.</cite>
  */
+@SuppressWarnings("PMD.TooManyStaticImports")
 public class QuadEdge implements IQuadEdge {
 
   /**

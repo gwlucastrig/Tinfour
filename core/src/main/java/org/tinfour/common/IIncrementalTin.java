@@ -192,6 +192,36 @@ public interface IIncrementalTin {
    */
   Iterable<IQuadEdge>edges();
 
+   /**
+   * Provides a convenience implementation
+   * that can be used with a Java enhanced-loop statement to access
+   * both sides of each edge in the incremental TIN.
+   * This method is similar to the {@code edges()} iterator
+   * except that it produces both sides of each edge.
+   * The edges produced by this Iterator are filtered so that the
+   * fictitious edges (ghost edges) are not produced by the
+   * iteration.
+   * <p>
+   * For example, this method could be used in the following manner:
+   * <pre>
+   *     IIncremntal tin = // some implementation
+   *     for(IQuadEdge e: tin.halfEdges(){
+   *            // some processing logic
+   *     }
+   * </pre>
+   *
+   * <p>
+   * Note that this loop produces both the "base side" and the "dual"
+   * of each edge.
+   * <p>
+   * Please see the API documentation for getEdgeIterator() for
+   * cautions regarding the use of this method.
+   * @return a valid instance.
+   */
+  Iterable<IQuadEdge>edgesAndDuals();
+
+
+
   /**
    * Provides a convenience implementation
    * that can be used with a Java enhanced-loop statement to access the set

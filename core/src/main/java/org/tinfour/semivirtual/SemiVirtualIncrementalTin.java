@@ -1278,7 +1278,7 @@ public class SemiVirtualIncrementalTin implements IIncrementalTin {
 
   @Override
   public Iterator<IQuadEdge> getEdgeIterator() {
-    return edgePool.getIterator(true);
+    return edgePool.getIterator(true, false);
   }
 
   @Override
@@ -1286,10 +1286,21 @@ public class SemiVirtualIncrementalTin implements IIncrementalTin {
     return  new Iterable<IQuadEdge>(){
       @Override
       public Iterator<IQuadEdge> iterator() {
-         return edgePool.getIterator(false);
+         return edgePool.getIterator(false, false);
       }
     };
   }
+
+  @Override
+  public Iterable<IQuadEdge> edgesAndDuals() {
+    return  new Iterable<IQuadEdge>(){
+      @Override
+      public Iterator<IQuadEdge> iterator() {
+         return edgePool.getIterator(false, true);
+      }
+    };
+  }
+
 
   @Override
   public int getMaximumEdgeAllocationIndex() {

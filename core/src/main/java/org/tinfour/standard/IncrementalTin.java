@@ -1797,10 +1797,17 @@ public class IncrementalTin implements IIncrementalTin {
     return new Iterable<IQuadEdge>() {
       @Override
       public Iterator<IQuadEdge> iterator() {
-        return edgePool.getIterator(false);
+        return edgePool.getIterator(false, false);
       }
     };
   }
+
+    @Override
+  public Iterable<IQuadEdge> edgesAndDuals() {
+    return () -> edgePool.getIterator(false, true);
+  }
+
+
 
   @Override
   public int getMaximumEdgeAllocationIndex() {

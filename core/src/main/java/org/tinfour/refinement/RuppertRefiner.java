@@ -42,7 +42,6 @@ import org.tinfour.common.IQuadEdge;
 import org.tinfour.common.SimpleTriangle;
 import org.tinfour.common.Vertex;
 import org.tinfour.interpolation.TriangularFacetSpecialInterpolator;
-import org.tinfour.interpolation.TriangularFacetInterpolator;
 
 /**
  * RuppertRefiner implements Ruppert’s Delaunay refinement for improving mesh
@@ -156,9 +155,9 @@ public class RuppertRefiner implements IDelaunayRefiner {
 	private Map<Vertex, CornerInfo> cornerInfo = new IdentityHashMap<>();
 
 	private final IIncrementalTinNavigator navigator;
-    private final TriangularFacetSpecialInterpolator interpolator;
+	private final TriangularFacetSpecialInterpolator interpolator;
 
-        private int vertexIndexer;
+	private int vertexIndexer;
 
 	/**
 	 * Creates a RuppertRefiner configured by a target circumradius-to-shortest-edge
@@ -257,7 +256,7 @@ public class RuppertRefiner implements IDelaunayRefiner {
 	 *                                     &lt; θ &lt; 60)
 	 * @param minTriangleArea              area threshold for skipping very small
 	 *                                     triangles (must be &ge; 0)
-	 * @param enforceSqrt2Guard            whether to force the ρ ≥ √2 termination
+	 * @param enforceSqrt2Guard            whether to force the ρ &ge; √2 termination
 	 *                                     guard
 	 * @param skipSeditiousTriangles       whether to skip splitting triangles whose
 	 *                                     shortest edges are seditious
@@ -300,14 +299,14 @@ public class RuppertRefiner implements IDelaunayRefiner {
 		navigator = tin.getNavigator();
 		cornerInfo = buildCornerInfo();
 
-                // The vertex index is strictly for diagnostic purposes.
-                int maxIndex = 0;
-                for(Vertex v: tin.vertices()){
-                    if(v.getIndex()>maxIndex){
-                        maxIndex = v.getIndex();
-                    }
-                }
-                this.vertexIndexer = maxIndex+1;
+		// The vertex index is strictly for diagnostic purposes.
+		int maxIndex = 0;
+		for(Vertex v: tin.vertices()){
+			if(v.getIndex()>maxIndex){
+				maxIndex = v.getIndex();
+			}
+		}
+		this.vertexIndexer = maxIndex+1;
 	}
 
 	/**
@@ -578,7 +577,7 @@ public class RuppertRefiner implements IDelaunayRefiner {
 
 		final double ox = mx + nx * d;
 		final double oy = my + ny * d;
-                final double oz = interpolator.interpolate(ox, oy, null);
+		final double oz = interpolator.interpolate(ox, oy, null);
 		final Vertex off = new Vertex(ox, oy, oz);
 
 		final IQuadEdge enc = firstEncroachedByPoint(off, segments);
@@ -604,7 +603,7 @@ public class RuppertRefiner implements IDelaunayRefiner {
 			return splitSegmentSmart(nearEdge);
 		}
 
-                off.setIndex(vertexIndexer++);
+		off.setIndex(vertexIndexer++);
 		addVertex(off, VType.OFFCENTER, null, 0);
 		lastInsertedVertex = off;
 		return off;
@@ -650,8 +649,8 @@ public class RuppertRefiner implements IDelaunayRefiner {
 		if (nearEdge != null) {
 			return splitSegmentSmart(nearEdge);
 		}
-                double cz = interpolator.interpolate(center.getX(), center.getY(), null);
-                Vertex centerZ = new Vertex(center.getX(), center.getY(), cz, vertexIndexer++);
+		double cz = interpolator.interpolate(center.getX(), center.getY(), null);
+		Vertex centerZ = new Vertex(center.getX(), center.getY(), cz, vertexIndexer++);
 		tin.add(centerZ);
 		vdata.put(centerZ, new VData(VType.CIRCUMCENTER, null, 0));
 		lastInsertedVertex = centerZ;
@@ -684,7 +683,7 @@ public class RuppertRefiner implements IDelaunayRefiner {
 			corner = b;
 		}
 
-                double z = (a.getZ()+b.getZ())*0.5;
+		double z = (a.getZ()+b.getZ())*0.5;
 		final Vertex v = tin.splitEdge(seg, 0.5, z);
 		if (v != null) {
 			final int k = (corner != null) ? shellIndex(corner, v.x, v.y) : 0;
@@ -729,8 +728,7 @@ public class RuppertRefiner implements IDelaunayRefiner {
 	 * @param v        point to test
 	 * @param segments list of constrained subsegments
 	 * @param tol      perpendicular-distance tolerance (scale-aware)
-	 * @return first subsegment whose interior is within {@code tol}, or
-	 *         {@code null}
+	 * @return first subsegment whose interior is within {@code tol}, or {@code null}
 	 */
 	private IQuadEdge firstNearConstrainedEdgeInterior(final Vertex v, final List<IQuadEdge> segments, final double tol) {
 		final double px = v.getX(), py = v.getY();

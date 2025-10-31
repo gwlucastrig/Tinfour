@@ -41,18 +41,13 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
 import java.util.function.Consumer;
+import static org.junit.jupiter.api.Assertions.*;
+import org.junit.jupiter.api.Test;
 import org.tinfour.common.IConstraint;
 import org.tinfour.common.PolygonConstraint;
 import org.tinfour.common.SimpleTriangle;
 import org.tinfour.common.Vertex;
 import org.tinfour.utils.TriangleCollector;
-
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.Test;
-import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * Tests to see that constraint polygons remain correct when an
@@ -180,7 +175,7 @@ public class PolygonConstraintVertexInsertionTest {
       assertEquals(a[0], a[1],  1.0e-4, "Unequal constraint coverage for trial " + iTrial);
     }
   }
-  
+
   @Test
   public void testPartiallyCovered() {
     for (int iTrial = 0; iTrial < nTrials; iTrial++) {
@@ -203,5 +198,5 @@ public class PolygonConstraintVertexInsertionTest {
       assertEquals(a[0], a[2],  1.0e-4, "Unequal constraint coverage for trial " + iTrial);
     }
   }
-  
+
 }

@@ -36,26 +36,21 @@
  */
 package org.tinfour.standard;
 
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.Test;
-import static org.junit.jupiter.api.Assertions.*;
-
 import java.awt.Color;
 import java.util.ArrayList;
 import java.util.List;
- 
-import java.util.ArrayList;
-import java.util.List;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.AfterEach;
+import static org.junit.jupiter.api.Assertions.*;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.tinfour.common.IConstraint;
 import org.tinfour.common.IIncrementalTin;
 import org.tinfour.common.IIntegrityCheck;
 import org.tinfour.common.LinearConstraint;
 import org.tinfour.common.PolygonConstraint;
 import org.tinfour.common.Vertex;
-import org.tinfour.standard.IncrementalTin;
 
 /**
  * Exercises the ability to add vertices after constraints are in place.
@@ -115,7 +110,7 @@ public class AddVertexPostConstraintTest {
    * A diagonal is constructed from (0.25, 0.25) to 0.75, 0.75.
    * Vertices are inserted at grid positions so that
    * some fall immediately on a constraint, some fall between constraints,
-   * and some are placed outside the the bounds of the constrained region. 
+   * and some are placed outside the the bounds of the constrained region.
    */
   @Test
   public void testInsertion() {
