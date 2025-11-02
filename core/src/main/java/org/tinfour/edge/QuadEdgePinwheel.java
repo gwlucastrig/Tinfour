@@ -15,7 +15,7 @@
  * ---------------------------------------------------------------------
  */
 
-/*
+ /*
  * -----------------------------------------------------------------------
  *
  * Revision History:
@@ -29,7 +29,6 @@
  *
  * -----------------------------------------------------------------------
  */
-
 package org.tinfour.edge;
 
 import java.util.Iterator;
@@ -42,14 +41,13 @@ import org.tinfour.common.IQuadEdge;
 public class QuadEdgePinwheel implements Iterable<IQuadEdge>, Iterator<IQuadEdge> {
 
   final IQuadEdge e0;
-  IQuadEdge n;
+  IQuadEdge p;
   boolean hasNext;
 
-  public QuadEdgePinwheel(IQuadEdge e0){
+  public QuadEdgePinwheel(IQuadEdge e0) {
     this.e0 = e0;
-    n = e0;
+    p = e0;
     hasNext = true;
-
   }
 
   @Override
@@ -59,19 +57,26 @@ public class QuadEdgePinwheel implements Iterable<IQuadEdge>, Iterator<IQuadEdge
 
   @Override
   public boolean hasNext() {
-     return hasNext;
+    return hasNext;
   }
 
   @Override
   public IQuadEdge next() {
-     IQuadEdge e = n;
-     n = e.getDualFromReverse();
-     hasNext = !n.equals(e0);
-     return e;
+    if (!hasNext) {
+      // This code will be reached only if application ignored the
+      // return value from hasNext().
+      return null;
+    }
+
+    p = p.getDualFromReverse();
+    if (p.equals(e0)) {
+      hasNext = false;
+    }
+    return p;
   }
 
   @Override
-  public void remove(){
+  public void remove() {
     throw new UnsupportedOperationException(
       "Remove is not supported for IQuadEdge iterators");
   }

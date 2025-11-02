@@ -67,77 +67,72 @@ import org.tinfour.common.VertexMergerGroup;
 import org.tinfour.edge.QuadEdgeConstants;
 
 /**
- * Provides a memory-conserving variation on the IncrementalTin class
- * for building and maintaining a Triangulated Irregular Network (TIN)
- * that is optimal with regard to the Delaunay criterion. For background
- * information and tactics for using this class,
- * see the documentation for the IncrementalTin class.
+ * Provides a memory-conserving variation on the IncrementalTin class for
+ * building and maintaining a Triangulated Irregular Network (TIN) that is
+ * optimal with regard to the Delaunay criterion. For background information and
+ * tactics for using this class, see the documentation for the IncrementalTin
+ * class.
  * <p>
  * The counterpart to this class, IncrementalTin, uses a direct implementation
  * of the quad-edge structure popularized by Guibas and Stolfi. While that
- * approach leads to elegant code, the nature of the Java language
- * (and object-oriented languages in general) results in relatively expensive
- * memory requirements, approximately 244 bytes per vertex inserted into the TIN
+ * approach leads to elegant code, the nature of the Java language (and
+ * object-oriented languages in general) results in relatively expensive memory
+ * requirements, approximately 244 bytes per vertex inserted into the TIN
  * (counting the storage for both edges and vertices). Since it is common for
- * many geophysical data sets to include multiple-millions of points,
- * that memory use adds up fast.
+ * many geophysical data sets to include multiple-millions of points, that
+ * memory use adds up fast.
  * <p>
- * This class reduces memory requirements by representing
- * the edge-link relationships with internal integer arrays
- * and numerical indexing rather than object references. By keeping the edge
- * relationship data in "virtual form", the implementation reduces the
- * memory use for the edges to about 120 bytes per vertex.
- * The implementation is "semi-virtual" in that all data is still kept
- * in core, but the amount of memory is reduced by a virtual representation
+ * This class reduces memory requirements by representing the edge-link
+ * relationships with internal integer arrays and numerical indexing rather than
+ * object references. By keeping the edge relationship data in "virtual form",
+ * the implementation reduces the memory use for the edges to about 120 bytes
+ * per vertex. The implementation is "semi-virtual" in that all data is still
+ * kept in core, but the amount of memory is reduced by a virtual representation
  * of the edge structures.
  * <p>
- * Unfortunately, this reduction comes with a cost. In testing, the
- * virtual implementation requires approximately 30 percent more runtime
- * to process vertices than the direct implementation. Both
- * implementations experience a degradation of throughput when the
- * memory use approaches the maximum allowed by the JVM (specified
- * on the command line using the -Xmx#### option). But since the
- * virtual implementation uses half the memory of the direct implementation,
- * the onset of degraded conditions when working with a fixed memory size
- * can be pushed back considerably using the virtual implementation.
+ * Unfortunately, this reduction comes with a cost. In testing, the virtual
+ * implementation requires approximately 30 percent more runtime to process
+ * vertices than the direct implementation. Both implementations experience a
+ * degradation of throughput when the memory use approaches the maximum allowed
+ * by the JVM (specified on the command line using the -Xmx#### option). But
+ * since the virtual implementation uses half the memory of the direct
+ * implementation, the onset of degraded conditions when working with a fixed
+ * memory size can be pushed back considerably using the virtual implementation.
  * <p>
- * This class also dramatically reduces the number of objects that
- * are used to represent the TIN. The IncrementalTIN class uses about 7.005
- * objects per vertex (including vertices and edges) while the virtual
- * implementation uses only about 1.012. This reduction can be
- * valuable in reducing the impact of garbage collection when processing
- * large data sets..
+ * This class also dramatically reduces the number of objects that are used to
+ * represent the TIN. The IncrementalTIN class uses about 7.005 objects per
+ * vertex (including vertices and edges) while the virtual implementation uses
+ * only about 1.012. This reduction can be valuable in reducing the impact of
+ * garbage collection when processing large data sets..
  * <h1>Methods and References</h1>
- * A good review of point location using a stochastic Lawson's walk
- * is provided by <cite>Soukal, R.; Ma&#769;lkova&#769;, Kolingerova&#769;
- * (2012)
- * "Walking algorithms for point location in TIN models", Computational
- * Geoscience 16:853-869</cite>.
+ * A good review of point location using a stochastic Lawson's walk is provided
+ * by <cite>Soukal, R.; Ma&#769;lkova&#769;, Kolingerova&#769; (2012) "Walking
+ * algorithms for point location in TIN models", Computational Geoscience
+ * 16:853-869</cite>.
  * <p>
  * The Bower-Watson algorithm for point insertion is discussed in
  * <cite>Cheng, Siu-Wing; Dey, T.; Shewchuk, J. (2013) "Delaunay mesh
- * generation",
- * CRC Press, Boca Raton, FL</cite>. This is a challenging book that provides
- * an overview of both 2D and solid TIN models. Jonathan Shewchuk is pretty much
- * the expert on Delaunay Triangulations and his writings were a valuable
- * resource in the creation of this class.
- * You can also read Bowyer's and Watson's original papers both of which
- * famously appeared in the same issue of the same journal in 1981. See
- * <cite>Bowyer, A. (1981) "Computing Dirichlet tesselations",
- * The Computer Journal" Vol 24, No 2., p. 162-166</cite>. and
- * <cite>Watson, D. (1981) "Computing the N-dimensional tesselation
- * with application to Voronoi Diagrams", The Computer Journal"
- * Vol 24, No 2., p. 167-172</cite>.
+ * generation", CRC Press, Boca Raton, FL</cite>. This is a challenging book
+ * that provides an overview of both 2D and solid TIN models. Jonathan Shewchuk
+ * is pretty much the expert on Delaunay Triangulations and his writings were a
+ * valuable resource in the creation of this class. You can also read Bowyer's
+ * and Watson's original papers both of which famously appeared in the same
+ * issue of the same journal in 1981. See
+ * <cite>Bowyer, A. (1981) "Computing Dirichlet tesselations", The Computer
+ * Journal" Vol 24, No 2., p. 162-166</cite>. and
+ * <cite>Watson, D. (1981) "Computing the N-dimensional tesselation with
+ * application to Voronoi Diagrams", The Computer Journal" Vol 24, No 2., p.
+ * 167-172</cite>.
  * <p>
  * The point-removal algorithm is due to Devillers. See
  * <cite>Devillers, O. (2002), "On deletion in delaunay triangulations",
- * International Journal of Computational Geometry &amp; Applications
- * 12.3 p. 123-2005</cite>.
+ * International Journal of Computational Geometry &amp; Applications 12.3 p.
+ * 123-2005</cite>.
  * <p>
  * The QuadEdge concept is based on the structure popularized by
- * <cite>Guibas, L. and Stolfi, J. (1985) "Primitives for the
- * manipulation of subdivisions and the computation of Voronoi diagrams"
- * ACM Transactions on Graphics, 4(2), 1985, p. 75-123.</cite>
+ * <cite>Guibas, L. and Stolfi, J. (1985) "Primitives for the manipulation of
+ * subdivisions and the computation of Voronoi diagrams" ACM Transactions on
+ * Graphics, 4(2), 1985, p. 75-123.</cite>
  */
 public class SemiVirtualIncrementalTin implements IIncrementalTin {
 
@@ -164,18 +159,17 @@ public class SemiVirtualIncrementalTin implements IIncrementalTin {
    */
   private final SemiVirtualEdgePool edgePool;
   /**
-   * The edge used to preserve the end-position of the
-   * most recent search results.
+   * The edge used to preserve the end-position of the most recent search
+   * results.
    */
   private SemiVirtualEdge searchEdge;
 
   /**
-   * Indicates that the TIN is locked and that calls to
-   * add or remove vertices are disabled. This can occur when the
-   * TIN is disposed, or when constraints are added to the TIN.
+   * Indicates that the TIN is locked and that calls to add or remove vertices
+   * are disabled. This can occur when the TIN is disposed, or when constraints
+   * are added to the TIN.
    */
   private boolean isLocked;
-
 
   /**
    * Indicates that the TIN is locked only because it includes constraints.
@@ -183,96 +177,88 @@ public class SemiVirtualIncrementalTin implements IIncrementalTin {
   private boolean lockedDueToConstraints;
 
   /**
-   * Indicates that the Delaunay triangulation is conformant. This value
-   * may be set to false if constraints are added without the restoreConformity
-   * option being applied.
+   * Indicates that the Delaunay triangulation is conformant. This value may be
+   * set to false if constraints are added without the restoreConformity option
+   * being applied.
    */
   private boolean isConformant;
 
   /**
-   * Indicates that the TIN is disposed. All internal objects
-   * associated with the current instance are put out-of-scope
-   * and the class is no longer usable.
+   * Indicates that the TIN is disposed. All internal objects associated with
+   * the current instance are put out-of-scope and the class is no longer
+   * usable.
    */
   private boolean isDisposed;
 
   /**
-   * The minimum x coordinate of all vertices that have been added to
-   * the TIN.
+   * The minimum x coordinate of all vertices that have been added to the TIN.
    */
   private double boundsMinX = Double.POSITIVE_INFINITY;
 
   /**
-   * The maximum y coordinate of all vertices that have been added to
-   * the TIN.
+   * The maximum y coordinate of all vertices that have been added to the TIN.
    */
   private double boundsMinY = Double.POSITIVE_INFINITY;
 
   /**
-   * The maximum x coordinate of all vertices that have been added to
-   * the TIN.
+   * The maximum x coordinate of all vertices that have been added to the TIN.
    */
   private double boundsMaxX = Double.NEGATIVE_INFINITY;
 
   /**
-   * The maximum y coordinate of all vertices that have been added to
-   * the TIN.
+   * The maximum y coordinate of all vertices that have been added to the TIN.
    */
   private double boundsMaxY = Double.NEGATIVE_INFINITY;
 
   /**
-   * The nominal spacing between points in sample data, used
-   * to specify thresholds for geometry-based logic and comparisons.
+   * The nominal spacing between points in sample data, used to specify
+   * thresholds for geometry-based logic and comparisons.
    */
   private final double nominalPointSpacing;
 
   /**
-   * The positive threshold used to determine if a higher-precision
-   * calculation
+   * The positive threshold used to determine if a higher-precision calculation
    * is required for performing calculations related to the half-plane
-   * calculation. When a computed value is sufficiently close to zero,
-   * there is a concern that numerical issues involved in the
-   * half-plane calculations might result in incorrect
-   * determinations. This value helps define "sufficiently close".
+   * calculation. When a computed value is sufficiently close to zero, there is
+   * a concern that numerical issues involved in the half-plane calculations
+   * might result in incorrect determinations. This value helps define
+   * "sufficiently close".
    */
   private final double halfPlaneThreshold;
 
   /**
-   * The negative threshold used to determine if a higher-precision
-   * calculation
+   * The negative threshold used to determine if a higher-precision calculation
    * is required for performing calculations related to the half-plane
-   * calculation. When a computed value is sufficiently close to zero,
-   * there is a concern that numerical issues involved in the
-   * half-plane calculations might result in incorrect
-   * determinations. This value helps define "sufficiently close".
+   * calculation. When a computed value is sufficiently close to zero, there is
+   * a concern that numerical issues involved in the half-plane calculations
+   * might result in incorrect determinations. This value helps define
+   * "sufficiently close".
    */
   private final double halfPlaneThresholdNeg;
 
   /**
-   * The positive threshold used to determine if a higher-precision
-   * calculation
+   * The positive threshold used to determine if a higher-precision calculation
    * is required for performing calculations related to the inCircle
-   * calculation. When a computed value is sufficiently close to zero,
-   * there is a concern that numerical issues involved in the
-   * half-plane calculations might result in incorrect
-   * determinations. This value helps define "sufficiently close".
+   * calculation. When a computed value is sufficiently close to zero, there is
+   * a concern that numerical issues involved in the half-plane calculations
+   * might result in incorrect determinations. This value helps define
+   * "sufficiently close".
    */
   private final double inCircleThreshold;
 
   /**
-   * The negative threshold used to determine if a higher-precision
-   * calculation
+   * The negative threshold used to determine if a higher-precision calculation
    * is required for performing calculations related to the half-plane
-   * calculation. When a computed value is sufficiently close to zero,
-   * there is a concern that numerical issues involved in the
-   * half-plane calculations might result in incorrect
-   * determinations. This value helps define "sufficiently close".
+   * calculation. When a computed value is sufficiently close to zero, there is
+   * a concern that numerical issues involved in the half-plane calculations
+   * might result in incorrect determinations. This value helps define
+   * "sufficiently close".
    */
   private final double inCircleThresholdNeg;
 
   /**
-   * The tolerance factor for treating closely spaced or identical vertices
-   * as a single point.
+   * The tolerance factor for treating closely spaced or identical vertices as a
+   * single point.
    */
   private final double vertexTolerance;
   /**
@@ -281,8 +267,8 @@ public class SemiVirtualIncrementalTin implements IIncrementalTin {
   private final double vertexTolerance2;
 
   /**
-   * Thresholds computed based on the nominal point spacing for
-   * the input vertices.
+   * Thresholds computed based on the nominal point spacing for the input
+   * vertices.
    */
   private final Thresholds thresholds;
   /**
@@ -296,9 +282,9 @@ public class SemiVirtualIncrementalTin implements IIncrementalTin {
   private boolean isBootstrapped;
 
   /**
-   * Keeps count of the number of vertices inserted into the TIN.
-   * This value may be larger than the number of vertices actually stored
-   * in the TIN if vertices are added redundantly.
+   * Keeps count of the number of vertices inserted into the TIN. This value may
+   * be larger than the number of vertices actually stored in the TIN if
+   * vertices are added redundantly.
    */
   private int nVerticesInserted;
   /**
@@ -311,8 +297,8 @@ public class SemiVirtualIncrementalTin implements IIncrementalTin {
    */
   private int nInCircleExtendedPrecision;
   /**
-   * Number of times the extended precision results were significantly
-   * different than the low-precision calculation.
+   * Number of times the extended precision results were significantly different
+   * than the low-precision calculation.
    */
   private int nInCircleExtendedPrecisionConflicts;
 
@@ -332,8 +318,8 @@ public class SemiVirtualIncrementalTin implements IIncrementalTin {
   private int nSyntheticVertices;
 
   /**
-   * Tracks the maximum depth of recursion when restoring Delaunay
-   * conformance after the addition of constraints.
+   * Tracks the maximum depth of recursion when restoring Delaunay conformance
+   * after the addition of constraints.
    */
   private int maxDepthOfRecursionInRestore;
 
@@ -343,8 +329,8 @@ public class SemiVirtualIncrementalTin implements IIncrementalTin {
   private int maxLengthOfQueueInFloodFill;
 
   /**
-   * Indicates whether vertex positions may be adjusted during insertion.
-   * At this time, this option only applies to vertices very near constrained
+   * Indicates whether vertex positions may be adjusted during insertion. At
+   * this time, this option only applies to vertices very near constrained
    * segments.
    */
   private boolean vertexAdjustmentEnabled = true;
@@ -361,8 +347,8 @@ public class SemiVirtualIncrementalTin implements IIncrementalTin {
   private final SemiVirtualStochasticLawsonsWalk walker;
 
   /**
-   * Constructs an incremental TIN using numerical thresholds appropriate
-   * for the default nominal point spacing of 1 unit.
+   * Constructs an incremental TIN using numerical thresholds appropriate for
+   * the default nominal point spacing of 1 unit.
    */
   public SemiVirtualIncrementalTin() {
 
@@ -384,18 +370,18 @@ public class SemiVirtualIncrementalTin implements IIncrementalTin {
   }
 
   /**
-   * Constructs an incremental TIN using numerical thresholds appropriate
-   * for the specified nominal point spacing. This value is an
-   * estimated spacing used for determining numerical thresholds for
-   * various proximity and inclusion tests. For best results, it should be
-   * within one to two orders of magnitude of the actual value for the
-   * samples. In practice, this value is usually chosen to be close
-   * to the mean point spacing for a sample. But for samples with varying
-   * density, a mean value from the set of smaller point spacings may be used.
+   * Constructs an incremental TIN using numerical thresholds appropriate for
+   * the specified nominal point spacing. This value is an estimated spacing
+   * used for determining numerical thresholds for various proximity and
+   * inclusion tests. For best results, it should be within one to two orders of
+   * magnitude of the actual value for the samples. In practice, this value is
+   * usually chosen to be close to the mean point spacing for a sample. But for
+   * samples with varying density, a mean value from the set of smaller point
+   * spacings may be used.
    * <p>
-   * Lidar applications sometimes refer to the point-spacing concept as
-   * "nominal pulse spacing", a term that reflects the origin of the
-   * data in a laser-based measuring system.
+   * Lidar applications sometimes refer to the point-spacing concept as "nominal
+   * pulse spacing", a term that reflects the origin of the data in a
+   * laser-based measuring system.
    *
    * @param nominalPointSpacing the nominal distance between points.
    */
@@ -418,10 +404,9 @@ public class SemiVirtualIncrementalTin implements IIncrementalTin {
   }
 
   /**
-   * Insert a vertex into the collection of vertices managed by
-   * the TIN. If the TIN is not yet bootstrapped, the vertex will
-   * be retained in a simple list until enough vertices are received
-   * in order to bootstrap the TIN.
+   * Insert a vertex into the collection of vertices managed by the TIN. If the
+   * TIN is not yet bootstrapped, the vertex will be retained in a simple list
+   * until enough vertices are received in order to bootstrap the TIN.
    *
    * @param v a valid vertex
    * @return true if the TIN is bootstrapped; otherwise false
@@ -452,7 +437,7 @@ public class SemiVirtualIncrementalTin implements IIncrementalTin {
       vertexList.add(v);
       boolean status = bootstrap(vertexList);
       if (status) {
-         isConformant = true;
+        isConformant = true;
         // the bootstrap process uses 3 vertices from
         // the vertex list but does not remove them from
         // the list.   The processVertexInsertion method has the ability
@@ -472,48 +457,48 @@ public class SemiVirtualIncrementalTin implements IIncrementalTin {
 
   /**
    * Inserts a list of vertices into the collection of vertices managed by the
-   * TIN. If the TIN is not yet bootstrapped, the vertices will be retained in
-   * a simple list until enough vertices are received in order to bootstrap
-   * the TIN.
+   * TIN. If the TIN is not yet bootstrapped, the vertices will be retained in a
+   * simple list until enough vertices are received in order to bootstrap the
+   * TIN.
    * <h1>Performance Consideration Related to List</h1>
    * <p>
    * In the bootstrap phase, three points are chosen at random from the vertex
-   * list to create the initial triangle for insertion. The initialization
-   * will make a small number of selection attempts and select the triangle
-   * with the largest number. In the event that this process does not find
-   * three points that are not a suitable choice (as when they are collinear
-   * or nearly collinear), the process will be repeated until a valid initial
-   * triangle is selected.
+   * list to create the initial triangle for insertion. The initialization will
+   * make a small number of selection attempts and select the triangle with the
+   * largest number. In the event that this process does not find three points
+   * that are not a suitable choice (as when they are collinear or nearly
+   * collinear), the process will be repeated until a valid initial triangle is
+   * selected.
    * <p>
-   * Thus, there is a small performance advantage in
-   * supplying the vertices using a list that can be accessed efficiently in a
-   * random order (see the discussion of the Java API for the List and
-   * java.util.RandomAccess interfaces). Once the initial triangle is
-   * established, the list will be traversed sequentially to build the TIN and
-   * random access considerations will no longer apply.
+   * Thus, there is a small performance advantage in supplying the vertices
+   * using a list that can be accessed efficiently in a random order (see the
+   * discussion of the Java API for the List and java.util.RandomAccess
+   * interfaces). Once the initial triangle is established, the list will be
+   * traversed sequentially to build the TIN and random access considerations
+   * will no longer apply.
    *
    * <h1>Performance Consideration Related to Location of Vertices</h1>
    *
-   * The performance of the insertion process is sensitive to the
-   * relative location of vertices.  An input data set based on
+   * The performance of the insertion process is sensitive to the relative
+   * location of vertices. An input data set based on
    * <strong>purely random</strong> vertex positions represents one of the
    * worst-case input sets in terms of processing time.
    * <p>
-   * Ordinarily, the most computationally expensive operation for inserting
-   * a vertex into the Delaunay triangulation is locating the triangle
-   * that contains its coordinates. But Tinfour implements logic to
-   * expedite this search operation by taking advantage of a characteristic
-   * that occurs in many data sets:  the location of one vertex in a sequence
-   * is usually close to the location of the vertex that preceded it.
-   * By starting each search at the position in the triangulation where a vertex
-   * was most recently inserted, the time-to-search can be reduced dramatically.
-   * Unfortunately, in vertices generated by a random process, this assumption
-   * of sequential proximity (i.e. "spatial autocorrelation") is not true.
+   * Ordinarily, the most computationally expensive operation for inserting a
+   * vertex into the Delaunay triangulation is locating the triangle that
+   * contains its coordinates. But Tinfour implements logic to expedite this
+   * search operation by taking advantage of a characteristic that occurs in
+   * many data sets: the location of one vertex in a sequence is usually close
+   * to the location of the vertex that preceded it. By starting each search at
+   * the position in the triangulation where a vertex was most recently
+   * inserted, the time-to-search can be reduced dramatically. Unfortunately, in
+   * vertices generated by a random process, this assumption of sequential
+   * proximity (i.e. "spatial autocorrelation") is not true.
    * <p>
    * To assist in the case of random or poorly correlated vertex geometries,
    * application can take advantage of the HilbertSort class which is supplied
-   * as part of the Core Tinfour module. In the example shown below, the
-   * use of the HilbertSort yields a <strong>factor of 100</strong>
+   * as part of the Core Tinfour module. In the example shown below, the use of
+   * the HilbertSort yields a <strong>factor of 100</strong>
    * improvement in the time to perform the .add() method.
    * <pre>
    *      int nVertices = 1_000_000;
@@ -531,8 +516,8 @@ public class SemiVirtualIncrementalTin implements IIncrementalTin {
    * </pre>
    *
    * @param list a valid list of vertices to be added to the TIN.
-   * @param monitor an optional instance of a monitoring implementation;
-   * null if not used
+   * @param monitor an optional instance of a monitoring implementation; null if
+   * not used
    * @return true if the TIN is bootstrapped; otherwise false
    */
   @Override
@@ -627,12 +612,12 @@ public class SemiVirtualIncrementalTin implements IIncrementalTin {
   }
 
   /**
-   * Create the initial three-vertex mesh by selecting vertices from
-   * the input list. Logic is provided to attempt to identify a
-   * initial triangle with a non-trivial area (on the theory that this
-   * stipulation produces a more robust initial mesh). In the event
-   * of an unsuccessful bootstrap attempt, future attempts will be conducted
-   * as the calling application provides additional vertices.
+   * Create the initial three-vertex mesh by selecting vertices from the input
+   * list. Logic is provided to attempt to identify a initial triangle with a
+   * non-trivial area (on the theory that this stipulation produces a more
+   * robust initial mesh). In the event of an unsuccessful bootstrap attempt,
+   * future attempts will be conducted as the calling application provides
+   * additional vertices.
    *
    * @param list a valid list of input vertices.
    * @return if successful, true; otherwise, false.
@@ -700,29 +685,27 @@ public class SemiVirtualIncrementalTin implements IIncrementalTin {
   }
 
   /**
-   * Given an perimeter edge AB defined by vertices a and b,
-   * compute the equivalent of the in-circle h factor indicating if the the
-   * vertex v is on the inside or outside of the edge (and, so, the TIN).
-   * The perimeter edge is oriented so that the interior is on the side
-   * of its dual. Thus if the test vertex is in the local direction of the TIN
-   * interior, h will be negative and if it is in the local direction of the
-   * TIN
-   * exterior, h will be positive. For the case where the vertex lies on
-   * the ray of the segment, e.g. h is zero, special logic is applied.
-   * If the point lies within the segment, h is artificially set
-   * to a value of positive 1. In the insertion in-circle logic below,
-   * a value of h>0 indicates that an edge is non-delaunay and thus AB needs
-   * to be removed (flipped). If the point lies outside the segment, h is
-   * artifically set to +1, which triggers the insertion logic to leave
-   * the edge AB in place.
+   * Given an perimeter edge AB defined by vertices a and b, compute the
+   * equivalent of the in-circle h factor indicating if the the vertex v is on
+   * the inside or outside of the edge (and, so, the TIN). The perimeter edge is
+   * oriented so that the interior is on the side of its dual. Thus if the test
+   * vertex is in the local direction of the TIN interior, h will be negative
+   * and if it is in the local direction of the TIN exterior, h will be
+   * positive. For the case where the vertex lies on the ray of the segment,
+   * e.g. h is zero, special logic is applied. If the point lies within the
+   * segment, h is artificially set to a value of positive 1. In the insertion
+   * in-circle logic below, a value of h>0 indicates that an edge is
+   * non-delaunay and thus AB needs to be removed (flipped). If the point lies
+   * outside the segment, h is artifically set to +1, which triggers the
+   * insertion logic to leave the edge AB in place.
    *
    * @param a a valid vertex
    * @param b a valid vertex
-   * @param v a valid vertex to be tested for a psuedo in-circle condition
-   * with vertices a and b.
+   * @param v a valid vertex to be tested for a psuedo in-circle condition with
+   * vertices a and b.
    * @return A negative value if the vertex is in the direction of the TIN
-   * interior, a positive value if it is in the direction of the exterior
-   * or a zero if it lies directly on the edge; zero is not returned.
+   * interior, a positive value if it is in the direction of the exterior or a
+   * zero if it lies directly on the edge; zero is not returned.
    */
   private double inCircleWithGhosts(final Vertex a, final Vertex b, final Vertex v) {
     double h = (v.x - a.x) * (a.y - b.y) + (v.y - a.y) * (b.x - a.x);
@@ -747,13 +730,13 @@ public class SemiVirtualIncrementalTin implements IIncrementalTin {
   }
 
   /**
-   * Performs processing for the public add() methods by adding the vertex
-   * to a fully bootstrapped mesh. The vertex will be either inserted
-   * into the mesh or the mesh will be extended to include the vertex.
+   * Performs processing for the public add() methods by adding the vertex to a
+   * fully bootstrapped mesh. The vertex will be either inserted into the mesh
+   * or the mesh will be extended to include the vertex.
    *
    * @param v a valid vertex.
-   * @return true if the vertex was added successfully; otherwise false
-   * (usually in response to redundant vertex specifications).
+   * @return true if the vertex was added successfully; otherwise false (usually
+   * in response to redundant vertex specifications).
    */
   private boolean addWithInsertOrAppend(final Vertex v) {
     final double x = v.x;
@@ -914,16 +897,15 @@ public class SemiVirtualIncrementalTin implements IIncrementalTin {
   }
 
   /**
-   * Tests the vertices of the triangle that includes the reference edge
-   * to see if any of them are an exact (instance) match for the specified
-   * vertex. If so, the VirtualEdge is loaded with the edge that starts
-   * with the specified vertex. If the vertex is a member of a
-   * VertexMergerGroup, the edge that starts with the containing group
-   * is returned.
+   * Tests the vertices of the triangle that includes the reference edge to see
+   * if any of them are an exact (instance) match for the specified vertex. If
+   * so, the VirtualEdge is loaded with the edge that starts with the specified
+   * vertex. If the vertex is a member of a VertexMergerGroup, the edge that
+   * starts with the containing group is returned.
    *
    * @param v the vertex to test for match
-   * @param sEdge an edge from the triangle containing the vertex,
-   * may be adjusted by the search.
+   * @param sEdge an edge from the triangle containing the vertex, may be
+   * adjusted by the search.
    * @return true if a match is found; otherwise, false
    */
   @SuppressWarnings("PMD.CompareObjectsWithEquals")
@@ -958,19 +940,18 @@ public class SemiVirtualIncrementalTin implements IIncrementalTin {
   }
 
   /**
-   * Tests the vertices of the triangle that includes the reference edge
-   * to see if any of them are an exact match for the specified
-   * coordinates. Typically, this method is employed after a search
-   * has obtained a neighboring edge for the coordinates.
-   * If one of the vertices is an exact match, within tolerance, for the
-   * specified coordinates, this method will return the edge that
-   * starts with the vertex.
+   * Tests the vertices of the triangle that includes the reference edge to see
+   * if any of them are an exact match for the specified coordinates. Typically,
+   * this method is employed after a search has obtained a neighboring edge for
+   * the coordinates. If one of the vertices is an exact match, within
+   * tolerance, for the specified coordinates, this method will return the edge
+   * that starts with the vertex.
    *
    * @param x the x coordinate for the point of interest
    * @param y the y coordinate for the point of interest
    * @param sEdge an edge from the triangle containing (x,y)
-   * @param distanceTolerance2 the square of a tolerance specification
-   * for accepting a vertex as a match for the coordinates
+   * @param distanceTolerance2 the square of a tolerance specification for
+   * accepting a vertex as a match for the coordinates
    * @return true if a match is found; otherwise, false
    */
   private boolean checkTriangleVerticesForMatchInternal(
@@ -996,11 +977,10 @@ public class SemiVirtualIncrementalTin implements IIncrementalTin {
 
   /**
    * Allocates a number of vertices roughly sufficient to represent a TIN
-   * containing the specified number of vertices. This method
-   * serves as a diagnostic tool, allowing a test-application
-   * to separate the portion of processing time consumed by
-   * Java object construction from that spent processing the
-   * vertex data.
+   * containing the specified number of vertices. This method serves as a
+   * diagnostic tool, allowing a test-application to separate the portion of
+   * processing time consumed by Java object construction from that spent
+   * processing the vertex data.
    *
    * @param nVertices the number of vertices expected to be added to the TIN.
    */
@@ -1025,22 +1005,21 @@ public class SemiVirtualIncrementalTin implements IIncrementalTin {
   }
 
   /**
-   * Given a vertex known to have coordinates very close or identical
-   * to a previously inserted vertex, perform a merge. The first time
-   * a merge is performed, the previously existing vertex is replaced with
-   * a VertexMergerGroup object and the new vertex is added to the
-   * group.
+   * Given a vertex known to have coordinates very close or identical to a
+   * previously inserted vertex, perform a merge. The first time a merge is
+   * performed, the previously existing vertex is replaced with a
+   * VertexMergerGroup object and the new vertex is added to the group.
    * <p>
-   * This method also checks to see if the newly inserted vertex is the
-   * same object as one previously inserted. In such a case, it is ignored.
-   * Although this situation could happen due to a poorly implemented
-   * application, the most common case is when the insertion was conducted
-   * using a list of vertices rather than individual insertions. The
-   * bootstrap logic creates an initial mesh from three randomly chosen
-   * vertices. When the list is processed, these vertices will eventually
-   * be passed to the processVertexInsertion routine. They will be identified
-   * as merge candidates and ignored. For large input lists, this strategy
-   * is more efficient than attempting to modify the input list.
+   * This method also checks to see if the newly inserted vertex is the same
+   * object as one previously inserted. In such a case, it is ignored. Although
+   * this situation could happen due to a poorly implemented application, the
+   * most common case is when the insertion was conducted using a list of
+   * vertices rather than individual insertions. The bootstrap logic creates an
+   * initial mesh from three randomly chosen vertices. When the list is
+   * processed, these vertices will eventually be passed to the
+   * processVertexInsertion routine. They will be identified as merge candidates
+   * and ignored. For large input lists, this strategy is more efficient than
+   * attempting to modify the input list.
    *
    * @param edge an edge selected so that the matching, previously inserted
    * vertex is assigned to vertex A.
@@ -1105,8 +1084,8 @@ public class SemiVirtualIncrementalTin implements IIncrementalTin {
   /**
    * Set the mark bit for an edge to 1.
    *
-   * @param map an array at least as large as the largest edge index divided
-   * by 32
+   * @param map an array at least as large as the largest edge index divided by
+   * 32
    * @param edge a valid edge
    */
   private void setMarkBit(BitSet bitset, final IQuadEdge edge) {
@@ -1117,8 +1096,8 @@ public class SemiVirtualIncrementalTin implements IIncrementalTin {
   /**
    * Gets the edge mark bit.
    *
-   * @param map an array at least as large as the largest edge index divided
-   * by 32
+   * @param map an array at least as large as the largest edge index divided by
+   * 32
    * @param edge a valid edge
    * @return if the edge is marked, a non-zero value; otherwise, a zero.
    */
@@ -1128,8 +1107,8 @@ public class SemiVirtualIncrementalTin implements IIncrementalTin {
   }
 
   /**
-   * Performs a survey of the TIN to gather statistics about the triangle
-   * formed during its construction.
+   * Performs a survey of the TIN to gather statistics about the triangle formed
+   * during its construction.
    *
    * @return A valid instance of the TriangleCount class.
    */
@@ -1140,14 +1119,13 @@ public class SemiVirtualIncrementalTin implements IIncrementalTin {
   }
 
   /**
-   * Gets a list of edges currently defining the perimeter of the TIN.
-   * The list may be empty if the TIN is not initialized (bootstrapped).
+   * Gets a list of edges currently defining the perimeter of the TIN. The list
+   * may be empty if the TIN is not initialized (bootstrapped).
    * <p>
-   * <strong>Warning:</strong> For efficiency purposes, the edges
-   * return by this routine are the same objects as those currently being used
-   * in the instance. Any modification of the edge objects will damage
-   * the TIN. Therefore, applications must not modify the edges returned by this
-   * method.
+   * <strong>Warning:</strong> For efficiency purposes, the edges return by this
+   * routine are the same objects as those currently being used in the instance.
+   * Any modification of the edge objects will damage the TIN. Therefore,
+   * applications must not modify the edges returned by this method.
    *
    * @return a valid, potentially empty list.
    */
@@ -1171,9 +1149,9 @@ public class SemiVirtualIncrementalTin implements IIncrementalTin {
   }
 
   /**
-   * Print statistics and diagnostic information collected during the
-   * TIN construction process. This information will be removed and
-   * reset by a call to the clear() method.
+   * Print statistics and diagnostic information collected during the TIN
+   * construction process. This information will be removed and reset by a call
+   * to the clear() method.
    *
    * @param ps A valid instance of a PrintStream to receive the output.
    */
@@ -1205,7 +1183,7 @@ public class SemiVirtualIncrementalTin implements IIncrementalTin {
       } else {
         nOrdinary++;
         sumLength += e.getLength();
-        if(e.isConstrained()){
+        if (e.isConstrained()) {
           nConstrained++;
         }
       }
@@ -1257,14 +1235,13 @@ public class SemiVirtualIncrementalTin implements IIncrementalTin {
   }
 
   /**
-   * Gets a list of edges currently allocated by an instance. The list may
-   * be empty if the TIN is not initialized (bootstrapped).
+   * Gets a list of edges currently allocated by an instance. The list may be
+   * empty if the TIN is not initialized (bootstrapped).
    * <p>
-   * <strong>Warning:</strong> For efficiency purposes, the edges
-   * return by this routine are the same objects as those currently being used
-   * in the instance. Any modification of the edge objects will damage
-   * the TIN. Therefore, applications must not modify the edges returned by this
-   * method.
+   * <strong>Warning:</strong> For efficiency purposes, the edges return by this
+   * routine are the same objects as those currently being used in the instance.
+   * Any modification of the edge objects will damage the TIN. Therefore,
+   * applications must not modify the edges returned by this method.
    *
    * @return a valid, potentially empty list.
    */
@@ -1283,24 +1260,23 @@ public class SemiVirtualIncrementalTin implements IIncrementalTin {
 
   @Override
   public Iterable<IQuadEdge> edges() {
-    return  new Iterable<IQuadEdge>(){
+    return new Iterable<IQuadEdge>() {
       @Override
       public Iterator<IQuadEdge> iterator() {
-         return edgePool.getIterator(false, false);
+        return edgePool.getIterator(false, false);
       }
     };
   }
 
   @Override
   public Iterable<IQuadEdge> edgesAndDuals() {
-    return  new Iterable<IQuadEdge>(){
+    return new Iterable<IQuadEdge>() {
       @Override
       public Iterator<IQuadEdge> iterator() {
-         return edgePool.getIterator(false, true);
+        return edgePool.getIterator(false, true);
       }
     };
   }
-
 
   @Override
   public int getMaximumEdgeAllocationIndex() {
@@ -1315,16 +1291,16 @@ public class SemiVirtualIncrementalTin implements IIncrementalTin {
   }
 
   /**
-   * Gets the nominal point spacing used to determine numerical thresholds
-   * for various proximity and inclusion tests. For best results, it should be
-   * within one to two orders of magnitude of the actual value for the
-   * samples. In practice, this value is usually chosen to be close
-   * to the mean point spacing for a sample. But for samples with varying
-   * density, a mean value from the set of smaller point spacings may be used.
+   * Gets the nominal point spacing used to determine numerical thresholds for
+   * various proximity and inclusion tests. For best results, it should be
+   * within one to two orders of magnitude of the actual value for the samples.
+   * In practice, this value is usually chosen to be close to the mean point
+   * spacing for a sample. But for samples with varying density, a mean value
+   * from the set of smaller point spacings may be used.
    * <p>
-   * Lidar applications sometimes refer to the point-spacing concept as
-   * "nominal pulse spacing", a term that reflects the origin of the
-   * data in a laser-based measuring system.
+   * Lidar applications sometimes refer to the point-spacing concept as "nominal
+   * pulse spacing", a term that reflects the origin of the data in a
+   * laser-based measuring system.
    *
    * @return a positive floating-point value greater than zero.
    */
@@ -1340,16 +1316,15 @@ public class SemiVirtualIncrementalTin implements IIncrementalTin {
 
   @Override
   /**
-   * Nullifies all internal data and references, preparing the
-   * instance for garbage collection.
-   * Because of the complex relationships between objects in a TIN,
-   * Java garbage collection may require an above average number of passes
-   * to clean up memory when an instance of this class goes out-of-scope.
-   * The dispose() method can be used to expedite garbage collection.
-   * Do not confuse the dispose() method with the clear() method.
-   * The clear() method prepares a TIN instance for reuse.
-   * The dispose() method prepares a TIN instance for garbage collection.
-   * Once the dispose() method is called on a TIN, it cannot be reused.
+   * Nullifies all internal data and references, preparing the instance for
+   * garbage collection. Because of the complex relationships between objects in
+   * a TIN, Java garbage collection may require an above average number of
+   * passes to clean up memory when an instance of this class goes out-of-scope.
+   * The dispose() method can be used to expedite garbage collection. Do not
+   * confuse the dispose() method with the clear() method. The clear() method
+   * prepares a TIN instance for reuse. The dispose() method prepares a TIN
+   * instance for garbage collection. Once the dispose() method is called on a
+   * TIN, it cannot be reused.
    */
   public void dispose() {
     if (!isDisposed) {
@@ -1370,9 +1345,9 @@ public class SemiVirtualIncrementalTin implements IIncrementalTin {
   @Override
   /**
    * Clears all internal state data of the TIN, preparing any allocated
-   * resources for re-use. When processing multiple sets of input data
-   * the clear() method has an advantage in that it can be used to reduce
-   * the overhead related to multiple edge object implementation.
+   * resources for re-use. When processing multiple sets of input data the
+   * clear() method has an advantage in that it can be used to reduce the
+   * overhead related to multiple edge object implementation.
    */
   public void clear() {
     if (isDisposed) {
@@ -1396,10 +1371,10 @@ public class SemiVirtualIncrementalTin implements IIncrementalTin {
   }
 
   /**
-   * Indicates whether the instance contains sufficient information
-   * to represent a TIN. Bootstrapping requires the input of at least
-   * three distinct, non-collinear vertices. If the TIN is not bootstrapped
-   * methods that access its content may return empty or null results.
+   * Indicates whether the instance contains sufficient information to represent
+   * a TIN. Bootstrapping requires the input of at least three distinct,
+   * non-collinear vertices. If the TIN is not bootstrapped methods that access
+   * its content may return empty or null results.
    *
    * @return true if the TIN is successfully initialized; otherwise, false.
    */
@@ -1409,10 +1384,9 @@ public class SemiVirtualIncrementalTin implements IIncrementalTin {
   }
 
   /**
-   * Set the search edge after a removal is completed.
-   * The logic for insertion requires that the search edge
-   * cannot be a ghost edge, but the logic for removal sometimes
-   * produces this result. Ensure that the search is set with
+   * Set the search edge after a removal is completed. The logic for insertion
+   * requires that the search edge cannot be a ghost edge, but the logic for
+   * removal sometimes produces this result. Ensure that the search is set with
    * an interior-side edge.
    *
    * @param e the search edge identified by the removal process.
@@ -1426,12 +1400,12 @@ public class SemiVirtualIncrementalTin implements IIncrementalTin {
   }
 
   /**
-   * Removes the specified vertex from the TIN. If the vertex is part of
-   * a merged-group, it is removed from the group by the structure of the
-   * TIN is unchanged.
+   * Removes the specified vertex from the TIN. If the vertex is part of a
+   * merged-group, it is removed from the group by the structure of the TIN is
+   * unchanged.
    * <p>
-   * At this time, this method does not handle the case where all
-   * vertices are removed from the TIN.
+   * At this time, this method does not handle the case where all vertices are
+   * removed from the TIN.
    *
    * @param vRemove the vertex to be removed
    * @return true if the vertex was found in the TIN and removed.
@@ -1526,7 +1500,7 @@ public class SemiVirtualIncrementalTin implements IIncrementalTin {
     }
     n0 = n1;
 
-    if(initialSize-edgePool.size() == 3){
+    if (initialSize - edgePool.size() == 3) {
       // Three edges deleted, which indicates that
       // the removal of the vertex resulted in a single triangle
       // that is already Delaunay.  The cavitation process should
@@ -1557,7 +1531,6 @@ public class SemiVirtualIncrementalTin implements IIncrementalTin {
     } while (!n1.equals(pStart));
     priorEar.next = firstEar;
     firstEar.prior = priorEar;
-
 
     // Step 3: Ear Closing
     // loop through the set of ears, finding the one
@@ -1647,9 +1620,9 @@ public class SemiVirtualIncrementalTin implements IIncrementalTin {
   }
 
   /**
-   * Gets a walker that is compatible with the point-spacing
-   * specifications for the TIN. Intended to support interpolator
-   * instances and related applications.
+   * Gets a walker that is compatible with the point-spacing specifications for
+   * the TIN. Intended to support interpolator instances and related
+   * applications.
    *
    * @return a valid walker.
    */
@@ -1660,8 +1633,8 @@ public class SemiVirtualIncrementalTin implements IIncrementalTin {
   }
 
   /**
-   * Obtains an arbitrary edge to serve as the
-   * start of a search or traversal operation.
+   * Obtains an arbitrary edge to serve as the start of a search or traversal
+   * operation.
    *
    * @return An ordinary (non-ghost) edge.
    */
@@ -1695,11 +1668,11 @@ public class SemiVirtualIncrementalTin implements IIncrementalTin {
    * Gets a list of vertices currently stored in the TIN. This list of objects
    * is not necessarily equivalent to the set of objects that were input because
    * some vertices may have been incorporated into one or more vertex-merger
-   * groups. Note that the list of vertices is not sorted and will usually
-   * not be returned in the same order as the original input set.
+   * groups. Note that the list of vertices is not sorted and will usually not
+   * be returned in the same order as the original input set.
    *
-   * @return a valid list of vertices, potentially empty if the TIN has
-   * not been initialized.
+   * @return a valid list of vertices, potentially empty if the TIN has not been
+   * initialized.
    */
   @Override
   public List<Vertex> getVertices() {
@@ -1761,7 +1734,6 @@ public class SemiVirtualIncrementalTin implements IIncrementalTin {
     return new SemiVirtualIntegrityCheck(this);
   }
 
-
   @Override
   public void addConstraints(List<IConstraint> constraints, boolean restoreConformity) {
 
@@ -1809,8 +1781,8 @@ public class SemiVirtualIncrementalTin implements IIncrementalTin {
     // Step 1 -- add all the vertices from the constraints to the TIN.
     //           Also, collect constraints in order with polygon constraints
     //           first followed by line constraints.
-    List<IConstraint>polygonConstraints = new ArrayList<>();
-    List<IConstraint>linearConstraints = new ArrayList<>();
+    List<IConstraint> polygonConstraints = new ArrayList<>();
+    List<IConstraint> linearConstraints = new ArrayList<>();
 
     boolean redundantVertex = false;
     int kConstraint = 0;
@@ -1842,17 +1814,16 @@ public class SemiVirtualIncrementalTin implements IIncrementalTin {
         }
         reference = c.getConstraintWithNewGeometry(replacementList);
       }
-      if(reference.definesConstrainedRegion()){
+      if (reference.definesConstrainedRegion()) {
         polygonConstraints.add(reference);
-      }else{
+      } else {
         linearConstraints.add(reference);
       }
       reference.setConstraintIndex(this, kConstraint++);
       constraintList.add(reference);
     }
 
-
-    List<IConstraint>processList = new ArrayList<>();
+    List<IConstraint> processList = new ArrayList<>();
     processList.addAll(polygonConstraints);
     processList.addAll(linearConstraints);
 
@@ -1861,7 +1832,7 @@ public class SemiVirtualIncrementalTin implements IIncrementalTin {
     isLocked = true;
     lockedDueToConstraints = true;
 
-    IntCollector []icArray = new IntCollector[constraintList.size()];
+    IntCollector[] icArray = new IntCollector[constraintList.size()];
     int k = 0;
     for (IConstraint c : constraintList) {
       c.setConstraintIndex(this, k);
@@ -1877,8 +1848,8 @@ public class SemiVirtualIncrementalTin implements IIncrementalTin {
     // To Investigate:  is one pass truly sufficient to restore conformity?
     if (restoreConformity) {
       for (IQuadEdge e : this.edges()) {
-          SemiVirtualEdge sEdge = (SemiVirtualEdge) e;
-          restoreConformity(sEdge, 1);
+        SemiVirtualEdge sEdge = (SemiVirtualEdge) e;
+        restoreConformity(sEdge, 1);
       }
       isConformant = true;
     }
@@ -1888,7 +1859,7 @@ public class SemiVirtualIncrementalTin implements IIncrementalTin {
     for (int i = 0; i < constraintList.size(); i++) {
       IConstraint c = constraintList.get(i);
       if (c.definesConstrainedRegion()) {
-        floodFillConstrainedRegions(c, icArray[i], visited );
+        floodFillConstrainedRegions(c, icArray[i], visited);
         IQuadEdge e = this.edgePool.getEdgeForIndex(icArray[i].buffer[0]);
         c.setConstraintLinkingEdge(e);
       }
@@ -1906,21 +1877,21 @@ public class SemiVirtualIncrementalTin implements IIncrementalTin {
     return false;
   }
 
-   /**
+  /**
    * Will mark the edge as a constrained edge and will set the
-   * constrained-region flags as necessary.  The constraint index
-   * is set, but is meaningful only for region-interior edges.
-   * In other cases, you may view it as a diagnostic, though its value
-   * is essentially undefined.
+   * constrained-region flags as necessary. The constraint index is set, but is
+   * meaningful only for region-interior edges. In other cases, you may view it
+   * as a diagnostic, though its value is essentially undefined.
+   *
    * @param edge a valid edge
    * @param constraint a valid constraint
-   * @param edgesForConstraint the edges making up a constraint, only set
-   * for region-defining constraints.
+   * @param edgesForConstraint the edges making up a constraint, only set for
+   * region-defining constraints.
    */
   private void setConstrained(
-          SemiVirtualEdge edge,
-          IConstraint constraint,
-          IntCollector edgesForConstraint) {
+    SemiVirtualEdge edge,
+    IConstraint constraint,
+    IntCollector edgesForConstraint) {
     if (constraint.definesConstrainedRegion()) {
       edgesForConstraint.add(edge.getIndex());
       edge.setConstraintBorderIndex(constraint.getConstraintIndex());
@@ -1939,11 +1910,9 @@ public class SemiVirtualIncrementalTin implements IIncrementalTin {
     }
   }
 
-
   private void processConstraint(
     IConstraint constraint,
-    IntCollector intCollector)
-  {
+    IntCollector intCollector) {
     List<Vertex> cvList = new ArrayList<>();
     cvList.addAll(constraint.getVertices());
     if (constraint.isPolygon()) {
@@ -2277,15 +2246,10 @@ public class SemiVirtualIncrementalTin implements IIncrementalTin {
       return;
     }
 
-    boolean constraintSweepRequired = maxLengthOfQueueInFloodFill > 0;
-
     // The maximum depth of recursion is artificially limited
     // to avoid excessive operations. This is a suboptimal solution
     // because it may leave some non-conformant edges in place
-    if (depthOfRecursion > 24) {
-      if (constraintSweepRequired) {
-        sweepForConstraintAssignments(ab);
-      }
+    if (depthOfRecursion > 32) {
       return;
     }
 
@@ -2296,9 +2260,6 @@ public class SemiVirtualIncrementalTin implements IIncrementalTin {
     // to produce a calculated result of a zero or less.
     double h = geoOp.inCircle(a, b, c, d);
     if (h <= thresholds.getDelaunayThreshold()) {
-      if (constraintSweepRequired) {
-        sweepForConstraintAssignments(ab);
-      }
       return;
     }
 
@@ -2343,8 +2304,8 @@ public class SemiVirtualIncrementalTin implements IIncrementalTin {
       md.setForward(db);
       db.setForward(bm);
       bm.setForward(md);
-      restoreConformity(am, depthOfRecursion+1);
-      restoreConformity(mb, depthOfRecursion+1);
+      restoreConformity(am, depthOfRecursion + 1);
+      restoreConformity(mb, depthOfRecursion + 1);
     } else {
       // the edge is not constrained, so perform a flip to restore Delaunay
       ab.setVertices(d, c);
@@ -2356,45 +2317,10 @@ public class SemiVirtualIncrementalTin implements IIncrementalTin {
       db.setForward(bc);
     }
 
-    restoreConformity(bc.getDual(), depthOfRecursion+1);
-    restoreConformity(ca.getDual(), depthOfRecursion+1);
-    restoreConformity(ad.getDual(), depthOfRecursion+1);
-    restoreConformity(db.getDual(), depthOfRecursion+1);
-
-
-    if (constraintSweepRequired) {
-      sweepForConstraintAssignments(ab);
-    }
-
-  }
-
-  private void sweepForConstraintAssignments(IQuadEdge ab) {
-    IConstraint con = getRegionConstraint(ab);
-    int constraintIndex = con == null ? -1 : con.getConstraintIndex();
-
-    for (IQuadEdge e : ab.pinwheel()) {
-      Vertex B = e.getB();
-      if (B == null) {
-        // e is a ghost edge, just skip it
-        continue;
-      }
-      if (con == null) {
-        con = getRegionConstraint(e);
-        constraintIndex = con == null ? -1 : con.getConstraintIndex();
-      }
-      if (e.isConstraintRegionBorder()) {
-        con = getBorderConstraint(e);
-        constraintIndex = con == null ? -1 : con.getConstraintIndex();
-      } else if (con != null && constraintIndex >= 0) {
-        e.setConstraintRegionInteriorIndex(constraintIndex);
-      }
-      if (constraintIndex >= 0) {
-        IQuadEdge f = e.getForward();
-        if (!f.isConstraintRegionBorder()) {
-          f.setConstraintRegionInteriorIndex(constraintIndex);
-        }
-      }
-    }
+    restoreConformity(bc.getDual(), depthOfRecursion + 1);
+    restoreConformity(ca.getDual(), depthOfRecursion + 1);
+    restoreConformity(ad.getDual(), depthOfRecursion + 1);
+    restoreConformity(db.getDual(), depthOfRecursion + 1);
   }
 
   private void removeEdge(SemiVirtualEdge e) {
@@ -2446,9 +2372,9 @@ public class SemiVirtualIncrementalTin implements IIncrementalTin {
   }
 
   /**
-   * Fills a cavity that was created by removing edges from the
-   * TIN. It is assumed that all the edges of the cavity are either
-   * Delaunay or are constrained edge.
+   * Fills a cavity that was created by removing edges from the TIN. It is
+   * assumed that all the edges of the cavity are either Delaunay or are
+   * constrained edge.
    *
    * @param cavityEdge a valid edge.
    */
@@ -2598,13 +2524,14 @@ public class SemiVirtualIncrementalTin implements IIncrementalTin {
   }
 
   /**
-   * Marks all edges inside a constrained region as being members of
-   * that region (transferring the index value of the constraint to
-   * the member edges). The name of this method is based on the idea
-   * that the operation resembles a flood-fill algorithm from computer graphics.
+   * Marks all edges inside a constrained region as being members of that region
+   * (transferring the index value of the constraint to the member edges). The
+   * name of this method is based on the idea that the operation resembles a
+   * flood-fill algorithm from computer graphics.
+   *
    * @param c a constraint defining a region to be flood filled
-   * @param intCollector a collection of the integer index values for
-   * the edges that correspond to the boundary of the constrained region
+   * @param intCollector a collection of the integer index values for the edges
+   * that correspond to the boundary of the constrained region
    */
   private void floodFillConstrainedRegions(
     IConstraint c,
@@ -2614,16 +2541,15 @@ public class SemiVirtualIncrementalTin implements IIncrementalTin {
     for (int i = 0; i < intCollector.n; i++) {
       IQuadEdge e = this.edgePool.getEdgeForIndex(intCollector.buffer[i]);
       if (e.isConstraintRegionBorder()) {
-        floodFillConstrainedRegionsQueue( constraintIndex, visited, e);
+        floodFillConstrainedRegionsQueue(constraintIndex, visited, e);
       }
     }
   }
 
-
   private void floodFillConstrainedRegionsQueue(
-          final int constraintIndex,
-          final BitSet visited,
-          final IQuadEdge firstEdge) {
+    final int constraintIndex,
+    final BitSet visited,
+    final IQuadEdge firstEdge) {
     // While the following logic could be more elegantly coded
     // using recursion, the depth of the recursion could get so deep that
     // it would overflow any reasonably sized stack.  So we use as
@@ -2669,7 +2595,6 @@ public class SemiVirtualIncrementalTin implements IIncrementalTin {
     }
   }
 
-
   @Override
   public List<IConstraint> getConstraints() {
     List<IConstraint> result = new ArrayList<>();
@@ -2677,28 +2602,25 @@ public class SemiVirtualIncrementalTin implements IIncrementalTin {
     return result;
   }
 
-
   @Override
-  public IConstraint getConstraint(int index){
-    if(index<0 || index>=constraintList.size()){
+  public IConstraint getConstraint(int index) {
+    if (index < 0 || index >= constraintList.size()) {
       return null;
     }
     return constraintList.get(index);
   }
 
-
-  IConstraint getBorderConstraint(IQuadEdge edge){
+  IConstraint getBorderConstraint(IQuadEdge edge) {
     int index = edge.getConstraintBorderIndex();
-    if(index<0 || index>=constraintList.size()){
+    if (index < 0 || index >= constraintList.size()) {
       return null;
     }
     return constraintList.get(index);
   }
-
 
   @Override
   public IConstraint getRegionConstraint(IQuadEdge edge) {
-     IQuadEdge e = edge;
+    IQuadEdge e = edge;
     if (e.isConstraintLineMember()) {
       IQuadEdge test = e.getForward();
       if (!test.isConstraintLineMember() && test.isConstraintRegionMember()) {
@@ -2717,7 +2639,7 @@ public class SemiVirtualIncrementalTin implements IIncrementalTin {
       int index = e.getConstraintRegionInteriorIndex();
       // the test for constraintList.size() should be completely
       // unnecessary, but we do it just in case.
-      if (index>=0 && index < constraintList.size()) {
+      if (index >= 0 && index < constraintList.size()) {
         return constraintList.get(index);
       }
     }
@@ -2728,7 +2650,6 @@ public class SemiVirtualIncrementalTin implements IIncrementalTin {
   public IConstraint getLinearConstraint(IQuadEdge edge) {
     return edgePool.getLinearConstraint(edge);
   }
-
 
   @Override
   public int getSyntheticVertexCount() {
@@ -2766,8 +2687,8 @@ public class SemiVirtualIncrementalTin implements IIncrementalTin {
   }
 
   /**
-   * Splits the edge at parameter t measured from A toward B.
-   * t is clamped to (ε, 1-ε) to avoid zero-length subedges.
+   * Splits the edge at parameter t measured from A toward B. t is clamped to
+   * (ε, 1-ε) to avoid zero-length subedges.
    */
   @Override
   public Vertex splitEdge(IQuadEdge eInput, double t, double zSplit, boolean restoreConformity) {
@@ -2775,8 +2696,8 @@ public class SemiVirtualIncrementalTin implements IIncrementalTin {
   }
 
   /**
-   * Splits the edge at parameter t measured from A toward B.
-   * t is clamped to (ε, 1-ε) to avoid zero-length subedges.
+   * Splits the edge at parameter t measured from A toward B. t is clamped to
+   * (ε, 1-ε) to avoid zero-length subedges.
    */
   @Override
   public Vertex splitEdge(IQuadEdge eInput, double t, double zSplit) {
@@ -2831,29 +2752,27 @@ public class SemiVirtualIncrementalTin implements IIncrementalTin {
     };
   }
 
-
   /**
-   * Indicates whether the triangulated mesh conforms to the Delaunay
-   * criterion.  This value is set to true when the triangulated irregular
-   * network (TIN) is successfully bootstrapped.  This value is set
-   * to false when constraints are added to the mesh without
-   * the restore-conformity option being enabled.
-   * @return true if the TIN conforms to the Delaunay criterion;
-   * otherwise, false.
+   * Indicates whether the triangulated mesh conforms to the Delaunay criterion.
+   * This value is set to true when the triangulated irregular network (TIN) is
+   * successfully bootstrapped. This value is set to false when constraints are
+   * added to the mesh without the restore-conformity option being enabled.
+   *
+   * @return true if the TIN conforms to the Delaunay criterion; otherwise,
+   * false.
    */
   @Override
-  public boolean isConformant(){
+  public boolean isConformant() {
     return isConformant;
   }
 
-
   /**
-   * Tests the vertices of the triangle that includes the reference edge to
-   * see if any of them are an exact match for the specified coordinates.
-   * Typically, this method is employed after a search has obtained a
-   * neighboring edge for the coordinates. If one of the vertices is an exact
-   * match, within tolerance, for the specified coordinates, this method will
-   * return the edge that starts with the vertex.
+   * Tests the vertices of the triangle that includes the reference edge to see
+   * if any of them are an exact match for the specified coordinates. Typically,
+   * this method is employed after a search has obtained a neighboring edge for
+   * the coordinates. If one of the vertices is an exact match, within
+   * tolerance, for the specified coordinates, this method will return the edge
+   * that starts with the vertex.
    *
    * @param x the x coordinate of interest
    * @param y the y coordinate of interest
@@ -2882,14 +2801,14 @@ public class SemiVirtualIncrementalTin implements IIncrementalTin {
   }
 
   /**
-   * Performs processing for the public add() methods by adding the vertex to
-   * a fully bootstrapped mesh that includes constraints.
-   * The vertex will be either inserted into the
-   * mesh or the mesh will be extended to include the vertex.
+   * Performs processing for the public add() methods by adding the vertex to a
+   * fully bootstrapped mesh that includes constraints. The vertex will be
+   * either inserted into the mesh or the mesh will be extended to include the
+   * vertex.
    *
    * @param v a valid vertex.
-   * @return true if the vertex was added successfully; otherwise false
-   * (usually in response to redundant vertex specifications).
+   * @return true if the vertex was added successfully; otherwise false (usually
+   * in response to redundant vertex specifications).
    */
   private boolean addPostConstraints(final Vertex v) {
     final double x = v.x;
@@ -2948,14 +2867,12 @@ public class SemiVirtualIncrementalTin implements IIncrementalTin {
     return insertAction(searchEdge, v, eResult.isInterior(), isOnEdge);
   }
 
-
-
   private boolean insertAction(final SemiVirtualEdge insertEdge, final Vertex v, boolean isInterior, boolean isOnEdge) {
 
     // The inner-process inserts the vertex and returns a list of any edges
     // that were constrained.
-    List<SemiVirtualEdge> conEdges =
-      insertActionInnerProcess(insertEdge, v, isInterior, isOnEdge);
+    List<SemiVirtualEdge> conEdges
+      = insertActionInnerProcess(insertEdge, v, isInterior, isOnEdge);
     if (!isConformant || conEdges.isEmpty()) {
       // we're done.
       return true;
@@ -2981,7 +2898,6 @@ public class SemiVirtualIncrementalTin implements IIncrementalTin {
         return test;
       }
     });
-
 
     queue.addAll(conEdges);
 
@@ -3035,7 +2951,7 @@ public class SemiVirtualIncrementalTin implements IIncrementalTin {
     SemiVirtualEdge ba = ab.getDual();
     SemiVirtualEdge bc = ab.getForward();
     SemiVirtualEdge ad = ba.getForward();
-    if(bc==null){
+    if (bc == null) {
       // the edge ab was deallocated and is in a "free" state
       return false;
     }
@@ -3058,9 +2974,6 @@ public class SemiVirtualIncrementalTin implements IIncrementalTin {
     double h = geoOp.inCircle(a, b, c, d);
     return h > thresholds.getDelaunayThreshold();
   }
-
-
-
 
   private List<SemiVirtualEdge> insertActionInnerProcess(final SemiVirtualEdge insertEdge, final Vertex v, boolean isInterior, boolean isOnEdge) {
     final double x = v.x;
@@ -3100,9 +3013,7 @@ public class SemiVirtualIncrementalTin implements IIncrementalTin {
       splitConstraintEnd = searchEdge.getB();
     }
 
-
     Vertex anchor = searchEdge.getA();
-
 
     final SemiVirtualEdge pStart;
     // construct reusable container objects
@@ -3147,7 +3058,6 @@ public class SemiVirtualIncrementalTin implements IIncrementalTin {
       n2.setForward(n0);
       c.loadFromEdge(searchEdge);
     }
-
 
     while (true) {
       n0.loadDualFromEdge(c);   //n0 = c.getDual();
@@ -3275,12 +3185,19 @@ public class SemiVirtualIncrementalTin implements IIncrementalTin {
       }
     }
 
-    // This logic is similar to the logic in sweepForConstraintAssignments()
-    // except that it does not need to look at the forward references
-    // to the edges in the pinwheel operation.  They would either be undisturbed
-    // or would have been updated by restoreConformity() above.
+    // This logic replaces the former sweepForConstraintAssignments()
     if (vertexIsInConstraintRegion) {
       int constraintIndex = vertexConstraintIndex;
+      if (searchEdge.isConstraintRegionBorder()) {
+        // The vertex constraint index may be set to the value of the
+        // the right-hand side of pStart, we need the constraint for the left.
+        IConstraint con = getBorderConstraint(searchEdge);
+        constraintIndex = con == null ? -1 : con.getConstraintIndex();
+      }
+      if (constraintIndex >= 0 && !searchEdge.isConstrained() && !searchEdge.isConstraintRegionMember()) {
+        searchEdge.setConstraintRegionInteriorIndex(constraintIndex);
+      }
+
       for (IQuadEdge q : searchEdge.pinwheel()) {
         if (q.isConstraintRegionBorder()) {
           IConstraint con = getBorderConstraint(q);
