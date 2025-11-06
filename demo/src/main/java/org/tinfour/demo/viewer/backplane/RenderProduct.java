@@ -40,22 +40,27 @@ public class RenderProduct {
     public MvComposite composite;
     public AffineTransform compatibilityTransform;
     public BufferedImage image;
-  
+
 
     RenderProduct(
       RenderProductType layerType,
-      MvComposite composite, 
+      MvComposite composite,
       BufferedImage image)
     {
       this.layerType = layerType;
       this.composite = composite;
       Shape clipMask = composite.getClipMask();
-      if(clipMask==null || layerType==RenderProductType.Constraints){
+      if (image == null) {
+        this.image = new BufferedImage(
+          composite.getWidth(),
+          composite.getHeight(),
+          BufferedImage.TYPE_INT_ARGB);
+      }else if(clipMask==null || layerType==RenderProductType.Constraints){
         this.image = image;
       }else{
         BufferedImage b = new BufferedImage(
-                image.getWidth(), 
-                image.getHeight(), 
+                composite.getWidth(),
+                composite.getHeight(),
                 BufferedImage.TYPE_INT_ARGB);
         Graphics2D g2d = b.createGraphics();
         g2d.setClip(clipMask);
