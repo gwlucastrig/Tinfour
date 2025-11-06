@@ -55,6 +55,13 @@ public class VisvalingamLineSimplification {
   private long nOperations;
 
   /**
+   * Standard constructor.
+   */
+  public VisvalingamLineSimplification() {
+    // no additional code required
+  }
+
+  /**
    * Simplify the geometry of the input line or polygon by progressively
    * removing points related to small-area features. The algorithm
    * repeatedly inspects a chain of points to identify the set of three sequential
@@ -177,7 +184,12 @@ public class VisvalingamLineSimplification {
     return n;
   }
 
+  /**
+   * Print summary information about the line simplification.
+   * @param ps a valid instance.
+   */
   public void report(PrintStream ps){
-    ps.format("Visvalingam nFeatures=%d, nPointsInput=%d, nRemoved=%d%n", nOperations, nProcessed, nRemoved);
+    ps.format("Visvalingam nFeatures=%d, nPointsInput=%d, nRemoved=%d%n",
+      nOperations, nProcessed, nRemoved);
   }
 }

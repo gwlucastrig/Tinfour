@@ -57,15 +57,18 @@ public interface IDelaunayRefiner {
 	 * performing local retriangulation or edge flips). This method mutates the
 	 * underlying triangulation in-place.
 	 * </p>
+	 * <p>
+	 * <strong>Implementation Note:</strong>
+	 * Implementations are encouraged to make this method behave
+	 * predictably when invoked repeatedly: calling it repeatedly on an
+	 * unchanged triangulation should either return the same inserted
+	 * vertex until the local repair completes, or return {@code null}
+	 * once no further single-step refinements are required.
+	 * </p>
 	 * @return the {@code Vertex} that was inserted as part of this refinement step,
 	 *         or {@code null} if no refinement was necessary (the triangulation
 	 *         already meets the quality criteria or no applicable operation was
 	 *         available).
-	 * @implNote Implementations are encouraged to make this method behave
-	 *           predictably when invoked repeatedly: calling it repeatedly on an
-	 *           unchanged triangulation should either return the same inserted
-	 *           vertex until the local repair completes, or return {@code null}
-	 *           once no further single-step refinements are required.
 	 * @see #refine()
 	 */
 	Vertex refineOnce();

@@ -54,6 +54,14 @@ public class BasicTabulator {
   int nD; // number of tabulated values
   int nNaN; // number of NaN's or infinite inputs
 
+
+  /**
+   * Standard constructor
+   */
+  public BasicTabulator() {
+    // no additional code required
+  }
+
   /**
    * Adds the specified value to the running tallies.  Internally,
    * both the signed and absolute value equivalents of the input are tracked.
@@ -210,6 +218,10 @@ public class BasicTabulator {
     return nNaN;
   }
 
+  /**
+   * Print a header for the summary of tabulator output.
+   * @param ps a valid instance.
+   */
   public static void printCaption(PrintStream ps){
     ps.println("                                 mean          sigma      min       max"
     + "       mean (abs)    sigma (abs)    min       max");

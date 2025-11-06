@@ -56,6 +56,13 @@ public class HilbertSort {
 
   double xMin, xMax, yMin, yMax;
 
+  /**
+   * Standard constructor
+   */
+  public HilbertSort(){
+    // no additional code required
+  }
+
   private int xy2Hilbert(final int px, final int py, final int n) {
     int i, xi, yi;
     int s, temp;

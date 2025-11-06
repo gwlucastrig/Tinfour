@@ -44,6 +44,12 @@ public class QuadEdgePinwheel implements Iterable<IQuadEdge>, Iterator<IQuadEdge
   IQuadEdge p;
   boolean hasNext;
 
+  /**
+   * Constructs a pinwheel iterator based on the specified edge.
+   * The first "next" edge produced by the iterator is the edge immediately
+   * counterclockwise from edge e0.
+   * @param e0 the producing edge for the iterator.
+   */
   public QuadEdgePinwheel(IQuadEdge e0) {
     this.e0 = e0;
     p = e0;

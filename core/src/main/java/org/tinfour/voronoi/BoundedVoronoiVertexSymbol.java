@@ -49,10 +49,17 @@ public class BoundedVoronoiVertexSymbol implements IBoundedVoronoiVertexSymbol {
   Color color;
   double vertexSymbolSize;
 
+  /**
+   * Standard constructor
+   */
   public BoundedVoronoiVertexSymbol() {
     vertexSymbolSize = 7;
   }
 
+  /**
+   * Constructs an instance with specified vertex symbol size.
+   * @param vertexSymbolSize a symbol size in pixels.
+   */
   public BoundedVoronoiVertexSymbol(double vertexSymbolSize) {
     if (vertexSymbolSize <= 0) {
       throw new IllegalArgumentException("Negative and zero sizes not supported");

@@ -37,7 +37,8 @@ import java.util.List;
 /**
  * Defines the primary methods used by an incremental TIN
  * implementation.
- * <h1>Implementations</h1>
+ * <p>
+ * <strong>Implementations</strong>
  * Currently, the Tinfour software library includes two implementations
  * of this interface: IncrementalTin in the package org.tinfour.standard,
  * and SemiVirtualIncrementalTin in the package org.tinfour.semivirtual.
@@ -61,13 +62,16 @@ import java.util.List;
  * The standard implementation classes uses about 7.005 objects per vertex
  * (including vertices, edges, and collections for management), while the
  * semi-virtual implementation uses about persistent 1.012 objects per vertex.
- * <h2>Usage Notes</h2>
- * <h3>Purpose of this Interface</h3>
+ * <p>
+ * <strong>Usage Notes</strong>
+ * <p>
+ * <strong>Purpose of this Interface</strong>
  * The intended purpose of this interface is to allow application
  * code to use the two classes interchangeably. Applications may select
  * which implementation is constructed at run-time based on the size
  * of their input data sets.
- * <h3>Multi-Threading and Concurrency</h3>
+ * <p>
+ * <strong>Multi-Threading and Concurrency</strong>
  * The process of creating a Delaunay Triangulation (TIN) using an
  * incremental-insertion technique is inherently serial. Therefore, application
  * code that creates a TIN should not attempt to access the "add" methods
@@ -77,7 +81,8 @@ import java.util.List;
  * Multi-threaded access is particularly useful when performing
  * surface-interpolation operations to construct raster (grid) representations
  * of data.
- * <h3>Constraints and constrained edges</h3>
+ * <p>
+ * <strong>Constraints and constrained edges</strong>
  * Normally, Tinfour is free to choose the geometry of the edges in a triangular
  * mesh based on the Delaunay criterion. But some applications require that
  * certain edges be preserved as specified. Therefore, Tinfour supports
@@ -364,7 +369,8 @@ public interface IIncrementalTin {
    * TIN. If the TIN is not yet bootstrapped, the vertices will be retained in
    * a simple list until enough vertices are received in order to bootstrap
    * the TIN.
-   * <h1>Performance Consideration Related to List</h1>
+   * <p>
+   * <strong>Performance Consideration Related to List</strong>
    *
    * In the bootstrap phase, three points are chosen at random from the vertex
    * list to create the initial triangle for insertion. In the event that the
@@ -377,7 +383,8 @@ public interface IIncrementalTin {
    * established, the list will be traversed sequentially to build the TIN and
    * random access considerations will no longer apply.
    *
-   * <h1>Performance Consideration Related to Location of Vertices</h1>
+   * <p>
+   * <strong>Performance Consideration Related to Location of Vertices</strong>
    *
    * The performance of the insertion process is sensitive to the
    * relative location of vertices.  An input data set based on

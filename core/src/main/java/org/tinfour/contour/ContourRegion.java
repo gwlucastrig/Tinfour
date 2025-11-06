@@ -503,16 +503,24 @@ public class ContourRegion {
   /**
    * Gets an application-defined index value to be used by the calling
    * implementation to associate supplemental data with the region.
-   * @return an arbitaru, application-specific index value.
+   * @return an arbitrary, application-specific index value.
    */
   public int getApplicationIndex(){
     return this.applicationIndex;
   }
 
+  /**
+   * Gets an enumeration value indicating the region type.
+   * @return a valid instance.
+   */
   public ContourRegionType getRegionType(){
     return contourRegionType;
   }
 
+  /**
+   * Indicates that the contour region encloses internal, <i>child</i> regions.
+   * @return true if the region enclosed child regions; otherwise, false.
+   */
   public boolean hasChildren(){
     return !children.isEmpty();
   }

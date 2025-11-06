@@ -8,7 +8,8 @@ package org.tinfour.voronoi;
 import java.awt.Graphics;
 
 /**
- *
+ * Defines methods for rendering vertex symbols when drawing a bounded
+ * Voronoi diagram.
  */
 public interface IBoundedVoronoiVertexSymbol {
 
@@ -20,5 +21,5 @@ public interface IBoundedVoronoiVertexSymbol {
    * @param y the user (pixel) y coordinate of the vertex
    */
   void draw(Graphics g, double x, double y);
-  
+
 }

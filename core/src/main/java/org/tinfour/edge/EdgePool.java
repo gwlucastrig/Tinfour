@@ -203,6 +203,12 @@ public class EdgePool implements Iterable<IQuadEdge> {
         }
     }
 
+    /**
+     * Allocates an edge with the specified vertices.
+     * @param a a valid instance.
+     * @param b a valid instance or a null in the event of a ghost edge.
+     * @return a valid edge instance.
+     */
     public QuadEdge allocateEdge(Vertex a, Vertex b) {
         Page page = nextAvailablePage;
         QuadEdge e = page.allocateEdge();
@@ -295,6 +301,10 @@ public class EdgePool implements Iterable<IQuadEdge> {
         return null;
     }
 
+    /**
+     * Gets a ghost edge to be used as a starting edge in a search operation
+     * @return a valid edge.
+     */
     public QuadEdge getStartingGhostEdge() {
         for (Page p : pages) {
             if (p.nAllocated > 0) {
@@ -354,6 +364,12 @@ public class EdgePool implements Iterable<IQuadEdge> {
         return eList;
     }
 
+    /**
+     * Gets the number of edges currently allocated by the edge pool.
+     * Free edges (those previously allocated and then freed)
+     * are not included in the count.
+     * @return a positive integer value, potentially zero.
+     */
     public int getEdgeCount() {
         return nAllocated;
     }

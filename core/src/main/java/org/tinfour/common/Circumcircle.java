@@ -55,6 +55,13 @@ public class Circumcircle {
   private static final double MIN_TRIG_AREA = 1.0e-20;
 
   /**
+   * Standard constructor.
+   */
+  public Circumcircle(){
+    // no additional code required
+  }
+
+  /**
    * Gets the square of the radius of the circumcircle.
    *
    * @return for a non-degenerate triangle, a positive floating point value

@@ -131,6 +131,12 @@ public interface IConstraint extends IPolyline {
    */
   int getConstraintIndex();
 
+  /**
+   * Gets a reference to an arbitrarily selected edge that was produced
+   * when the constraint was added to a TIN.
+   * @return if the constraint is tied to a TIN, a valid edge; otherwise,
+   * a null.
+   */
   IQuadEdge getConstraintLinkingEdge();
 
   /**

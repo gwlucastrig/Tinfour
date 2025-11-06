@@ -45,21 +45,58 @@ import java.util.List;
 public abstract class PolyLineConstraintAdapter
         implements IConstraint, Iterable<Vertex> {
 
+  /**
+   * The list of vertices that define the constraint geometry
+   */
   protected final List<Vertex> list;
+
   private final Rectangle2D bounds = new Rectangle2D.Double();
   private double x = Double.NaN;
   private double y = Double.NaN;
+
+  /**
+   * Indicates an object registered to the constraint for use by application code.
+   */
   protected Object applicationData;
+  
+  /**
+   * An integer index for the constraint
+   */
   protected int constraintIndex;
+
+  /**
+   * Defines an edge that links the constraint to the Delaunay triangulation
+   * (may be null).
+   */
   protected IQuadEdge constraintLinkingEdge;
+  /**
+   * The Delaunay triangulation associated with the constraint (if any)
+   */
   protected IIncrementalTin maintainingTin;
+
+  /**
+   * Indicates that the constraint is complete (application-dependent,
+   * for example, if the constraint defines a closed polygon,
+   * this value would indicate that the area has been computed).
+   */
   protected boolean isComplete;
+
+  /**
+   * Indicates the overall length of the polyline.
+   */
   protected double length;
 
+  /**
+   * Standard constructor
+   */
   PolyLineConstraintAdapter() {
     list = new ArrayList<>();
   }
 
+  /**
+   * Constructs a polyline constraint with the specified vertices.
+   * @param vList a non-empty list of vertices.
+   */
   PolyLineConstraintAdapter(List<Vertex> vList) {
     list = new ArrayList<>(vList.size() + 1);
     for (Vertex v : vList) {

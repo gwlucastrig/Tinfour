@@ -40,7 +40,9 @@ public interface IInterpolatorOverTin extends IProcessUsingTin {
 
      /**
      * Perform interpolation using the specified valuator.
-     * <h1>Important Synchronization Issue</h1>
+     * <p>
+     * <strong>Important Synchronization Issue</strong>
+     * <p>
      * To improve performance, classes that implement this interface
      * frequently maintain state data about the TIN that can be reused
      * for query to query.  They also avoid run-time overhead by not

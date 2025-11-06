@@ -21,7 +21,7 @@
  * Revision History:
  * Date     Name         Description
  * ------   ---------    -------------------------------------------------
- * 01/2019  G. Lucas     Created  
+ * 01/2019  G. Lucas     Created
  *
  * Notes:
  *
@@ -37,6 +37,13 @@ package org.tinfour.utils.loaders;
  */
 public class CoordinatePair {
 
+  /**
+   * Standard constructor.
+   */
+  public CoordinatePair(){
+    // no additional code required
+  }
+  
   /**
    * The x horizontal coordinate for the pair
    */

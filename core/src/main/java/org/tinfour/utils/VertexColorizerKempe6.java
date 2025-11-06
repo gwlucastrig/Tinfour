@@ -21,7 +21,7 @@
  * Revision History:
  * Date Name Description
  * ------   --------- -------------------------------------------------
- * 08/2018  G. Lucas  Initial implementation 
+ * 08/2018  G. Lucas  Initial implementation
  *
  * Notes:
  *
@@ -49,11 +49,18 @@ import org.tinfour.common.Vertex;
  * <p>
  * A 5-color algorithm for color-coding vertices also exists and has
  * similar time-complexity as this implementation. It is more complicated
- * than this routine, but not unreasonably so. Therefore, the Tinfour 
+ * than this routine, but not unreasonably so. Therefore, the Tinfour
  * project may consider the 5-color algorithm for future implementations.
  */
 public class VertexColorizerKempe6 {
 
+  /**
+   * Standard constructor.
+   */
+  public VertexColorizerKempe6(){
+    // no additional code required
+  }
+  
   /**
    * Assign color index values to vertices.
    *
@@ -71,7 +78,7 @@ public class VertexColorizerKempe6 {
 
     // this implementation uses the vertex index member element to
     // keep track of neighbor counts.  Since we do not wish permanently
-    // modify the input application's vertices, we will restore those 
+    // modify the input application's vertices, we will restore those
     // indicates at the end.
     List<Vertex> masterList = tin.getVertices();
     int[] masterIndex = new int[masterList.size()];
@@ -178,7 +185,7 @@ public class VertexColorizerKempe6 {
       throw new IllegalArgumentException(
               "Unable to process input, TIN is not bootstrapped");
     }
-    
+
     boolean visited[] = new boolean[tin.getMaximumEdgeAllocationIndex() + 1];
     for (IQuadEdge edge : tin.edges()) {
       if (!visited[edge.getIndex()]) {

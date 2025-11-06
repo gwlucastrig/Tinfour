@@ -147,6 +147,16 @@ public class SemiVirtualStochasticLawsonsWalk {
     halfPlaneThresholdNeg = -thresholds.getHalfPlaneThreshold();
   }
 
+  /**
+   * Find an edge from the triangle enclosing the specified coordinates
+   * @param startingEdge a valid edge from the semivirtual incremental TIN
+   * to be used as a starting position for the search.
+   * @param x a valid Cartesian coordinate
+   * @param y a valid Cartesian coordinate
+   * @return  an edge (not necessarily the closest one) of a triangle
+   * that contains the specified coordinates, or the nearest exterior-side
+   * edge if the point lies outside the convex hull of the TIN.
+   */
   public SemiVirtualEdge findAnEdgeFromEnclosingTriangle(
     final SemiVirtualEdge startingEdge,
     final double x,

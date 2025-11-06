@@ -47,6 +47,11 @@ public class ContourIntegrityCheck {
   private final ContourBuilderForTin builder;
   String message = "No inspection was performed";
 
+  /**
+   * Constructs an instance of the integrity checker for the specified
+   * builder instance.
+   * @param builder a fully populated builder instance.
+   */
   public ContourIntegrityCheck(ContourBuilderForTin builder){
     if(builder==null){
       throw new IllegalArgumentException(

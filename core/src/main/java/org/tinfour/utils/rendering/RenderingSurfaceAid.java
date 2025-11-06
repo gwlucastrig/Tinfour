@@ -215,12 +215,21 @@ public class RenderingSurfaceAid {
     return rta.getPixelsPerUnit();
   }
 
+  /**
+   * Fills the overall image with the specified color
+   * @param c a valid instance.
+   */
   public void fillBackground(Color c){
     g2d.setColor(c);
     g2d.fillRect(0, 0, width, height);
   }
 
 
+  /**
+   * Draws a 1-pixel rectangular frame around the outer boundaries of the
+   * rendering surface in the specified color.
+   * @param c a valid instance.
+   */
   public void drawFrame(Color c){
     g2d.setStroke(new BasicStroke(1.0f));
     g2d.setColor(c);

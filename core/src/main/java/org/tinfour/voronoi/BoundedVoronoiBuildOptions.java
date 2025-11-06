@@ -21,7 +21,7 @@
  * Revision History:
  * Date Name Description
  * ------   --------- -------------------------------------------------
- * 08/2018  G. Lucas  Initial implementation 
+ * 08/2018  G. Lucas  Initial implementation
  *
  * Notes:
  *
@@ -32,18 +32,25 @@ package org.tinfour.voronoi;
 import java.awt.geom.Rectangle2D;
 
 /**
- * Specifies options for building a bounded Voronoi Diagram 
+ * Specifies options for building a bounded Voronoi Diagram
  */
 public class BoundedVoronoiBuildOptions {
-  
 
-  protected Rectangle2D bounds;
-  
-  protected boolean enableAutomaticColorAssignment;
- 
-  
+
+  Rectangle2D bounds;
+
+  boolean enableAutomaticColorAssignment;
+
   /**
-   * Sets the bounds for the Bounded Voronoi Diagram.  The domain of a true 
+   * Standard constructor.
+   */
+  public BoundedVoronoiBuildOptions(){
+    // no additional code required
+  }
+
+
+  /**
+   * Sets the bounds for the Bounded Voronoi Diagram.  The domain of a true
    * Voronoi Diagram is the entire coordinate plane. For practical purposes
    * the bounded Voronoi Diagram class limits the bounds to a finite
    * domain.  By default, the constructor will create bounds that are
@@ -58,7 +65,7 @@ public class BoundedVoronoiBuildOptions {
   public void setBounds(Rectangle2D bounds){
     this.bounds = bounds;
   }
-  
+
   /**
    * Enable the automatic assignment of color values to input vertices.
    * @param status true if automatic coloring is enabled; otherwise false.

@@ -104,7 +104,8 @@ import org.tinfour.edge.QuadEdgeConstants;
  * convex hull of an existing TIN, it is inserted. If the vertex lies to the
  * exterior, the bounds of the TIN is extended to include it. Delaunay
  * optimality is maintained at each step.
- * <h1>Memory use and performance</h1>
+ * <p>
+ * <strong>Memory use and performance</strong>
  * <p>
  * This class was designed to handle cases where the input set includes a large
  * number of vertices. In particular, terrain elevation data sets collected
@@ -119,7 +120,8 @@ import org.tinfour.edge.QuadEdgeConstants;
  * routinely delivered a processing rate of 1.1 million vertices per second.
  * Time-complexity for samples smaller than 10 million was nearly linear. Memory
  * use averaged 244 bytes per vertex.
- * <h2>Memory Use</h2>
+ * <p>
+ * <strong>Memory Use</strong>
  * <p>
  * About a third of the memory use by this class when running under Hotspot is
  * due to Java object-related overhead rather than actual data. Software
@@ -133,8 +135,10 @@ import org.tinfour.edge.QuadEdgeConstants;
  * systems and Java Virtual Machines (JVMs), the Hotspot JVM for Windows uses 12
  * bytes per object. Thus for each vertex, it requires (1+3*2)x12 = 84 bytes of
  * overhead.
- * <h2>Performance</h2>
- * <h3>Managing the performance cost of object construction</h3>
+ * <p>
+ * <strong>Performance</strong>
+ * <p>
+ * <strong>Managing the performance cost of object construction</strong>
  * Testing indicates that the most time-consuming part of the TIN construction
  * operation is the construction of Java objects. As noted above, this class
  * requires 6 edge-related objects per vertex. Although this overhead is
@@ -146,7 +150,8 @@ import org.tinfour.edge.QuadEdgeConstants;
  * amortized over the entire data set, this reducing the processing time for a
  * group of multiple input sets. Applications that do so should be able to
  * improve on the run-time performance values quoted above.
- * <h3>Input geometry</h3>
+ * <p>
+ * <strong>Input geometry</strong>
  * The worst case vertex geometry for TIN construction is a data set in which a
  * large number of points are collinear and do not form triangles readily.
  * Unfortunately, that is exactly the geometry of one of the most obvious
@@ -161,13 +166,15 @@ import org.tinfour.edge.QuadEdgeConstants;
  * the initial add routine, the bootstrap process attempts pick the largest
  * starting triangle that it can without excessive processing. Doing so improves
  * performance and stability of the build process.
- * <h3>Storing the same vertex more than once</h3>
+ * <p>
+ * <strong>Storing the same vertex more than once</strong>
  * The add() methods detect when the same vertex object is inserted more than
  * once and ignore redundant inputs. For distinct vertex objects at the same or
  * nearly same coordinates, this class maintains a "merged group" of vertices.
  * Rules for disambiguating the values of a merged group my be specified using a
  * call to the setResolutionRuleForMergedVertices() method.
- * <h3>Sequential spatial autocorrelation</h3>
+ * <p>
+ * <strong>Sequential spatial autocorrelation</strong>
  * <p>
  * Inserting a vertex into a TIN depends on identifying the triangle that
  * contains an insertion vertex (if any). This class uses the Stochastic
@@ -189,14 +196,16 @@ import org.tinfour.edge.QuadEdgeConstants;
  * completion" indicates how many comparisons were needed to locate vertices. If
  * this number is larger than 7 or 8, it may be useful to try using the
  * HilbertSort and see if it improves processing times.
- * <h3>Cleaning up when finished</h3>
+ * <p>
+ * <strong>Cleaning up when finished</strong>
  * <p>
  * Because of the complex relationships between objects in a TIN, Java garbage
  * collection may require an above-average number of passes to clean up memory
  * when an instance of this class goes out-of-scope. The dispose() method can be
  * used to expedite garbage collection. Once the dispose() method is called on a
  * TIN, it cannot be reused. Do not confuse dispose() with clear().
- * <h3>Running nude</h3>
+ * <p>
+ * <strong>Running nude</strong>
  * <p>
  * Because of the unusually demanding performance considerations related to the
  * use of this class, object instances are frequently reused and, thus, are
@@ -217,7 +226,8 @@ import org.tinfour.edge.QuadEdgeConstants;
  * have to be discarded (and garbage collected) before the entire vertex set was
  * processed. Doing so would substantially degrade the performance of this
  * class.
- * <h3>Multi-Threading and Concurrency</h3>
+ * <p>
+ * <strong>Multi-Threading and Concurrency</strong>
  * The process of creating a Delaunay Triangulation (TIN) using an
  * incremental-insertion technique is inherently serial. Therefore, application
  * code that creates a TIN should not attempt to access the "add" methods for
@@ -226,7 +236,8 @@ import org.tinfour.edge.QuadEdgeConstants;
  * Multi-threaded access is particularly useful when performing
  * surface-interpolation operations to construct raster (grid) representations
  * of data.
- * <h1>Methods and References</h1>
+ * <p>
+ * <strong>Methods and References</strong>
  * <p>
  * A good review of point location using a stochastic Lawson's walk is provided
  * by <cite>Soukal, R.; Ma&#769;lkova&#769;, Kolingerova&#769; (2012) "Walking
@@ -589,7 +600,8 @@ public class IncrementalTin implements IIncrementalTin {
    * TIN. If the TIN is not yet bootstrapped, the vertices will be retained in a
    * simple list until enough vertices are received in order to bootstrap the
    * TIN.
-   * <h1>Performance Consideration Related to List</h1>
+   * <p>
+   * <strong>Performance Consideration Related to List</strong>
    * <p>
    * In the bootstrap phase, three points are chosen at random from the vertex
    * list to create the initial triangle for insertion. The initialization will
@@ -606,7 +618,8 @@ public class IncrementalTin implements IIncrementalTin {
    * traversed sequentially to build the TIN and random access considerations
    * will no longer apply.
    *
-   * <h1>Performance Consideration Related to Location of Vertices</h1>
+   * <p>
+   * <strong>Performance Consideration Related to Location of Vertices</strong>
    *
    * The performance of the insertion process is sensitive to the relative
    * location of vertices. An input data set based on

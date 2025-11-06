@@ -62,8 +62,9 @@ public class TriangularFacetSpecialInterpolator implements IInterpolatorOverTin 
 	 * <p>
 	 * This class uses logic similar to the TriangularFacetInterpolator, but
 	 * clips input coordinates to the domain of the Delaunay triangulation.
-	 *
-	 * <h1>Important Synchronization Issue</h1>
+	 * <p>
+	 * <strong>Important Synchronization Issue</strong>
+   * <p>
 	 * To improve performance, the classes in this package frequently maintain
 	 * state-data about the TIN that can be reused for query to query. They also
 	 * avoid run-time overhead by not implementing any kind of Java

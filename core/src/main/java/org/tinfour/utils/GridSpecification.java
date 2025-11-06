@@ -38,7 +38,7 @@ import java.io.IOException;
 import java.io.PrintStream;
 
 /**
- * Provides metadata for describing a grid and mapping Cartesian coordinates 
+ * Provides metadata for describing a grid and mapping Cartesian coordinates
  * to and from grid coordinates. Also provides convenience routines for writing
  * data to Esri's ASCII raster format (&#46;asc files).
  */
@@ -103,7 +103,7 @@ public class GridSpecification {
    * than when the application specifies a CenterOfCell.    *
    * @param cellPosition specifies the orientation of grid cells relative
    * to the origin; the origin may be at the center or lower-left corner
-   * of a grid cell. 
+   * of a grid cell.
    * @param cellSize the dimension of the grid cell in the same coordinate
    * system as the bounds
    * @param xmin the minimum x coordinate for the area of interest
@@ -148,7 +148,7 @@ public class GridSpecification {
     }
     nRows = nR;
     nCols = nC;
-    
+
     nCells = nRows * nCols;
     if (cellPosition == CellPosition.CornerOfCell) {
       xLowerLeft = j0 * cellSize;
@@ -161,13 +161,13 @@ public class GridSpecification {
     xUpperRight = xLowerLeft+(nCols-1)*cellSize;
     yUpperRight = yLowerLeft+(nRows-1)*cellSize;
 
- 
+
   }
 
   /**
    * Maps the specified row and column values to the Cartesian coordinates in
    * the system defined by the grid. The result is stored in an instance of
-   * Point2D. 
+   * Point2D.
    *
    * @param row the specified row, numbered from zero, ordered top to bottom
    * @param col the specified column, numbered from zero, ordered left to right
@@ -195,7 +195,7 @@ public class GridSpecification {
     c[offset + 1] = (x - xLowerLeft) / cellSize;
   }
 
- 
+
 
   /**
    * Writes a two dimensional array of values to a file in a form compatible
@@ -269,66 +269,75 @@ public class GridSpecification {
   }
 
   /**
-   * @return the cellPosition
+   * Get an enumerated value indicating the cellPosition
+   * @return a valid instance
    */
   public CellPosition getCellPosition() {
     return cellPosition;
   }
 
   /**
-   * @return the cellSize
+   *Gets the cellSize
+   * @return a valid, finite floating-point value.
    */
   public double getCellSize() {
     return cellSize;
   }
 
   /**
-   * @return the x coordinate of the lower-left bounds of the grid
+   * Gets the x coordinate of the lower-left bounds of the grid
+   * @return a valid, finite floating-point value.
    */
   public double getLowerLeftX() {
     return xLowerLeft;
   }
 
   /**
-   * @return the y coordinate of the lower-left bounds of the grid
+   * Gets the y coordinate of the lower-left bounds of the grid
+   * @return a valid, finite floating-point value.
    */
   public double getLowerLeftY() {
     return yLowerLeft;
   }
 
   /**
-   * @return the x coordinate of the upper-right bounds of the grid
+   * Gets the x coordinate of the upper-right bounds of the grid.
+   *  @return a valid, finite floating-point value.
    */
   public double getUpperRightX() {
     return xUpperRight;
   }
 
   /**
-   * @return the y coordinate of the upper-right bounds of the grid
+   * Gets the y coordinate of the upper-right bounds of the grid
+   * @return a valid, finite floating-point value
    */
   public double getUpperRightY() {
     return yUpperRight;
   }
 
   /**
-   * @return the number of rows in the grid
+   * Gets the number of rows in the grid
+   *  @return a positive number greater than zero.
    */
   public int getRowCount() {
     return nRows;
   }
 
   /**
-   * @return the number of Columns in the grid.
+   * Gets  the number of Columns in the grid.
+   * @return a positive number greater than zero.
    */
   public int getColumnCount() {
     return nCols;
   }
 
   /**
-   * @return the number of cells in the grid.
+   * Gets the number of cells in the grid/
+   * @return a positive number greater than zero.
    */
   public int getCellCount() {
     return nCells;
   }
- 
+
 }

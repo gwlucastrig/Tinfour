@@ -26,7 +26,7 @@
  *
  * -----------------------------------------------------------------------
  */
- 
+
 
 package org.tinfour.interpolation;
 
@@ -37,9 +37,16 @@ import org.tinfour.common.Vertex;
  */
 public class VertexValuatorDefault implements IVertexValuator {
 
+  /**
+   * Standard constructor.
+   */
+  public VertexValuatorDefault() {
+    // no additional code required
+  }
+
     @Override
     public double value(Vertex v) {
        return v.getZ();
     }
-    
+
 }

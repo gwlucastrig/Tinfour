@@ -170,7 +170,7 @@ public class ContourBuilderForTin {
    * the debugging and diagnostics. This representation is slightly redundant,
    * but the added overhead is less important that creating manageable code.
    */
-  private List<PerimeterLink> perimeterList = new ArrayList<PerimeterLink>();
+  private List<PerimeterLink> perimeterList = new ArrayList<>();
 
   /**
    * Creates a set of contours at the specified vertical coordinates from the

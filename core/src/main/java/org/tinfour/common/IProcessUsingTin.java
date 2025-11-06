@@ -34,7 +34,8 @@ package org.tinfour.common;
 
 /**
  * An interface for classes that perform processing on a TIN.
- * <h1>Support for Parallel Processing</h1>
+ * <p>
+ * <strong>Support for Parallel Processing</strong>
  * The design of use of this interface is intended to support cases
  * where multiple instances of a processing class may run in parallel
  * (in order to expedite completion).  For performance reasons very few
@@ -42,7 +43,8 @@ package org.tinfour.common;
  * Therefore, parallel processing requires that the TIN be accessed on
  * a read-only basis and not be modified by any other thread while the
  * processing methods are running.
- * <p>A class implementing this interface <strong>must not modify the
+ * <p>
+ * A class implementing this interface <strong>must not modify the
  * TIN in any way</strong>.
  */
 public interface IProcessUsingTin {

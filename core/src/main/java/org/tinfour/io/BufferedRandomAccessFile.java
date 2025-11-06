@@ -30,7 +30,7 @@
  * Revision History:
  * Date     Name         Description
  * ------   ---------    -------------------------------------------------
- * 10/2019  G. Lucas     Created  
+ * 10/2019  G. Lucas     Created
  *
  * Notes:
  *
@@ -174,13 +174,13 @@ public class BufferedRandomAccessFile
   private void prepRead(int nBytesToRead) throws IOException {
     int nBytes = nBytesToRead;
 
-    // Development note: 
+    // Development note:
     // For this to work, it is imperative that when writeDataIsInBuffer
     // is true, readDataInBuffer must be false.   Also, if the file has
     // been closed, both flags must be false.
     assert !readDataIsInBuffer || !writeDataIsInBuffer : "Read/Write conflict";
     if (readDataIsInBuffer) {
-      //sufficient read data is already in the buffer 
+      //sufficient read data is already in the buffer
       int remaining = buffer.remaining();
       if (remaining >= nBytesToRead) {
         virtualPosition += nBytesToRead;
@@ -316,6 +316,7 @@ public class BufferedRandomAccessFile
    * will be performed. The file position is measured in bytes and given as
    * an offset from the first byte in the file (i.e. the first byte is at
    * position zero).
+   *
    * @return a positive long integer value
    */
   public long getFilePosition() {
@@ -324,63 +325,132 @@ public class BufferedRandomAccessFile
 
   /**
    * Gets a reference to the file associated with this class.
+   *
    * @return a valid file reference.
    */
   public File getFile() {
     return file;
   }
 
+  /**
+   * Reads an 8-byte IEEE-754 floating-point value given in little-endian order.
+   *
+   * @return a floating-point value, potentially NaN or INFINITY
+   * @throws IOException in the event of an unrecoverable I/O exception.
+   */
   public double leReadDouble() throws IOException {
     prepRead(8);
     return buffer.getDouble();
   }
 
+  /**
+   * Reads a 4-byte IEEE-754 floating-point value given in little-endian order.
+   *
+   * @return a floating-point value, potentially NaN or INFINITY
+   * @throws IOException in the event of an unrecoverable I/O exception.
+   */
   public float leReadFloat() throws IOException {
     prepRead(4);
     return buffer.getFloat();
   }
 
-  
+  /**
+   * Reads a 4-byte integer given in little-endian order.
+   *
+   * @return a valid integer
+   * @throws IOException in the event of an unrecoverable I/O exception.
+   */
   public int leReadInt() throws IOException {
     prepRead(4);
     return buffer.getInt();
   }
 
+  /**
+   * Reads an 8-byte integer given in little-endian order.
+   *
+   * @return a valid integer
+   * @throws IOException in the event of an unrecoverable I/O exception.
+   */
   public long leReadLong() throws IOException {
     prepRead(8);
     return buffer.getLong();
   }
 
+  /**
+   * Reads an 2-byte integer given in little-endian order.
+   *
+   * @return a valid Java short
+   * @throws IOException in the event of an unrecoverable I/O exception.
+   */
   public short leReadShort() throws IOException {         //NOPMD
     prepRead(2);
     return buffer.getShort();
   }
 
+  /**
+   * Reads an 2-byte integer given in little-endian order, treating it
+   * as an unsigned value.
+   *
+   * @return a Java int with a positive value
+   * @throws IOException in the event of an unrecoverable I/O exception.
+   */
   public int leReadUnsignedShort() throws IOException {
     prepRead(2);
     return buffer.getShort() & 0x0000ffff;
   }
 
+  /**
+   * Writes an 2-byte integer given in little-endian order.
+   *
+   * @param v an integral value.
+   * @throws IOException in the event of an unrecoverable I/O exception.
+   */
   public void leWriteShort(int v) throws IOException {
     prepWrite(2);
     buffer.putShort((short) (v & 0xffff));      //NOPMD
   }
 
+  /**
+   * Writes an 4-byte integer given in little-endian order.
+   *
+   * @param value an integral value.
+   * @throws IOException in the event of an unrecoverable I/O exception.
+   */
   public void leWriteInt(int value) throws IOException {
     prepWrite(4);
     buffer.putInt(value);
   }
 
+  /**
+   * Writes an 8-byte integer output in little-endian order.
+   *
+   * @param v an integral value.
+   * @throws IOException in the event of an unrecoverable I/O exception.
+   */
   public void leWriteLong(long v) throws IOException {
     prepWrite(8);
     buffer.putLong(v);
   }
 
+  /**
+   * Writes an 4-byte IEEE-754 floating-point value output in little-endian
+   * order.
+   *
+   * @param v an integral value.
+   * @throws IOException in the event of an unrecoverable I/O exception.
+   */
   public void leWriteFloat(float v) throws IOException {
     prepWrite(4);
     buffer.putFloat(v);
   }
 
+  /**
+   * Writes an 8-byte IEEE-754 floating-point value output in little-endian
+   * order.
+   *
+   * @param v an integral value.
+   * @throws IOException in the event of an unrecoverable I/O exception.
+   */
   public void leWriteDouble(double v) throws IOException {
     prepWrite(8);
     buffer.putDouble(v);
@@ -734,7 +804,7 @@ public class BufferedRandomAccessFile
     char c;
     int nValid = 0, nRead = 0;
     while (nRead < nBytesToRead) {
-      b = readUnsignedByte();  
+      b = readUnsignedByte();
       nRead++;
       if (b == 0) {
         break;
@@ -835,10 +905,25 @@ public class BufferedRandomAccessFile
     buffer.put((byte) (value & 0xff));
   }
 
+  /**
+   * Write the content of the specified array
+   *
+   * @param array a valid array
+   * @throws IOException in the event of an unhandled I/O exception.
+   */
   public void writeFully(byte[] array) throws IOException {
     writeFully(array, 0, array.length);
   }
 
+  /**
+   * Write the specified number of bytes from the byte array starting
+   * at the indicated offset (array index).
+   *
+   * @param array a valid array
+   * @param arrayOffset the starting index into the array.
+   * @param length the number of bytes to be written.
+   * @throws IOException in the event of an unhandled I/O exception.
+   */
   public void writeFully(byte[] array, int arrayOffset, int length)
           throws IOException {
     assert !readDataIsInBuffer || !writeDataIsInBuffer : "Write/Read conflict";
@@ -939,6 +1024,16 @@ public class BufferedRandomAccessFile
     }
   }
 
+  /**
+   * Write the content of the string as a sequence of characters in the range
+   * of the ASCII character set.  If the length of the output string
+   * exceeds the specified number of bytes, the string is truncated.
+   * If the length of the string is less than the specified number of bytes,
+   * zeroes are written to the output.
+   * @param s a valid string.
+   * @param nBytes the number of bytes to be written to the file.
+   * @throws IOException in the event of an unhandled I/O exception.
+   */
   public void writeASCII(String s, int nBytes) throws IOException {
     if (s == null) {
       throw new NullPointerException();

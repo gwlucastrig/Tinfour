@@ -47,6 +47,14 @@ public class BarycentricCoordinates {
   private double barycentricCoordinateDeviation;
 
   /**
+   * Standard constructor
+   */
+  public BarycentricCoordinates() {
+    // no additional code required
+  }
+
+
+  /**
    * Given a reference point inside a simple, but potentially non-convex
    * polygon, creates an array of barycentric coordinates for the point. The
    * coordinates are normalized, so that their sum is 1.0. This method

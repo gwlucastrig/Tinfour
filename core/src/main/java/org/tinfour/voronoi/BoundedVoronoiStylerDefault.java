@@ -245,7 +245,6 @@ public class BoundedVoronoiStylerDefault implements IBoundedVoronoiStyler {
    * Tests to see if the polygon is enabled for rendering a symbol at the vertex
    * position and, if it is, returns a vertex symbol that can be used for
    * rendering.
-   * <p>
    * @param polygon a valid polygon
    * @return if rendering is enabled, a valid symbol instance; otherwise, a
    * null.

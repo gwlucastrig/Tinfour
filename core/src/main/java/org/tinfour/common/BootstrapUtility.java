@@ -81,6 +81,18 @@ public class BootstrapUtility {
 
   final Random random = new Random(0);
 
+  /**
+   * Default constructor assuming nominal point spacing of 1.0 units.
+   */
+  public BootstrapUtility(){
+    this(new Thresholds(1.0));
+  }
+
+  /**
+   * Recommended constructor
+   * @param thresholds a set of threshold values used for numerically sensitive
+   * calculations.
+   */
   public BootstrapUtility(Thresholds thresholds) {
     triangleMinAreaThreshold
             = thresholds.getNominalPointSpacing() * MIN_AREA_FACTOR;
@@ -335,8 +347,8 @@ public class BootstrapUtility {
     double sin2T = Math.sin(twoTheta);
     double cos2T = Math.cos(twoTheta);
 
-    // compute secondDrv, the second derivative.  If 2nd derivative is negative, 
-    // then the theta we found would produce a local maximum for the 
+    // compute secondDrv, the second derivative.  If 2nd derivative is negative,
+    // then the theta we found would produce a local maximum for the
     // distance sum.  So we simply advance it by 90 degrees.
     // If d2 is close to zero, then the distribution of points was
     // similar in all directions (e.g. it exhibited radial symmetry) and
@@ -430,8 +442,8 @@ public class BootstrapUtility {
         }
       }
     }
-    
-    
+
+
     // orient triangle so result is positive
     area = geoOp.area(a, b, c);
     if (area < 0) {

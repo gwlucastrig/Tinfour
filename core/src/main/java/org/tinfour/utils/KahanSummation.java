@@ -26,26 +26,32 @@
  * Notes:
  *
  * -----------------------------------------------------------------------
- */ 
+ */
 package org.tinfour.utils;
 
 /**
- * Provides methods and elements for Kahan's algorithm for 
+ * Provides methods and elements for Kahan's algorithm for
  * summing a set of numerical values with extended precision arithmetic.
  * Often, when adding a large set of small values to a large value,
  * the limited precision of computer arithmetic results in the contribution
  * of the small values being lost.  This limitation may result in a loss
  * of valuable data if the total sum of the collected small values is
- * large enough enough to make a meaningful contribution to the 
+ * large enough enough to make a meaningful contribution to the
  * large value. Kahan's algorithm extends the precision of the computation
  * so that the contribution of small values is preserved.
- * 
+ *
  */
 public class KahanSummation {
- private double c;  // compensator for Kahan summation  
+ private double c;  // compensator for Kahan summation
  private double s;  // summand
  private int    n;
- 
+
+ /**
+  * Standard constructor
+  */
+ public KahanSummation(){
+   // no additional code required
+ }
  /**
   * Add the value to the summation
   * @param a a valid floating-point number
@@ -55,19 +61,19 @@ public class KahanSummation {
     y = a - c;
     t = s + y;
     c = (t - s ) - y;
-    s = t; 
+    s = t;
     n++;
  }
- 
+
  /**
   * The current value of the summation.
-  * @return the standard-precision part of the sum, 
+  * @return the standard-precision part of the sum,
   * a valid floating-point number.
   */
  public double getSum(){
    return s;
  }
- 
+
  /**
   * Gets the mean value of the summands.
   * @return a valid floating-point value.
@@ -78,7 +84,7 @@ public class KahanSummation {
    }
    return s/n;
  }
- 
+
  /**
   * Gets the number of summands that were added to the summation.
   * @return a value of zero or greater.
@@ -86,5 +92,5 @@ public class KahanSummation {
  public int getSummandCount(){
    return n;
  }
- 
+
 }

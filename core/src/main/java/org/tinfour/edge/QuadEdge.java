@@ -665,6 +665,12 @@ public class QuadEdge implements IQuadEdge {
     }
   }
 
+  /**
+   * Checks to see if the constraint index is within the range supported
+   * by this instance.
+   * @param lowValue the lowest allowed value for the constraint index.
+   * @param constraintIndex a positive integer.
+   */
   protected void checkConstraintIndex(int lowValue, int constraintIndex) {
     if (constraintIndex < lowValue || constraintIndex > CONSTRAINT_INDEX_VALUE_MAX) {
       throw new IllegalArgumentException(
@@ -712,21 +718,21 @@ public class QuadEdge implements IQuadEdge {
     dual.setConstraintRegionInteriorIndex(constraintIndex);
   }
 
-  protected void setUpperConstraintIndex(int constraintIndex) {
+  void setUpperConstraintIndex(int constraintIndex) {
     dual.index = (dual.index & CONSTRAINT_UPPER_INDEX_ZERO)
       | ((constraintIndex + 1) << CONSTRAINT_INDEX_BIT_SIZE);
   }
 
-  protected int getUpperConstraintIndex() {
+  int getUpperConstraintIndex() {
     return ((dual.index & CONSTRAINT_UPPER_INDEX_MASK) >> CONSTRAINT_INDEX_BIT_SIZE) - 1;
   }
 
-  protected void setLowerConstraintIndex(int constraintIndex) {
+  void setLowerConstraintIndex(int constraintIndex) {
     dual.index = (dual.index & CONSTRAINT_LOWER_INDEX_ZERO)
       | (constraintIndex + 1);
   }
 
-  protected int getLowerConstraintIndex() {
+  int getLowerConstraintIndex() {
     return (dual.index & CONSTRAINT_LOWER_INDEX_MASK) - 1;
   }
 

@@ -43,7 +43,6 @@ import org.tinfour.common.Vertex;
  * by using Visvalingam's algorithm.
  */
 @SuppressWarnings({"PMD.AvoidDeeplyNestedIfStmts", "PMD.CompareObjectsWithEquals"})
-
 public class PolylineThinner {
 
   private static class Node {
@@ -217,6 +216,12 @@ public class PolylineThinner {
 
   }
 
+  /**
+   * Standard constructor.
+   */
+  public PolylineThinner(){
+    // no additional code required
+  }
   /**
    * Given a feature, apply Visvalingam's algorithm to reduce the
    * complexity of the feature geometry. Features are compared against

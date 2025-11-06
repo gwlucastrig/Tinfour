@@ -34,9 +34,21 @@ package org.tinfour.utils;
  * An enumeration for specifying linear units of measure.
  */
 public enum LinearUnits {
+  /**
+   * Indicates that no unit specification is applicable.
+   */
   UNKNOWN("unknown", 1.0, "Unknown"),
+  /**
+   * Specifies units in meters.
+   */
   METERS("m", 1.0, "Meters"),
+  /**
+   * Specifies units in feet.
+   */
   FEET("ft", 0.3048, "Feet"),
+  /**
+   * Specifies units in fathoms.
+   */
   FATHOMS("fathoms", 1.8288, "Fathoms");
 
   final String abbreviation;
@@ -77,8 +89,8 @@ public enum LinearUnits {
   public double fromMeters(double value){
     return value/metersConversion;
   }
-  
-  
+
+
   /**
    * Gets the name of the units in a form suitable for user interface display.
    * @return a valid string.

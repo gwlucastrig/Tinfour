@@ -32,7 +32,6 @@ package org.tinfour.utils.loaders;
 
 import java.io.BufferedInputStream;
 import java.io.Closeable;
-import org.tinfour.io.DelimitedReader;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
@@ -40,6 +39,7 @@ import java.util.ArrayList;
 import java.util.List;
 import org.tinfour.common.IMonitorWithCancellation;
 import org.tinfour.common.Vertex;
+import org.tinfour.io.DelimitedReader;
 import org.tinfour.utils.LinearUnits;
 
 /**
@@ -151,14 +151,25 @@ public class VertexReaderText implements Closeable, IVertexReader {
     }
   }
 
+  /**
+   * Sets a coordinate transform to be applied when reading vertical
+   * coordinates (z coordinates).
+   * @param verticalCoordinateTransform a valid instance.
+   */
   public void setVerticalCoordinateTransform(
     IVerticalCoordinateTransform verticalCoordinateTransform) {
     this.verticalCoordinateTransform = verticalCoordinateTransform;
   }
 
+  /**
+   * Sets an array of strings to be used as the target
+   * headers for the x, y, and z columns.
+   * @param targetHeaders an array of 3 valid, non-empty strings
+   */
   public void setTargetHeaders(String[] targetHeaders) {
     if (targetHeaders == null || targetHeaders.length != 3) {
-      throw new IllegalArgumentException("Invalid target headers specification, argument is not of length 3");
+      throw new IllegalArgumentException(
+        "Invalid target headers specification, argument is not of length 3");
     }
     String[] a = new String[3];
     for (int i = 0; i < 3; i++) {

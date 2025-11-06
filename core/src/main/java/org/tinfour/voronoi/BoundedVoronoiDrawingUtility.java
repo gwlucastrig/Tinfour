@@ -149,6 +149,13 @@ public class BoundedVoronoiDrawingUtility {
     clipBounds = computeClipBounds();
   }
 
+  /**
+   * Constructs an instance for the specified Voronoi diagram
+   * @param diagram a valid instance
+   * @param clipBounds the bounds for clipping the rendered image, may be larger
+   * than those of the diagram instance.
+   * @param af a valid affine transform mapping Cartesian coordinates to pixels.
+   */
   public BoundedVoronoiDrawingUtility(
           BoundedVoronoiDiagram diagram,
           Rectangle2D clipBounds,
@@ -165,7 +172,7 @@ public class BoundedVoronoiDrawingUtility {
    *
    * @return a valid transform
    */
-  AffineTransform getTransform() {
+  public AffineTransform getTransform() {
     return af;
   }
 
@@ -175,7 +182,7 @@ public class BoundedVoronoiDrawingUtility {
    *
    * @return a valid transform
    */
-  AffineTransform getInverseTransform() {
+  public AffineTransform getInverseTransform() {
     try {
       return af.createInverse();
     } catch (NoninvertibleTransformException ex) {

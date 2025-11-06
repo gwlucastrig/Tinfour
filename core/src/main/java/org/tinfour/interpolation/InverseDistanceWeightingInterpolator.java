@@ -82,7 +82,9 @@ public class InverseDistanceWeightingInterpolator implements IInterpolatorOverTi
    * Because the interpolator will access the TIN on a read-only basis,
    * it is possible to construct multiple instances of this class and
    * allow them to operate in parallel threads.
-   * <h1>Important Synchronization Issue</h1>
+   * <p>
+   * <strong>Important Synchronization Issue</strong>
+   * <p>
    * To improve performance, the classes in this package
    * frequently maintain state-data about the TIN that can be reused
    * for query to query. They also avoid run-time overhead by not

@@ -49,7 +49,9 @@ import org.tinfour.io.BufferedRandomAccessFile;
  * A shapefile product is actually a collection of multiple files.
  * This class maintains the specified files and writes them as a group.
  * When the close method is called, all open file resources are closed.
- * <h1>Using this class</h1>
+ * <p>
+ * <strong>Using this class</strong>
+ * <p>
  * While Tinfour is not a Geographic Information System (GIS), some of the
  * most interesting data sets that it can be applied to are GIS products.
  * The shapefile writer is intended to support applications that may require

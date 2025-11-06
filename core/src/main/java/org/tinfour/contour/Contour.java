@@ -357,6 +357,10 @@ public class Contour {
     return closedLoop;
   }
 
+  /**
+   * Get the bounds of the contour.
+   * @return a valid instance.
+   */
   public Rectangle2D getBounds(){
     Rectangle2D r2d = new Rectangle2D.Double(xy[0], xy[1], 0, 0);
     for(int i=1; i<n/2; i++){

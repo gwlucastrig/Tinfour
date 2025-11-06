@@ -11,7 +11,8 @@ import org.tinfour.common.IMonitorWithCancellation;
 import org.tinfour.common.Vertex;
 
 /**
- *
+ * Defines methods to be used for reading a set of vertices from
+ * various input sources.
  */
 public interface IVertexReader {
 
@@ -104,5 +105,5 @@ public interface IVertexReader {
    * @param transform a valid transform or a null if none is to be applied.
    */
   void setCoordinateTransform(ICoordinateTransform transform);
-  
+
 }

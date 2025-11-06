@@ -104,7 +104,8 @@ import org.tinfour.edge.QuadEdgeConstants;
  * vertex (including vertices and edges) while the virtual implementation uses
  * only about 1.012. This reduction can be valuable in reducing the impact of
  * garbage collection when processing large data sets..
- * <h1>Methods and References</h1>
+ * <p>
+ * <strong>Methods and References</strong>
  * A good review of point location using a stochastic Lawson's walk is provided
  * by <cite>Soukal, R.; Ma&#769;lkova&#769;, Kolingerova&#769; (2012) "Walking
  * algorithms for point location in TIN models", Computational Geoscience
@@ -460,7 +461,8 @@ public class SemiVirtualIncrementalTin implements IIncrementalTin {
    * TIN. If the TIN is not yet bootstrapped, the vertices will be retained in a
    * simple list until enough vertices are received in order to bootstrap the
    * TIN.
-   * <h1>Performance Consideration Related to List</h1>
+   * <p>
+   * <strong>Performance Consideration Related to List</strong>
    * <p>
    * In the bootstrap phase, three points are chosen at random from the vertex
    * list to create the initial triangle for insertion. The initialization will
@@ -477,7 +479,8 @@ public class SemiVirtualIncrementalTin implements IIncrementalTin {
    * traversed sequentially to build the TIN and random access considerations
    * will no longer apply.
    *
-   * <h1>Performance Consideration Related to Location of Vertices</h1>
+   * <p>
+   * <strong>Performance Consideration Related to Location of Vertices</strong>
    *
    * The performance of the insertion process is sensitive to the relative
    * location of vertices. An input data set based on

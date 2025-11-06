@@ -33,7 +33,8 @@ public interface IIntegrityCheck {
   /**
    * Performs an inspection of the TIN checking for conditions that
    * violate the construction rules.
-   * <h3>The Rules</h3>
+   * <p>
+   * <strong>The Rules</strong>
    * <ul>
    * <li>Ensure that every edge links to two valid triangular circuits
    * (one on each side).

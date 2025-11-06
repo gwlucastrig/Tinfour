@@ -37,7 +37,8 @@ import org.tinfour.common.Vertex;
  * support research and experimentation. This class is not used as part
  * of the internal operations in the NaturalNeighborInterpolator
  * implementation.
- * <h1> Interpreting the results</h1>
+ * <p>
+ * <strong>Interpreting the results</strong>
  * If the query is successful, the result type element will be set to
  * SUCCESS.  In that case, the interpolated value can be computed as shown
  * in the following example code.  This logic is similar to what is

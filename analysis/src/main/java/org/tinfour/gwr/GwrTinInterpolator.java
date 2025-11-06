@@ -130,7 +130,9 @@ public class GwrTinInterpolator extends GwrInterpolator implements IInterpolator
    * Because the interpolator will access the TIN on a read-only basis,
    * it is possible to construct multiple instances of this class and
    * allow them to operate in parallel threads.
-   * <h1>Important Synchronization Issue</h1>
+   * <p>
+   * <strong>Important Synchronization Issue</strong>
+   * <p>
    * In order to provide maximum performance, the classes in this package
    * do not implement any kind of Java synchronization or or even the
    * relatively weak concurrent-modification testing provided by the
@@ -157,7 +159,9 @@ public class GwrTinInterpolator extends GwrInterpolator implements IInterpolator
    * Because the interpolator will access the TIN on a read-only basis,
    * it is possible to construct multiple instances of this class and
    * allow them to operate in parallel threads.
-   * <h1>Important Synchronization Issue</h1>
+   * <p>
+   * <strong>Important Synchronization Issue</strong>
+   * <p>
    * In order to provide maximum performance, the classes in this package
    * do not implement any kind of Java synchronization or or even the
    * relatively weak concurrent-modification testing provided by the

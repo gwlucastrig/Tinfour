@@ -39,6 +39,14 @@ import java.awt.RenderingHints;
  */
 public class BoundedVoronoiStylerAdapter implements IBoundedVoronoiStyler {
 
+  /**
+   * Constructs an instance that implements default behavior.
+   */
+  public BoundedVoronoiStylerAdapter() {
+    // no additional code required
+  }
+
+
   @Override
   public boolean isFeatureTypeEnabled(BoundedVoronoiRenderingType type) {
     return false;

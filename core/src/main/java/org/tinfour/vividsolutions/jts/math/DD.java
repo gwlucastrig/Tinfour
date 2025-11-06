@@ -84,7 +84,8 @@ import java.io.Serializable;
  * Douglas Priest developed the first C implementation of these techniques.
  * Other more recent C++ implementation are due to Keith M. Briggs and David Bailey et al.
  *
- * <h3>References</h3>
+ * <p>
+ * <strong>References</strong>
  * <ul>
  * <li>Priest, D., <i>Algorithms for Arbitrary Precision Floating Point Arithmetic</i>,
  * in P. Kornerup and D. Matula, Eds., Proc. 10th Symposium on Computer Arithmetic,
@@ -820,6 +821,12 @@ public strictfp final class DD
     return axdd.add(d2);
   }
 
+  /**
+   * Returns the square root of the specified value as a double-precision
+   * instance.
+   * @param x a valid, finite floating-point value.
+   * @return a valid instance.
+   */
   public static DD sqrt(double x)
   {
     return valueOf(x).sqrt();
