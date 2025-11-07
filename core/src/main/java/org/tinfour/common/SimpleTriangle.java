@@ -203,24 +203,27 @@ public class SimpleTriangle {
     q11.selfAdd(q21);
     return q11.doubleValue() / 2.0;
   }
-  
+
   /**
    * Get the shortest edge of the triangle.
    *
    * @return the shortest edge (by squared length)
    */
   public IQuadEdge getShortestEdge() {
-      double lenA = edgeA.getLengthSq();
-      double lenB = edgeB.getLengthSq();
-      double lenC = edgeC.getLengthSq();
-
-      if (lenA <= lenB && lenA <= lenC) {
-          return edgeA;
-      } else if (lenB <= lenA && lenB <= lenC) {
-          return edgeB;
+    double lenA = edgeA.getLengthSq();
+    double lenB = edgeB.getLengthSq();
+    double lenC = edgeC.getLengthSq();
+    if (lenA <= lenB) {
+      if (lenA <= lenC) {
+        return edgeA;
       } else {
-          return edgeC;
+        return edgeC;
       }
+    } else if (lenB <= lenC) {
+      return edgeB;
+    } else {
+      return edgeC;
+    }
   }
 
   /**
@@ -361,5 +364,33 @@ public class SimpleTriangle {
    */
   public int getIndex(){
     return index;
+  }
+
+  @Override
+  public String toString(){
+    int aIndex = edgeA.getA().getIndex();
+    int bIndex = edgeB.getA().getIndex();
+    int cIndex = edgeC.getA().getIndex();
+    int i0, i1, i2;
+    if(aIndex<bIndex){
+      if(aIndex<cIndex){
+        i0 = aIndex;
+        i1 = bIndex;
+        i2 = cIndex;
+      }else{
+        i0 = cIndex;
+        i1 = aIndex;
+        i2 = bIndex;
+      }
+    }else if(bIndex<cIndex){
+      i0 = bIndex;
+      i1 = cIndex;
+      i2 = aIndex;
+    }else{
+      i0 = cIndex;
+      i1 = aIndex;
+      i2 = bIndex;
+    }
+    return "Triangle "+i0+", "+i1+" "+i2;
   }
 }

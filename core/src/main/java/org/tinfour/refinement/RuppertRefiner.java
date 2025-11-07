@@ -34,7 +34,6 @@ import java.util.ArrayList;
 import java.util.IdentityHashMap;
 import java.util.List;
 import java.util.Map;
-
 import org.tinfour.common.Circumcircle;
 import org.tinfour.common.IIncrementalTin;
 import org.tinfour.common.IIncrementalTinNavigator;
@@ -579,6 +578,7 @@ public class RuppertRefiner implements IDelaunayRefiner {
 		final double oy = my + ny * d;
 		final double oz = interpolator.interpolate(ox, oy, null);
 		final Vertex off = new Vertex(ox, oy, oz);
+		off.setRefinementProduct(true);
 
 		final IQuadEdge enc = firstEncroachedByPoint(off, segments);
 		if (enc != null) {
@@ -651,6 +651,7 @@ public class RuppertRefiner implements IDelaunayRefiner {
 		}
 		double cz = interpolator.interpolate(center.getX(), center.getY(), null);
 		Vertex centerZ = new Vertex(center.getX(), center.getY(), cz, vertexIndexer++);
+		centerZ.setRefinementProduct(true);
 		tin.add(centerZ);
 		vdata.put(centerZ, new VData(VType.CIRCUMCENTER, null, 0));
 		lastInsertedVertex = centerZ;
@@ -686,6 +687,7 @@ public class RuppertRefiner implements IDelaunayRefiner {
 		double z = (a.getZ()+b.getZ())*0.5;
 		final Vertex v = tin.splitEdge(seg, 0.5, z);
 		if (v != null) {
+			v.setRefinementProduct(true);
 			final int k = (corner != null) ? shellIndex(corner, v.x, v.y) : 0;
 			vdata.put(v, new VData(VType.MIDPOINT, corner, k));
 			lastInsertedVertex = v;

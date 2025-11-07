@@ -110,6 +110,15 @@ public class Vertex implements ISamplePoint {
    * This flag is used in support of data filtering and similar operations.
    */
   public static final int BIT_WITHHELD = 0x04;
+
+  /**
+   * A bit flag indication that the vertex was created by a Delaunay refinement
+   * algorithm or other technique used to improve the quality of the
+   * triangular mesh.
+   */
+  public static final int BIT_REFINEMENT = 0x08;
+
+
   /**
    * An indexing value assigned to the Vertex. In this package, it is used
    * primary for diagnostic purposes and labeling graphics.
@@ -200,7 +209,12 @@ public class Vertex implements ISamplePoint {
    * @return a valid, non-empty string.
    */
   public String getLabel() {
-    return (isSynthetic() ? "S" : "") + Integer.toString(index);
+    if(isRefinementProduct()){
+      return "R" + Integer.toString(index);
+    }else if(isSynthetic()){
+      return "S" + Integer.toString(index);
+    }
+    return Integer.toString(index);
   }
 
   @Override
@@ -455,6 +469,36 @@ public class Vertex implements ISamplePoint {
               "Color index out of valid range [0..255]");
     }
     this.auxiliary = (byte)(auxiliaryIndex&0xff);
+  }
+
+  /**
+   * Indicates whether a vertex is a refinement product (was created through
+   * a Delaunay refinement procedure rather than supplied by an application).
+   * <p>
+   * <strong>Note:</strong> When one of the Tinfour Incremental TIN classes
+   * performs a restore-Delaunay operation for added constraints, any
+   * artificially created vertices will be marked as "synthetic" but not
+   * as a "refinement product". The designation refinement product
+   * applies only in cases where a Delaunay refiner class creates vertices
+   * based on it own independent algorithms.
+   *
+   * @return true if vertex is a refinement product; otherwise, false
+   */
+  public boolean isRefinementProduct() {
+    return (status & BIT_REFINEMENT) != 0;
+  }
+
+  /**
+   * Sets or clears the is-refinement-product status of a vertex.
+   *
+   * @param refinement true if vertex is synthetic; otherwise, false
+   */
+  public void setRefinementProduct(boolean refinement) {
+    if (refinement) {
+      status |= (BIT_REFINEMENT|BIT_SYNTHETIC);
+    } else {
+      status &= ~(BIT_REFINEMENT|BIT_SYNTHETIC);
+    }
   }
 
 }
