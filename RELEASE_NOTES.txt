@@ -1,0 +1,20 @@
+Tinfour Release 2.1.9  November 2025 --------------------------
+
+Release 2.1.9 introduces two major new features to the Tinfour API:
+   1.  Delaunay Refinement (see issue 121)
+   2.  AlphaShapes (see issue 117)
+
+Other changes or new features in the API include
+   1.  Introduction of the IIncrementalTin.edgeAndDual() iterator (see issue 132)
+   2.  Change to order of edges produced by the IQuadEdge.pinwheel() iterator (see issue 133)
+ 
+Additionally, we have addressed a small number of bugs, particularly those related
+to the assignment of constraints to edges when adding vertices to an existing
+Incremental TIN instance that already includes constraint objects.
+We also cleaned up numerous Javadoc issues.
+
+The Tinfour software project gratefully acknowledges the contribution
+of Mr. Michael Carleton who created the RuppertRefiner class.
+The new class implements Delaunay refinement, a technique that has
+been on the Tinfour "wishlist" for quite a long time.
+For more details, please see https://github.com/gwlucastrig/Tinfour/issues/121

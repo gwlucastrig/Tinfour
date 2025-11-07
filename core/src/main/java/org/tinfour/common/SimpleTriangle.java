@@ -368,9 +368,12 @@ public class SimpleTriangle {
 
   @Override
   public String toString(){
-    int aIndex = edgeA.getA().getIndex();
-    int bIndex = edgeB.getA().getIndex();
-    int cIndex = edgeC.getA().getIndex();
+    Vertex A = edgeA.getA();
+    Vertex B = edgeB.getA();
+    Vertex C = edgeC.getA();
+    int aIndex = A==null? Integer.MIN_VALUE: A.getIndex();
+    int bIndex = B==null? Integer.MIN_VALUE: B.getIndex();
+    int cIndex = C==null? Integer.MIN_VALUE: C.getIndex();
     int i0, i1, i2;
     if(aIndex<bIndex){
       if(aIndex<cIndex){
@@ -391,6 +394,11 @@ public class SimpleTriangle {
       i1 = aIndex;
       i2 = bIndex;
     }
-    return "Triangle "+i0+", "+i1+" "+i2;
+    return "Triangle with vertices "
+      + (i0 == Integer.MIN_VALUE ? "Ghost" : Integer.toString(i0))
+      +", "
+      + (i1 == Integer.MIN_VALUE ? "Ghost" : Integer.toString(i1))
+      +", "
+      + (i2 == Integer.MIN_VALUE ? "Ghost" : Integer.toString(i2));
   }
 }
