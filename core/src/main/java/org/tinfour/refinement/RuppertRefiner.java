@@ -34,9 +34,11 @@ package org.tinfour.refinement;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.IdentityHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.PriorityQueue;
+import java.util.Set;
 
 import org.tinfour.common.Circumcircle;
 import org.tinfour.common.IIncrementalTin;
@@ -159,6 +161,10 @@ public class RuppertRefiner implements IDelaunayRefiner {
 
 	private final IIncrementalTinNavigator navigator;
 	private final TriangularFacetSpecialInterpolator interpolator;
+
+	// live set of constrained subsegments in the current triangulation
+	private final Set<IQuadEdge> constrainedSegments = new LinkedHashSet<>();
+	private boolean constrainedSegmentsInitialized = false;
 
 	// worst-first heap
 	private final PriorityQueue<BadTri> badTriangles = new PriorityQueue<>(Comparator.comparingDouble((BadTri bt) -> bt.priority).reversed());
@@ -304,6 +310,7 @@ public class RuppertRefiner implements IDelaunayRefiner {
 		}
 
 		navigator = tin.getNavigator();
+		initConstrainedSegments();
 		cornerInfo = buildCornerInfo();
 
 		// The vertex index is strictly for diagnostic purposes.
@@ -360,9 +367,11 @@ public class RuppertRefiner implements IDelaunayRefiner {
 
 	@Override
 	public Vertex refineOnce() {
-		final List<IQuadEdge> segments = collectConstrainedSegments();
+		if (!constrainedSegmentsInitialized) {
+			initConstrainedSegments();
+		}
 
-		final IQuadEdge enc = findEncroachedSegment(segments);
+		final IQuadEdge enc = findEncroachedSegment();
 		if (enc != null) {
 			return splitSegmentSmart(enc);
 		}
@@ -372,7 +381,7 @@ public class RuppertRefiner implements IDelaunayRefiner {
 		}
 		final SimpleTriangle bad = nextBadTriangleFromQueue();
 		if (bad != null) {
-			return insertOffcenterOrSplit(bad, segments);
+			return insertOffcenterOrSplit(bad);
 		}
 
 		return null;
@@ -393,6 +402,20 @@ public class RuppertRefiner implements IDelaunayRefiner {
 			}
 		}
 		badTrianglesInitialized = true;
+	}
+
+	/**
+	 * Build the initial set of constrained subsegments by scanning TIN edges once.
+	 * Uses base edges as canonical representatives.
+	 */
+	private void initConstrainedSegments() {
+		constrainedSegments.clear();
+		for (IQuadEdge e : tin.edges()) { // edges() returns base edges
+			if (e.isConstrained()) {
+				constrainedSegments.add(e); // base edges only
+			}
+		}
+		constrainedSegmentsInitialized = true;
 	}
 
 	/**
@@ -486,26 +509,6 @@ public class RuppertRefiner implements IDelaunayRefiner {
 	}
 
 	/**
-	 * Collects constrained subsegments from the current TIN.
-	 *
-	 * <p>
-	 * Returns a snapshot list of {@link IQuadEdge} whose {@code isConstrained()}
-	 * predicate is true. The list is used by encroachment and near-edge searches.
-	 * </p>
-	 *
-	 * @return modifiable list of constrained subsegments
-	 */
-	private List<IQuadEdge> collectConstrainedSegments() {
-		final List<IQuadEdge> result = new ArrayList<>();
-		for (final IQuadEdge e : tin.edges()) { // .edges() returns only base edges
-			if (e.isConstrained()) {
-				result.add(e);
-			}
-		}
-		return result;
-	}
-
-	/**
 	 * Scan segments and return one encroached segment, or {@code null}.
 	 *
 	 * <p>
@@ -518,8 +521,8 @@ public class RuppertRefiner implements IDelaunayRefiner {
 	 * @param segments a snapshot list of constrained subsegments to inspect
 	 * @return an encroached {@link IQuadEdge} or {@code null} if none found
 	 */
-	private IQuadEdge findEncroachedSegment(final List<IQuadEdge> segments) {
-		for (final IQuadEdge seg : segments) {
+	private IQuadEdge findEncroachedSegment() {
+		for (final IQuadEdge seg : constrainedSegments) {
 			// NOTE validity of this (fast) test requires Delaunay integrity
 			final Vertex enc = closestEncroacherOrNull(seg);
 			if (enc != null) {
@@ -642,7 +645,7 @@ public class RuppertRefiner implements IDelaunayRefiner {
 	 *                 tests
 	 * @return
 	 */
-	private Vertex insertOffcenterOrSplit(final SimpleTriangle tri, final List<IQuadEdge> segments) {
+	private Vertex insertOffcenterOrSplit(final SimpleTriangle tri) {
 		final Vertex a = tri.getVertexA(), b = tri.getVertexB(), c = tri.getVertexC();
 
 		Vertex p = a, q = b;
@@ -657,7 +660,7 @@ public class RuppertRefiner implements IDelaunayRefiner {
 
 		final double len = Math.sqrt(p.getDistanceSq(q));
 		if (!(len > 0)) {
-			return insertCircumcenterOrSplit(tri, segments);
+			return insertCircumcenterOrSplit(tri);
 		}
 
 		final double mx = 0.5 * (p.getX() + q.getX());
@@ -671,14 +674,14 @@ public class RuppertRefiner implements IDelaunayRefiner {
 		double ny = q.getX() - p.getX();
 		final double nlen = hypot(nx, ny);
 		if (nlen == 0) {
-			return insertCircumcenterOrSplit(tri, segments);
+			return insertCircumcenterOrSplit(tri);
 		}
 		nx /= nlen;
 		ny /= nlen;
 
 		final Circumcircle cc = tri.getCircumcircle();
 		if (cc == null) {
-			return insertCircumcenterOrSplit(tri, segments);
+			return insertCircumcenterOrSplit(tri);
 		}
 		final double cx = cc.getX(), cy = cc.getY();
 		final double dCirc = hypot(cx - mx, cy - my);
@@ -691,7 +694,7 @@ public class RuppertRefiner implements IDelaunayRefiner {
 		final Vertex off = new Vertex(ox, oy, oz);
 		off.setRefinementProduct(true);
 
-		final IQuadEdge enc = firstEncroachedByPoint(off, segments);
+		final IQuadEdge enc = firstEncroachedByPoint(off);
 		if (enc != null) {
 			return splitSegmentSmart(enc);
 		}
@@ -709,7 +712,7 @@ public class RuppertRefiner implements IDelaunayRefiner {
 			return null;
 		}
 
-		final IQuadEdge nearEdge = firstNearConstrainedEdgeInterior(off, segments, nearEdgeTol);
+		final IQuadEdge nearEdge = firstNearConstrainedEdgeInterior(off, nearEdgeTol);
 		if (nearEdge != null) {
 			return splitSegmentSmart(nearEdge);
 		}
@@ -733,7 +736,7 @@ public class RuppertRefiner implements IDelaunayRefiner {
 	 * @param segments snapshot of constrained subsegments used for screening
 	 * @return
 	 */
-	private Vertex insertCircumcenterOrSplit(final SimpleTriangle tri, final List<IQuadEdge> segments) {
+	private Vertex insertCircumcenterOrSplit(final SimpleTriangle tri) {
 		final Circumcircle cc = tri.getCircumcircle();
 		if (cc == null) {
 			return null;
@@ -741,7 +744,7 @@ public class RuppertRefiner implements IDelaunayRefiner {
 
 		final Vertex center = cc.getCircumcenter();
 
-		final IQuadEdge enc = firstEncroachedByPoint(center, segments);
+		final IQuadEdge enc = firstEncroachedByPoint(center);
 		if (enc != null) {
 			return splitSegmentSmart(enc);
 		}
@@ -756,7 +759,7 @@ public class RuppertRefiner implements IDelaunayRefiner {
 			return null;
 		}
 
-		final IQuadEdge nearEdge = firstNearConstrainedEdgeInterior(center, segments, nearEdgeTol);
+		final IQuadEdge nearEdge = firstNearConstrainedEdgeInterior(center, nearEdgeTol);
 		if (nearEdge != null) {
 			return splitSegmentSmart(nearEdge);
 		}
@@ -799,15 +802,25 @@ public class RuppertRefiner implements IDelaunayRefiner {
 		}
 
 		double z = (a.getZ() + b.getZ()) * 0.5;
-		final Vertex v = tin.splitEdge(seg, 0.5, z);
+
+		// Remove the old constrained segment from our set.
+		final IQuadEdge baseSeg = seg.getBaseReference();
+		constrainedSegments.remove(baseSeg);
+
+		final Vertex v = tin.splitEdge(baseSeg, 0.5, z);
 		if (v != null) {
 			v.setRefinementProduct(true);
 			final int k = (corner != null) ? shellIndex(corner, v.x, v.y) : 0;
 			vdata.put(v, new VData(VType.MIDPOINT, corner, k));
 			lastInsertedVertex = v;
 
+			// Update constrained-segment set around the new vertex.
+			if (constrainedSegmentsInitialized) {
+				updateConstrainedSegmentsAroundVertex(v);
+			}
+
+			// Existing queue update (as before)
 			if (badTrianglesInitialized) {
-				// Update around both original segment endpoints and new midpoint
 				updateBadTrianglesAroundVertex(a);
 				updateBadTrianglesAroundVertex(b);
 				updateBadTrianglesAroundVertex(v);
@@ -817,14 +830,74 @@ public class RuppertRefiner implements IDelaunayRefiner {
 	}
 
 	/**
+	 * After a change around vertex v (e.g., segment split), ensure all constrained
+	 * subsegments incident to v are in the constrainedSegments set.
+	 *
+	 * This does not attempt to remove anything except in the caller.
+	 */
+	private void updateConstrainedSegmentsAroundVertex(final Vertex v) {
+		navigator.resetForChangeToTin();
+
+		// 1. Find a triangle that contains v
+		final SimpleTriangle t0 = navigator.getContainingTriangle(v.getX(), v.getY());
+		if (t0 == null) {
+			return;
+		}
+
+		final IQuadEdge[] triEdges = new IQuadEdge[] { t0.getEdgeA(), t0.getEdgeB(), t0.getEdgeC() };
+
+		IQuadEdge seed = null;
+
+		// Prefer an edge whose A-vertex is v; otherwise use its dual
+		for (IQuadEdge e : triEdges) {
+			if (e.getA() == v) {
+				seed = e;
+				break;
+			}
+			if (e.getB() == v) {
+				IQuadEdge d = e.getDual();
+				if (d != null && d.getA() == v) {
+					seed = d;
+					break;
+				}
+			}
+		}
+
+		if (seed == null) {
+			IQuadEdge ne = navigator.getNeighborEdge(v.getX(), v.getY());
+			if (ne == null) {
+				return;
+			}
+			if (ne.getA() == v) {
+				seed = ne;
+			} else if (ne.getB() == v) {
+				IQuadEdge d = ne.getDual();
+				if (d != null && d.getA() == v) {
+					seed = d;
+				}
+			}
+			if (seed == null) {
+				return;
+			}
+		}
+
+		// 2. Pinwheel around v and add any constrained edges into the set.
+		for (IQuadEdge e : seed.pinwheel()) {
+			if (e.isConstrained()) {
+				constrainedSegments.add(e.getBaseReference()); // use base as canonical representative
+			}
+		}
+	}
+
+	/**
 	 * Find the first constrained subsegment encroached by the candidate point.
 	 *
 	 * @param p        the candidate point (may be off-center or circumcenter)
 	 * @param segments the constrained subsegment snapshot to check
 	 * @return the first encroached {@link IQuadEdge} or {@code null}
 	 */
-	private IQuadEdge firstEncroachedByPoint(final Vertex p, final List<IQuadEdge> segments) {
-		for (final IQuadEdge seg : segments) {
+	private IQuadEdge firstEncroachedByPoint(final Vertex p) {
+		for (final IQuadEdge seg : constrainedSegments) {
 			final Vertex vA = seg.getA();
 			final Vertex vB = seg.getB();
 			final double midX = (vA.getX() + vB.getX()) / 2.0;
@@ -839,24 +912,26 @@ public class RuppertRefiner implements IDelaunayRefiner {
 	}
 
 	/**
-	 * Find a constrained subsegment whose open interior lies within {@code tol} of
-	 * {@code v}.
+	 * Checks whether the point {@code v} lies closer than {@code tol} to the middle
+	 * part of any constrained segment (excluding its endpoints), and returns the
+	 * first such segment if found.
 	 *
 	 * <p>
-	 * Used to avoid inserting points nearly on the interior of constrained edges.
-	 * Projection onto each segment is computed; only projections with parameter
-	 * {@code t ∈ (0,1)} are considered interior.
+	 * This is used as a safety check to avoid inserting vertices that are almost on
+	 * a constrained edge, which can cause numerical or geometric problems. For each
+	 * constrained segment, the closest point on that segment to {@code v} is
+	 * computed; if this closest point lies strictly between the two endpoints and
+	 * is within distance {@code tol}, the segment is returned.
 	 * </p>
 	 *
-	 * @param v        point to test
-	 * @param segments list of constrained subsegments
-	 * @param tol      perpendicular-distance tolerance (scale-aware)
-	 * @return first subsegment whose interior is within {@code tol}, or
-	 *         {@code null}
+	 * @param v   vertex to test
+	 * @param tol maximum allowed distance to a constrained segment
+	 * @return a constrained segment whose interior is within {@code tol} of
+	 *         {@code v}, or {@code null} if none are close enough
 	 */
-	private IQuadEdge firstNearConstrainedEdgeInterior(final Vertex v, final List<IQuadEdge> segments, final double tol) {
+	private IQuadEdge firstNearConstrainedEdgeInterior(final Vertex v, final double tol) {
 		final double px = v.getX(), py = v.getY();
-		for (final IQuadEdge seg : segments) {
+		for (final IQuadEdge seg : constrainedSegments) {
 			final Vertex a = seg.getA(), b = seg.getB();
 			final double ax = a.getX(), ay = a.getY();
 			final double bx = b.getX(), by = b.getY();
@@ -938,7 +1013,7 @@ public class RuppertRefiner implements IDelaunayRefiner {
 	 */
 	private Map<Vertex, CornerInfo> buildCornerInfo() {
 		final Map<Vertex, List<Vertex>> nbrs = new IdentityHashMap<>();
-		for (final IQuadEdge e : collectConstrainedSegments()) {
+		for (final IQuadEdge e : constrainedSegments) {
 			final Vertex A = e.getA(), B = e.getB();
 			nbrs.computeIfAbsent(A, k -> new ArrayList<>()).add(B);
 			nbrs.computeIfAbsent(B, k -> new ArrayList<>()).add(A);
