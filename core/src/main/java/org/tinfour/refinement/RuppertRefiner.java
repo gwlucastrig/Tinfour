@@ -365,6 +365,13 @@ public class RuppertRefiner implements IDelaunayRefiner {
 		return false;
 	}
 
+	/**
+	 * Performs a single refinement step, typically inserting one vertex or
+	 * resolving one bad feature.
+	 *
+	 * @return {@code true} if refinement made progress, {@code false} if no more
+	 *         refinement is possible
+	 */
 	@Override
 	public Vertex refineOnce() {
 		if (!constrainedSegmentsInitialized) {
@@ -388,7 +395,20 @@ public class RuppertRefiner implements IDelaunayRefiner {
 	}
 
 	/**
-	 * Build the initial priority queue of bad triangles by scanning the TIN once.
+	 * Initializes the set of constrained segments from the current TIN.
+	 */
+	private void initConstrainedSegments() {
+		constrainedSegments.clear();
+		for (IQuadEdge e : tin.edges()) { // edges() returns base edges
+			if (e.isConstrained()) {
+				constrainedSegments.add(e); // base edges only
+			}
+		}
+		constrainedSegmentsInitialized = true;
+	}
+
+	/**
+	 * Initializes the queue of bad triangles using the current TIN state.
 	 */
 	private void initBadTriangleQueue() {
 		badTriangles.clear();
@@ -405,22 +425,9 @@ public class RuppertRefiner implements IDelaunayRefiner {
 	}
 
 	/**
-	 * Build the initial set of constrained subsegments by scanning TIN edges once.
-	 * Uses base edges as canonical representatives.
-	 */
-	private void initConstrainedSegments() {
-		constrainedSegments.clear();
-		for (IQuadEdge e : tin.edges()) { // edges() returns base edges
-			if (e.isConstrained()) {
-				constrainedSegments.add(e); // base edges only
-			}
-		}
-		constrainedSegmentsInitialized = true;
-	}
-
-	/**
-	 * Returns the next bad triangle from the priority queue, or null if none
-	 * remain.
+	 * Retrieves and removes the next bad triangle from the priority queue.
+	 *
+	 * @return the next bad triangle, or {@code null} if the queue is empty
 	 */
 	private SimpleTriangle nextBadTriangleFromQueue() {
 		while (!badTriangles.isEmpty()) {
@@ -435,102 +442,6 @@ public class RuppertRefiner implements IDelaunayRefiner {
 				return t;
 			}
 			// else: triangle is no longer bad; discard and continue
-		}
-		return null;
-	}
-
-	/**
-	 * Scan all triangles incident to vertex v and (re)add any bad ones into the
-	 * queue.
-	 * <p>
-	 * Uses the navigator and edge.pinwheel() to find incident edges with v as
-	 * origin, then constructs a SimpleTriangle from each base edge and evaluates
-	 * its quality.
-	 */
-	private void updateBadTrianglesAroundVertex(final Vertex v) {
-		navigator.resetForChangeToTin();
-
-		// find a triangle that contains v
-		final SimpleTriangle t0 = navigator.getContainingTriangle(v.getX(), v.getY());
-		if (t0 == null) {
-			return;
-		}
-
-		// try to get a seed edge whose origin is exactly v
-		final IQuadEdge[] triEdges = new IQuadEdge[] { t0.getEdgeA(), t0.getEdgeB(), t0.getEdgeC() };
-
-		IQuadEdge seed = null;
-
-		// prefer an edge whose A-vertex is v; if only found with B==v, use its dual
-		for (IQuadEdge e : triEdges) {
-			if (e.getA() == v) {
-				seed = e;
-				break;
-			}
-			if (e.getB() == v) {
-				IQuadEdge d = e.getDual();
-				if (d != null && d.getA() == v) {
-					seed = d;
-					break;
-				}
-			}
-		}
-
-		// fallback to neighborEdge if needed
-		if (seed == null) {
-			IQuadEdge ne = navigator.getNeighborEdge(v.getX(), v.getY());
-			if (ne == null) {
-				return;
-			}
-			if (ne.getA() == v) {
-				seed = ne;
-			} else if (ne.getB() == v) {
-				IQuadEdge d = ne.getDual();
-				if (d != null && d.getA() == v) {
-					seed = d;
-				}
-			}
-			if (seed == null) {
-				// Could not find an edge whose origin is v
-				return;
-			}
-		}
-
-		// pinwheel around v using oriented edges and evaluate each incident triangle
-		for (IQuadEdge e : seed.pinwheel()) {
-			SimpleTriangle t;
-			t = new SimpleTriangle(tin, e); // NOTE: e, not e.getBaseEdge()
-
-			final double p = triangleBadPriority(t);
-			if (p > 0.0) {
-				badTriangles.add(new BadTri(e, p)); // store oriented edge
-			}
-		}
-	}
-
-	/**
-	 * Scan segments and return one encroached segment, or {@code null}.
-	 *
-	 * <p>
-	 * The test is scale-aware: the encroachment tolerance is proportional to the
-	 * segment length. A nearest-neighbour query at the segment midpoint is used as
-	 * a fast certificate of encroachment; the method validates the certificate with
-	 * the precise diametral-circle test.
-	 * </p>
-	 *
-	 * @param segments a snapshot list of constrained subsegments to inspect
-	 * @return an encroached {@link IQuadEdge} or {@code null} if none found
-	 */
-	private IQuadEdge findEncroachedSegment() {
-		for (final IQuadEdge seg : constrainedSegments) {
-			// NOTE validity of this (fast) test requires Delaunay integrity
-			final Vertex enc = closestEncroacherOrNull(seg);
-			if (enc != null) {
-				if (ignoreSeditiousEncroachments && shouldIgnoreEncroachment(seg, enc)) {
-					continue;
-				}
-				return seg;
-			}
 		}
 		return null;
 	}
@@ -619,6 +530,76 @@ public class RuppertRefiner implements IDelaunayRefiner {
 
 		// We use cross2 (proportional to area^2) as priority: larger triangle first.
 		return cross2;
+	}
+
+	/**
+	 * Scan segments and return one encroached segment, or {@code null}.
+	 *
+	 * <p>
+	 * The test is scale-aware: the encroachment tolerance is proportional to the
+	 * segment length. A nearest-neighbour query at the segment midpoint is used as
+	 * a fast certificate of encroachment; the method validates the certificate with
+	 * the precise diametral-circle test.
+	 * </p>
+	 *
+	 * @param segments a snapshot list of constrained subsegments to inspect
+	 * @return an encroached {@link IQuadEdge} or {@code null} if none found
+	 */
+	private IQuadEdge findEncroachedSegment() {
+		for (final IQuadEdge seg : constrainedSegments) {
+			// NOTE validity of this (fast) test requires Delaunay integrity
+			final Vertex enc = closestEncroacherOrNull(seg);
+			if (enc != null) {
+				if (ignoreSeditiousEncroachments && shouldIgnoreEncroachment(seg, enc)) {
+					continue;
+				}
+				return seg;
+			}
+		}
+		return null;
+	}
+
+	/**
+	 * Returns the nearest encroaching apex vertex of the two triangles adjacent to
+	 * the given edge, or null if neither apex lies strictly inside the edge’s
+	 * diametral circle (Gabriel test). Endpoints of the edge are not considered
+	 * encroachers. Handles boundary edges where one apex may be absent. Assumes the
+	 * mesh is (constrained) Delaunay so checking only adjacent apices is
+	 * sufficient.
+	 *
+	 * @param edge edge to test (must be part of the current (C)DT)
+	 * @return the closest encroaching apex vertex (C or D), or null if the edge is
+	 *         not encroached
+	 */
+	private static Vertex closestEncroacherOrNull(IQuadEdge edge) {
+		Vertex A = edge.getA(), B = edge.getB();
+		double mx = 0.5 * (A.getX() + B.getX());
+		double my = 0.5 * (A.getY() + B.getY());
+		double r2 = edge.getLengthSq() / 4; // (diameter/2) squared
+
+		Vertex best = null;
+		double bestD2 = Double.POSITIVE_INFINITY;
+
+		IQuadEdge f = edge.getForward();
+		Vertex C = f.getB();
+		if (C != null) {
+			double d2 = C.getDistanceSq(mx, my);
+			if (d2 < bestD2) {
+				bestD2 = d2;
+				best = C;
+			}
+		}
+		IQuadEdge fd = edge.getForwardFromDual();
+		Vertex D = fd.getB();
+		if (D != null) {
+			double d2 = D.getDistanceSq(mx, my);
+			if (d2 < bestD2) {
+				bestD2 = d2;
+				best = D;
+			}
+		}
+
+		return (best != null && bestD2 < r2) ? best : null;
 	}
 
 	/**
@@ -775,10 +756,6 @@ public class RuppertRefiner implements IDelaunayRefiner {
 		return centerZ;
 	}
 
-	private Vertex nearestNeighbor(final double x, final double y) {
-		return navigator.getNearestVertex(x, y);
-	}
-
 	/**
 	 * Split a constrained subsegment while tagging the new midpoint for shells.
 	 *
@@ -827,6 +804,92 @@ public class RuppertRefiner implements IDelaunayRefiner {
 			}
 		}
 		return v;
+	}
+
+	/**
+	 * Add a new vertex to both the TIN and record metadata.
+	 *
+	 * @param v      the vertex to add (must be non-null)
+	 * @param type   the creation type (see {@link VType})
+	 * @param corner optional corner vertex used for shell tagging (may be
+	 *               {@code null})
+	 * @param shell  shell index assigned to the vertex (0 if not used)
+	 */
+
+	private void addVertex(final Vertex v, final VType type, final Vertex corner, final int shell) {
+		tin.add(v);
+		vdata.put(v, new VData(type, corner, shell));
+
+		if (badTrianglesInitialized) {
+			updateBadTrianglesAroundVertex(v);
+		}
+	}
+
+	/**
+	 * Updates the bad triangle queue for triangles incident to the specified
+	 * vertex.
+	 *
+	 * @param v vertex whose neighborhood has changed
+	 */
+	private void updateBadTrianglesAroundVertex(final Vertex v) {
+		navigator.resetForChangeToTin();
+
+		// find a triangle that contains v
+		final SimpleTriangle t0 = navigator.getContainingTriangle(v.getX(), v.getY());
+		if (t0 == null) {
+			return;
+		}
+
+		// try to get a seed edge whose origin is exactly v
+		final IQuadEdge[] triEdges = new IQuadEdge[] { t0.getEdgeA(), t0.getEdgeB(), t0.getEdgeC() };
+
+		IQuadEdge seed = null;
+
+		// prefer an edge whose A-vertex is v; if only found with B==v, use its dual
+		for (IQuadEdge e : triEdges) {
+			if (e.getA() == v) {
+				seed = e;
+				break;
+			}
+			if (e.getB() == v) {
+				IQuadEdge d = e.getDual();
+				if (d != null && d.getA() == v) {
+					seed = d;
+					break;
+				}
+			}
+		}
+
+		// fallback to neighborEdge if needed
+		if (seed == null) {
+			IQuadEdge ne = navigator.getNeighborEdge(v.getX(), v.getY());
+			if (ne == null) {
+				return;
+			}
+			if (ne.getA() == v) {
+				seed = ne;
+			} else if (ne.getB() == v) {
+				IQuadEdge d = ne.getDual();
+				if (d != null && d.getA() == v) {
+					seed = d;
+				}
+			}
+			if (seed == null) {
+				// Could not find an edge whose origin is v
+				return;
+			}
+		}
+
+		// pinwheel around v using oriented edges and evaluate each incident triangle
+		for (IQuadEdge e : seed.pinwheel()) {
+			SimpleTriangle t;
+			t = new SimpleTriangle(tin, e); // NOTE: e, not e.getBaseEdge()
+
+			final double p = triangleBadPriority(t);
+			if (p > 0.0) {
+				badTriangles.add(new BadTri(e, p)); // store oriented edge
+			}
+		}
 	}
 
 	/**
@@ -998,6 +1061,10 @@ public class RuppertRefiner implements IDelaunayRefiner {
 		return (mw != null && mw.t == VType.MIDPOINT && mw.corner == corner);
 	}
 
+	private Vertex nearestNeighbor(final double x, final double y) {
+		return navigator.getNearestVertex(x, y);
+	}
+
 	/**
 	 * Build corner angle information for constrained-graph vertices.
 	 *
@@ -1135,68 +1202,6 @@ public class RuppertRefiner implements IDelaunayRefiner {
 	 */
 	private boolean sameShell(final Vertex z, final Vertex a, final Vertex b) {
 		return shellIndex(z, a.x, a.y) == shellIndex(z, b.x, b.y);
-	}
-
-	/**
-	 * Add a new vertex to both the TIN and record metadata.
-	 *
-	 * @param v      the vertex to add (must be non-null)
-	 * @param type   the creation type (see {@link VType})
-	 * @param corner optional corner vertex used for shell tagging (may be
-	 *               {@code null})
-	 * @param shell  shell index assigned to the vertex (0 if not used)
-	 */
-
-	private void addVertex(final Vertex v, final VType type, final Vertex corner, final int shell) {
-		tin.add(v);
-		vdata.put(v, new VData(type, corner, shell));
-
-		if (badTrianglesInitialized) {
-			updateBadTrianglesAroundVertex(v);
-		}
-	}
-
-	/**
-	 * Returns the nearest encroaching apex vertex of the two triangles adjacent to
-	 * the given edge, or null if neither apex lies strictly inside the edge’s
-	 * diametral circle (Gabriel test). Endpoints of the edge are not considered
-	 * encroachers. Handles boundary edges where one apex may be absent. Assumes the
-	 * mesh is (constrained) Delaunay so checking only adjacent apices is
-	 * sufficient.
-	 *
-	 * @param edge edge to test (must be part of the current (C)DT)
-	 * @return the closest encroaching apex vertex (C or D), or null if the edge is
-	 *         not encroached
-	 */
-	private static Vertex closestEncroacherOrNull(IQuadEdge edge) {
-		Vertex A = edge.getA(), B = edge.getB();
-		double mx = 0.5 * (A.getX() + B.getX());
-		double my = 0.5 * (A.getY() + B.getY());
-		double r2 = edge.getLengthSq() / 4; // (diameter/2) squared
-
-		Vertex best = null;
-		double bestD2 = Double.POSITIVE_INFINITY;
-
-		IQuadEdge f = edge.getForward();
-		Vertex C = f.getB();
-		if (C != null) {
-			double d2 = C.getDistanceSq(mx, my);
-			if (d2 < bestD2) {
-				bestD2 = d2;
-				best = C;
-			}
-		}
-		IQuadEdge fd = edge.getForwardFromDual();
-		Vertex D = fd.getB();
-		if (D != null) {
-			double d2 = D.getDistanceSq(mx, my);
-			if (d2 < bestD2) {
-				bestD2 = d2;
-				best = D;
-			}
-		}
-
-		return (best != null && bestD2 < r2) ? best : null;
 	}
 
 	private static double hypot(double dx, double dy) {
