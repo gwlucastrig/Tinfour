@@ -22,6 +22,7 @@
  * Date     Name         Description
  * ------   ---------    -------------------------------------------------
  * 10/2025  M. Carleton  Created
+ * 11/2025  M. Carleton  Optimize performance (bad triangles queue)
  *
  * Notes:
  *
@@ -31,9 +32,12 @@
 package org.tinfour.refinement;
 
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.IdentityHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.PriorityQueue;
+
 import org.tinfour.common.Circumcircle;
 import org.tinfour.common.IIncrementalTin;
 import org.tinfour.common.IIncrementalTinNavigator;
@@ -156,6 +160,10 @@ public class RuppertRefiner implements IDelaunayRefiner {
 	private final IIncrementalTinNavigator navigator;
 	private final TriangularFacetSpecialInterpolator interpolator;
 
+	// worst-first heap
+	private final PriorityQueue<BadTri> badTriangles = new PriorityQueue<>(Comparator.comparingDouble((BadTri bt) -> bt.priority).reversed());
+	private boolean badTrianglesInitialized = false;
+
 	private int vertexIndexer;
 
 	/**
@@ -255,8 +263,8 @@ public class RuppertRefiner implements IDelaunayRefiner {
 	 *                                     &lt; θ &lt; 60)
 	 * @param minTriangleArea              area threshold for skipping very small
 	 *                                     triangles (must be &ge; 0)
-	 * @param enforceSqrt2Guard            whether to force the ρ &ge; √2 termination
-	 *                                     guard
+	 * @param enforceSqrt2Guard            whether to force the ρ &ge; √2
+	 *                                     termination guard
 	 * @param skipSeditiousTriangles       whether to skip splitting triangles whose
 	 *                                     shortest edges are seditious
 	 * @param ignoreSeditiousEncroachments whether to ignore seditious encroachments
@@ -278,7 +286,7 @@ public class RuppertRefiner implements IDelaunayRefiner {
 		}
 
 		this.tin = tin;
-        this.interpolator = new TriangularFacetSpecialInterpolator(tin);
+		this.interpolator = new TriangularFacetSpecialInterpolator(tin);
 		this.minAngleRad = Math.toRadians(minAngleDeg);
 		final double sinT = Math.sin(minAngleRad);
 		this.beta = 1.0 / (2.0 * sinT);
@@ -300,12 +308,12 @@ public class RuppertRefiner implements IDelaunayRefiner {
 
 		// The vertex index is strictly for diagnostic purposes.
 		int maxIndex = 0;
-		for(Vertex v: tin.vertices()){
-			if(v.getIndex()>maxIndex){
+		for (Vertex v : tin.vertices()) {
+			if (v.getIndex() > maxIndex) {
 				maxIndex = v.getIndex();
 			}
 		}
-		this.vertexIndexer = maxIndex+1;
+		this.vertexIndexer = maxIndex + 1;
 	}
 
 	/**
@@ -332,6 +340,9 @@ public class RuppertRefiner implements IDelaunayRefiner {
 	 */
 	@Override
 	public boolean refine() {
+		if (!badTrianglesInitialized) {
+			initBadTriangleQueue();
+		}
 		// ~100 refinements per input triangle
 		// very generous cap -- not intended to be hit!
 		final int maxIterations = vdata.size() * 2 * 100;
@@ -354,15 +365,124 @@ public class RuppertRefiner implements IDelaunayRefiner {
 		final IQuadEdge enc = findEncroachedSegment(segments);
 		if (enc != null) {
 			return splitSegmentSmart(enc);
-
 		}
 
-		final SimpleTriangle bad = findLargestPoorTriangle(segments);
+		if (!badTrianglesInitialized) {
+			initBadTriangleQueue();
+		}
+		final SimpleTriangle bad = nextBadTriangleFromQueue();
 		if (bad != null) {
 			return insertOffcenterOrSplit(bad, segments);
+		}
 
+		return null;
+	}
+
+	/**
+	 * Build the initial priority queue of bad triangles by scanning the TIN once.
+	 */
+	private void initBadTriangleQueue() {
+		badTriangles.clear();
+
+		for (final SimpleTriangle t : tin.triangles()) {
+			final double p = triangleBadPriority(t);
+			if (p > 0.0) {
+				// Use the oriented edge exactly as SimpleTriangle is using it.
+				final IQuadEdge rep = t.getEdgeA();
+				badTriangles.add(new BadTri(rep, p));
+			}
+		}
+		badTrianglesInitialized = true;
+	}
+
+	/**
+	 * Returns the next bad triangle from the priority queue, or null if none
+	 * remain.
+	 */
+	private SimpleTriangle nextBadTriangleFromQueue() {
+		while (!badTriangles.isEmpty()) {
+			final BadTri bt = badTriangles.poll();
+			final IQuadEdge rep = bt.repEdge;
+
+			SimpleTriangle t;
+			t = new SimpleTriangle(tin, rep);
+
+			final double p = triangleBadPriority(t);
+			if (p > 0.0) {
+				return t;
+			}
+			// else: triangle is no longer bad; discard and continue
 		}
 		return null;
+	}
+
+	/**
+	 * Scan all triangles incident to vertex v and (re)add any bad ones into the
+	 * queue.
+	 * <p>
+	 * Uses the navigator and edge.pinwheel() to find incident edges with v as
+	 * origin, then constructs a SimpleTriangle from each base edge and evaluates
+	 * its quality.
+	 */
+	private void updateBadTrianglesAroundVertex(final Vertex v) {
+		navigator.resetForChangeToTin();
+
+		// find a triangle that contains v
+		final SimpleTriangle t0 = navigator.getContainingTriangle(v.getX(), v.getY());
+		if (t0 == null) {
+			return;
+		}
+
+		// try to get a seed edge whose origin is exactly v
+		final IQuadEdge[] triEdges = new IQuadEdge[] { t0.getEdgeA(), t0.getEdgeB(), t0.getEdgeC() };
+
+		IQuadEdge seed = null;
+
+		// prefer an edge whose A-vertex is v; if only found with B==v, use its dual
+		for (IQuadEdge e : triEdges) {
+			if (e.getA() == v) {
+				seed = e;
+				break;
+			}
+			if (e.getB() == v) {
+				IQuadEdge d = e.getDual();
+				if (d != null && d.getA() == v) {
+					seed = d;
+					break;
+				}
+			}
+		}
+
+		// fallback to neighborEdge if needed
+		if (seed == null) {
+			IQuadEdge ne = navigator.getNeighborEdge(v.getX(), v.getY());
+			if (ne == null) {
+				return;
+			}
+			if (ne.getA() == v) {
+				seed = ne;
+			} else if (ne.getB() == v) {
+				IQuadEdge d = ne.getDual();
+				if (d != null && d.getA() == v) {
+					seed = d;
+				}
+			}
+			if (seed == null) {
+				// Could not find an edge whose origin is v
+				return;
+			}
+		}
+
+		// pinwheel around v using oriented edges and evaluate each incident triangle
+		for (IQuadEdge e : seed.pinwheel()) {
+			SimpleTriangle t;
+			t = new SimpleTriangle(tin, e); // NOTE: e, not e.getBaseEdge()
+
+			final double p = triangleBadPriority(t);
+			if (p > 0.0) {
+				badTriangles.add(new BadTri(e, p)); // store oriented edge
+			}
+		}
 	}
 
 	/**
@@ -413,98 +533,89 @@ public class RuppertRefiner implements IDelaunayRefiner {
 	}
 
 	/**
-	 * Find the largest-area triangle whose quality violates the requested bound.
-	 *
-	 * <p>
-	 * The implementation uses a radius-to-shortest-edge ratio test (equivalently
-	 * the minimum-angle bound). Triangles marked as ghosts or outside constrained
-	 * regions (when any constraints exist) are ignored. Optionally skips triangles
-	 * whose shortest edge is seditious.
-	 * </p>
-	 *
-	 * @param segments snapshot of constrained subsegments (used by heuristics)
-	 * @return a {@link SimpleTriangle} chosen for refinement, or {@code null}
+	 * Computes a "badness" priority for the given triangle.
+	 * 
+	 * @return >0 if triangle is poor-quality and should be refined (value is used
+	 *         as priority). <=0 if triangle is triangle is acceptable or should be
+	 *         ignored (ghost, outside region, etc.)
 	 */
-	private SimpleTriangle findLargestPoorTriangle(final List<IQuadEdge> segments) {
-		SimpleTriangle best = null;
-		double bestCross2 = -1.0;
+	private double triangleBadPriority(final SimpleTriangle t) {
+		if (t.isGhost()) {
+			return 0.0;
+		}
 
 		final int constraints = tin.getConstraints().size();
+
+		if (constraints == 1) {
+			// faster constraint check
+			if (!t.getEdgeA().isConstraintRegionMember() || !t.getEdgeB().isConstraintRegionMember() || !t.getEdgeC().isConstraintRegionMember()) {
+				return 0.0;
+			}
+		} else if (constraints > 1) {
+			final var rc = t.getContainingRegion();
+			if (rc == null || !rc.definesConstrainedRegion()) {
+				return 0.0;
+			}
+		}
+
+		final Vertex A = t.getVertexA(), B = t.getVertexB(), C = t.getVertexC();
+		final double ax = A.getX(), ay = A.getY();
+		final double bx = B.getX(), by = B.getY();
+		final double cx = C.getX(), cy = C.getY();
+
+		// AB, AC
+		final double abx = bx - ax, aby = by - ay;
+		final double acx = cx - ax, acy = cy - ay;
+
+		// |AB|^2, |AC|^2, |BC|^2 via (AC-AB)^2 = la + lc - 2 dot(AB,AC)
+		final double la = abx * abx + aby * aby;
+		final double lc = acx * acx + acy * acy;
+		final double dot = abx * acx + aby * acy;
+		final double lb = la + lc - 2.0 * dot;
+
+		// cross^2 (double-area squared)
+		final double cross = abx * acy - aby * acx;
+		final double cross2 = cross * cross;
+		if (!(cross2 > 0.0)) {
+			return 0.0;
+		}
+
+		// shortest edge and product of the other two squared sides
+		double pairProd;
+		Vertex sA, sB;
+		if (la <= lb && la <= lc) {
+			pairProd = lb * lc;
+			sA = A;
+			sB = B;
+		} else if (lb <= la && lb <= lc) {
+			pairProd = la * lc;
+			sA = B;
+			sB = C;
+		} else {
+			pairProd = la * lb;
+			sA = C;
+			sB = A;
+		}
+
 		final double threshMul = 4.0 * rhoMin * rhoMin; // 4*rhoMin^2
 		final double minCross2 = 4.0 * minTriangleArea * minTriangleArea; // (2*area)^2
 
-		for (final SimpleTriangle t : tin.triangles()) {
-			if (t.isGhost()) {
-				continue;
-			}
-
-			if (constraints == 1) {
-				// faster constraint check
-				if (!t.getEdgeA().isConstraintRegionMember() || !t.getEdgeB().isConstraintRegionMember() || !t.getEdgeC().isConstraintRegionMember()) {
-					continue;
-				}
-			} else if (constraints > 1) {
-				final var rc = t.getContainingRegion();
-				if (rc == null || !rc.definesConstrainedRegion()) {
-					continue;
-				}
-			}
-
-			// below, compute edge ratio and area inline
-			final Vertex A = t.getVertexA(), B = t.getVertexB(), C = t.getVertexC();
-			final double ax = A.getX(), ay = A.getY();
-			final double bx = B.getX(), by = B.getY();
-			final double cx = C.getX(), cy = C.getY();
-
-			// AB, AC
-			final double abx = bx - ax, aby = by - ay;
-			final double acx = cx - ax, acy = cy - ay;
-
-			// |AB|^2, |AC|^2, |BC|^2 via (AC-AB)^2 = la + lc - 2 dot(AB,AC)
-			final double la = abx * abx + aby * aby;
-			final double lc = acx * acx + acy * acy;
-			final double dot = abx * acx + aby * acy;
-			final double lb = la + lc - 2.0 * dot;
-
-			// cross^2 (double-area squared)
-			final double cross = abx * acy - aby * acx;
-			final double cross2 = cross * cross;
-			if (!(cross2 > 0.0)) {
-				continue;
-			}
-
-			// shortest edge and product of the other two squared sides
-			double pairProd;
-			Vertex sA, sB;
-			if (la <= lb && la <= lc) {
-				pairProd = lb * lc;
-				sA = A;
-				sB = B;
-			} else if (lb <= la && lb <= lc) {
-				pairProd = la * lc;
-				sA = B;
-				sB = C;
-			} else {
-				pairProd = la * lb;
-				sA = C;
-				sB = A;
-			}
-
-			// bad if (R/s) >= rhoMin <=> pairProd >= 4*rhoMin^2 * cross^2
-			if (pairProd < threshMul * cross2) {
-				continue;
-			}
-
-			if (skipSeditiousTriangles && isSeditious(sA, sB)) {
-				continue;
-			}
-
-			if (cross2 > minCross2 && cross2 > bestCross2) {
-				bestCross2 = cross2;
-				best = t;
-			}
+		// bad if (R/s) >= rhoMin <=> pairProd >= 4*rhoMin^2 * cross^2
+		if (pairProd < threshMul * cross2) {
+			return 0.0;
 		}
-		return best;
+
+		if (skipSeditiousTriangles && isSeditious(sA, sB)) {
+			return 0.0;
+		}
+
+		// area (via cross2) must exceed threshold
+		if (!(cross2 > minCross2)) {
+			return 0.0;
+		}
+
+		// We use cross2 (proportional to area^2) as priority: larger triangle first.
+		return cross2;
 	}
 
 	/**
@@ -649,11 +760,14 @@ public class RuppertRefiner implements IDelaunayRefiner {
 		if (nearEdge != null) {
 			return splitSegmentSmart(nearEdge);
 		}
+
 		double cz = interpolator.interpolate(center.getX(), center.getY(), null);
-		Vertex centerZ = new Vertex(center.getX(), center.getY(), cz, vertexIndexer++);
+		Vertex centerZ = new Vertex(center.getX(), center.getY(), cz);
+		centerZ.setIndex(vertexIndexer++);
 		centerZ.setRefinementProduct(true);
-		tin.add(centerZ);
-		vdata.put(centerZ, new VData(VType.CIRCUMCENTER, null, 0));
+
+		addVertex(centerZ, VType.CIRCUMCENTER, null, 0);
+
 		lastInsertedVertex = centerZ;
 		return centerZ;
 	}
@@ -684,13 +798,20 @@ public class RuppertRefiner implements IDelaunayRefiner {
 			corner = b;
 		}
 
-		double z = (a.getZ()+b.getZ())*0.5;
+		double z = (a.getZ() + b.getZ()) * 0.5;
 		final Vertex v = tin.splitEdge(seg, 0.5, z);
 		if (v != null) {
 			v.setRefinementProduct(true);
 			final int k = (corner != null) ? shellIndex(corner, v.x, v.y) : 0;
 			vdata.put(v, new VData(VType.MIDPOINT, corner, k));
 			lastInsertedVertex = v;
+
+			if (badTrianglesInitialized) {
+				// Update around both original segment endpoints and new midpoint
+				updateBadTrianglesAroundVertex(a);
+				updateBadTrianglesAroundVertex(b);
+				updateBadTrianglesAroundVertex(v);
+			}
 		}
 		return v;
 	}
@@ -730,7 +851,8 @@ public class RuppertRefiner implements IDelaunayRefiner {
 	 * @param v        point to test
 	 * @param segments list of constrained subsegments
 	 * @param tol      perpendicular-distance tolerance (scale-aware)
-	 * @return first subsegment whose interior is within {@code tol}, or {@code null}
+	 * @return first subsegment whose interior is within {@code tol}, or
+	 *         {@code null}
 	 */
 	private IQuadEdge firstNearConstrainedEdgeInterior(final Vertex v, final List<IQuadEdge> segments, final double tol) {
 		final double px = v.getX(), py = v.getY();
@@ -949,9 +1071,14 @@ public class RuppertRefiner implements IDelaunayRefiner {
 	 *               {@code null})
 	 * @param shell  shell index assigned to the vertex (0 if not used)
 	 */
+
 	private void addVertex(final Vertex v, final VType type, final Vertex corner, final int shell) {
 		tin.add(v);
 		vdata.put(v, new VData(type, corner, shell));
+
+		if (badTrianglesInitialized) {
+			updateBadTrianglesAroundVertex(v);
+		}
 	}
 
 	/**
@@ -1000,6 +1127,20 @@ public class RuppertRefiner implements IDelaunayRefiner {
 	private static double hypot(double dx, double dy) {
 		double sumOfSquares = dx * dx + dy * dy;
 		return Math.sqrt(sumOfSquares);
+	}
+
+	/**
+	 * Priority-queue entry for a bad triangle. We store a representative edge and a
+	 * priority (e.g. area or cross^2).
+	 */
+	private static final class BadTri {
+		final IQuadEdge repEdge; // representative edge for this triangle
+		final double priority; // larger = "worse" (e.g. cross^2 or area)
+
+		BadTri(IQuadEdge repEdge, double priority) {
+			this.repEdge = repEdge;
+			this.priority = priority;
+		}
 	}
 
 	/**
