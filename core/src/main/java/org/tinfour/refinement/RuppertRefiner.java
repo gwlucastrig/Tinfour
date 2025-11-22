@@ -163,6 +163,7 @@ public class RuppertRefiner implements IDelaunayRefiner {
 	private Map<Vertex, CornerInfo> cornerInfo = new IdentityHashMap<>();
 
 	private final IIncrementalTinNavigator navigator;
+	private final boolean interpolateZ;
 	private final TriangularFacetSpecialInterpolator interpolator;
 
 	// live set of constrained subsegments in the current triangulation
@@ -251,7 +252,31 @@ public class RuppertRefiner implements IDelaunayRefiner {
 	 * @throws IllegalArgumentException on invalid inputs
 	 */
 	public RuppertRefiner(final IIncrementalTin tin, final double minAngleDeg, final double minTriangleArea) {
-		this(tin, minAngleDeg, minTriangleArea, false, true, true);
+		this(tin, minAngleDeg, minTriangleArea, false, true, true, false);
+	}
+
+	/**
+	 * Constructs a RuppertRefiner with the requested minimum internal triangle
+	 * angle and a user-specified minimum triangle area threshold.
+	 *
+	 * <p>
+	 * The {@code minTriangleArea} is used as a conservative safeguard to avoid
+	 * attempting to refine triangles whose area is extremely small (in the
+	 * coordinate units squared). A value of 0 disables the area-based skipping.
+	 * </p>
+	 *
+	 * @param tin             the incremental triangulation to refine (non-null,
+	 *                        bootstrapped)
+	 * @param minAngleDeg     the requested minimum angle in degrees (0 &lt; θ &lt;
+	 *                        60)
+	 * @param minTriangleArea area threshold for skipping refinement of very small
+	 *                        triangles (must be &ge; 0)
+	 * @param interpolateZ    whether to interpolate Z for newly inserted Steiner
+	 *                        vertices from the current TIN surface
+	 * @throws IllegalArgumentException on invalid inputs
+	 */
+	public RuppertRefiner(final IIncrementalTin tin, final double minAngleDeg, final double minTriangleArea, boolean interpolateZ) {
+		this(tin, minAngleDeg, minTriangleArea, false, true, true, false);
 	}
 
 	/**
@@ -267,8 +292,13 @@ public class RuppertRefiner implements IDelaunayRefiner {
 	 * shortest edges have been marked seditious are not attempted for split.</li>
 	 * <li>{@code ignoreSeditiousEncroachments} — when {@code true}, encroachments
 	 * identified as seditious are ignored (prevents ping-pong splitting).</li>
+	 * <li>{@code interpolateZ} — when {@code true}, Z values for newly created
+	 * Steiner vertices (e.g., circumcenters and segment splits) are assigned by
+	 * interpolating from the current TIN surface; when {@code false}, the refiner
+	 * does not interpolate Z (no elevation is assigned/modified by the
+	 * refiner).</li>
 	 * </ul>
-	 *
+	 * 
 	 * @param tin                          the incremental triangulation to refine
 	 *                                     (non-null, bootstrapped)
 	 * @param minAngleDeg                  the requested minimum angle in degrees (0
@@ -279,11 +309,14 @@ public class RuppertRefiner implements IDelaunayRefiner {
 	 *                                     termination guard
 	 * @param skipSeditiousTriangles       whether to skip splitting triangles whose
 	 *                                     shortest edges are seditious
+	 * @param interpolateZ                 whether to interpolate Z for newly
+	 *                                     inserted Steiner vertices from the
+	 *                                     current TIN surface
 	 * @param ignoreSeditiousEncroachments whether to ignore seditious encroachments
 	 * @throws IllegalArgumentException on invalid inputs
 	 */
 	public RuppertRefiner(final IIncrementalTin tin, final double minAngleDeg, final double minTriangleArea, final boolean enforceSqrt2Guard,
-			final boolean skipSeditiousTriangles, final boolean ignoreSeditiousEncroachments) {
+			final boolean skipSeditiousTriangles, final boolean ignoreSeditiousEncroachments, boolean interpolateZ) {
 		if (tin == null) {
 			throw new IllegalArgumentException("tin must not be null");
 		}
@@ -298,6 +331,7 @@ public class RuppertRefiner implements IDelaunayRefiner {
 		}
 
 		this.tin = tin;
+		this.interpolateZ = interpolateZ;
 		this.interpolator = new TriangularFacetSpecialInterpolator(tin);
 		this.minAngleRad = Math.toRadians(minAngleDeg);
 		final double sinT = Math.sin(minAngleRad);
@@ -693,7 +727,7 @@ public class RuppertRefiner implements IDelaunayRefiner {
 
 		final double ox = mx + nx * d;
 		final double oy = my + ny * d;
-		final double oz = interpolator.interpolate(ox, oy, null);
+		final double oz = interpolateZ ? interpolator.interpolate(ox, oy, null) : Double.NaN;
 		final Vertex off = new Vertex(ox, oy, oz);
 		off.setRefinementProduct(true);
 
@@ -766,7 +800,7 @@ public class RuppertRefiner implements IDelaunayRefiner {
 			return splitSegmentSmart(nearEdge);
 		}
 
-		double cz = interpolator.interpolate(center.getX(), center.getY(), null);
+		double cz = interpolateZ ? interpolator.interpolate(center.getX(), center.getY(), null) : Double.NaN;
 		Vertex centerZ = new Vertex(center.getX(), center.getY(), cz);
 		centerZ.setIndex(vertexIndexer++);
 		centerZ.setRefinementProduct(true);
