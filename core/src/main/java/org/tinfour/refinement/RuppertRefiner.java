@@ -1042,7 +1042,7 @@ public class RuppertRefiner implements IDelaunayRefiner {
 		IQuadEdge[] edges = new IQuadEdge[] { tri.getEdgeA(), tri.getEdgeB(), tri.getEdgeC() };
 
 		for (IQuadEdge e : edges) {
-			// Check the edge of the containing triangle
+			// check the edge of the containing triangle
 			if (checkEdge(e, p))
 				return e.getBaseReference();
 
@@ -1074,6 +1074,10 @@ public class RuppertRefiner implements IDelaunayRefiner {
 		return false;
 	}
 
+	/**
+	 * Finds the first constrained segment whose diametral circle is strictly
+	 * encroached by the candidate point {@code p}.
+	 */
 	private boolean isEncroachedByPoint(IQuadEdge seg, Vertex p) {
 		if (!seg.isConstrained()) {
 			return false;
@@ -1091,16 +1095,13 @@ public class RuppertRefiner implements IDelaunayRefiner {
 	}
 
 	/**
-	 * Checks whether the point {@code v} lies closer than {@code tol} to the middle
-	 * part of any constrained segment (excluding its endpoints), and returns the
+	 * Checks whether the point {@code v} lies closer than {@code tol} to the
+	 * interior (excluding endpoints) of any constrained segment, and returns the
 	 * first such segment if found.
 	 *
 	 * <p>
 	 * This is used as a safety check to avoid inserting vertices that are almost on
-	 * a constrained edge, which can cause numerical or geometric problems. For each
-	 * constrained segment, the closest point on that segment to {@code v} is
-	 * computed; if this closest point lies strictly between the two endpoints and
-	 * is within distance {@code tol}, the segment is returned.
+	 * a constrained edge, which can cause numerical or geometric problems.
 	 * </p>
 	 *
 	 * @param v   vertex to test
