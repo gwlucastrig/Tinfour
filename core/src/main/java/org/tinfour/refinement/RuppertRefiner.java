@@ -22,6 +22,7 @@
  * Date     Name         Description
  * ------   ---------    -------------------------------------------------
  * 10/2025  M. Carleton  Created
+ * 11/2025  M. Carleton  Optimize performance (bad triangles queue)
  *
  * Notes:
  *
@@ -30,10 +31,18 @@
 
 package org.tinfour.refinement;
 
+import java.util.ArrayDeque;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.HashSet;
 import java.util.IdentityHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.PriorityQueue;
+import java.util.Queue;
+import java.util.Set;
+
 import org.tinfour.common.Circumcircle;
 import org.tinfour.common.IIncrementalTin;
 import org.tinfour.common.IIncrementalTinNavigator;
@@ -154,7 +163,19 @@ public class RuppertRefiner implements IDelaunayRefiner {
 	private Map<Vertex, CornerInfo> cornerInfo = new IdentityHashMap<>();
 
 	private final IIncrementalTinNavigator navigator;
+	private final boolean interpolateZ;
 	private final TriangularFacetSpecialInterpolator interpolator;
+
+	// live set of constrained subsegments in the current triangulation
+	private final Set<IQuadEdge> constrainedSegments = new HashSet<>();
+	private boolean constrainedSegmentsInitialized = false;
+
+	// worst-first heap
+	private final PriorityQueue<BadTri> badTriangles = new PriorityQueue<>(Comparator.comparingDouble((BadTri bt) -> bt.priority).reversed());
+	private boolean badTrianglesInitialized = false;
+
+	private final Queue<IQuadEdge> encroachedSegmentQueue = new ArrayDeque<>();
+	private final Set<IQuadEdge> inEncroachmentQueue = Collections.newSetFromMap(new IdentityHashMap<>());
 
 	private int vertexIndexer;
 
@@ -231,7 +252,31 @@ public class RuppertRefiner implements IDelaunayRefiner {
 	 * @throws IllegalArgumentException on invalid inputs
 	 */
 	public RuppertRefiner(final IIncrementalTin tin, final double minAngleDeg, final double minTriangleArea) {
-		this(tin, minAngleDeg, minTriangleArea, false, true, true);
+		this(tin, minAngleDeg, minTriangleArea, false, true, true, false);
+	}
+
+	/**
+	 * Constructs a RuppertRefiner with the requested minimum internal triangle
+	 * angle and a user-specified minimum triangle area threshold.
+	 *
+	 * <p>
+	 * The {@code minTriangleArea} is used as a conservative safeguard to avoid
+	 * attempting to refine triangles whose area is extremely small (in the
+	 * coordinate units squared). A value of 0 disables the area-based skipping.
+	 * </p>
+	 *
+	 * @param tin             the incremental triangulation to refine (non-null,
+	 *                        bootstrapped)
+	 * @param minAngleDeg     the requested minimum angle in degrees (0 &lt; θ &lt;
+	 *                        60)
+	 * @param minTriangleArea area threshold for skipping refinement of very small
+	 *                        triangles (must be &ge; 0)
+	 * @param interpolateZ    whether to interpolate Z for newly inserted Steiner
+	 *                        vertices from the current TIN surface
+	 * @throws IllegalArgumentException on invalid inputs
+	 */
+	public RuppertRefiner(final IIncrementalTin tin, final double minAngleDeg, final double minTriangleArea, boolean interpolateZ) {
+		this(tin, minAngleDeg, minTriangleArea, false, true, true, false);
 	}
 
 	/**
@@ -247,23 +292,31 @@ public class RuppertRefiner implements IDelaunayRefiner {
 	 * shortest edges have been marked seditious are not attempted for split.</li>
 	 * <li>{@code ignoreSeditiousEncroachments} — when {@code true}, encroachments
 	 * identified as seditious are ignored (prevents ping-pong splitting).</li>
+	 * <li>{@code interpolateZ} — when {@code true}, Z values for newly created
+	 * Steiner vertices (e.g., circumcenters and segment splits) are assigned by
+	 * interpolating from the current TIN surface; when {@code false}, the refiner
+	 * does not interpolate Z (no elevation is assigned/modified by the
+	 * refiner).</li>
 	 * </ul>
-	 *
+	 * 
 	 * @param tin                          the incremental triangulation to refine
 	 *                                     (non-null, bootstrapped)
 	 * @param minAngleDeg                  the requested minimum angle in degrees (0
 	 *                                     &lt; θ &lt; 60)
 	 * @param minTriangleArea              area threshold for skipping very small
 	 *                                     triangles (must be &ge; 0)
-	 * @param enforceSqrt2Guard            whether to force the ρ &ge; √2 termination
-	 *                                     guard
+	 * @param enforceSqrt2Guard            whether to force the ρ &ge; √2
+	 *                                     termination guard
 	 * @param skipSeditiousTriangles       whether to skip splitting triangles whose
 	 *                                     shortest edges are seditious
+	 * @param interpolateZ                 whether to interpolate Z for newly
+	 *                                     inserted Steiner vertices from the
+	 *                                     current TIN surface
 	 * @param ignoreSeditiousEncroachments whether to ignore seditious encroachments
 	 * @throws IllegalArgumentException on invalid inputs
 	 */
 	public RuppertRefiner(final IIncrementalTin tin, final double minAngleDeg, final double minTriangleArea, final boolean enforceSqrt2Guard,
-			final boolean skipSeditiousTriangles, final boolean ignoreSeditiousEncroachments) {
+			final boolean skipSeditiousTriangles, final boolean ignoreSeditiousEncroachments, boolean interpolateZ) {
 		if (tin == null) {
 			throw new IllegalArgumentException("tin must not be null");
 		}
@@ -278,7 +331,8 @@ public class RuppertRefiner implements IDelaunayRefiner {
 		}
 
 		this.tin = tin;
-        this.interpolator = new TriangularFacetSpecialInterpolator(tin);
+		this.interpolateZ = interpolateZ;
+		this.interpolator = new TriangularFacetSpecialInterpolator(tin);
 		this.minAngleRad = Math.toRadians(minAngleDeg);
 		final double sinT = Math.sin(minAngleRad);
 		this.beta = 1.0 / (2.0 * sinT);
@@ -296,16 +350,17 @@ public class RuppertRefiner implements IDelaunayRefiner {
 		}
 
 		navigator = tin.getNavigator();
+		initConstrainedSegments();
 		cornerInfo = buildCornerInfo();
 
 		// The vertex index is strictly for diagnostic purposes.
 		int maxIndex = 0;
-		for(Vertex v: tin.vertices()){
-			if(v.getIndex()>maxIndex){
+		for (Vertex v : tin.vertices()) {
+			if (v.getIndex() > maxIndex) {
 				maxIndex = v.getIndex();
 			}
 		}
-		this.vertexIndexer = maxIndex+1;
+		this.vertexIndexer = maxIndex + 1;
 	}
 
 	/**
@@ -332,6 +387,9 @@ public class RuppertRefiner implements IDelaunayRefiner {
 	 */
 	@Override
 	public boolean refine() {
+		if (!badTrianglesInitialized) {
+			initBadTriangleQueue();
+		}
 		// ~100 refinements per input triangle
 		// very generous cap -- not intended to be hit!
 		final int maxIterations = vdata.size() * 2 * 100;
@@ -347,61 +405,206 @@ public class RuppertRefiner implements IDelaunayRefiner {
 		return false;
 	}
 
+	/**
+	 * Performs a single refinement step, typically inserting one vertex or
+	 * resolving one bad feature.
+	 *
+	 * @return {@code true} if refinement made progress, {@code false} if no more
+	 *         refinement is possible
+	 */
 	@Override
 	public Vertex refineOnce() {
-		final List<IQuadEdge> segments = collectConstrainedSegments();
-
-		final IQuadEdge enc = findEncroachedSegment(segments);
-		if (enc != null) {
-			return splitSegmentSmart(enc);
-
+		if (!constrainedSegmentsInitialized) {
+			initConstrainedSegments();
 		}
 
-		final SimpleTriangle bad = findLargestPoorTriangle(segments);
-		if (bad != null) {
-			return insertOffcenterOrSplit(bad, segments);
+		final IQuadEdge enc = findEncroachedSegment();
+		if (enc != null) {
+			return splitSegmentSmart(enc);
+		}
 
+		if (!badTrianglesInitialized) {
+			initBadTriangleQueue();
+		}
+		final SimpleTriangle bad = nextBadTriangleFromQueue();
+		if (bad != null) {
+			return insertOffcenterOrSplit(bad);
+		}
+
+		return null;
+	}
+
+	/**
+	 * Initializes the set of constrained segments from the current TIN.
+	 */
+	private void initConstrainedSegments() {
+		constrainedSegments.clear();
+		encroachedSegmentQueue.clear();
+		inEncroachmentQueue.clear();
+
+		for (IQuadEdge e : tin.edges()) {
+			if (e.isConstrained()) {
+				constrainedSegments.add(e.getBaseReference());
+				// Check encroachment immediately during init
+				if (closestEncroacherOrNull(e) != null) {
+					addEncroachmentCandidate(e);
+				}
+			}
+		}
+		constrainedSegmentsInitialized = true;
+	}
+
+	private void addEncroachmentCandidate(IQuadEdge e) {
+		IQuadEdge base = e.getBaseReference();
+		if (!inEncroachmentQueue.contains(base)) {
+			inEncroachmentQueue.add(base);
+			encroachedSegmentQueue.add(base);
+		}
+	}
+
+	/**
+	 * Initializes the queue of bad triangles using the current TIN state.
+	 */
+	private void initBadTriangleQueue() {
+		badTriangles.clear();
+
+		for (final SimpleTriangle t : tin.triangles()) {
+			final double p = triangleBadPriority(t);
+			if (p > 0.0) {
+				// Use the oriented edge exactly as SimpleTriangle is using it.
+				final IQuadEdge rep = t.getEdgeA();
+				badTriangles.add(new BadTri(rep, p));
+			}
+		}
+		badTrianglesInitialized = true;
+	}
+
+	/**
+	 * Retrieves and removes the next bad triangle from the priority queue.
+	 *
+	 * @return the next bad triangle, or {@code null} if the queue is empty
+	 */
+	private SimpleTriangle nextBadTriangleFromQueue() {
+		while (!badTriangles.isEmpty()) {
+			final BadTri bt = badTriangles.poll();
+			final IQuadEdge rep = bt.repEdge;
+
+			SimpleTriangle t;
+			t = new SimpleTriangle(tin, rep);
+
+			final double p = triangleBadPriority(t);
+			if (p > 0.0) {
+				return t;
+			}
+			// else: triangle is no longer bad; discard and continue
 		}
 		return null;
 	}
 
 	/**
-	 * Collects constrained subsegments from the current TIN.
-	 *
-	 * <p>
-	 * Returns a snapshot list of {@link IQuadEdge} whose {@code isConstrained()}
-	 * predicate is true. The list is used by encroachment and near-edge searches.
-	 * </p>
-	 *
-	 * @return modifiable list of constrained subsegments
+	 * Computes a "badness" priority for the given triangle.
+	 * 
+	 * @return >0 if triangle is poor-quality and should be refined (value is used
+	 *         as priority). <=0 if triangle is triangle is acceptable or should be
+	 *         ignored (ghost, outside region, etc.)
 	 */
-	private List<IQuadEdge> collectConstrainedSegments() {
-		final List<IQuadEdge> result = new ArrayList<>();
-		for (final IQuadEdge e : tin.edges()) { // .edges() returns only base edges
-			if (e.isConstrained()) {
-				result.add(e);
+	private double triangleBadPriority(final SimpleTriangle t) {
+		if (t.isGhost()) {
+			return 0.0;
+		}
+
+		final int constraints = tin.getConstraints().size();
+
+		if (constraints == 1) {
+			// faster constraint check
+			if (!t.getEdgeA().isConstraintRegionMember() || !t.getEdgeB().isConstraintRegionMember() || !t.getEdgeC().isConstraintRegionMember()) {
+				return 0.0;
+			}
+		} else if (constraints > 1) {
+			final var rc = t.getContainingRegion();
+			if (rc == null || !rc.definesConstrainedRegion()) {
+				return 0.0;
 			}
 		}
-		return result;
+
+		final Vertex A = t.getVertexA(), B = t.getVertexB(), C = t.getVertexC();
+		final double ax = A.getX(), ay = A.getY();
+		final double bx = B.getX(), by = B.getY();
+		final double cx = C.getX(), cy = C.getY();
+
+		// AB, AC
+		final double abx = bx - ax, aby = by - ay;
+		final double acx = cx - ax, acy = cy - ay;
+
+		// |AB|^2, |AC|^2, |BC|^2 via (AC-AB)^2 = la + lc - 2 dot(AB,AC)
+		final double la = abx * abx + aby * aby;
+		final double lc = acx * acx + acy * acy;
+		final double dot = abx * acx + aby * acy;
+		final double lb = la + lc - 2.0 * dot;
+
+		// cross^2 (double-area squared)
+		final double cross = abx * acy - aby * acx;
+		final double cross2 = cross * cross;
+		if (!(cross2 > 0.0)) {
+			return 0.0;
+		}
+
+		// shortest edge and product of the other two squared sides
+		double pairProd;
+		Vertex sA, sB;
+		if (la <= lb && la <= lc) {
+			pairProd = lb * lc;
+			sA = A;
+			sB = B;
+		} else if (lb <= la && lb <= lc) {
+			pairProd = la * lc;
+			sA = B;
+			sB = C;
+		} else {
+			pairProd = la * lb;
+			sA = C;
+			sB = A;
+		}
+
+		final double threshMul = 4.0 * rhoMin * rhoMin; // 4*rhoMin^2
+		final double minCross2 = 4.0 * minTriangleArea * minTriangleArea; // (2*area)^2
+
+		// bad if (R/s) >= rhoMin <=> pairProd >= 4*rhoMin^2 * cross^2
+		if (pairProd < threshMul * cross2) {
+			return 0.0;
+		}
+
+		if (skipSeditiousTriangles && isSeditious(sA, sB)) {
+			return 0.0;
+		}
+
+		// area (via cross2) must exceed threshold
+		if (!(cross2 > minCross2)) {
+			return 0.0;
+		}
+
+		// We use cross2 (proportional to area^2) as priority: larger triangle first.
+		return cross2;
 	}
 
 	/**
-	 * Scan segments and return one encroached segment, or {@code null}.
-	 *
-	 * <p>
-	 * The test is scale-aware: the encroachment tolerance is proportional to the
-	 * segment length. A nearest-neighbour query at the segment midpoint is used as
-	 * a fast certificate of encroachment; the method validates the certificate with
-	 * the precise diametral-circle test.
-	 * </p>
-	 *
-	 * @param segments a snapshot list of constrained subsegments to inspect
-	 * @return an encroached {@link IQuadEdge} or {@code null} if none found
+	 * Retrieves the next encroached segment from the worklist. Returns null if the
+	 * queue is empty (or all candidates were resolved).
 	 */
-	private IQuadEdge findEncroachedSegment(final List<IQuadEdge> segments) {
-		for (final IQuadEdge seg : segments) {
-			// NOTE validity of this (fast) test requires Delaunay integrity
-			final Vertex enc = closestEncroacherOrNull(seg);
+	private IQuadEdge findEncroachedSegment() {
+		while (!encroachedSegmentQueue.isEmpty()) {
+			IQuadEdge seg = encroachedSegmentQueue.poll();
+			inEncroachmentQueue.remove(seg);
+
+			/*
+			 * Verify the segment is still valid, constrained, and actually encroached. (The
+			 * mesh changes, so a queued segment might have been split already or fixed).
+			 */
+			if (!constrainedSegments.contains(seg.getBaseReference())) {
+				continue;
+			}
+
+			Vertex enc = closestEncroacherOrNull(seg);
 			if (enc != null) {
 				if (ignoreSeditiousEncroachments && shouldIgnoreEncroachment(seg, enc)) {
 					continue;
@@ -413,98 +616,46 @@ public class RuppertRefiner implements IDelaunayRefiner {
 	}
 
 	/**
-	 * Find the largest-area triangle whose quality violates the requested bound.
+	 * Returns the nearest encroaching apex vertex of the two triangles adjacent to
+	 * the given edge, or null if neither apex lies strictly inside the edge’s
+	 * diametral circle (Gabriel test). Endpoints of the edge are not considered
+	 * encroachers. Handles boundary edges where one apex may be absent. Assumes the
+	 * mesh is (constrained) Delaunay so checking only adjacent apices is
+	 * sufficient.
 	 *
-	 * <p>
-	 * The implementation uses a radius-to-shortest-edge ratio test (equivalently
-	 * the minimum-angle bound). Triangles marked as ghosts or outside constrained
-	 * regions (when any constraints exist) are ignored. Optionally skips triangles
-	 * whose shortest edge is seditious.
-	 * </p>
-	 *
-	 * @param segments snapshot of constrained subsegments (used by heuristics)
-	 * @return a {@link SimpleTriangle} chosen for refinement, or {@code null}
+	 * @param edge edge to test (must be part of the current (C)DT)
+	 * @return the closest encroaching apex vertex (C or D), or null if the edge is
+	 *         not encroached
 	 */
-	private SimpleTriangle findLargestPoorTriangle(final List<IQuadEdge> segments) {
-		SimpleTriangle best = null;
-		double bestCross2 = -1.0;
+	private static Vertex closestEncroacherOrNull(IQuadEdge edge) {
+		Vertex A = edge.getA(), B = edge.getB();
+		double mx = 0.5 * (A.getX() + B.getX());
+		double my = 0.5 * (A.getY() + B.getY());
+		double r2 = edge.getLengthSq() / 4; // (diameter/2) squared
 
-		final int constraints = tin.getConstraints().size();
-		final double threshMul = 4.0 * rhoMin * rhoMin; // 4*rhoMin^2
-		final double minCross2 = 4.0 * minTriangleArea * minTriangleArea; // (2*area)^2
+		Vertex best = null;
+		double bestD2 = Double.POSITIVE_INFINITY;
 
-		for (final SimpleTriangle t : tin.triangles()) {
-			if (t.isGhost()) {
-				continue;
-			}
-
-			if (constraints == 1) {
-				// faster constraint check
-				if (!t.getEdgeA().isConstraintRegionMember() || !t.getEdgeB().isConstraintRegionMember() || !t.getEdgeC().isConstraintRegionMember()) {
-					continue;
-				}
-			} else if (constraints > 1) {
-				final var rc = t.getContainingRegion();
-				if (rc == null || !rc.definesConstrainedRegion()) {
-					continue;
-				}
-			}
-
-			// below, compute edge ratio and area inline
-			final Vertex A = t.getVertexA(), B = t.getVertexB(), C = t.getVertexC();
-			final double ax = A.getX(), ay = A.getY();
-			final double bx = B.getX(), by = B.getY();
-			final double cx = C.getX(), cy = C.getY();
-
-			// AB, AC
-			final double abx = bx - ax, aby = by - ay;
-			final double acx = cx - ax, acy = cy - ay;
-
-			// |AB|^2, |AC|^2, |BC|^2 via (AC-AB)^2 = la + lc - 2 dot(AB,AC)
-			final double la = abx * abx + aby * aby;
-			final double lc = acx * acx + acy * acy;
-			final double dot = abx * acx + aby * acy;
-			final double lb = la + lc - 2.0 * dot;
-
-			// cross^2 (double-area squared)
-			final double cross = abx * acy - aby * acx;
-			final double cross2 = cross * cross;
-			if (!(cross2 > 0.0)) {
-				continue;
-			}
-
-			// shortest edge and product of the other two squared sides
-			double pairProd;
-			Vertex sA, sB;
-			if (la <= lb && la <= lc) {
-				pairProd = lb * lc;
-				sA = A;
-				sB = B;
-			} else if (lb <= la && lb <= lc) {
-				pairProd = la * lc;
-				sA = B;
-				sB = C;
-			} else {
-				pairProd = la * lb;
-				sA = C;
-				sB = A;
-			}
-
-			// bad if (R/s) >= rhoMin <=> pairProd >= 4*rhoMin^2 * cross^2
-			if (pairProd < threshMul * cross2) {
-				continue;
-			}
-
-			if (skipSeditiousTriangles && isSeditious(sA, sB)) {
-				continue;
-			}
-
-			if (cross2 > minCross2 && cross2 > bestCross2) {
-				bestCross2 = cross2;
-				best = t;
+		IQuadEdge f = edge.getForward();
+		Vertex C = f.getB();
+		if (C != null) {
+			double d2 = C.getDistanceSq(mx, my);
+			if (d2 < bestD2) {
+				bestD2 = d2;
+				best = C;
 			}
 		}
-		return best;
+		IQuadEdge fd = edge.getForwardFromDual();
+		Vertex D = fd.getB();
+		if (D != null) {
+			double d2 = D.getDistanceSq(mx, my);
+			if (d2 < bestD2) {
+				bestD2 = d2;
+				best = D;
+			}
+		}
+
+		return (best != null && bestD2 < r2) ? best : null;
 	}
 
 	/**
@@ -531,7 +682,7 @@ public class RuppertRefiner implements IDelaunayRefiner {
 	 *                 tests
 	 * @return
 	 */
-	private Vertex insertOffcenterOrSplit(final SimpleTriangle tri, final List<IQuadEdge> segments) {
+	private Vertex insertOffcenterOrSplit(final SimpleTriangle tri) {
 		final Vertex a = tri.getVertexA(), b = tri.getVertexB(), c = tri.getVertexC();
 
 		Vertex p = a, q = b;
@@ -546,7 +697,7 @@ public class RuppertRefiner implements IDelaunayRefiner {
 
 		final double len = Math.sqrt(p.getDistanceSq(q));
 		if (!(len > 0)) {
-			return insertCircumcenterOrSplit(tri, segments);
+			return insertCircumcenterOrSplit(tri);
 		}
 
 		final double mx = 0.5 * (p.getX() + q.getX());
@@ -560,14 +711,14 @@ public class RuppertRefiner implements IDelaunayRefiner {
 		double ny = q.getX() - p.getX();
 		final double nlen = hypot(nx, ny);
 		if (nlen == 0) {
-			return insertCircumcenterOrSplit(tri, segments);
+			return insertCircumcenterOrSplit(tri);
 		}
 		nx /= nlen;
 		ny /= nlen;
 
 		final Circumcircle cc = tri.getCircumcircle();
 		if (cc == null) {
-			return insertCircumcenterOrSplit(tri, segments);
+			return insertCircumcenterOrSplit(tri);
 		}
 		final double cx = cc.getX(), cy = cc.getY();
 		final double dCirc = hypot(cx - mx, cy - my);
@@ -576,11 +727,11 @@ public class RuppertRefiner implements IDelaunayRefiner {
 
 		final double ox = mx + nx * d;
 		final double oy = my + ny * d;
-		final double oz = interpolator.interpolate(ox, oy, null);
+		final double oz = interpolateZ ? interpolator.interpolate(ox, oy, null) : Double.NaN;
 		final Vertex off = new Vertex(ox, oy, oz);
 		off.setRefinementProduct(true);
 
-		final IQuadEdge enc = firstEncroachedByPoint(off, segments);
+		final IQuadEdge enc = firstEncroachedByPoint(off);
 		if (enc != null) {
 			return splitSegmentSmart(enc);
 		}
@@ -598,14 +749,13 @@ public class RuppertRefiner implements IDelaunayRefiner {
 			return null;
 		}
 
-		final IQuadEdge nearEdge = firstNearConstrainedEdgeInterior(off, segments, nearEdgeTol);
+		final IQuadEdge nearEdge = firstNearConstrainedEdgeInterior(off, nearEdgeTol);
 		if (nearEdge != null) {
 			return splitSegmentSmart(nearEdge);
 		}
 
 		off.setIndex(vertexIndexer++);
 		addVertex(off, VType.OFFCENTER, null, 0);
-		lastInsertedVertex = off;
 		return off;
 	}
 
@@ -622,7 +772,7 @@ public class RuppertRefiner implements IDelaunayRefiner {
 	 * @param segments snapshot of constrained subsegments used for screening
 	 * @return
 	 */
-	private Vertex insertCircumcenterOrSplit(final SimpleTriangle tri, final List<IQuadEdge> segments) {
+	private Vertex insertCircumcenterOrSplit(final SimpleTriangle tri) {
 		final Circumcircle cc = tri.getCircumcircle();
 		if (cc == null) {
 			return null;
@@ -630,7 +780,7 @@ public class RuppertRefiner implements IDelaunayRefiner {
 
 		final Vertex center = cc.getCircumcenter();
 
-		final IQuadEdge enc = firstEncroachedByPoint(center, segments);
+		final IQuadEdge enc = firstEncroachedByPoint(center);
 		if (enc != null) {
 			return splitSegmentSmart(enc);
 		}
@@ -645,21 +795,19 @@ public class RuppertRefiner implements IDelaunayRefiner {
 			return null;
 		}
 
-		final IQuadEdge nearEdge = firstNearConstrainedEdgeInterior(center, segments, nearEdgeTol);
+		final IQuadEdge nearEdge = firstNearConstrainedEdgeInterior(center, nearEdgeTol);
 		if (nearEdge != null) {
 			return splitSegmentSmart(nearEdge);
 		}
-		double cz = interpolator.interpolate(center.getX(), center.getY(), null);
-		Vertex centerZ = new Vertex(center.getX(), center.getY(), cz, vertexIndexer++);
-		centerZ.setRefinementProduct(true);
-		tin.add(centerZ);
-		vdata.put(centerZ, new VData(VType.CIRCUMCENTER, null, 0));
-		lastInsertedVertex = centerZ;
-		return centerZ;
-	}
 
-	private Vertex nearestNeighbor(final double x, final double y) {
-		return navigator.getNearestVertex(x, y);
+		double cz = interpolateZ ? interpolator.interpolate(center.getX(), center.getY(), null) : Double.NaN;
+		Vertex centerZ = new Vertex(center.getX(), center.getY(), cz);
+		centerZ.setIndex(vertexIndexer++);
+		centerZ.setRefinementProduct(true);
+
+		addVertex(centerZ, VType.CIRCUMCENTER, null, 0);
+
+		return centerZ;
 	}
 
 	/**
@@ -684,15 +832,231 @@ public class RuppertRefiner implements IDelaunayRefiner {
 			corner = b;
 		}
 
-		double z = (a.getZ()+b.getZ())*0.5;
-		final Vertex v = tin.splitEdge(seg, 0.5, z);
+		double z = (a.getZ() + b.getZ()) * 0.5;
+
+		// Remove the old constrained segment from our set.
+		final IQuadEdge baseSeg = seg.getBaseReference();
+		constrainedSegments.remove(baseSeg);
+
+		final Vertex v = tin.splitEdge(baseSeg, 0.5, z);
 		if (v != null) {
 			v.setRefinementProduct(true);
 			final int k = (corner != null) ? shellIndex(corner, v.x, v.y) : 0;
+			// NOTE no call to addVertex() here since tin.splitEdge() creates the vertex
 			vdata.put(v, new VData(VType.MIDPOINT, corner, k));
 			lastInsertedVertex = v;
+
+			// update constrained-segment set around the new vertex
+			if (constrainedSegmentsInitialized) {
+				updateConstrainedSegmentsAroundVertex(v);
+			}
+
+			if (badTrianglesInitialized) {
+				updateBadTrianglesAroundVertex(a, null);
+				updateBadTrianglesAroundVertex(b, null);
+				updateBadTrianglesAroundVertex(v, null);
+			}
 		}
 		return v;
+	}
+
+	/**
+	 * Add a new vertex to the TIN, record its metadata, and check for local
+	 * encroachments.
+	 *
+	 * @param v      the vertex to add (must be non-null)
+	 * @param type   the creation type (see {@link VType})
+	 * @param corner optional corner vertex used for shell tagging (may be
+	 *               {@code null})
+	 * @param shell  shell index assigned to the vertex (0 if not used)
+	 */
+	private void addVertex(final Vertex v, final VType type, final Vertex corner, final int shell) {
+		tin.add(v);
+		lastInsertedVertex = v;
+
+		vdata.put(v, new VData(type, corner, shell));
+
+		// check for new encroachments caused by this vertex.
+		navigator.resetForChangeToTin();
+
+		// robustly find an edge starting at v
+		final SimpleTriangle t0 = navigator.getContainingTriangle(v.getX(), v.getY());
+
+		if (t0 != null) {
+			IQuadEdge seed = null;
+
+			if (t0.getVertexA() == v) {
+				seed = t0.getEdgeA();
+			} else if (t0.getVertexB() == v) {
+				seed = t0.getEdgeB();
+			} else if (t0.getVertexC() == v) {
+				seed = t0.getEdgeC();
+			}
+
+			// pinwheel around v to check opposite edges
+			if (seed != null) {
+				for (IQuadEdge e : seed.pinwheel()) {
+					// In the triangle (v, a, b), edge 'e' is (v -> a).
+					// The edge opposite 'v' is (a -> b), which is e.getForward().
+					IQuadEdge opposite = e.getForward();
+
+					if (opposite.isConstrained()) {
+						// Check if this segment is now encroached (likely by v)
+						if (closestEncroacherOrNull(opposite) != null) {
+							addEncroachmentCandidate(opposite);
+						}
+					}
+				}
+			}
+		}
+
+		if (badTrianglesInitialized) {
+			updateBadTrianglesAroundVertex(v, t0);
+		}
+	}
+
+	/**
+	 * Updates the bad triangle queue for triangles incident to the specified
+	 * vertex.
+	 *
+	 * @param v vertex whose neighborhood has changed
+	 * @param s the triangle containing v, if already computed
+	 */
+	private void updateBadTrianglesAroundVertex(final Vertex v, SimpleTriangle s) {
+		navigator.resetForChangeToTin();
+
+		// find a triangle that contains v
+		final SimpleTriangle t0 = s == null ? navigator.getContainingTriangle(v.getX(), v.getY()) : s;
+		if (t0 == null) {
+			return;
+		}
+
+		// try to get a seed edge whose origin is exactly v
+		final IQuadEdge[] triEdges = new IQuadEdge[] { t0.getEdgeA(), t0.getEdgeB(), t0.getEdgeC() };
+
+		IQuadEdge seed = null;
+
+		// prefer an edge whose A-vertex is v; if only found with B==v, use its dual
+		for (IQuadEdge e : triEdges) {
+			if (e.getA() == v) {
+				seed = e;
+				break;
+			}
+			if (e.getB() == v) {
+				IQuadEdge d = e.getDual();
+				if (d != null && d.getA() == v) {
+					seed = d;
+					break;
+				}
+			}
+		}
+
+		// fallback to neighborEdge if needed
+		if (seed == null) {
+			IQuadEdge ne = navigator.getNeighborEdge(v.getX(), v.getY());
+			if (ne == null) {
+				return;
+			}
+			if (ne.getA() == v) {
+				seed = ne;
+			} else if (ne.getB() == v) {
+				IQuadEdge d = ne.getDual();
+				if (d != null && d.getA() == v) {
+					seed = d;
+				}
+			}
+			if (seed == null) {
+				// Could not find an edge whose origin is v
+				return;
+			}
+		}
+
+		// pinwheel around v using oriented edges and evaluate each incident triangle
+		for (IQuadEdge e : seed.pinwheel()) {
+			SimpleTriangle t;
+			t = new SimpleTriangle(tin, e); // NOTE: e, not e.getBaseEdge()
+
+			final double p = triangleBadPriority(t);
+			if (p > 0.0) {
+				badTriangles.add(new BadTri(e, p)); // store oriented edge
+			}
+		}
+	}
+
+	/**
+	 * After a change around vertex v (e.g., segment split), ensure all constrained
+	 * subsegments incident to v are in the constrainedSegments set.
+	 *
+	 * This does not attempt to remove anything except in the caller.
+	 */
+	private void updateConstrainedSegmentsAroundVertex(final Vertex v) {
+		navigator.resetForChangeToTin();
+
+		// find a triangle that contains v
+		final SimpleTriangle t0 = navigator.getContainingTriangle(v.getX(), v.getY());
+		if (t0 == null) {
+			return;
+		}
+
+		final IQuadEdge[] triEdges = new IQuadEdge[] { t0.getEdgeA(), t0.getEdgeB(), t0.getEdgeC() };
+
+		IQuadEdge seed = null;
+
+		// Prefer an edge whose A-vertex is v; otherwise use its dual
+		for (IQuadEdge e : triEdges) {
+			if (e.getA() == v) {
+				seed = e;
+				break;
+			}
+			if (e.getB() == v) {
+				IQuadEdge d = e.getDual();
+				if (d != null && d.getA() == v) {
+					seed = d;
+					break;
+				}
+			}
+		}
+
+		if (seed == null) {
+			IQuadEdge ne = navigator.getNeighborEdge(v.getX(), v.getY());
+			if (ne == null) {
+				return;
+			}
+			if (ne.getA() == v) {
+				seed = ne;
+			} else if (ne.getB() == v) {
+				IQuadEdge d = ne.getDual();
+				if (d != null && d.getA() == v) {
+					seed = d;
+				}
+			}
+			if (seed == null) {
+				return;
+			}
+		}
+
+		// pinwheel around v and add any constrained edges into the set.
+		for (IQuadEdge e : seed.pinwheel()) {
+			// check 1: incident edge
+			if (e.isConstrained()) {
+				constrainedSegments.add(e.getBaseReference());
+
+				if (closestEncroacherOrNull(e) != null) {
+					addEncroachmentCandidate(e);
+				}
+			}
+
+			// check 2: The Opposite Edges
+			IQuadEdge opposite = e.getForward();
+
+			if (opposite.isConstrained()) {
+				// We don't need to add 'opposite' to 'constrainedSegments'
+				// (it should already be there), but we MUST check if 'v' encroached it.
+				if (closestEncroacherOrNull(opposite) != null) {
+					addEncroachmentCandidate(opposite);
+				}
+			}
+		}
 	}
 
 	/**
@@ -702,63 +1066,130 @@ public class RuppertRefiner implements IDelaunayRefiner {
 	 * @param segments the constrained subsegment snapshot to check
 	 * @return the first encroached {@link IQuadEdge} or {@code null}
 	 */
-	private IQuadEdge firstEncroachedByPoint(final Vertex p, final List<IQuadEdge> segments) {
-		for (final IQuadEdge seg : segments) {
-			final Vertex vA = seg.getA();
-			final Vertex vB = seg.getB();
-			final double midX = (vA.getX() + vB.getX()) / 2.0;
-			final double midY = (vA.getY() + vB.getY()) / 2.0;
-			final double length = seg.getLength();
-			final double r2 = length * length / 4;
-			if (p.getDistanceSq(midX, midY) < r2) {
-				return seg;
+	private IQuadEdge firstEncroachedByPoint(final Vertex p) {
+		final SimpleTriangle tri = navigator.getContainingTriangle(p.getX(), p.getY());
+		if (tri == null) {
+			return null;
+		}
+
+		// check edges of the containing triangle AND its neighbors
+		IQuadEdge[] edges = new IQuadEdge[] { tri.getEdgeA(), tri.getEdgeB(), tri.getEdgeC() };
+
+		for (IQuadEdge e : edges) {
+			// check the edge of the containing triangle
+			if (checkEdge(e, p))
+				return e.getBaseReference();
+
+			// check the neighbor's edges (the dual)
+			IQuadEdge dual = e.getDual();
+			if (dual != null) {
+				IQuadEdge n1 = dual.getForward();
+				if (checkEdge(n1, p))
+					return n1.getBaseReference();
+
+				IQuadEdge n2 = n1.getForward();
+				if (checkEdge(n2, p))
+					return n2.getBaseReference();
+			}
+		}
+
+		return null;
+	}
+
+	/**
+	 * Returns true if 'e' is constrained and encroached by 'p'.
+	 */
+	private boolean checkEdge(IQuadEdge e, Vertex p) {
+		if (e.isConstrained()) {
+			if (isEncroachedByPoint(e, p)) {
+				return true;
+			}
+		}
+		return false;
+	}
+
+	/**
+	 * Finds the first constrained segment whose diametral circle is strictly
+	 * encroached by the candidate point {@code p}.
+	 */
+	private boolean isEncroachedByPoint(IQuadEdge seg, Vertex p) {
+		if (!seg.isConstrained()) {
+			return false;
+		}
+
+		final Vertex vA = seg.getA();
+		final Vertex vB = seg.getB();
+		final double midX = (vA.getX() + vB.getX()) / 2.0;
+		final double midY = (vA.getY() + vB.getY()) / 2.0;
+
+		final double lenSq = vA.getDistanceSq(vB);
+		final double r2 = lenSq / 4.0;
+
+		return p.getDistanceSq(midX, midY) < r2;
+	}
+
+	/**
+	 * Checks whether the point {@code v} lies closer than {@code tol} to the
+	 * interior (excluding endpoints) of any constrained segment, and returns the
+	 * first such segment if found.
+	 *
+	 * <p>
+	 * This is used as a safety check to avoid inserting vertices that are almost on
+	 * a constrained edge, which can cause numerical or geometric problems.
+	 * </p>
+	 *
+	 * @param v   vertex to test
+	 * @param tol maximum allowed distance to a constrained segment
+	 * @return a constrained segment whose interior is within {@code tol} of
+	 *         {@code v}, or {@code null} if none are close enough
+	 */
+	private IQuadEdge firstNearConstrainedEdgeInterior(final Vertex v, final double tol) {
+		final SimpleTriangle tri = navigator.getContainingTriangle(v.getX(), v.getY());
+		if (tri == null) {
+			return null;
+		}
+
+		// check edges of containing triangle
+		IQuadEdge[] edges = new IQuadEdge[] { tri.getEdgeA(), tri.getEdgeB(), tri.getEdgeC() };
+
+		for (IQuadEdge e : edges) {
+			if (e.isConstrained()) {
+				if (isNearEdgeInterior(e, v, tol)) {
+					return e;
+				}
 			}
 		}
 		return null;
 	}
 
-	/**
-	 * Find a constrained subsegment whose open interior lies within {@code tol} of
-	 * {@code v}.
-	 *
-	 * <p>
-	 * Used to avoid inserting points nearly on the interior of constrained edges.
-	 * Projection onto each segment is computed; only projections with parameter
-	 * {@code t ∈ (0,1)} are considered interior.
-	 * </p>
-	 *
-	 * @param v        point to test
-	 * @param segments list of constrained subsegments
-	 * @param tol      perpendicular-distance tolerance (scale-aware)
-	 * @return first subsegment whose interior is within {@code tol}, or {@code null}
-	 */
-	private IQuadEdge firstNearConstrainedEdgeInterior(final Vertex v, final List<IQuadEdge> segments, final double tol) {
-		final double px = v.getX(), py = v.getY();
-		for (final IQuadEdge seg : segments) {
-			final Vertex a = seg.getA(), b = seg.getB();
-			final double ax = a.getX(), ay = a.getY();
-			final double bx = b.getX(), by = b.getY();
+	private boolean isNearEdgeInterior(IQuadEdge seg, Vertex px, double tol) {
+		final Vertex a = seg.getA();
+		final Vertex b = seg.getB();
 
-			final double vx = bx - ax, vy = by - ay;
-			final double wx = px - ax, wy = py - ay;
+		// project px onto line segment ab
+		final double ax = a.getX(), ay = a.getY();
+		final double bx = b.getX(), by = b.getY();
+		final double vx = bx - ax, vy = by - ay;
+		final double wx = px.getX() - ax, wy = px.getY() - ay;
 
-			final double vv = vx * vx + vy * vy;
-			if (vv == 0) {
-				continue;
-			}
-
-			final double t = (wx * vx + wy * vy) / vv;
-			if (t <= 0 || t >= 1) {
-				continue;
-			}
-
-			final double projx = ax + t * vx, projy = ay + t * vy;
-			final double dist = hypot(px - projx, py - projy);
-			if (dist <= tol) {
-				return seg;
-			}
+		final double vv = vx * vx + vy * vy;
+		if (vv == 0) {
+			return false;
 		}
-		return null;
+
+		final double t = (wx * vx + wy * vy) / vv;
+
+		// strictly interior check (0 < t < 1)
+		if (t <= 0 || t >= 1) {
+			return false;
+		}
+
+		// distance check
+		final double projx = ax + t * vx;
+		final double projy = ay + t * vy;
+		final double distSq = (px.getX() - projx) * (px.getX() - projx) + (px.getY() - projy) * (px.getY() - projy);
+
+		return distSq <= (tol * tol);
 	}
 
 	/**
@@ -801,6 +1232,10 @@ public class RuppertRefiner implements IDelaunayRefiner {
 		return (mw != null && mw.t == VType.MIDPOINT && mw.corner == corner);
 	}
 
+	private Vertex nearestNeighbor(final double x, final double y) {
+		return navigator.getNearestVertex(x, y);
+	}
+
 	/**
 	 * Build corner angle information for constrained-graph vertices.
 	 *
@@ -816,7 +1251,7 @@ public class RuppertRefiner implements IDelaunayRefiner {
 	 */
 	private Map<Vertex, CornerInfo> buildCornerInfo() {
 		final Map<Vertex, List<Vertex>> nbrs = new IdentityHashMap<>();
-		for (final IQuadEdge e : collectConstrainedSegments()) {
+		for (final IQuadEdge e : constrainedSegments) {
 			final Vertex A = e.getA(), B = e.getB();
 			nbrs.computeIfAbsent(A, k -> new ArrayList<>()).add(B);
 			nbrs.computeIfAbsent(B, k -> new ArrayList<>()).add(A);
@@ -940,66 +1375,23 @@ public class RuppertRefiner implements IDelaunayRefiner {
 		return shellIndex(z, a.x, a.y) == shellIndex(z, b.x, b.y);
 	}
 
-	/**
-	 * Add a new vertex to both the TIN and record metadata.
-	 *
-	 * @param v      the vertex to add (must be non-null)
-	 * @param type   the creation type (see {@link VType})
-	 * @param corner optional corner vertex used for shell tagging (may be
-	 *               {@code null})
-	 * @param shell  shell index assigned to the vertex (0 if not used)
-	 */
-	private void addVertex(final Vertex v, final VType type, final Vertex corner, final int shell) {
-		tin.add(v);
-		vdata.put(v, new VData(type, corner, shell));
-	}
-
-	/**
-	 * Returns the nearest encroaching apex vertex of the two triangles adjacent to
-	 * the given edge, or null if neither apex lies strictly inside the edge’s
-	 * diametral circle (Gabriel test). Endpoints of the edge are not considered
-	 * encroachers. Handles boundary edges where one apex may be absent. Assumes the
-	 * mesh is (constrained) Delaunay so checking only adjacent apices is
-	 * sufficient.
-	 *
-	 * @param edge edge to test (must be part of the current (C)DT)
-	 * @return the closest encroaching apex vertex (C or D), or null if the edge is
-	 *         not encroached
-	 */
-	private static Vertex closestEncroacherOrNull(IQuadEdge edge) {
-		Vertex A = edge.getA(), B = edge.getB();
-		double mx = 0.5 * (A.getX() + B.getX());
-		double my = 0.5 * (A.getY() + B.getY());
-		double r2 = edge.getLengthSq() / 4; // (diameter/2) squared
-
-		Vertex best = null;
-		double bestD2 = Double.POSITIVE_INFINITY;
-
-		IQuadEdge f = edge.getForward();
-		Vertex C = f.getB();
-		if (C != null) {
-			double d2 = C.getDistanceSq(mx, my);
-			if (d2 < bestD2) {
-				bestD2 = d2;
-				best = C;
-			}
-		}
-		IQuadEdge fd = edge.getForwardFromDual();
-		Vertex D = fd.getB();
-		if (D != null) {
-			double d2 = D.getDistanceSq(mx, my);
-			if (d2 < bestD2) {
-				bestD2 = d2;
-				best = D;
-			}
-		}
-
-		return (best != null && bestD2 < r2) ? best : null;
-	}
-
 	private static double hypot(double dx, double dy) {
 		double sumOfSquares = dx * dx + dy * dy;
 		return Math.sqrt(sumOfSquares);
+	}
+
+	/**
+	 * Priority-queue entry for a bad triangle. We store a representative edge and a
+	 * priority (e.g. area or cross^2).
+	 */
+	private static final class BadTri {
+		final IQuadEdge repEdge; // representative edge for this triangle
+		final double priority; // larger = "worse" (e.g. cross^2 or area)
+
+		BadTri(IQuadEdge repEdge, double priority) {
+			this.repEdge = repEdge;
+			this.priority = priority;
+		}
 	}
 
 	/**
