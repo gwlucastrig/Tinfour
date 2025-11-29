@@ -179,7 +179,7 @@ class SvmCapacityGraph {
     g2d.setColor(Color.white);
     g2d.fillRect(0, 0, width, height);
     g2d.setColor(lineColor);
-    g2d.drawRect(0, 0, width - 1, height - 1);
+    //g2d.drawRect(0, 0, width - 1, height - 1);
 
     double wInPixels = dimension.getWidth();
     double hInPixels = dimension.getHeight();
