@@ -77,7 +77,6 @@ import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.Timer;
 import org.tinfour.common.Vertex;
-import org.tinfour.gis.shapefile.ShapefileReader;
 import org.tinfour.demo.viewer.backplane.BackplaneManager;
 import org.tinfour.demo.viewer.backplane.CompositeImageScale;
 import org.tinfour.demo.viewer.backplane.IModel;
@@ -90,6 +89,7 @@ import org.tinfour.demo.viewer.backplane.RenderProduct;
 import org.tinfour.demo.viewer.backplane.RenderProductType;
 import org.tinfour.demo.viewer.backplane.ViewOptions;
 import org.tinfour.demo.viewer.backplane.ViewOptions.RasterInterpolationMethod;
+import org.tinfour.gis.shapefile.ShapefileReader;
 
 /**
  * A test panel to demonstrate mouse events and coordinate transformation when
@@ -454,7 +454,8 @@ public class DataViewingPanel extends JPanel {
             Font f = getFont();
             String family = f.getFamily();
             f = new Font(family, Font.BOLD, 14);
-            si.render(g, x0, y0, f, Color.white, Color.black);
+            Color foreground = viewOptions.getForeground();
+            si.render(g, x0, y0, f, foreground, null);
           }
         }
         if (showLegend && legendImage != null) {

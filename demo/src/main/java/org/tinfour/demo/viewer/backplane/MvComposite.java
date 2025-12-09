@@ -56,13 +56,13 @@ import org.tinfour.common.IQuadEdge;
 import org.tinfour.common.NearestEdgeResult;
 import org.tinfour.common.PolygonConstraint;
 import org.tinfour.common.Vertex;
+import org.tinfour.demo.utils.TestPalette;
+import org.tinfour.demo.viewer.backplane.ViewOptions.RasterInterpolationMethod;
 import org.tinfour.gwr.BandwidthSelectionMethod;
-import org.tinfour.regression.SurfaceModel;
 import org.tinfour.gwr.GwrTinInterpolator;
 import org.tinfour.interpolation.NaturalNeighborInterpolator;
 import org.tinfour.interpolation.TriangularFacetInterpolator;
-import org.tinfour.demo.utils.TestPalette;
-import org.tinfour.demo.viewer.backplane.ViewOptions.RasterInterpolationMethod;
+import org.tinfour.regression.SurfaceModel;
 import org.tinfour.utils.AxisIntervals;
 import org.tinfour.utils.LinearUnits;
 
@@ -823,7 +823,7 @@ public class MvComposite {
       if (con.isValid()) {
         boolean moveFlag = true;
         Path2D path = new Path2D.Double();  //NOPMD
-        for (Vertex v : con) {
+        for (Vertex v : con.getVertices()) {
           c[0] = v.getX();
           c[1] = v.getY();
           m2c.transform(c, 0, c, 2, 1);
@@ -1796,7 +1796,7 @@ public class MvComposite {
 
         path.closePath();
         if (foundStuff) {
-          clip.append(path, true);
+          clip.append(path, false);
           clipHasData = true;
         }
       }

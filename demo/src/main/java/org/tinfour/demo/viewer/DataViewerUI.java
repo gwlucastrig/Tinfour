@@ -261,7 +261,7 @@ class DataViewerUI {
       }
 
     });
-    
+
     JMenuItem exportControl = new ExportControl(fileMenu, dvPanel);
 
     JMenuItem openItem = this.makeLoadModelFromFile(fileMenu);
@@ -485,6 +485,9 @@ class DataViewerUI {
           }
             if (currentDirectory == null) {
                 IModel m = dvPanel.getModel();
+                if(m==null){
+                  return;
+                }
                 File f = m.getFile();
                 if (f != null) {
                     File p = f.getParentFile();

@@ -150,9 +150,9 @@ class MvTaskBuildTinAndRender implements IModelViewTask {
       // We should consolidate them into a single method call.
       backplaneManager.postStatusMessage(taskIndex,
         "Preparing clip mask from constraints");
-      double pixelSpacing = 50;
+      double pixelSpacing = 10;  // sqrt of min area for inclusion, in pixels
       double uPerPixel = Math.sqrt(Math.abs(composite.c2m.getDeterminant()));
-      double uSpacing = pixelSpacing / uPerPixel;
+      double uSpacing = pixelSpacing * uPerPixel;
       double areaThreshold = 0.4 * uSpacing * uSpacing;
 
       List<IConstraint> rawList = model.getConstraints();
@@ -177,23 +177,18 @@ class MvTaskBuildTinAndRender implements IModelViewTask {
       }
       List<IConstraint> clipList = new ArrayList<>(rawList.size());
 
-      PolylineThinner thinner = new PolylineThinner();
+
       for (int iC = 0; iC < testList.size(); iC++) {
         IPolyline p = testList.get(iC);
-        IPolyline test = thinner.thinPoints(p, testList, areaThreshold);
-        if (test == null) {
-          // the thinPoints operation did not alter the
-          // geometry of the input line, so we just use it
-          clipList.add(polyList.get(iC));
-        } else {
-          // the thinPoints operation changed the geometry of the polyline
-          // replace it in the master list, and also add it to
-          // the constraint list
-          testList.set(iC, test);
-          if (test.isValid()) {
-            clipList.add((PolygonConstraint) test);
+        if (p instanceof PolygonConstraint) {
+          PolygonConstraint poly = (PolygonConstraint) p;
+          double polyArea = poly.getArea();
+          System.out.println("AreaThreshold " + areaThreshold + ", polyArea " + polyArea);
+          if (polyArea < 0 && Math.abs(polyArea) < areaThreshold) {
+            continue;
           }
         }
+        clipList.add(polyList.get(iC));
       }
       if (!clipList.isEmpty()) {
         composite.setConstraintsForRender(clipList);
@@ -502,7 +497,6 @@ class MvTaskBuildTinAndRender implements IModelViewTask {
               }
             }
           }
-
         }
       }
     }
