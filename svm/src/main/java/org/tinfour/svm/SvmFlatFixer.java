@@ -57,7 +57,7 @@ class SvmFlatFixer {
   private double remediatedVolume;
 
   private boolean isEquiv(double a, double b) {
-    return Math.abs(a - b) < 1.0e-6;
+    return Math.abs(a - b) < 1.0e-3;
   }
 
   SvmFlatFixer(IIncrementalTin tin, double zShore) {
