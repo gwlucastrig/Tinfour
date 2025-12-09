@@ -42,7 +42,6 @@ import java.util.Map;
 import java.util.PriorityQueue;
 import java.util.Queue;
 import java.util.Set;
-
 import org.tinfour.common.Circumcircle;
 import org.tinfour.common.IIncrementalTin;
 import org.tinfour.common.IIncrementalTinNavigator;
@@ -276,7 +275,7 @@ public class RuppertRefiner implements IDelaunayRefiner {
 	 * @throws IllegalArgumentException on invalid inputs
 	 */
 	public RuppertRefiner(final IIncrementalTin tin, final double minAngleDeg, final double minTriangleArea, boolean interpolateZ) {
-		this(tin, minAngleDeg, minTriangleArea, false, true, true, false);
+		this(tin, minAngleDeg, minTriangleArea, false, true, true, interpolateZ);
 	}
 
 	/**
@@ -298,7 +297,7 @@ public class RuppertRefiner implements IDelaunayRefiner {
 	 * does not interpolate Z (no elevation is assigned/modified by the
 	 * refiner).</li>
 	 * </ul>
-	 * 
+	 *
 	 * @param tin                          the incremental triangulation to refine
 	 *                                     (non-null, bootstrapped)
 	 * @param minAngleDeg                  the requested minimum angle in degrees (0
@@ -503,7 +502,7 @@ public class RuppertRefiner implements IDelaunayRefiner {
 
 	/**
 	 * Computes a "badness" priority for the given triangle.
-	 * 
+	 *
 	 * @return >0 if triangle is poor-quality and should be refined (value is used
 	 *         as priority). <=0 if triangle is triangle is acceptable or should be
 	 *         ignored (ghost, outside region, etc.)
