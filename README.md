@@ -9,8 +9,12 @@ High-Performance 2D Delaunay Triangulation and Related Utilities Written in Java
 > [Sonatype's Maven Central Repository](https://search.maven.org/search?q=Tinfour)
 > or the [Maven Central Repository](https://mvnrepository.com/search?q=tinfour)
 >
-> We are migrating some of our documentation to a separate project.
-> Visit [TinfourDocs](https://gwlucastrig.github.io/TinfourDocs/) to check it out.
+> Notes about the Delaunay triangulation and related algorithms are available at
+> [TinfourDocs](https://gwlucastrig.github.io/TinfourDocs/). For project-specific
+> documentation and implementation guides for Tinfour users, take a look at our [Wiki](https://github.com/gwlucastrig/Tinfour/wiki).
+> 
+> Recently, we learned about a new .NET port of Tinfour. To find out more, visit
+> [Tinfour.NET](https://github.com/matthewfender/Tinfour.NET) on Github.
 >
 
 ### Delaunay Triangulation ###
