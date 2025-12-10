@@ -11,7 +11,7 @@ High-Performance 2D Delaunay Triangulation and Related Utilities Written in Java
 >
 > Notes about the Delaunay triangulation and related algorithms are available at
 > [TinfourDocs](https://gwlucastrig.github.io/TinfourDocs/). For project-specific
-> documentation and implementation guides for Tinfour users, take a look at our [Wiki](https://github.com/gwlucastrig/Tinfour/wiki).
+> documentation and implementation guides, take a look at our [Wiki](https://github.com/gwlucastrig/Tinfour/wiki).
 > 
 > Recently, we learned about a new .NET port of Tinfour. To find out more, visit
 > [Tinfour.NET](https://github.com/matthewfender/Tinfour.NET) on Github.
