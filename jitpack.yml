@@ -1,2 +1,5 @@
+jdk:
+  - openjdk17
 install:
-   - mvn install -DskipTests -Pjitpack
+  - mvn wrapper:wrapper -Dmaven=3.9.12
+  - ./mvnw -B clean install -DskipTests -Pjitpack
