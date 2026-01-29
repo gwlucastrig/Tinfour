@@ -224,15 +224,15 @@ public final class AxisIntervals {
     int sizeInPixels)
   {
     return computeIntervals(
-            value0, 
-            value1, 
+            value0,
+            value1,
             primaryMinIntervalInPixels,
-            secondaryMinIntervalInPixels, 
-            sizeInPixels, 
+            secondaryMinIntervalInPixels,
+            sizeInPixels,
             false);
   }
-  
-  
+
+
   /**
    * Compute the intervals over a range of values. This method
    * attempts to select the the finest real-valued intervals
@@ -248,7 +248,7 @@ public final class AxisIntervals {
    * @param sizeInPixels the overall size of the area for labeling,
    * i&#46;.e$#46; the length of a horizontal axis or the height of
    * a vertical axis
-   * @param bracketValues true if the computed interval must fully 
+   * @param bracketValues true if the computed interval must fully
    * bracket the input values; false if bracketing is optional.
    * @return if successful, a valid instance; otherwise, a null.
    */
@@ -315,7 +315,7 @@ public final class AxisIntervals {
     double vOffset = Math.floor(value0 / firstInterval) * firstInterval;
     double v0 = value0 - vOffset;
     double v1 = value1 - vOffset;
-  
+
     int i0, i1;
     double f0, f1;
 
@@ -354,7 +354,7 @@ public final class AxisIntervals {
       }
     }
 
-    
+
     boolean isValue0Labeled = Math.abs(f0 - v0) / uPerPixel < 1;
     boolean isValue1Labeled = Math.abs(f1 - v1) / uPerPixel < 1;
 
@@ -447,7 +447,15 @@ public final class AxisIntervals {
     return intervalMagnitude;
   }
 
-  
+  /**
+   * Gets the primary interval, the distance between primary tics in
+   * value-computed coordinates.
+   * @return a valid floating point value.
+   */
+  public double getInterval(){
+    return interval;
+  }
+
   /**
    * Gets the scale factor for units in the value coordinate system
    * compare to pixels.  Useful for creating affine transforms.

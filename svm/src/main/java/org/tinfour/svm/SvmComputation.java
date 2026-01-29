@@ -481,7 +481,7 @@ public class SvmComputation {
     ps.format("     25th percentile %12.3f %s%n", spacing.percentile25/lengthFactor, lengthUnits);
     ps.format("     median          %12.3f %s%n", spacing.median / lengthFactor, lengthUnits);
     ps.format("     75th percentile %12.3f %s%n", spacing.percentile75/lengthFactor, lengthUnits);
-    ps.format("     maximim         %12.3f %s%n", spacing.lenMax / lengthFactor, lengthUnits);
+    ps.format("     maximum         %12.3f %s%n", spacing.lenMax / lengthFactor, lengthUnits);
     ps.format("     minimum         %14.5f %s%n", spacing.lenMin / lengthFactor, lengthUnits);
     ps.format("%n");
 
