@@ -193,7 +193,7 @@ public class BasicSamplesTabulator {
    * @return a valid floating points value or Double&#46;NaN if insufficient
    * samples have been recorded or the percentile specification is out-of-range.
    */
-  public double getValueForPercentileScore(double percentile) {
+  public double getValueForPercentile(double percentile) {
     if (!makeReady() || percentile < 0 || percentile >= 100.0) {
       return Double.NaN;
     }
