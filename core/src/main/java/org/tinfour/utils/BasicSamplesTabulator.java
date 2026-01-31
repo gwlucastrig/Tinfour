@@ -362,10 +362,10 @@ public class BasicSamplesTabulator {
     }
 
     double[] y = new double[nBins];
-    y[0] = (count[0] + count[1]) / 2.0;
-    y[nBins - 1] = (count[nBins - 1] + count[nBins - 2]) / 2.0;
+    y[0] = (2.0/3.0)*count[0] + (1.0/3.0)*count[1];
+    y[nBins - 1] = (2.0/3.0)*count[nBins - 1] + (1.0/3.0)*count[nBins - 2];
     for (int i = 1; i < nBins - 1; i++) {
-      y[i] = (count[i - 1] + count[i] + count[i + 1]) / 3.0;
+      y[i] = 0.25*count[i - 1] + 0.5*count[i] + 0.25*count[i + 1];
     }
 
     List<BasicHistogramCount> histogramCounts = new ArrayList<>(nBins);

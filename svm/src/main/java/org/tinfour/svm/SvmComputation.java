@@ -36,12 +36,10 @@ package org.tinfour.svm;
 import java.awt.geom.Rectangle2D;
 import java.io.BufferedOutputStream;
 import java.io.File;
-import org.tinfour.utils.KahanSummation;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.PrintStream;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.function.Consumer;
 import org.tinfour.common.GeometricOperations;
@@ -53,11 +51,15 @@ import org.tinfour.common.PolygonConstraint;
 import org.tinfour.common.SimpleTriangle;
 import org.tinfour.common.Thresholds;
 import org.tinfour.common.Vertex;
-import org.tinfour.svm.properties.SvmProperties;
 import org.tinfour.semivirtual.SemiVirtualIncrementalTin;
 import org.tinfour.standard.IncrementalTin;
 import org.tinfour.svm.SvmTriangleVolumeTabulator.AreaVolumeSum;
+import org.tinfour.svm.properties.SvmProperties;
+import org.tinfour.svm.properties.SvmUnitSpecification;
+import org.tinfour.utils.BasicHistogramCount;
+import org.tinfour.utils.BasicSamplesTabulator;
 import org.tinfour.utils.HilbertSort;
+import org.tinfour.utils.KahanSummation;
 import org.tinfour.utils.TriangleCollector;
 
 /**
@@ -163,21 +165,17 @@ public class SvmComputation {
     final int nSamples;
     final double sigma;
     final double mean;
-    final double median;
     final double lenMin;
     final double lenMax;
-    final double percentile25;
-    final double percentile75;
+    final double []percentileValues;
 
-    SampleSpacing(int nSamples, double mean, double sigma, double median, double lenMin, double lenMax, double percentile25, double percentile75) {
+    SampleSpacing(int nSamples, double mean, double sigma, double lenMin, double lenMax, double []percentileValues) {
       this.nSamples = nSamples;
       this.mean = mean;
       this.sigma = sigma;
-      this.median = median;
       this.lenMin = lenMin;
       this.lenMax = lenMax;
-      this.percentile25 = percentile25;
-      this.percentile75 = percentile75;
+      this.percentileValues = percentileValues;
     }
   }
 
@@ -263,7 +261,7 @@ public class SvmComputation {
     long timeToAddConstraints = time2 - time1;
 
     long spTime0 = System.nanoTime();
-    SampleSpacing spacing = this.evaluateSampleSpacing(tin);
+    SampleSpacing spacing = this.evaluateSampleSpacing(tin, properties);
     long spTime1 = System.nanoTime();
     long timeToFindSampleSpacing = spTime1 - spTime0;
 
@@ -476,13 +474,15 @@ public class SvmComputation {
       (data.getMaxZ() - data.getMinZ()) / lengthFactor);
 
     ps.format("  Sounding spacing%n");
+    ps.format("     minimum         %14.5f %s%n", spacing.lenMin / lengthFactor, lengthUnits);
+    ps.format("     maximum         %12.3f %s%n", spacing.lenMax / lengthFactor, lengthUnits);
     ps.format("     mean            %12.3f %s%n", spacing.mean / lengthFactor, lengthUnits);
     ps.format("     std dev         %12.3f %s%n", spacing.sigma / lengthFactor, lengthUnits);
-    ps.format("     25th percentile %12.3f %s%n", spacing.percentile25/lengthFactor, lengthUnits);
-    ps.format("     median          %12.3f %s%n", spacing.median / lengthFactor, lengthUnits);
-    ps.format("     75th percentile %12.3f %s%n", spacing.percentile75/lengthFactor, lengthUnits);
-    ps.format("     maximum         %12.3f %s%n", spacing.lenMax / lengthFactor, lengthUnits);
-    ps.format("     minimum         %14.5f %s%n", spacing.lenMin / lengthFactor, lengthUnits);
+    for (int i = 1; i < 10; i++) {
+      ps.format("     %2dth percentile %12.3f %s%n",
+        i * 10, spacing.percentileValues[i] / lengthFactor, lengthUnits);
+    }
+
     ps.format("%n");
 
     double rawVolume = volumeTabulator.getVolume();
@@ -706,8 +706,8 @@ public class SvmComputation {
    * @param tin a valid instance
    * @return a valid instance
    */
-  private SampleSpacing evaluateSampleSpacing(IIncrementalTin tin) {
-
+  private SampleSpacing evaluateSampleSpacing(IIncrementalTin tin, SvmProperties properties) {
+    BasicSamplesTabulator bstat = new BasicSamplesTabulator();
     List<IConstraint> constraintsFromTin = tin.getConstraints();
     boolean[] water = new boolean[constraintsFromTin.size()];
     for (IConstraint con : constraintsFromTin) {
@@ -716,10 +716,8 @@ public class SvmComputation {
     KahanSummation sumLen = new KahanSummation();
     KahanSummation sumLen2 = new KahanSummation();
     int nEdgeMax = tin.getMaximumEdgeAllocationIndex();
-    float[] lenArray = new float[nEdgeMax];
-    int nLen = 0;
-    double lenMin = Double.POSITIVE_INFINITY;
-    double lenMax = Double.NEGATIVE_INFINITY;
+
+
 
     for (IQuadEdge edge : tin.edges()) {
       if (!edge.isConstraintRegionInterior()) {
@@ -740,31 +738,74 @@ public class SvmComputation {
           double len = edge.getLength();
           sumLen.add(len);
           sumLen2.add(len * len);
-          lenArray[nLen++] = (float) len;
-          if (len < lenMin) {
-            lenMin = len;
-          }
-          if (len > lenMax) {
-            lenMax = len;
-          }
+          bstat.recordSample(len);
         }
       }
     }
 
-    Arrays.sort(lenArray, 0, nLen);
-    double sLen = sumLen.getSum();
-    double sLen2 = sumLen2.getSum();
 
-    double sigma = Double.NaN;
-    double mean = sumLen.getMean();
-    double median = lenArray[nLen / 2];
-    if (nLen > 2) {
-      sigma = Math.sqrt((sLen2 - (sLen / nLen) * sLen) / (nLen - 1));
+    int nSamples = bstat.getSampleCount();
+    double lenMin = bstat.getMinimum();
+    double lenMax = bstat.getMaximum();
+
+    // Populate a histogram with 5 unit spacing.
+    File soundingSpacingTableFile = properties.getSoundingSpacingTableFile();
+    if (soundingSpacingTableFile != null) {
+      String hName = soundingSpacingTableFile.getName();
+      char delimiter = '\t';
+      int iExt = hName.lastIndexOf('.');
+      if (iExt > 0) {
+        hName = hName.substring(iExt, hName.length());
+      }
+      if (".csv".equalsIgnoreCase(hName)) {
+        delimiter = ',';
+      }
+
+      double binSize;
+      SvmUnitSpecification distSpec = properties.getUnitOfDistance();
+      if(distSpec!=null && "m".equalsIgnoreCase(distSpec.getLabel())){
+        binSize = 1.0;
+      }else{
+        binSize = 5.0;
+      }
+
+      try (FileOutputStream soundingSpacingOutputStream = new FileOutputStream(soundingSpacingTableFile);
+        BufferedOutputStream bos = new BufferedOutputStream(soundingSpacingOutputStream);
+        PrintStream ts = new PrintStream(bos, true, "UTF-8");) {
+        int hN = (int) Math.ceil(lenMax / binSize);
+        double hMax = hN * binSize;
+        List<BasicHistogramCount> hList = bstat.getHistogram(hN, 0, hMax);
+        ts.format("x0%cx1%cx%cy%ccount%n",
+          delimiter,
+          delimiter,
+          delimiter,
+          delimiter);
+        for (BasicHistogramCount count : hList) {
+          ts.format("%9.4f%c%9.4f%c%9.4f%c%9.4f%c%d%n",
+            count.x0,
+            delimiter,
+            count.x1,
+            delimiter,
+            count.x,
+            delimiter,
+            count.y,
+            delimiter,
+            count.count);
+        }
+      } catch (IOException ioex) {
+        // no action required.
+      }
     }
-    double percentile25 = lenArray[(int)(nLen*0.25+0.5)];
-     double percentile75 = lenArray[(int)(nLen*0.75+0.5)];
 
-    return new SampleSpacing(nLen, mean, sigma, median, lenMin, lenMax, percentile25, percentile75);
+    double sigma = bstat.getSigma();
+    double mean = bstat.getMean();
+
+    double []percentileValues = new double[10];  // 0 through 90
+    for(int i=0; i<10; i++){
+      percentileValues[i] = bstat.getValueForPercentile(i*10.0);
+    }
+
+    return new SampleSpacing(nSamples, mean, sigma, lenMin, lenMax, percentileValues);
 
   }
 }

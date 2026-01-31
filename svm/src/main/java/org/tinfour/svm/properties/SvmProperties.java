@@ -92,6 +92,8 @@ public class SvmProperties {
 
   private final static String anomalyTableFileKey = "anomalyTableFileName";
 
+  private final static String soundingSpacingTableFileKey = "soundingSpacingTableFileName";
+
   private final static String experimentalFilterKey = "experimentalFilter";
   private final static String experimentalFilterFileKey = "experimentalFilterFileName";
   private final static String experimentalFilterSlopeOfAnomalyKey = "experimentalFilterSlopeOfAnomaly";
@@ -1026,6 +1028,21 @@ public class SvmProperties {
     }
     return null;
   }
+
+  /**
+   * Get the path to a file for writing a table giving the histogram.
+   * This setting controls whether histogram file is written.
+   *
+   * @return a valid File instance or a null if not specified.
+   */
+  public File getSoundingSpacingTableFile() {
+    if (properties.containsKey(soundingSpacingTableFileKey)) {
+      return extractOutputFile(outputFolderKey, properties.getProperty(soundingSpacingTableFileKey));
+    }
+    return null;
+  }
+
+
 
   /**
    * Gets the bathymetry model specified for the soundings.
