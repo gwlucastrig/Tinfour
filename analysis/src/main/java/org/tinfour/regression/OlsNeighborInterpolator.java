@@ -749,7 +749,7 @@ public class OlsNeighborInterpolator implements IInterpolatorOverTin {
    * @return a valid, potentially empty list.
    */
   public List<Vertex> getVertices() {
-    ArrayList<Vertex> list = new ArrayList();
+    ArrayList<Vertex> list = new ArrayList<>();
     list.addAll(samplesFromRegression);
     return list;
   }

@@ -238,26 +238,6 @@ public class SemiVirtualIncrementalTin implements IIncrementalTin {
   private final double halfPlaneThresholdNeg;
 
   /**
-   * The positive threshold used to determine if a higher-precision calculation
-   * is required for performing calculations related to the inCircle
-   * calculation. When a computed value is sufficiently close to zero, there is
-   * a concern that numerical issues involved in the half-plane calculations
-   * might result in incorrect determinations. This value helps define
-   * "sufficiently close".
-   */
-  private final double inCircleThreshold;
-
-  /**
-   * The negative threshold used to determine if a higher-precision calculation
-   * is required for performing calculations related to the half-plane
-   * calculation. When a computed value is sufficiently close to zero, there is
-   * a concern that numerical issues involved in the half-plane calculations
-   * might result in incorrect determinations. This value helps define
-   * "sufficiently close".
-   */
-  private final double inCircleThresholdNeg;
-
-  /**
    * The tolerance factor for treating closely spaced or identical vertices as a
    * single point.
    */
@@ -359,8 +339,6 @@ public class SemiVirtualIncrementalTin implements IIncrementalTin {
 
     halfPlaneThreshold = thresholds.getHalfPlaneThreshold();
     halfPlaneThresholdNeg = -thresholds.getHalfPlaneThreshold();
-    inCircleThreshold = thresholds.getInCircleThreshold();
-    inCircleThresholdNeg = -thresholds.getInCircleThreshold();
 
     vertexTolerance = thresholds.getVertexTolerance();
     vertexTolerance2 = thresholds.getVertexTolerance2();
@@ -393,8 +371,6 @@ public class SemiVirtualIncrementalTin implements IIncrementalTin {
 
     halfPlaneThreshold = thresholds.getHalfPlaneThreshold();
     halfPlaneThresholdNeg = -thresholds.getHalfPlaneThreshold();
-    inCircleThreshold = thresholds.getInCircleThreshold();
-    inCircleThresholdNeg = -thresholds.getInCircleThreshold();
 
     vertexTolerance = thresholds.getVertexTolerance();
     vertexTolerance2 = thresholds.getVertexTolerance2();
