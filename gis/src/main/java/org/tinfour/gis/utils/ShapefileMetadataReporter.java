@@ -124,7 +124,7 @@ public class ShapefileMetadataReporter {
     ps.format("Shapefile Name:   %s%n", target.getName());
     try (ShapefileReader reader = new ShapefileReader(target)) {
       ShapefileType shapeType = reader.getShapefileType();
-      ps.format("Shapefiile Type:  %s%s%n", shapeType,
+      ps.format("Shapefile Type:  %s%s%n", shapeType,
               shapeType.is3D() ? "    (Z coordinate supplied)" : "");
       ps.format("Bounds%n");
       ps.format("   X Min,Max: %15.6f, %15.6f%n", reader.getMinX(), reader.getMaxX());
