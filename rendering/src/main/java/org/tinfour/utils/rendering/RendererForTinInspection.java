@@ -215,7 +215,7 @@ public class RendererForTinInspection {
       return rsa;
     }
 
-    Rectangle2D r2d = tin.getBounds();
+    Rectangle2D r2d = AwtGeometryAdapter.toRectangle2D(tin.getBounds());
     double yLower = r2d.getMinY();
     double yUpper = r2d.getMaxY();
     if (this.coordinateSystemIsPixels) {

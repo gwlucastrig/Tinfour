@@ -44,6 +44,7 @@ import org.tinfour.contour.Contour;
 import org.tinfour.contour.ContourBuilderForTin;
 import org.tinfour.contour.ContourRegion;
 import org.tinfour.standard.IncrementalTin;
+import org.tinfour.utils.rendering.AwtPathWriter;
 import org.tinfour.utils.rendering.RenderingSurfaceAid;
 
 /**
@@ -188,7 +189,7 @@ public class ExampleContour {
       // regions
       Color color = defaultColors[region.getRegionIndex()];
       g2d.setColor(color);
-      Path2D path = region.getPath2D(af);
+      Path2D path = AwtPathWriter.toPath2D(region, af);
       g2d.fill(path);
       g2d.draw(path);
     }
@@ -196,7 +197,7 @@ public class ExampleContour {
     // Overlay the regions with the contours, in gray
     g2d.setColor(Color.gray);
     for (Contour contour : contours) {
-      Path2D path = contour.getPath2D(af);
+      Path2D path = AwtPathWriter.toPath2D(contour, af);
       g2d.draw(path);
     }
 

@@ -111,8 +111,8 @@
  */
 package org.tinfour.edge;
 
-import java.awt.geom.AffineTransform;
-import java.awt.geom.Line2D;
+import org.tinfour.geom.GeoAffineTransform;
+import org.tinfour.geom.GeoLine;
 import java.util.Formatter;
 import org.tinfour.common.IQuadEdge;
 import org.tinfour.common.Vertex;
@@ -627,12 +627,12 @@ public class QuadEdge implements IQuadEdge {
   }
 
   @Override
-  public void setLine2D(AffineTransform transform, Line2D l2d) {
+  public void setLine2D(GeoAffineTransform transform, GeoLine l2d) {
     transcribeToLine2D(transform, l2d);
   }
 
   @Override
-  public void transcribeToLine2D(AffineTransform transform, Line2D l2d) {
+  public void transcribeToLine2D(GeoAffineTransform transform, GeoLine l2d) {
     Vertex A = getA();
     Vertex B = getB();
     double[] c = new double[8];

@@ -30,7 +30,7 @@
  */
 package org.tinfour.utils;
 
-import java.awt.geom.Point2D;
+import org.tinfour.geom.GeoPoint;
 import java.io.BufferedOutputStream;
 import java.io.File;
 import java.io.FileOutputStream;
@@ -167,13 +167,13 @@ public class GridSpecification {
   /**
    * Maps the specified row and column values to the Cartesian coordinates in
    * the system defined by the grid. The result is stored in an instance of
-   * Point2D.
+   * GeoPoint.
    *
    * @param row the specified row, numbered from zero, ordered top to bottom
    * @param col the specified column, numbered from zero, ordered left to right
-   * @param p2d an instance of Point2D to receive the x,y coordinates
+   * @param p2d an instance of GeoPoint to receive the x,y coordinates
    */
-  public void mapRowColumnToXy(double row, double col, Point2D p2d) {
+  public void mapRowColumnToXy(double row, double col, GeoPoint p2d) {
     p2d.setLocation(
             xLowerLeft + col * cellSize,
             yUpperRight - row * cellSize);

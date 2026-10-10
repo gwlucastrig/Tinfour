@@ -53,6 +53,7 @@ import org.tinfour.common.Vertex;
 import org.tinfour.utils.TinInstantiationUtility;
 import org.tinfour.utils.Tincalc;
 import org.tinfour.utils.VertexColorizerKempe6;
+import org.tinfour.utils.rendering.AwtGeometryAdapter;
 
 /**
  * Provides utilities for drawing graphical representations of a
@@ -121,7 +122,7 @@ public class BoundedVoronoiDrawingUtility {
     this.diagram = diagram;
 
     if (optionalBounds == null) {
-      Rectangle2D sb = diagram.getSampleBounds();
+      Rectangle2D sb = AwtGeometryAdapter.toRectangle2D(diagram.getSampleBounds());
       double w = sb.getWidth();
       double h = sb.getHeight();
       double x = sb.getX();
@@ -162,7 +163,7 @@ public class BoundedVoronoiDrawingUtility {
           AffineTransform af) {
     this.diagram = diagram;
     this.af = af;
-    this.bounds = diagram.getBounds();
+    this.bounds = AwtGeometryAdapter.toRectangle2D(diagram.getBounds());
     this.clipBounds = clipBounds;
   }
 

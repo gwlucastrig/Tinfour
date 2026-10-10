@@ -57,6 +57,7 @@ import javax.swing.UnsupportedLookAndFeelException;
 import org.tinfour.common.IIncrementalTin;
 import org.tinfour.common.IQuadEdge;
 import org.tinfour.common.Vertex;
+import org.tinfour.utils.rendering.AwtGeometryAdapter;
 
 public class TestPanelForCdt extends JPanel {
 
@@ -183,7 +184,7 @@ public class TestPanelForCdt extends JPanel {
     g.setColor(Color.white);
     g.fillRect(0, 0, w, h);
 
-    Rectangle2D bounds = tin.getBounds();
+    Rectangle2D bounds = AwtGeometryAdapter.toRectangle2D(tin.getBounds());
     // compare aspect ratios of the data bounds and panel to determine
     // how to scale the data
     double scale;

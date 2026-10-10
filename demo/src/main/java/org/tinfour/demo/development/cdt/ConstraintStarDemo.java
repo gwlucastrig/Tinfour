@@ -54,8 +54,12 @@ import org.tinfour.common.IQuadEdge;
 import org.tinfour.common.PolygonConstraint;
 import org.tinfour.common.SimpleTriangle;
 import org.tinfour.common.Vertex;
+import org.tinfour.geom.GeoAffineTransform;
+import org.tinfour.geom.GeoLine;
 import org.tinfour.standard.IncrementalTin;
 import org.tinfour.utils.TriangleCollector;
+import org.tinfour.utils.rendering.AwtGeometryAdapter;
+import org.tinfour.utils.rendering.AwtPathWriter;
 import org.tinfour.utils.rendering.RenderingSurfaceAid;
 
 /**
@@ -87,7 +91,7 @@ public class ConstraintStarDemo extends JPanel {
         Object obj = constraint.getApplicationData();
         if (obj instanceof Color) {
           g2d.setColor((Color) obj);
-          Path2D path = t.getPath2D(af);
+          Path2D path = AwtPathWriter.toPath2D(t, af);
           g2d.fill(path);
           g2d.draw(path);
         }
@@ -345,7 +349,7 @@ public class ConstraintStarDemo extends JPanel {
       // the component is not yet fully realized by Java Swing.
       return null;
     }
-    Rectangle2D bounds = tin.getBounds();
+    Rectangle2D bounds = AwtGeometryAdapter.toRectangle2D(tin.getBounds());
     double x0 = bounds.getMinX();
     double y0 = bounds.getMinY();
     double x1 = bounds.getMaxX();
@@ -370,9 +374,12 @@ public class ConstraintStarDemo extends JPanel {
     g2d.setStroke(new BasicStroke(1.0f));
     g2d.setColor(new Color(160, 160, 160));  // lighter gray
     Line2D l2d = new Line2D.Double();
+    GeoAffineTransform gaf = AwtGeometryAdapter.toGeoAffineTransform(af);
+    GeoLine gLine = new GeoLine();
     for (IQuadEdge e : tin.edges()) {
       if (!e.isConstraintRegionBorder()) {
-        e.setLine2D(af, l2d);
+        e.setLine2D(gaf, gLine);
+        l2d.setLine(gLine.getX1(), gLine.getY1(), gLine.getX2(), gLine.getY2());
         g2d.draw(l2d);
       }
     }
@@ -380,7 +387,8 @@ public class ConstraintStarDemo extends JPanel {
     g2d.setColor(Color.black);
     for (IQuadEdge e : tin.edges()) {
       if (e.isConstraintRegionBorder()) {
-        e.setLine2D(af, l2d);
+        e.setLine2D(gaf, gLine);
+        l2d.setLine(gLine.getX1(), gLine.getY1(), gLine.getX2(), gLine.getY2());
         g2d.draw(l2d);
       }
     }

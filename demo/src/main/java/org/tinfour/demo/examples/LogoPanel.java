@@ -53,6 +53,7 @@ import org.tinfour.common.IQuadEdge;
 import org.tinfour.common.PolygonConstraint;
 import org.tinfour.common.Vertex;
 import org.tinfour.utils.TriangleCollector;
+import org.tinfour.utils.rendering.AwtGeometryAdapter;
 
 @SuppressWarnings("PMD.AvoidInstantiatingObjectsInLoops")
 class LogoPanel extends JPanel {
@@ -119,7 +120,7 @@ class LogoPanel extends JPanel {
     // with the images stacked vertically.  To ensure uniform spacing
     // between TINs, we allow a 1.1 vertical factor so that the spacing
     // between rows is 0.1 times the hight of the figure.
-    Rectangle2D bounds = tin.getBounds();
+    Rectangle2D bounds = AwtGeometryAdapter.toRectangle2D(tin.getBounds());
     double bH = (2 * 0.1 + 3) * bounds.getHeight();
     double bW = bounds.getWidth();
 

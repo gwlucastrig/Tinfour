@@ -54,7 +54,7 @@
  */
 package org.tinfour.standard;
 
-import java.awt.geom.Rectangle2D;
+import org.tinfour.geom.GeoRectangle;
 import java.io.PrintStream;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
@@ -1597,11 +1597,11 @@ public class IncrementalTin implements IIncrementalTin {
    * otherwise, a null
    */
   @Override
-  public Rectangle2D getBounds() {
+  public GeoRectangle getBounds() {
     if (Double.isInfinite(boundsMinX)) {
       return null;
     }
-    return new Rectangle2D.Double(
+    return new GeoRectangle(
       boundsMinX,
       boundsMinY,
       boundsMaxX - boundsMinX,

@@ -45,7 +45,7 @@
  */
 package org.tinfour.voronoi;
 
-import java.awt.geom.Rectangle2D;
+import org.tinfour.geom.GeoRectangle;
 import java.io.PrintStream;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -77,7 +77,7 @@ public class BoundedVoronoiDiagram {
   /**
    * The overall domain of the structure
    */
-  final private Rectangle2D bounds;
+  final private GeoRectangle bounds;
   double xmin;
   double xmax;
   double ymin;
@@ -86,7 +86,7 @@ public class BoundedVoronoiDiagram {
   /**
    * The overall bounds of the sample points
    */
-  final private Rectangle2D sampleBounds;
+  final private GeoRectangle sampleBounds;
 
   final private EdgePool edgePool;
 
@@ -127,7 +127,7 @@ public class BoundedVoronoiDiagram {
               "Insufficent input size, at least 3 vertices are required");
     }
 
-    sampleBounds = new Rectangle2D.Double(
+    sampleBounds = new GeoRectangle(
             vertexList.get(0).getX(),
             vertexList.get(0).getY(),
             0, 0);
@@ -152,7 +152,7 @@ public class BoundedVoronoiDiagram {
               + "to establish a Voronoi Diagram");
     }
 
-    this.bounds = new Rectangle2D.Double(
+    this.bounds = new GeoRectangle(
             sampleBounds.getX(),
             sampleBounds.getY(),
             sampleBounds.getWidth(),
@@ -194,7 +194,7 @@ public class BoundedVoronoiDiagram {
               "Input TIN is not bootstrapped (populated)");
     }
 
-    this.bounds = new Rectangle2D.Double(
+    this.bounds = new GeoRectangle(
             sampleBounds.getX(),
             sampleBounds.getY(),
             sampleBounds.getWidth(),
@@ -930,8 +930,8 @@ public class BoundedVoronoiDiagram {
    *
    * @return a valid rectangle
    */
-  public Rectangle2D getBounds() {
-    return new Rectangle2D.Double(
+  public GeoRectangle getBounds() {
+    return new GeoRectangle(
             bounds.getX(),
             bounds.getY(),
             bounds.getWidth(),
@@ -944,8 +944,8 @@ public class BoundedVoronoiDiagram {
    *
    * @return a valid rectangle
    */
-  public Rectangle2D getSampleBounds() {
-    return new Rectangle2D.Double(
+  public GeoRectangle getSampleBounds() {
+    return new GeoRectangle(
             sampleBounds.getX(),
             sampleBounds.getY(),
             sampleBounds.getWidth(),

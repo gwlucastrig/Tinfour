@@ -56,6 +56,7 @@ import org.tinfour.utils.Tincalc;
 import org.tinfour.utils.loaders.CoordinatePair;
 import org.tinfour.utils.loaders.ICoordinateTransform;
 import org.tinfour.utils.loaders.SimpleGeographicTransform;
+import org.tinfour.utils.rendering.AwtGeometryAdapter;
 
 /**
  * A model for managing data taken from a text or comma-separated-value file
@@ -577,7 +578,7 @@ public class ModelAdapter implements IModel {
     constraintList = new ArrayList<>(constraints.size());
     constraintList.addAll(constraints);
     for(IConstraint c: constraintList){
-      Rectangle2D r2d = c.getBounds();
+      Rectangle2D r2d = AwtGeometryAdapter.toRectangle2D(c.getBounds());
       if (r2d.getMinX() < xMin) {
         xMin = r2d.getMinX();
       }

@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<project
+  xmlns="http://maven.apache.org/POM/4.0.0"
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd"
+>
+  <modelVersion>4.0.0</modelVersion>
+
+  <parent>
+    <groupId>org.tinfour</groupId>
+    <artifactId>Tinfour</artifactId>
+    <version>2.2.0-SNAPSHOT</version>
+  </parent>
+
+  <artifactId>TinfourRendering</artifactId>
+  <name>Rendering</name>
+  <description>AWT-based rendering and drawing utilities for Tinfour. These
+    classes depend on java.awt and are therefore kept separate from the
+    core module, which is free of java.awt dependencies (see issue #136).</description>
+
+  <dependencies>
+    <dependency>
+      <groupId>junit</groupId>
+      <artifactId>junit</artifactId>
+    </dependency>
+
+    <dependency>
+      <groupId>org.tinfour</groupId>
+      <artifactId>TinfourCore</artifactId>
+    </dependency>
+  </dependencies>
+
+</project>

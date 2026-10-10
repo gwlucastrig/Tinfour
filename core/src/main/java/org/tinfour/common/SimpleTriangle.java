@@ -30,15 +30,15 @@
  */
 package org.tinfour.common;
 
-import java.awt.geom.AffineTransform;
-import java.awt.geom.Path2D;
+import org.tinfour.geom.GeometryWriter;
+import org.tinfour.geom.WritableGeometry;
 import org.tinfour.vividsolutions.jts.math.DD;
 
 /**
  * Provides methods and elements for a simple representation of a triangle based
  * on IQuadEdge edges.
  */
-public class SimpleTriangle {
+public class SimpleTriangle implements WritableGeometry {
 
   private final IIncrementalTin tin;
   private final IQuadEdge edgeA;
@@ -253,37 +253,22 @@ public class SimpleTriangle {
   }
 
   /**
-   * Gets a Java Path2D based on the geometry of the triangle mapped through an
-   * optional affine transform.
+   * Writes the geometry of this triangle to the specified writer as a closed
+   * polygon, in model (Cartesian) coordinates.
    *
-   * @param transform a valid transform, or the null to use the identity
-   * transform.
-   * @return a valid instance of a Java Path2D
+   * @param writer a valid geometry writer
    */
-  public Path2D getPath2D(AffineTransform transform) {
-    AffineTransform af = transform;
-    if (transform == null) {
-      af = new AffineTransform();
-    }
-    double[] c = new double[12];
-
+  @Override
+  public void writeTo(GeometryWriter writer) {
     Vertex A = edgeA.getA();
     Vertex B = edgeB.getA();
     Vertex C = edgeC.getA();
-    c[0] = A.getX();
-    c[1] = A.getY();
-    c[2] = B.getX();
-    c[3] = B.getY();
-    c[4] = C.getX();
-    c[5] = C.getY();
-    af.transform(c, 0, c, 6, 3);
-
-    Path2D path = new Path2D.Double();
-    path.moveTo(c[6], c[7]);
-    path.lineTo(c[8], c[9]);
-    path.lineTo(c[10], c[11]);
-    path.closePath();
-    return path;
+    double[] xy = {
+      A.getX(), A.getY(),
+      B.getX(), B.getY(),
+      C.getX(), C.getY()
+    };
+    writer.addPolygon(xy, null);
   }
 
   /**

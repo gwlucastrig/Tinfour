@@ -29,7 +29,7 @@
  */
 package org.tinfour.contour;
 
-import java.awt.geom.Point2D;
+import org.tinfour.geom.GeoPoint;
 import java.io.PrintStream;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -1011,7 +1011,7 @@ public class ContourBuilderForTin {
           // enclosed by other regions.
           continue;
         }
-        Point2D testPoint = rJ.getTestPoint();
+        GeoPoint testPoint = rJ.getTestPoint();
         if (rI.isPointInsideRegion(xy, testPoint.getX(), testPoint.getY())) {
           rJ.setParent(rI);
         }

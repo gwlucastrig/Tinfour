@@ -50,6 +50,7 @@ import org.tinfour.common.IQuadEdge;
 import org.tinfour.interpolation.NaturalNeighborInterpolator;
 import org.tinfour.svm.properties.SvmProperties;
 import org.tinfour.utils.KahanSummation;
+import org.tinfour.utils.rendering.AwtGeometryAdapter;
 
 /**
  * Provides methods for producing a grid-based output of the SVM results
@@ -230,7 +231,7 @@ class SvmRaster {
     }
 
     KahanSummation sum = new KahanSummation();
-    Rectangle2D bounds = tin.getBounds();
+    Rectangle2D bounds = AwtGeometryAdapter.toRectangle2D(tin.getBounds());
     double xMin = bounds.getMinX();
     double yMin = bounds.getMinY();
     double xMax = bounds.getMaxX();

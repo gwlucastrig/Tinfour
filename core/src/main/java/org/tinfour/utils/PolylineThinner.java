@@ -29,7 +29,7 @@
 
 package org.tinfour.utils;
 
-import java.awt.geom.Rectangle2D;
+import org.tinfour.geom.GeoRectangle;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
@@ -246,7 +246,7 @@ public class PolylineThinner {
     if (vList.size() < 2) {
       return null;
     }
-    Rectangle2D r2d = feature.getBounds();
+    GeoRectangle r2d = feature.getBounds();
 
     int nNode = vList.size();
     int nNodeMin;  // the minimum number of nodes in a feature

@@ -29,7 +29,7 @@
  */
 package org.tinfour.voronoi;
 
-import java.awt.geom.Rectangle2D;
+import org.tinfour.geom.GeoRectangle;
 import java.util.Arrays;
 import java.util.List;
 import org.tinfour.common.IQuadEdge;
@@ -46,7 +46,7 @@ public class ThiessenPolygon {
   private final Vertex vertex;
   final IQuadEdge[] edges;
   final double area;
-  final Rectangle2D bounds;
+  final GeoRectangle bounds;
 
   /**
    * Constructs a Thiessen Polygon representation. The open flag is used to
@@ -64,7 +64,7 @@ public class ThiessenPolygon {
     this.open = open;
 
     Vertex v = edgeList.get(0).getA();
-    bounds = new Rectangle2D.Double(v.getX(), v.getY(), 0, 0);
+    bounds = new GeoRectangle(v.getX(), v.getY(), 0, 0);
     double s = 0;
     for (IQuadEdge e : edgeList) {
       Vertex A = e.getA();
@@ -112,8 +112,8 @@ public class ThiessenPolygon {
    *
    * @return a safe copy of a rectangle instance.
    */
-  public Rectangle2D getBounds() {
-    return new Rectangle2D.Double(
+  public GeoRectangle getBounds() {
+    return new GeoRectangle(
             bounds.getX(),
             bounds.getY(),
             bounds.getWidth(),

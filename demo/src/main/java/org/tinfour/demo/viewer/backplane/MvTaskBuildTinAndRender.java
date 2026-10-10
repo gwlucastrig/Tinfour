@@ -46,6 +46,7 @@ import org.tinfour.demo.viewer.backplane.ViewOptions.SampleThinning;
 import org.tinfour.utils.PolylineThinner;
 import org.tinfour.utils.TinInstantiationUtility;
 import org.tinfour.utils.Tincalc;
+import org.tinfour.utils.rendering.AwtGeometryAdapter;
 
 /**
  * Provides a runnable for rendering in cases where a new model or changed view
@@ -165,7 +166,7 @@ class MvTaskBuildTinAndRender implements IModelViewTask {
         //        by testing whether the constraints actually overlap the
         //        drawing area.
         if (c instanceof PolygonConstraint && c.isValid()) {
-          Rectangle2D r2dCon = c.getBounds();
+          Rectangle2D r2dCon = AwtGeometryAdapter.toRectangle2D(c.getBounds());
           double w = r2dCon.getWidth() / uPerPixel;
           double h = r2dCon.getHeight() / uPerPixel;
           double diag = Math.sqrt(w * w + h * h);
@@ -473,7 +474,7 @@ class MvTaskBuildTinAndRender implements IModelViewTask {
           double areaThreshold = 0.4 * uSpacing * uSpacing;
           List<IPolyline> thinConList = new ArrayList<>(constraintList.size());
           for (IConstraint con : constraintList) {
-            Rectangle2D r2dCon = con.getBounds();
+            Rectangle2D r2dCon = AwtGeometryAdapter.toRectangle2D(con.getBounds());
             double w = r2dCon.getWidth() / uPerPixel;
             double h = r2dCon.getHeight() / uPerPixel;
             double diag = Math.sqrt(w * w + h * h);
@@ -575,7 +576,7 @@ class MvTaskBuildTinAndRender implements IModelViewTask {
       if (constraintList != null) {
         List<IConstraint> clipCon = new ArrayList<>(constraintList.size());
         for (IConstraint con : constraintList) {
-          Rectangle2D r2dCon = con.getBounds();
+          Rectangle2D r2dCon = AwtGeometryAdapter.toRectangle2D(con.getBounds());
           if (r2dCon.intersects(r2d)) {
             clipCon.add(con);
           }

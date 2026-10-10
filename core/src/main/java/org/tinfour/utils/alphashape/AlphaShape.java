@@ -29,7 +29,8 @@
  */
 package org.tinfour.utils.alphashape;
 
-import java.awt.geom.Path2D;
+import org.tinfour.geom.GeometryWriter;
+import org.tinfour.geom.WritableGeometry;
 import java.io.PrintStream;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -65,7 +66,7 @@ import org.tinfour.utils.Polyside;
  * in IEEE Transactions on Information Theory, vol. 29, no. 4, pp. 551-559,
  * July 1983, doi: 10.1109/TIT.1983.1056714.</cite>
  */
-public class AlphaShape {
+public class AlphaShape implements WritableGeometry {
 
   private final IIncrementalTin tin;
   private final double radius;
@@ -492,92 +493,95 @@ public class AlphaShape {
   }
 
   /**
-   * Gets a instance of a Path2D based on the polygon geometry of the alpha
-   * shape,
-   * including any enclosed (hole) features. Non-polygon features are
-   * excluded.
+   * Writes the polygon geometry of this alpha shape to the specified writer,
+   * in model (Cartesian) coordinates, including any enclosed (hole) features.
+   * Non-polygon features are excluded. Equivalent to {@code writeTo(writer, true)}.
    *
-   * @return a valid, potentially empty instance.
+   * @param writer a valid geometry writer
    */
-  public Path2D getPath2D() {
-    return getPath2D(true);
+  @Override
+  public void writeTo(GeometryWriter writer) {
+    writeTo(writer, true);
   }
 
   /**
-   * Gets a instance of a Path2D based on the geometry of the alpha shape,
-   * including any enclosed (hole) features. If polygonFlag option
-   * is specified, only valid polygon features will be included
-   * (a polygon is considered if it has a non-zero area and is suitable
-   * for plotting with a fill operation). If polygonFlag option is false,
-   * open-line (non-polygon) features and zero-area polygons will be included.
+   * Writes the geometry of this alpha shape to the specified writer, in model
+   * (Cartesian) coordinates. If polygonFlag is true, only valid polygon
+   * features are written, as fillable polygons (a polygon is valid if it has a
+   * non-zero area). If polygonFlag is false, open-line (non-polygon) features
+   * and zero-area polygons are written, as open polylines suitable for
+   * stroking rather than filling.
    *
-   * @param polygonFlag true if only valid polygon features are included; false
-   * if only open-line features are included.
-   * @return a valid, potentially empty instance.
+   * @param writer a valid geometry writer
+   * @param polygonFlag true to write fillable polygon features; false to write
+   * open-line features and zero-area polygons
    */
-  public Path2D getPath2D(boolean polygonFlag) {
-    Path2D p = new Path2D.Double();
+  public void writeTo(GeometryWriter writer, boolean polygonFlag) {
     for (AlphaPart a : alphaParts) {
       if (polygonFlag) {
         if (a.isPolygon() && Math.abs(a.getArea()) > areaMinThreshold) {
-          // edges are connected.  Move to first vertex of first edge,
-          // and then line-to second vertex of all subsequent edges.
-          IQuadEdge aEdge = a.edges.get(0);
-          Vertex A = aEdge.getA();
-          p.moveTo(A.getX(), A.getY());
-          for (IQuadEdge e : a.edges) {
-            Vertex B = e.getB();
-            p.lineTo(B.getX(), B.getY());
-          }
+          writeConnected(writer, a, true);
         }
       } else {
         if (a.isPolygon()) {
           if (Math.abs(a.getArea()) <= areaMinThreshold) {
-            IQuadEdge aEdge = a.edges.get(0);
-            Vertex A = aEdge.getA();
-            p.moveTo(A.getX(), A.getY());
-            for (IQuadEdge e : a.edges) {
-              Vertex B = e.getB();
-              p.lineTo(B.getX(), B.getY());
-            }
+            writeConnected(writer, a, false);
           }
         } else {
-          // edges are not connected.
+          // edges are not connected: emit each as a separate open segment.
           for (IQuadEdge e : a.edges) {
             Vertex A = e.getA();
             Vertex B = e.getB();
-            p.moveTo(A.getX(), A.getY());
-            p.lineTo(B.getX(), B.getY());
+            writer.addPolyline(
+                    new double[]{A.getX(), A.getY(), B.getX(), B.getY()}, false);
           }
         }
       }
     }
-    return p;
   }
 
   /**
-   * Gets a path containing only those parts that are not enclosed by
-   * other polygons. Typically, this selection set represents the
-   * outer envelope of the alpha shape.
+   * Writes only those parts that are not enclosed by other polygons, as
+   * fillable polygons, in model (Cartesian) coordinates. Typically, this
+   * selection set represents the outer envelope of the alpha shape.
    *
-   * @return a valid Path2D instance.
+   * @param writer a valid geometry writer
    */
-  public Path2D getOuterPolygonsPath2D() {
-    Path2D p = new Path2D.Double();
+  public void writeOuterPolygonsTo(GeometryWriter writer) {
     for (AlphaPart a : alphaParts) {
-      if (a.isPolygon() && !a.isEnclosed() && Math.abs(a.getArea()) > areaMinThreshold) {
-        // edges are connected.  Move to first vertex of first edge,
-        // and then line-to second vertex of all subsequent edges.
-        IQuadEdge aEdge = a.edges.get(0);
-        Vertex A = aEdge.getA();
-        p.moveTo(A.getX(), A.getY());
-        for (IQuadEdge e : a.edges) {
-          Vertex B = e.getB();
-          p.lineTo(B.getX(), B.getY());
-        }
+      if (a.isPolygon() && !a.isEnclosed()
+              && Math.abs(a.getArea()) > areaMinThreshold) {
+        writeConnected(writer, a, true);
       }
     }
-    return p;
+  }
+
+  /**
+   * Writes a part whose edges form a connected ring: the first vertex of the
+   * first edge followed by the second vertex of every edge.
+   *
+   * @param writer a valid geometry writer
+   * @param a the alpha part to write
+   * @param asPolygon true to write as a closed (fillable) polygon; false to
+   * write as an open polyline
+   */
+  private static void writeConnected(
+          GeometryWriter writer, AlphaPart a, boolean asPolygon) {
+    double[] ring = new double[(a.edges.size() + 1) * 2];
+    int k = 0;
+    Vertex A = a.edges.get(0).getA();
+    ring[k++] = A.getX();
+    ring[k++] = A.getY();
+    for (IQuadEdge e : a.edges) {
+      Vertex B = e.getB();
+      ring[k++] = B.getX();
+      ring[k++] = B.getY();
+    }
+    if (asPolygon) {
+      writer.addPolygon(ring, null);
+    } else {
+      writer.addPolyline(ring, false);
+    }
   }
 
   /**

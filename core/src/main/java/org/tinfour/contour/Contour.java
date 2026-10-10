@@ -29,9 +29,9 @@
  */
 package org.tinfour.contour;
 
-import java.awt.geom.AffineTransform;
-import java.awt.geom.Path2D;
-import java.awt.geom.Rectangle2D;
+import org.tinfour.geom.GeometryWriter;
+import org.tinfour.geom.GeoRectangle;
+import org.tinfour.geom.WritableGeometry;
 import java.util.Arrays;
 import java.util.concurrent.atomic.AtomicInteger;
 import org.tinfour.common.IQuadEdge;
@@ -59,7 +59,7 @@ import org.tinfour.common.Vertex;
  * is provided by the application.
  *
  */
-public class Contour {
+public class Contour implements WritableGeometry {
 
   static final AtomicInteger serialIdSource = new AtomicInteger();
 
@@ -303,27 +303,17 @@ public class Contour {
   }
 
   /**
-   * Gets a Path2D suitable for rendering purposes.
+   * Writes the geometry of this contour to the specified writer as a polyline
+   * (closed if this contour is a closed loop), in model (Cartesian)
+   * coordinates.
    *
-   * @param transform a valid AffineTransform, typically specified to map the
-   * Cartesian coordinates of the contour to pixel coordinate.
-   * @return a valid instance
+   * @param writer a valid geometry writer
    */
-  public Path2D getPath2D(AffineTransform transform) {
-    Path2D path = new Path2D.Double();
+  @Override
+  public void writeTo(GeometryWriter writer) {
     if (n >= 4) {
-      double[] c = new double[n];
-      transform.transform(xy, 0, c, 0, n / 2);
-
-      path.moveTo(c[0], c[1]);
-      for (int i = 1; i < n / 2; i++) {
-        path.lineTo(c[i * 2], c[i * 2 + 1]);
-      }
-      if (this.closedLoop) {
-        path.closePath();
-      }
+      writer.addPolyline(Arrays.copyOf(xy, n), this.closedLoop);
     }
-    return path;
   }
 
   /**
@@ -361,8 +351,8 @@ public class Contour {
    * Get the bounds of the contour.
    * @return a valid instance.
    */
-  public Rectangle2D getBounds(){
-    Rectangle2D r2d = new Rectangle2D.Double(xy[0], xy[1], 0, 0);
+  public GeoRectangle getBounds(){
+    GeoRectangle r2d = new GeoRectangle(xy[0], xy[1], 0, 0);
     for(int i=1; i<n/2; i++){
       r2d.add(xy[i*2], xy[i*2+1]);
     }

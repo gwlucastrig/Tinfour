@@ -45,6 +45,7 @@ import org.tinfour.utils.Tincalc;
 import org.tinfour.utils.loaders.ICoordinateTransform;
 import org.tinfour.utils.loaders.IVertexReader;
 import org.tinfour.utils.loaders.VertexReaderText;
+import org.tinfour.utils.rendering.AwtGeometryAdapter;
 
 /**
  * A class for loading bathymetry and shoreline data to be used for estimating
@@ -184,11 +185,11 @@ public class BathymetryData {
             soundingBounds.getHeight());
 
     for (IConstraint con : lakeConstraints) {
-      Rectangle2D b = con.getBounds();
+      Rectangle2D b = AwtGeometryAdapter.toRectangle2D(con.getBounds());
       r2d.add(b);
     }
     for (IConstraint con : islandConstraints) {
-      Rectangle2D b = con.getBounds();
+      Rectangle2D b = AwtGeometryAdapter.toRectangle2D(con.getBounds());
       r2d.add(b);
     }
     bounds = r2d;

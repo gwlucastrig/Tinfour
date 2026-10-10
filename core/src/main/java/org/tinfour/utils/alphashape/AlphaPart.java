@@ -29,7 +29,8 @@
  */
 package org.tinfour.utils.alphashape;
 
-import java.awt.geom.Path2D;
+import org.tinfour.geom.GeometryWriter;
+import org.tinfour.geom.WritableGeometry;
 import java.util.ArrayList;
 import java.util.List;
 import org.tinfour.common.IQuadEdge;
@@ -40,7 +41,7 @@ import org.tinfour.common.Vertex;
  * The path may represent either the outer bounds of a region or an enclosed
  * region.
  */
-public class AlphaPart {
+public class AlphaPart implements WritableGeometry {
 
   final AlphaPartType partType;
   final List<IQuadEdge> edges = new ArrayList<>();
@@ -222,36 +223,38 @@ public class AlphaPart {
   }
 
   /**
-   * Get an instance of Path2D populated with coordinates taken from
-   * the edges that define this alpha part. For a polygon part, the defining
-   * points will be linked together as a series of connected line segments.
-   * For a non-polygon part, the Path2D will consist of a series of separate
-   * line segments.  Non-polygon parts are no suitable for rendering using
-   * Java's area-fill routines.
-   * @return a valid instance
+   * Writes the geometry of this alpha part to the specified writer, in model
+   * (Cartesian) coordinates. For a polygon part, the defining points are
+   * written as a single closed polygon. For a non-polygon part, the geometry
+   * is written as a series of separate (open) line segments, which are not
+   * suitable for area-fill rendering.
+   *
+   * @param writer a valid geometry writer
    */
-  public Path2D getPath2D() {
-    Path2D p = new Path2D.Double();
-
+  @Override
+  public void writeTo(GeometryWriter writer) {
     if (isPolygon() && Math.abs(getArea()) > 1.0e-6) {
-      // edges are connected.  Move to first vertex of first edge,
-      // and then line-to second vertex of all subsequent edges.
-      IQuadEdge aEdge = edges.get(0);
-      Vertex A = aEdge.getA();
-      p.moveTo(A.getX(), A.getY());
+      // edges are connected: the first vertex of the first edge followed by
+      // the second vertex of every edge forms a closed ring.
+      double[] ring = new double[(edges.size() + 1) * 2];
+      int k = 0;
+      Vertex A = edges.get(0).getA();
+      ring[k++] = A.getX();
+      ring[k++] = A.getY();
       for (IQuadEdge e : edges) {
         Vertex B = e.getB();
-        p.lineTo(B.getX(), B.getY());
+        ring[k++] = B.getX();
+        ring[k++] = B.getY();
       }
+      writer.addPolygon(ring, null);
     } else {
-      // edges are not connected.
+      // edges are not connected: emit each as a separate open segment.
       for (IQuadEdge e : edges) {
         Vertex A = e.getA();
         Vertex B = e.getB();
-        p.moveTo(A.getX(), A.getY());
-        p.lineTo(B.getX(), B.getY());
+        writer.addPolyline(
+                new double[]{A.getX(), A.getY(), B.getX(), B.getY()}, false);
       }
     }
-    return p;
   }
 }

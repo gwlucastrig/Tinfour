@@ -48,6 +48,7 @@ import org.tinfour.utils.HilbertSort;
 import org.tinfour.utils.Tincalc;
 import org.tinfour.utils.loaders.ICoordinateTransform;
 import org.tinfour.utils.loaders.VertexReaderText;
+import org.tinfour.utils.rendering.AwtGeometryAdapter;
 
 /**
  * A class for loading bathymetry and shoreline data to be used for estimating
@@ -329,9 +330,9 @@ public class SvmBathymetryData {
             shoreReferenceElevation = v.getZ();
           }
           if (constraintBounds == null) {
-            constraintBounds = p.getBounds();
+            constraintBounds = AwtGeometryAdapter.toRectangle2D(p.getBounds());
           } else {
-            constraintBounds.add(p.getBounds());
+            constraintBounds.add(AwtGeometryAdapter.toRectangle2D(p.getBounds()));
           }
         }
       }

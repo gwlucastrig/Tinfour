@@ -48,6 +48,7 @@ import javax.imageio.ImageIO;
 import org.tinfour.common.IIncrementalTin;
 import org.tinfour.common.IQuadEdge;
 import org.tinfour.common.Vertex;
+import org.tinfour.utils.rendering.AwtGeometryAdapter;
 
 /**
  * Provides an example of code to build a GRID from an LAS file
@@ -247,7 +248,7 @@ public class TinRenderingUtility {
    */
   public static void drawTin(IIncrementalTin tin, int width, int height, File file)
     throws IOException {
-    Rectangle2D r2d = tin.getBounds();
+    Rectangle2D r2d = AwtGeometryAdapter.toRectangle2D(tin.getBounds());
     double x0 = r2d.getMinX();
     double x1 = r2d.getMaxX();
     double y0 = r2d.getMinY();

@@ -30,7 +30,7 @@
  */
 package org.tinfour.common;
 
-import java.awt.geom.Rectangle2D;
+import org.tinfour.geom.GeoRectangle;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
@@ -50,7 +50,7 @@ public abstract class PolyLineConstraintAdapter
    */
   protected final List<Vertex> list;
 
-  private final Rectangle2D bounds = new Rectangle2D.Double();
+  private final GeoRectangle bounds = new GeoRectangle();
   private double x = Double.NaN;
   private double y = Double.NaN;
 
@@ -131,7 +131,7 @@ public abstract class PolyLineConstraintAdapter
   }
 
   @Override
-  public Rectangle2D getBounds() {
+  public GeoRectangle getBounds() {
     return bounds;
 
   }

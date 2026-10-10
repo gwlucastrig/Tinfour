@@ -28,7 +28,7 @@
  */
 package org.tinfour.common;
 
-import java.awt.geom.Rectangle2D;
+import org.tinfour.geom.GeoRectangle;
 
 /**
  * Provides center coordinates and radius for a circumcircle.
@@ -248,8 +248,8 @@ public class Circumcircle {
    * Gets the bounds of the circumcircle.
    * @return a valid rectangle instance.
    */
-  public Rectangle2D getBounds(){
+  public GeoRectangle getBounds(){
       double r = getRadius();
-      return new Rectangle2D.Double(centerX-r, centerY-r, 2*r, 2*r);
+      return new GeoRectangle(centerX-r, centerY-r, 2*r, 2*r);
   }
 }

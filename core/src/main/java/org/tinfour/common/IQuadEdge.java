@@ -23,8 +23,8 @@
 
 package org.tinfour.common;
 
-import java.awt.geom.AffineTransform;
-import java.awt.geom.Line2D;
+import org.tinfour.geom.GeoAffineTransform;
+import org.tinfour.geom.GeoLine;
 
 /**
  * Defines methods for accessing the data in a quad-edge
@@ -362,30 +362,30 @@ public interface IQuadEdge {
   /**
    * A deprecated method replaced by the equivalent transcribeToLine2D().
    * @param transform a valid affine transform
-   * @param l2d a valid Line2D instance to receive the geometry data from the edge.
+   * @param l2d a valid GeoLine instance to receive the geometry data from the edge.
    */
   @Deprecated
-  void setLine2D(AffineTransform transform, Line2D l2d);
+  void setLine2D(GeoAffineTransform transform, GeoLine l2d);
 
 
   /**
    * Provides a convenience method for rendering edges by setting the
-   * Line2D argument with the transformed coordinates of the edge.
+   * GeoLine argument with the transformed coordinates of the edge.
    * The affine transform is used to map vertex A and B of the edge
    * to the specified coordinate system. The transformed coordinates
-   * are then stored in the application-supplied Line2D object.  If a null
+   * are then stored in the application-supplied GeoLine object.  If a null
    * reference is supplied for the transform, this method treats it as the
    * identity transform.
    * <p>
    * This method is intended to support rendering operations that may
-   * render a large number of edges using Java's Line2D class. In such cases,
-   * this method avoids the overhead involved in creating multiple Line2D
+   * render a large number of edges using Java's GeoLine class. In such cases,
+   * this method avoids the overhead involved in creating multiple GeoLine
    * instances by allowing an application to reuse a single instance multiple
    * times.
    * @param transform a valid affine transform
-   * @param l2d a valid Line2D instance to receive the geometry data from the edge.
+   * @param l2d a valid GeoLine instance to receive the geometry data from the edge.
    */
-  void transcribeToLine2D(AffineTransform transform, Line2D l2d);
+  void transcribeToLine2D(GeoAffineTransform transform, GeoLine l2d);
 
   /**
    * Sets a flag identifying the edge as the border of a region-based constraint

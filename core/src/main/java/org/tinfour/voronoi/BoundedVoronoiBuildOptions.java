@@ -29,7 +29,7 @@
  */
 package org.tinfour.voronoi;
 
-import java.awt.geom.Rectangle2D;
+import org.tinfour.geom.GeoRectangle;
 
 /**
  * Specifies options for building a bounded Voronoi Diagram
@@ -37,7 +37,7 @@ import java.awt.geom.Rectangle2D;
 public class BoundedVoronoiBuildOptions {
 
 
-  Rectangle2D bounds;
+  GeoRectangle bounds;
 
   boolean enableAutomaticColorAssignment;
 
@@ -62,7 +62,7 @@ public class BoundedVoronoiBuildOptions {
    * as the size of the sample data set.
    * @param bounds a valid rectangle.
    */
-  public void setBounds(Rectangle2D bounds){
+  public void setBounds(GeoRectangle bounds){
     this.bounds = bounds;
   }
 

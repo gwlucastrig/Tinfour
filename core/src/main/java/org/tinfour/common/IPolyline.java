@@ -13,7 +13,7 @@
 
 package org.tinfour.common;
 
-import java.awt.geom.Rectangle2D;
+import org.tinfour.geom.GeoRectangle;
 import java.util.List;
 
 /**
@@ -45,7 +45,7 @@ public interface IPolyline extends Iterable<Vertex> {
    * Gets the bounds of the feature.
    * <p>
    * <strong>Caution:</strong> Implementations of this method expose
-   * the Rectangle2D object used by the feature instance.
+   * the GeoRectangle object used by the feature instance.
    * Although this approach supports efficiency
    * for the potentially intense processing conducted by the Tinfour classes,
    * it does not provide a safe implementation for careless developers.
@@ -54,7 +54,7 @@ public interface IPolyline extends Iterable<Vertex> {
    *
    * @return a valid, potentially empty rectangle instance.
    */
-  Rectangle2D getBounds();
+  GeoRectangle getBounds();
 
   /**
    * Gets the total length of the feature. The length is the accumulated

@@ -30,8 +30,7 @@
  */
 package org.tinfour.common;
 
-import java.awt.geom.AffineTransform;
-import java.awt.geom.Path2D;
+import org.tinfour.geom.WritableGeometry;
 import java.util.List;
 
 /**
@@ -85,7 +84,7 @@ import java.util.List;
  *
  *
  */
-public interface IConstraint extends IPolyline {
+public interface IConstraint extends IPolyline, WritableGeometry {
 
   /**
    * Indicates whether the constraint applies a constrained region behavior
@@ -200,15 +199,6 @@ public interface IConstraint extends IPolyline {
 
 
 
-  /**
-   * Gets a Java Path2D based on the geometry of the constraint mapped through
-   * an optional affine transform.
-   *
-   * @param transform a valid transform, or the null to use the identity
-   * transform.
-   * @return a valid instance of a Java Path2D
-   */
-  Path2D getPath2D(AffineTransform transform);
 
 
   /**

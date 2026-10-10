@@ -29,7 +29,7 @@
  */
 package org.tinfour.voronoi;
 
-import java.awt.geom.Rectangle2D;
+import org.tinfour.geom.GeoRectangle;
 import java.util.List;
 import org.tinfour.common.IQuadEdge;
 import org.tinfour.common.Vertex;
@@ -143,7 +143,7 @@ public class BoundedVoronoiIntegrityCheck {
       for(ThiessenPolygon p: lmv.getPolygons()){
         sumArea+=p.getArea();
       }
-      Rectangle2D bounds = lmv.getBounds();
+      GeoRectangle bounds = lmv.getBounds();
       double boundsArea = bounds.getWidth()*bounds.getHeight();
       double meanArea = (boundsArea+sumArea)/2.0;
       double areaTest = Math.abs(boundsArea-sumArea)/meanArea;

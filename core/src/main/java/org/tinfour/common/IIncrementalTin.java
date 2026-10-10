@@ -29,7 +29,7 @@
  */
 package org.tinfour.common;
 
-import java.awt.geom.Rectangle2D;
+import org.tinfour.geom.GeoRectangle;
 import java.io.PrintStream;
 import java.util.Iterator;
 import java.util.List;
@@ -131,7 +131,7 @@ public interface IIncrementalTin {
    * @return if available, a valid rectangle giving the bounds of the TIN;
    * otherwise, a null
    */
-  Rectangle2D getBounds();
+  GeoRectangle getBounds();
 
   /**
    * Gets a list of edges currently allocated by an instance. The list may
